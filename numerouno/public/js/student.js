@@ -9,7 +9,14 @@ frappe.ui.form.on('Student', {
         frm.add_custom_button(__('Create Student Group'), () => {
             show_student_group_dialog(frm);
         }, __('Actions'));
+
+        // Button 2: Create Student Group
+        frm.add_custom_button(__('Assign Student Group'), () => {
+            assign_student_group(frm);
+        }, __('Actions'));
     }
+
+
 });
 
 function show_program_dialog(frm) {
@@ -192,3 +199,45 @@ function update_required_fields(dialog) {
 
     dialog.refresh();
 }
+
+function assign_student_group(frm){
+    const dialog = new frappe.ui.Dialog({
+        title: __('Assign Student Group'),
+        fields: [
+            {
+                label: __('Student Group'),
+                fieldname: 'student_group',
+                fieldtype: 'Link',
+                options: 'Student Group',
+                reqd: 1,
+            },
+        ],
+        primary_action_label: __('Assign'),
+        primary_action(values) {
+
+            frappe.call({
+                method: "numerouno.numerouno.doctype.student.student.assign_student_group",
+                args: {
+                    student: frm.doc.name,
+                    student_group: values.student_group,
+                },
+                callback: function (r) {
+                    if (!r.exc && r.message && r.message.name) {
+                        frappe.show_alert({
+                            message: __('Student Assigned to Student Group'),
+                            indicator: 'green'
+                        });
+                        frappe.set_route('Form', 'Student Group', r.message.name);
+                    }
+                },
+                freeze: true,
+                freeze_message: __('Assigning Student Group...')
+            });
+
+            dialog.hide();
+        }
+    });
+
+    dialog.show();
+}
+
