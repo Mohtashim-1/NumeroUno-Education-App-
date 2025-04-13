@@ -2,6 +2,7 @@
 
 import frappe
 from frappe import _
+import frappe.utils
 
 @frappe.whitelist()
 def create_student_applicant(student, program):
@@ -55,4 +56,21 @@ def create_student_group(student, group_name, academic_year, group_based_on, fro
     return {
         "name": group.name,
         "url": frappe.utils.get_url_to_form("Student Group", group.name)
+    }
+
+
+@frappe.whitelist()
+def assign_student_group(student, student_group):
+    # assign student group 
+    group = frappe.get_doc("Student Group", student_group)
+    
+    if not any(s.student == student for s in group.students):
+        group.append("students",{
+            "student": student
+        })
+        group.save(ignore_permissions=True)
+        
+    return {
+        "name":group.name,
+        "url":frappe.utils.get_url_to_form("Student Group",group.name)
     }
