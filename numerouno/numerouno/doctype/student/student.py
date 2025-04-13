@@ -31,3 +31,28 @@ def create_student_applicant(student, program):
         "name": applicant.name,
         "url": frappe.utils.get_url_to_form("Student Applicant", applicant.name)
     }
+    
+    
+@frappe.whitelist()
+def create_student_group(student, group_name, academic_year, group_based_on, from_date, to_date, coarse_location=None, course=None, batch=None, program=None):
+    student_doc = frappe.get_doc("Student", student)
+
+    group = frappe.new_doc("Student Group")
+    group.update({
+        "student_group_name": group_name,
+        "students": [{"student": student_doc.name}],
+        "academic_year": academic_year,
+        "group_based_on": group_based_on,
+        "course": course,
+        "batch": batch,
+        "program": program,
+        "from_date": from_date,
+        "to_date": to_date,
+        "coarse_location": coarse_location
+    })
+
+    group.insert(ignore_permissions=True)
+    return {
+        "name": group.name,
+        "url": frappe.utils.get_url_to_form("Student Group", group.name)
+    }
