@@ -1,0 +1,68 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-04-16 23:51:36.081457",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "date",
+  "student",
+  "student_group",
+  "column_break_fbnk",
+  "student_signature"
+ ],
+ "fields": [
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "options": "Today",
+   "read_only": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "label": "Student Group",
+   "options": "Student Group"
+  },
+  {
+   "fieldname": "column_break_fbnk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "student_signature",
+   "fieldtype": "Signature",
+   "label": "Student Signature"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-04-17 00:04:27.673036",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Student Card",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
