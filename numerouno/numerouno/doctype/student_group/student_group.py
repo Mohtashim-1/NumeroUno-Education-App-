@@ -39,10 +39,18 @@ def create_coarse_schedule(student_group, from_time, to_time):
                 sa.student_group = doc.name
                 sa.status = "Present"  # or set as "Not Marked" initially
                 sa.insert()
+            
+            # Create Student Card only once per student
+            if not frappe.db.exists("Student Card", {"student": s.student, "student_group": doc.name}):
+                sc = frappe.new_doc("Student Card")
+                sc.student = s.student
+                sc.student_group = doc.name
+                # Add other fields if needed here
+                sc.insert()
 
             current_date = add_days(current_date, 1)
 
-    frappe.msgprint(_("Coarse Schedule and Attendance created from {0} to {1}").format(from_date, to_date))
+    frappe.msgprint(_("Course Schedule, Student Attendance, and Student Cards created from {0} to {1}").format(from_date, to_date))
 
 
 @frappe.whitelist()

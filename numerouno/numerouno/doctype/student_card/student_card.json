@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:{student}-{student_group}",
  "creation": "2025-04-16 23:51:36.081457",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -9,7 +10,8 @@
   "student",
   "student_group",
   "column_break_fbnk",
-  "student_signature"
+  "student_signature",
+  "amended_from"
  ],
  "fields": [
   {
@@ -39,14 +41,26 @@
    "fieldname": "student_signature",
    "fieldtype": "Signature",
    "label": "Student Signature"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Student Card",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2025-04-17 00:04:27.673036",
+ "modified": "2025-04-17 00:29:09.115224",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Student Card",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -64,5 +78,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
