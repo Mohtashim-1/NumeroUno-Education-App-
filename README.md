@@ -34,7 +34,7 @@ Pulls signature from the `Student Card` doctype and displays in print format wit
 ---
 
 ## 📁 Project Structure
-
+```text
 numeruno/
 ├── numeruno/
 │   ├── custom/
