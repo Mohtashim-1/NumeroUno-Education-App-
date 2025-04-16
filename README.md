@@ -35,9 +35,15 @@ Pulls signature from the `Student Card` doctype and displays in print format wit
 
 ## 📁 Project Structure
 
-numeruno/ ├── numeruno/ │ ├── custom/ │ │ ├── student_group.py # Python script for auto-scheduling and attendance │ │ ├── print_format/ │ │ │ └── student_attendance.html # Custom Jinja print format │ │ └── ... │ └── hooks.py └── README.md
-
-
+numeruno/
+├── numeruno/
+│   ├── custom/
+│   │   ├── student_group.py          # Python script for auto-scheduling and attendance
+│   │   ├── print_format/
+│   │   │   └── student_attendance.html  # Custom Jinja print format
+│   │   └── ...
+│   └── hooks.py
+└── README.md
 ---
 
 ## 🧠 Technologies
