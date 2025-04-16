@@ -31,7 +31,8 @@ app_license = "mit"
 doctype_js = {
     "Student" : "public/js/student.js",
     "Student Group" : "public/js/student_group.js",
-    "Student Attendance" : "public/js/student_attendance.js"
+    "Student Attendance" : "public/js/student_attendance.js",
+    "Student Card" : "public/js/student_card.js"
     }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
