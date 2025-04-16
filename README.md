@@ -32,16 +32,3 @@ Print format displays attendance per day based on actual records:
 Pulls signature from the `Student Card` doctype and displays it in the print format with adjustable image size.
 
 ---
-
-## 📁 Project Structure
-
-```text
-numeruno/
-├── numeruno/
-│   ├── custom/
-│   │   ├── student_group.py              # Python script for auto-scheduling and attendance
-│   │   ├── print_format/
-│   │   │   └── student_attendance.html   # Custom Jinja print format
-│   │   └── ...
-│   └── hooks.py
-└── README.md
