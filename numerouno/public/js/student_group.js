@@ -34,7 +34,7 @@ function show_coarse_dialog(frm) {
             if (!values) return;
 
             frappe.call({
-                method: "numerouno.numerouno.doctype.student_group.student_group.create_coarse_schedule",
+                method: "numerouno.numerouno.doctype.student_group.student_group.   ",
                 args: {
                     student_group: frm.doc.name,
                     from_time: values.from_time,
