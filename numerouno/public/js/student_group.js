@@ -4,6 +4,10 @@ frappe.ui.form.on('Student Group', {
             show_coarse_dialog(frm);
         }, __('Actions'));
 
+        frm.add_custom_button(__('Create Attendance'), () => {
+            show_attendance_dialog(frm);
+        }, __('Actions'));
+
         
     }
 });

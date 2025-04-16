@@ -62,3 +62,32 @@ def create_academic_term(doc, method):
         at.save()
 
         doc.academic_term = at.name
+
+@frappe.whitelist()
+def create_student_attendance(doc, method):
+    # Get the coarse schedules for this student group
+    coarse_schedules = frappe.get_all(
+        "Coarse Schedule",
+        filters={
+            "student_group": doc.name,
+            "program": doc.program,
+            "course": doc.course,
+            "room": doc.custom_coarse_location
+        },
+        fields=["schedule_date", "name"]
+    )
+
+    # Loop through each student in the group
+    for student_row in doc.students:
+        student = student_row.student
+
+        # Loop through each schedule
+        for cs in coarse_schedules:
+            sa = frappe.new_doc("Student Attendance")
+            sa.student = student
+            sa.date = cs.schedule_date
+            sa.course_schedule = cs.name
+            sa.student_group = doc.name
+            sa.status = "Present"
+            sa.insert()  # use insert to save it to DB
+
