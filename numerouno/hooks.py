@@ -125,13 +125,11 @@ doctype_js = {
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Student Group": {
+		"validate": "numerouno.numerouno.doctype.student_group.student_group.create_academic_term",
+	}
+}
 
 # Scheduled Tasks
 # ---------------

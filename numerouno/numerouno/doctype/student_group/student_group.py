@@ -34,13 +34,31 @@ def create_coarse_schedule(student_group, from_time, to_time):
 
     frappe.msgprint(_("Coarse Schedule created from {0} to {1}").format(from_date, to_date))
 
-
 @frappe.whitelist()
 def create_academic_term(doc, method):
-    at = frappe.new_doc("Academic Term")
-    education_settings = frappe.get_single("Education Settings")
-    academic_year = education_settings.academic_year
-    at.academic_year = academic_year
-    at.term_start_date = doc.custom_from_date
-    at.term_end_date = doc.custom_to_date
-    at.save()
+    if not doc.academic_term:
+        # Check if a term already exists with same dates
+        existing_term = frappe.get_value(
+            "Academic Term",
+            {
+                "term_start_date": doc.custom_from_date,
+                "term_end_date": doc.custom_to_date,
+                "academic_year": doc.academic_year
+            }
+        )
+
+        if existing_term:
+            doc.academic_term = existing_term
+            return
+
+        # Create a new Academic Term
+        term_name = f"{doc.custom_from_date} to {doc.custom_to_date}"
+
+        at = frappe.new_doc("Academic Term")
+        at.academic_year = doc.academic_year
+        at.term_name = term_name
+        at.term_start_date = doc.custom_from_date
+        at.term_end_date = doc.custom_to_date
+        at.save()
+
+        doc.academic_term = at.name
