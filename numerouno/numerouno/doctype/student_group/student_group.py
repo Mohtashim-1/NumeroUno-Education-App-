@@ -53,10 +53,11 @@ def create_coarse_schedule(student_group, from_time, to_time):
     frappe.msgprint(_("Course Schedule, Student Attendance, and Student Cards created from {0} to {1}").format(from_date, to_date))
 
 
-@frappe.whitelist()
 def create_academic_term(doc, method):
+    if not (doc.custom_from_date and doc.custom_to_date and doc.academic_year):
+        return  # Exit silently if any required field is missing
+
     if not doc.academic_term:
-        # Check if a term already exists with same dates
         existing_term = frappe.get_value(
             "Academic Term",
             {
@@ -70,9 +71,7 @@ def create_academic_term(doc, method):
             doc.academic_term = existing_term
             return
 
-        # Create a new Academic Term
         term_name = f"{doc.custom_from_date} to {doc.custom_to_date}"
-
         at = frappe.new_doc("Academic Term")
         at.academic_year = doc.academic_year
         at.term_name = term_name
