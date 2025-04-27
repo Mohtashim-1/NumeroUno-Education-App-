@@ -6,6 +6,23 @@ app_email = "shoaibmohtashim973@gmail.com"
 app_license = "mit"
 # required_apps = []
 
+
+website_route_rules = [
+    {"from_route": "/assessment-result1", "to_route": "numerouno/assessment_result1"}
+]
+
+portal_menu_items = [
+    {
+        "title": "Assessment Results",
+        "route": "/assessment-result1",
+        "reference_doctype": "Assessment Result",
+        "role": "Student"
+    }
+]
+
+
+
+
 # Includes in <head>
 # ------------------
 
