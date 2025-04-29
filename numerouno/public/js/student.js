@@ -155,7 +155,7 @@ function show_student_group_dialog(frm) {
                     batch: values.batch,
                     from_date: values.from_date,
                     to_date: values.to_date,
-                    coarse_location: values.coarse_location
+                    custom_coarse_location: values.coarse_location
                 },
                 callback: function (r) {
                     if (!r.exc && r.message && r.message.name) {

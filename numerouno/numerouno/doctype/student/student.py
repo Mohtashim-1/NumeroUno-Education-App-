@@ -47,8 +47,8 @@ def create_student_group(student, group_name, academic_year, group_based_on, fro
         "course": course,
         "batch": batch,
         "program": program,
-        "from_date": from_date,
-        "to_date": to_date,
+        "custom_from_date": from_date,
+        "custom_to_date": to_date,
         "coarse_location": coarse_location
     })
 
