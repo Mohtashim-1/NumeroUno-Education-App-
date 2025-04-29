@@ -1,6 +1,5 @@
 import frappe
 
-
 @frappe.whitelist()
 def create_bulk_assessment_results(assessment_plan, results_data):
     import json
@@ -25,10 +24,10 @@ def create_bulk_assessment_results(assessment_plan, results_data):
             "assessment_plan": assessment_plan,
             "student": row.get("student"),
             "student_name": row.get("student_name"),
-            "custom_company": "NumeoUno",
+            "custom_company": company,
             "details": [
     {
-        "assessment_criteria": row.get("assessment_criteria") or "Practical Assessment",
+        "assessment_criteria": row.get("assessment_criteria"),
         "score": float(row.get("score")),
         "comment": row.get("comment") or ""
     }

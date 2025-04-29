@@ -81,7 +81,6 @@ function show_assessment_dialog(frm) {
                 fieldname: 'assessment_group',
                 fieldtype: 'Link',
                 options: "Assessment Group",
-                default: "All Assessment Groups",
                 reqd: 1,
             },
             {
@@ -89,7 +88,6 @@ function show_assessment_dialog(frm) {
                 fieldname: 'grading_scale',
                 fieldtype: 'Link',
                 options: "Grading Scale",
-                default: "Default Grading",
                 reqd: 1,
             },
             { fieldtype: 'Column Break' },
@@ -204,7 +202,7 @@ function show_assessment_dialog(frm) {
         if (table_data.length === 0) {
             dialog.fields_dict.assessment_criteria.df.data = [
                 {
-                    assessment_criteria: 'Practical Assessment',
+                    assessment_criteria: '',
                     maximum_score: 100
                 }
             ];
@@ -258,7 +256,7 @@ function show_bulk_assessment_result_dialog(frm) {
                                     const data = r.message.map(student => ({
                                         student: student.name,
                                         student_name: student.student_name,
-                                        assessment_criteria: 'Practical Assessment',
+                                        assessment_criteria: '',
                                         score: '',
                                         comment: ''
                                     }));
@@ -312,14 +310,14 @@ function show_bulk_assessment_result_dialog(frm) {
                         label: __('Score'),
                         fieldname: 'score',
                         fieldtype: 'Float',
-                        in_list_view: 1,
+                        // in_list_view: 1,
                         reqd: 1
                     },
                     {
                         label: __('Comment'),
                         fieldname: 'comment',
-                        fieldtype: 'Data',  // ✅ Changed to Data so it shows
-                        in_list_view: 1
+                        fieldtype: 'Data',  
+                        // in_list_view: 1
                     }
                 ]
             }
