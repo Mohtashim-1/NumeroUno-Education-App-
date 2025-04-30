@@ -52,6 +52,7 @@ function show_coarse_dialog(frm) {
                             message: __('Coarse Schedule Created'),
                             indicator: 'green'
                         });
+                        frm.reload_doc(); // 🔁 Refresh the document
                     }
                 },
                 freeze: true,
