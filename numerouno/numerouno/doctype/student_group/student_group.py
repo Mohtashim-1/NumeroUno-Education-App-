@@ -1,6 +1,7 @@
 import frappe
-from frappe.utils import getdate, add_days
+from frappe.utils import getdate, add_days, nowdate
 from frappe import _
+
 
 
 @frappe.whitelist()
@@ -107,3 +108,31 @@ def create_academic_term(doc, method):
         at.save()
 
         doc.academic_term = at.name
+
+
+@frappe.whitelist()
+def create_sales_order(student_group, item_code, rate):
+    student_group_doc = frappe.get_doc("Student Group", student_group)
+    students = student_group_doc.students
+
+    if not students:
+        frappe.throw("No students in the group")
+
+    qty = len(students)
+
+    sales_order = frappe.new_doc("Sales Order")
+    sales_order.customer = student_group_doc.custom_customer
+
+    # ✅ Set delivery date to 7 days from now (or today, if preferred)
+    sales_order.delivery_date = add_days(nowdate(), 7)
+
+    sales_order.append("items", {
+        "item_code": item_code,
+        "qty": qty,
+        "rate": rate
+    })
+
+    sales_order.insert()
+    frappe.db.commit()
+
+    return sales_order.name

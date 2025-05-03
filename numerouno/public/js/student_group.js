@@ -14,6 +14,14 @@ frappe.ui.form.on('Student Group', {
         frm.add_custom_button(__('Create Assessment Results (Bulk)'), () => {
             show_bulk_assessment_result_dialog(frm);
         }, __('Actions'));
+
+        frm.add_custom_button(__('Create Sales Order'), () => {
+            create_sales_order(frm);
+        }, __('Actions'));
+
+        frm.add_custom_button(__('Create Sales Invoice'), () => {
+            create_sales_invoice(frm);
+        }, __('Actions'));
         
     }
 });
@@ -380,4 +388,58 @@ function show_bulk_assessment_result_dialog(frm) {
     // ✅ Make dialog larger
     dialog.$wrapper.css('width', '90%');
     dialog.$wrapper.find('.modal-dialog').css('max-width', '95%');
+}
+
+
+
+function create_sales_order(frm) {
+    const students = frm.doc.students || [];
+    const qty = students.length;
+
+    if (qty === 0) {
+        frappe.msgprint(__('No students found in this group.'));
+        return;
+    }
+
+    const dialog = new frappe.ui.Dialog({
+        title: __('Create Sales Order'),
+        fields: [
+            {
+                label: __('Item (Course Name)'),
+                fieldname: 'item',
+                fieldtype: 'Link',
+                options: 'Item',
+                reqd: 1
+            },
+            {
+                label: __('Rate'),
+                fieldname: 'rate',
+                fieldtype: 'Currency',
+                reqd: 1
+            }
+        ],
+        primary_action_label: __('Create'),
+        primary_action(values) {
+            frappe.call({
+                method: "numerouno.numerouno.doctype.student_group.student_group.create_sales_order",
+                args: {
+                    student_group: frm.doc.name,
+                    item_code: values.item,
+                    rate: values.rate
+                },
+                callback: function(r) {
+                    if (!r.exc && r.message) {
+                        frappe.show_alert({ message: __('Sales Order Created'), indicator: 'green' });
+                        frappe.set_route('Form', 'Sales Order', r.message);
+                    }
+                },
+                freeze: true,
+                freeze_message: __('Creating Sales Order...')
+            });
+
+            dialog.hide();
+        }
+    });
+
+    dialog.show();
 }
