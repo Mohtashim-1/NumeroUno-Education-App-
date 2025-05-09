@@ -141,33 +141,44 @@ def create_sales_order(student_group, item_code, rate):
     return sales_order.name
 
 
-
 @frappe.whitelist()
-def create_sales_invoice(student_group, item_code, rate):
-    student_group_doc = frappe.get_doc("Student Group", student_group)
-    students = student_group_doc.students
+def create_sales_invoice(student_group, sales_order):
+    # 1) Load Student Group & validate
+    sg = frappe.get_doc("Student Group", student_group)
+    if not sg.students:
+        frappe.throw(_("No students in the group"))
 
-    if not students:
-        frappe.throw("No students in the group")
+    # 2) Load the Sales Order and ensure it's submitted
+    so = frappe.get_doc("Sales Order", sales_order)
+    if so.docstatus == 0:
+        so.submit()
 
-    qty = len(students)
+    # 3) Build a new Sales Invoice manually (so items + sales_order link are present)
+    si = frappe.new_doc("Sales Invoice")
+    si.customer = so.customer
+    si.company = so.company
+    si.due_date = add_days(nowdate(), 7)
+    # copy each item, including the sales_order link
+    for row in so.get("items"):
+        si.append("items", {
+            "item_code":      row.item_code,
+            "qty":            row.qty,
+            "rate":           row.rate,
+            "uom":            row.uom,
+            "sales_order":    so.name,
+            "description":    row.description,
+            # add any other fields you need
+        })
 
-    sales_invoice = frappe.new_doc("Sales Invoice")
-    sales_invoice.customer = student_group_doc.student_group_name or student_group_doc.name
+    # 4) insert & submit
+    si.insert()
+    si.submit()
 
-    # ✅ Set due date (e.g., 7 days from today)
-    sales_invoice.due_date = add_days(nowdate(), 7)
+    # 5) write back to Student Group
+    sg.custom_sales_invoice = si.name
+    sg.save(ignore_permissions=True)
 
-    sales_invoice.append("items", {
-        "item_code": item_code,
-        "qty": qty,
-        "rate": rate
-    })
-
-    sales_invoice.insert()
-    frappe.db.commit()
-
-    return sales_invoice.name
+    return si.name
 
 
 @frappe.whitelist()
