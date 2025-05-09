@@ -1,6 +1,7 @@
 import frappe
 from frappe.utils import getdate, add_days, nowdate
 from frappe import _
+from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 
 
 
@@ -109,7 +110,6 @@ def create_academic_term(doc, method):
 
         doc.academic_term = at.name
 
-
 @frappe.whitelist()
 def create_sales_order(student_group, item_code, rate):
     student_group_doc = frappe.get_doc("Student Group", student_group)
@@ -122,8 +122,6 @@ def create_sales_order(student_group, item_code, rate):
 
     sales_order = frappe.new_doc("Sales Order")
     sales_order.customer = student_group_doc.custom_customer
-
-    # ✅ Set delivery date to 7 days from now (or today, if preferred)
     sales_order.delivery_date = add_days(nowdate(), 7)
 
     sales_order.append("items", {
@@ -133,6 +131,85 @@ def create_sales_order(student_group, item_code, rate):
     })
 
     sales_order.insert()
+    sales_order.submit()
+
+    # ✅ Update custom field in Student Group
+    student_group_doc.custom_sales_order = sales_order.name
+    student_group_doc.save(ignore_permissions=True)
+
+    frappe.db.commit()
+    return sales_order.name
+
+
+
+@frappe.whitelist()
+def create_sales_invoice(student_group, item_code, rate):
+    student_group_doc = frappe.get_doc("Student Group", student_group)
+    students = student_group_doc.students
+
+    if not students:
+        frappe.throw("No students in the group")
+
+    qty = len(students)
+
+    sales_invoice = frappe.new_doc("Sales Invoice")
+    sales_invoice.customer = student_group_doc.student_group_name or student_group_doc.name
+
+    # ✅ Set due date (e.g., 7 days from today)
+    sales_invoice.due_date = add_days(nowdate(), 7)
+
+    sales_invoice.append("items", {
+        "item_code": item_code,
+        "qty": qty,
+        "rate": rate
+    })
+
+    sales_invoice.insert()
     frappe.db.commit()
 
-    return sales_order.name
+    return sales_invoice.name
+
+
+@frappe.whitelist()
+def create_sales_invoice_from_sales_order(sales_order):
+    from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+
+    if not sales_order:
+        frappe.throw("Sales Order is required")
+
+    sales_order_doc = frappe.get_doc("Sales Order", sales_order)
+
+    # ✅ Submit Sales Order if not submitted
+    if sales_order_doc.docstatus == 0:
+        sales_order_doc.submit()
+
+    # ✅ Create Invoice from Sales Order
+    invoice = make_sales_invoice(sales_order)
+    invoice.due_date = add_days(nowdate(), 7)
+
+    # 🛑 Handle missing income_account or other required fields if needed
+    for item in invoice.items:
+        if not item.income_account:
+            item.income_account = frappe.db.get_value(
+                "Item Default",
+                {"parent": item.item_code},
+                "income_account"
+            ) or frappe.db.get_single_value("Company", invoice.company, "default_income_account")
+
+    # ✅ Insert and Submit Invoice
+    invoice.insert()
+    invoice.submit()
+
+    # ✅ Update Student Group with Sales Invoice reference
+    student_group = sales_order_doc.get("custom_student_group")
+
+    if student_group:
+        sg_doc = frappe.get_doc("Student Group", student_group)
+        sg_doc.custom_sales_invoice = invoice.name
+        sg_doc.save(ignore_permissions=True)
+        frappe.db.commit()
+    else:
+        frappe.log_error(f"❌ Sales Order {sales_order} has no custom_student_group", "Sales Invoice Link Failure")
+
+    frappe.db.commit()
+    return invoice.name
