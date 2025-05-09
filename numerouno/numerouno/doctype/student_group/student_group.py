@@ -2,7 +2,27 @@ import frappe
 from frappe.utils import getdate, add_days, nowdate
 from frappe import _
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+from frappe.model.document import Document
 
+
+
+def sync_children(doc, method):
+    for row in doc.students:
+        # 1) always store the link back to this parent
+        row.custom_student_group = doc.name
+
+        # 2) mirror your parent’s date fields
+        row.custom_start_date = doc.custom_from_date
+        row.custom_end_date   = doc.custom_to_date
+
+        # 3) mirror the course name
+        row.custom_course_name = doc.course
+
+        # 4) mirror the invoice if one exists
+        row.custom_sales_invoice = doc.custom_sales_invoice or ""
+
+        # 5) flag “invoiced” if you’ve actually set an invoice
+        row.custom_invoiced = 1 if doc.custom_sales_invoice else 0
 
 
 @frappe.whitelist()
@@ -139,7 +159,6 @@ def create_sales_order(student_group, item_code, rate):
 
     frappe.db.commit()
     return sales_order.name
-
 
 @frappe.whitelist()
 def create_sales_invoice(student_group, sales_order):
