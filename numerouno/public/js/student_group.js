@@ -416,6 +416,12 @@ function create_sales_order(frm) {
                 fieldname: 'rate',
                 fieldtype: 'Currency',
                 reqd: 1
+            },
+            {
+                label: __('Also Create Sales Invoice'),
+                fieldname: 'create_invoice',
+                fieldtype: 'Check',
+                default: 1
             }
         ],
         primary_action_label: __('Create'),
@@ -429,12 +435,81 @@ function create_sales_order(frm) {
                 },
                 callback: function(r) {
                     if (!r.exc && r.message) {
-                        frappe.show_alert({ message: __('Sales Order Created'), indicator: 'green' });
-                        frappe.set_route('Form', 'Sales Order', r.message);
+                        const sales_order_name = r.message;
+
+                        if (values.create_invoice) {
+                            frappe.call({
+                                method: "numerouno.numerouno.doctype.student_group.student_group.create_sales_invoice_from_sales_order",
+                                args: { sales_order: sales_order_name },
+                                callback: function(res) {
+                                    if (!res.exc && res.message) {
+                                        frappe.show_alert({ message: __('Sales Invoice Created'), indicator: 'green' });
+                                        frappe.set_route('Form', 'Sales Invoice', res.message);
+                                    }
+                                }
+                            });
+                        } else {
+                            frappe.show_alert({ message: __('Sales Order Created'), indicator: 'green' });
+                            frappe.set_route('Form', 'Sales Order', sales_order_name);
+                        }
                     }
                 },
                 freeze: true,
                 freeze_message: __('Creating Sales Order...')
+            });
+
+            dialog.hide();
+        }
+    });
+
+    dialog.show();
+}
+
+
+
+function create_sales_invoice(frm) {
+    const students = frm.doc.students || [];
+    const qty = students.length;
+
+    if (qty === 0) {
+        frappe.msgprint(__('No students found in this group.'));
+        return;
+    }
+
+    const dialog = new frappe.ui.Dialog({
+        title: __('Create Sales Invoice'),
+        fields: [
+            {
+                label: __('Item (Course Name)'),
+                fieldname: 'item',
+                fieldtype: 'Link',
+                options: 'Item',
+                reqd: 1
+            },
+            {
+                label: __('Rate'),
+                fieldname: 'rate',
+                fieldtype: 'Currency',
+                reqd: 1
+            }
+        ],
+        primary_action_label: __('Create'),
+        primary_action(values) {
+            frappe.call({
+                method: "numerouno.numerouno.doctype.student_group.student_group.create_sales_order.create_sales_invoice",
+                args: {
+                    student_group: frm.doc.name,
+                    item_code: values.item,
+                    rate: values.rate
+                },
+                callback: function(r) {
+                    if (!r.exc && r.message) {
+                        frappe.show_alert({ message: __('Sales Invoice Created'), indicator: 'green' });
+                        frappe.set_route('Form', 'Sales Invoice', r.message);
+                    }
+                },
+                freeze: true,
+                freeze_message: __('Creating Sales Invoice...')
             });
 
             dialog.hide();
