@@ -147,7 +147,7 @@ doctype_js = {
 doc_events = {
 	"Student Group": {
 		"before_save": "numerouno.numerouno.doctype.student_group.student_group.create_academic_term",
-  
+        "validate": "numerouno.numerouno.doctype.student_group.student_group.sync_children",
 	}
 }
 
