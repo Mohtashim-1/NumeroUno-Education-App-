@@ -70,4 +70,24 @@ def execute(filters=None):
         {"label": "Student Invoice",  "fieldname": "student_invoice","fieldtype": "Link",  "options": "Sales Invoice",   "width": 150},
     ]
 
-    return columns, data
+    # build our pie‐slice values
+    total = len(data)
+    invoiced_count = sum(1 for d in data if d.get("invoiced"))
+    uninvoiced_count = total - invoiced_count
+
+    # chart config
+    chart = {
+        "data": {
+            "labels": ["Invoiced", "Uninvoiced"],
+            "datasets": [
+                {
+                    "name": "Students",
+                    "values": [invoiced_count, uninvoiced_count]
+                }
+            ]
+        },
+        "type": "pie"
+    }
+
+    # return: columns, data, (no message), chart
+    return columns, data, None, chart
