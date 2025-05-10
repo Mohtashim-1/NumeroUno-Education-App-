@@ -56,7 +56,7 @@ def execute(filters=None):
     """, values, as_dict=True)
 
     columns = [
-        {"label": "ID",               "fieldname": "id",             "fieldtype": "Link",  "options": "Student Group",   "width": 120}
+        {"label": "ID",               "fieldname": "id",             "fieldtype": "Link",  "options": "Student Group",   "width": 120},
         {"label": "Customer",         "fieldname": "customer",       "fieldtype": "Link",  "options": "Customer",        "width": 150},
         {"label": "Sales Order",      "fieldname": "sales_order",    "fieldtype": "Link",  "options": "Sales Order",     "width": 150},
         {"label": "Sales Invoice",    "fieldname": "sales_invoice",  "fieldtype": "Link",  "options": "Sales Invoice",   "width": 150},
