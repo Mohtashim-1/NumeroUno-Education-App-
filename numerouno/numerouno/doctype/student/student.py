@@ -74,3 +74,33 @@ def assign_student_group(student, student_group):
         "name":group.name,
         "url":frappe.utils.get_url_to_form("Student Group",group.name)
     }
+
+#  run this function when document created it is custom app so i guess it will run on student application created through hooks.py
+
+
+@frappe.whitelist()
+def send_email_notification_to_accountant(doc, method):
+    frappe.msgprint(f"Student {doc.student_name} created")
+    # send email notification to accountant
+    if doc.custom_mode_of_payment == "Cash":
+        # get all the users who have the role of "Accounts User"
+        accountant_users = frappe.get_all("User", filters={"role": "Accounts User"}, fields=["email"])
+        recipient_emails = [user.email for user in accountant_users]
+        
+        # send email notification to accountant
+        frappe.sendmail(
+            recipients=recipient_emails,
+            subject=f"Cash Payment for {doc.student_name}",
+            message=f"Payment for the student {doc.student_name} Payment Mode is Cash and joining date is {doc.joining_date}\n\nView Student: {frappe.utils.get_url_to_form('Student', doc.name)}"
+        )
+    elif doc.custom_mode_of_payment == "Service Order":
+        # get all the users who have the role of "Accounts User"
+        accountant_users = frappe.get_all("User", filters={"role": "Accounts User"}, fields=["email"])
+        recipient_emails = [user.email for user in accountant_users]
+        
+        # send email notification to accountant
+        frappe.sendmail(
+            recipients=recipient_emails,
+            subject=f"Service Order Payment for {doc.student_name}",
+            message=f"Service Order for the student {doc.student_name} Payment Mode is Service Order and joining date is {doc.joining_date}\n\nView Student: {frappe.utils.get_url_to_form('Student', doc.name)}"
+        )

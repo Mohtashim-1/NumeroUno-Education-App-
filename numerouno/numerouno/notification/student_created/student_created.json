@@ -1,0 +1,31 @@
+{
+ "attach_print": 0,
+ "channel": "Email",
+ "condition": "doc.custom_mode_of_payment==\"Cash\"",
+ "creation": "2025-06-15 17:12:29.419567",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Student",
+ "enabled": 1,
+ "event": "Save",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "<p>Add your message here</p>\n",
+ "message_type": "Markdown",
+ "modified": "2025-06-15 17:23:00.990357",
+ "modified_by": "tahaabid0@gmail.com",
+ "module": "Numerouno",
+ "name": "Student Created",
+ "owner": "tahaabid0@gmail.com",
+ "recipients": [
+  {
+   "receiver_by_document_field": "owner"
+  }
+ ],
+ "send_system_notification": 1,
+ "send_to_all_assignees": 0,
+ "sender": "shoaibmohtashim973@gmail.com",
+ "sender_email": "shoaibmohtashim973@gmail.com",
+ "subject": "{{doc.name}} Created | Cash Payment "
+}
