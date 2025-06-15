@@ -17,7 +17,7 @@ The purpose of this project is to enhance ERPNext’s education module by adding
 ### ✅ Custom Course Schedule Generator
 Automates the creation of `Course Schedule` and `Student Attendance` entries for a given `Student Group`.
 
-- Uses custom date fields: `custom_from_date`, `custom_to_date`
+- Uses custom date fields: `from_date`, `to_date`
 - Automatically assigns instructors
 - Initializes student attendance per day
 

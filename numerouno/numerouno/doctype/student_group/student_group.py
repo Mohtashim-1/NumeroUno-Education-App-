@@ -12,8 +12,8 @@ def sync_children(doc, method):
         row.custom_student_group = doc.name
 
         # 2) mirror your parent’s date fields
-        row.custom_start_date = doc.custom_from_date
-        row.custom_end_date   = doc.custom_to_date
+        row.custom_start_date = doc.from_date
+        row.custom_end_date   = doc.to_date
 
         # 3) mirror the course name
         row.custom_course_name = doc.course
@@ -33,7 +33,7 @@ def create_coarse_schedule(student_group, from_time, to_time):
 
         doc = frappe.get_doc("Student Group", student_group)
 
-        if not doc.custom_from_date or not doc.custom_to_date:
+        if not doc.from_date or not doc.to_date:
             frappe.throw(_("❌ Please set both 'From Date' and 'To Date' in the Student Group."))
 
         if not doc.custom_coarse_location:
@@ -50,8 +50,8 @@ def create_coarse_schedule(student_group, from_time, to_time):
         if not doc.students:
             frappe.throw(_("❌ No students found in this Student Group."))
 
-        from_date = getdate(doc.custom_from_date)
-        to_date = getdate(doc.custom_to_date)
+        from_date = getdate(doc.from_date)
+        to_date = getdate(doc.to_date)
 
         for i in doc.instructors:
             instructor = i.instructor
@@ -103,15 +103,15 @@ def create_coarse_schedule(student_group, from_time, to_time):
 
 
 def create_academic_term(doc, method):
-    if not (doc.custom_from_date and doc.custom_to_date and doc.academic_year):
+    if not (doc.from_date and doc.to_date and doc.academic_year):
         return  # Exit silently if any required field is missing
 
     if not doc.academic_term:
         existing_term = frappe.get_value(
             "Academic Term",
             {
-                "term_start_date": doc.custom_from_date,
-                "term_end_date": doc.custom_to_date,
+                "term_start_date": doc.from_date,
+                "term_end_date": doc.to_date,
                 "academic_year": doc.academic_year
             }
         )
@@ -120,12 +120,12 @@ def create_academic_term(doc, method):
             doc.academic_term = existing_term
             return
 
-        term_name = f"{doc.custom_from_date} to {doc.custom_to_date}"
+        term_name = f"{doc.from_date} to {doc.to_date}"
         at = frappe.new_doc("Academic Term")
         at.academic_year = doc.academic_year
         at.term_name = term_name
-        at.term_start_date = doc.custom_from_date
-        at.term_end_date = doc.custom_to_date
+        at.term_start_date = doc.from_date
+        at.term_end_date = doc.to_date
         at.save()
 
         doc.academic_term = at.name

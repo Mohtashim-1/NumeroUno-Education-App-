@@ -22,11 +22,11 @@ def execute(filters=None):
 
     # — your date filters
     if filters.get("from_date"):
-        conditions.append("sg.custom_from_date >= %(from_date)s")
+        conditions.append("sg.from_date >= %(from_date)s")
         values["from_date"] = filters["from_date"]
 
     if filters.get("to_date"):
-        conditions.append("sg.custom_to_date <= %(to_date)s")
+        conditions.append("sg.to_date <= %(to_date)s")
         values["to_date"] = filters["to_date"]
 
     # build WHERE clause *only* if you have any conditions
@@ -42,8 +42,8 @@ def execute(filters=None):
             sg.custom_sales_invoice   AS sales_invoice,
             sg.program                AS program,
             sg.course                 AS course,
-            sg.custom_from_date       AS from_date,
-            sg.custom_to_date         AS to_date,
+            sg.from_date       AS from_date,
+            sg.to_date         AS to_date,
             st.student                AS student,
             st.student_name           AS student_name,
             st.custom_invoiced        AS invoiced,
