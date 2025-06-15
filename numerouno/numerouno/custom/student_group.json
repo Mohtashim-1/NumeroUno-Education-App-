@@ -533,7 +533,7 @@
    "fetch_if_empty": 0,
    "fieldname": "custom_from_date",
    "fieldtype": "Date",
-   "hidden": 0,
+   "hidden": 1,
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
@@ -729,7 +729,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 10,
+   "idx": 11,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -789,7 +789,7 @@
    "fetch_if_empty": 0,
    "fieldname": "custom_to_date",
    "fieldtype": "Date",
-   "hidden": 0,
+   "hidden": 1,
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
@@ -865,7 +865,7 @@
    "_comments": null,
    "_liked_by": null,
    "_user_tags": null,
-   "creation": "2025-06-15 03:28:43.820435",
+   "creation": "2025-06-15 15:53:20.744770",
    "default_value": null,
    "doc_type": "Student Group",
    "docstatus": 0,
@@ -873,7 +873,7 @@
    "field_name": null,
    "idx": 0,
    "is_system_generated": 0,
-   "modified": "2025-06-15 03:28:43.820435",
+   "modified": "2025-06-15 15:53:20.744770",
    "modified_by": "Administrator",
    "module": null,
    "name": "Student Group-main-field_order",
@@ -881,7 +881,7 @@
    "property": "field_order",
    "property_type": "Data",
    "row_name": null,
-   "value": "[\"academic_year\", \"group_based_on\", \"student_group_name\", \"max_strength\", \"custom_from_date\", \"custom_to_date\", \"custom_confirmation_type\", \"custom_coarse_location\", \"custom_course_location_name\", \"custom_customer\", \"sales_invoice\", \"column_break_3\", \"academic_term\", \"program\", \"batch\", \"student_category\", \"course\", \"disabled\", \"section_break_6\", \"get_students\", \"students\", \"section_break_12\", \"instructors\", \"custom_more_info\", \"custom_reference\", \"custom_customer_po\", \"custom_customer_po_attachment\", \"custom_column_break_pxk0c\", \"custom_customer_po_date\"]"
+   "value": "[\"academic_year\", \"group_based_on\", \"student_group_name\", \"max_strength\", \"custom_from_date\", \"custom_to_date\", \"custom_confirmation_type\", \"custom_coarse_location\", \"custom_course_location_name\", \"custom_customer\", \"custom_sales_invoice\", \"column_break_3\", \"academic_term\", \"program\", \"batch\", \"student_category\", \"course\", \"disabled\", \"section_break_6\", \"get_students\", \"students\", \"section_break_12\", \"instructors\", \"custom_more_info\", \"custom_reference\", \"custom_customer_po\", \"custom_customer_po_attachment\", \"custom_column_break_pxk0c\", \"custom_customer_po_date\"]"
   }
  ],
  "sync_on_migrate": 1
