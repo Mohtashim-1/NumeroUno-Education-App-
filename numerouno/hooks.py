@@ -150,7 +150,10 @@ doc_events = {
         "validate": "numerouno.numerouno.doctype.student_group.student_group.sync_children",
 	},
     "Student": {
-        "after_insert": "numerouno.numerouno.doctype.student.student.send_email_notification_to_accountant"
+        "on_update": [
+            "numerouno.numerouno.doctype.student.student.send_email_notification_to_accountant",
+            "numerouno.numerouno.doctype.student.student.send_welcome_email_to_student"
+        ]
     }
 }
 

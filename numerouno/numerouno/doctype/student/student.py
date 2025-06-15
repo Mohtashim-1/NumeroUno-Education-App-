@@ -104,3 +104,14 @@ def send_email_notification_to_accountant(doc, method):
             subject=f"Service Order Payment for {doc.student_name}",
             message=f"Service Order for the student {doc.student_name} Payment Mode is Service Order and joining date is {doc.joining_date}\n\nView Student: {frappe.utils.get_url_to_form('Student', doc.name)}"
         )
+
+@frappe.whitelist()
+def send_welcome_email_to_student(doc, method):
+    # send welcome email to student andd a welcome message to student and good message to student
+    if doc.student_email_id:
+        frappe.msgprint(f"Email sent to {doc.student_name}")
+        frappe.sendmail(
+            recipients=[doc.student_email_id],
+            subject="Welcome to Numerouno",
+            message="Welcome to Numerouno and good luck for your future studies"
+        )
