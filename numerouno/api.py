@@ -80,3 +80,18 @@ def mark_attendance(credential_data):
         return {"message": f"Attendance marked for {student.student_name}"}
     else:
         return {"message": "Student not found or invalid fingerprint."}
+
+@frappe.whitelist()
+def can_show_quiz(quiz_id, user_id=None):
+    if not user_id:
+        user_id = frappe.session.user
+    submissions = frappe.get_all(
+        "LMS Quiz Submission",
+        filters={"quiz": quiz_id, "member": user_id},
+        fields=["percentage", "passing_percentage"],
+        order_by="creation asc"
+    )
+    if len(submissions) >= 2:
+        failed_both = all(sub["percentage"] < sub["passing_percentage"] for sub in submissions)
+        return not failed_both
+    return True

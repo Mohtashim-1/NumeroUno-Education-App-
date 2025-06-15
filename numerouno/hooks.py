@@ -28,11 +28,11 @@ portal_menu_items = [
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/numerouno/css/numerouno.css"
-# app_include_js = "/assets/numerouno/js/numerouno.js"
+# app_include_js = "/assets/numerouno/js/CustomLessonContent.vue"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/numerouno/css/numerouno.css"
-# web_include_js = "/assets/numerouno/js/numerouno.js"
+# web_include_js = "/assets/numerouno/js/CustomLessonContent.vue"
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "numerouno/public/scss/website"
