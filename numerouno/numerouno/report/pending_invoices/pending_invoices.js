@@ -22,6 +22,12 @@ frappe.query_reports["Pending Invoices"] = {
       options: "Customer"
     },
     {
+      fieldname: "instructor",
+      label: __("Instructor"),
+      fieldtype: "Link",
+      options: "Instructor"
+    },
+    {
       fieldname: "from_date",
       label: __("From Date"),
       fieldtype: "Date"

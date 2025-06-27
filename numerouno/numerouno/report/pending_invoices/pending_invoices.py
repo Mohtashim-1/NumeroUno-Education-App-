@@ -29,6 +29,11 @@ def execute(filters=None):
         conditions.append("sg.to_date <= %(to_date)s")
         values["to_date"] = filters["to_date"]
 
+    # — instructor filter
+    if filters.get("instructor"):
+        conditions.append("sgi.instructor = %(instructor)s")
+        values["instructor"] = filters["instructor"]
+
     # build WHERE clause *only* if you have any conditions
     where_clause = ""
     if conditions:
@@ -47,11 +52,16 @@ def execute(filters=None):
             st.student                AS student,
             st.student_name           AS student_name,
             st.custom_invoiced        AS invoiced,
-            st.custom_sales_invoice   AS student_invoice
+            st.custom_sales_invoice   AS student_invoice,
+            sgi.instructor            AS instructor,
+            sgi.instructor_name       AS instructor_name
         FROM `tabStudent Group` sg
         LEFT JOIN `tabStudent Group Student` st
           ON st.parent = sg.name
          AND st.parentfield = 'students'
+        LEFT JOIN `tabStudent Group Instructor` sgi
+          ON sgi.parent = sg.name
+         AND sgi.parentfield = 'instructors'
         {where_clause}
     """, values, as_dict=True)
 
@@ -68,6 +78,8 @@ def execute(filters=None):
         {"label": "Student Name",     "fieldname": "student_name",   "fieldtype": "Data",  "width": 150},
         {"label": "Invoiced",         "fieldname": "invoiced",       "fieldtype": "Check", "width":  80},
         {"label": "Student Invoice",  "fieldname": "student_invoice","fieldtype": "Link",  "options": "Sales Invoice",   "width": 150},
+        {"label": "Instructor",       "fieldname": "instructor",     "fieldtype": "Link",  "options": "Instructor",      "width": 150},
+        {"label": "Instructor Name",  "fieldname": "instructor_name","fieldtype": "Data",  "width": 150},
     ]
 
     # build our pie‐slice values
