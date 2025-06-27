@@ -1,8 +1,9 @@
 import frappe
-from frappe.utils import getdate, add_days, nowdate
+from frappe.utils import getdate, add_days, nowdate, get_url
 from frappe import _
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from frappe.model.document import Document
+from frappe.utils.background_jobs import enqueue
 
 
 
@@ -11,7 +12,7 @@ def sync_children(doc, method):
         # 1) always store the link back to this parent
         row.custom_student_group = doc.name
 
-        # 2) mirror your parent’s date fields
+        # 2) mirror your parent's date fields
         row.custom_start_date = doc.from_date
         row.custom_end_date   = doc.to_date
 
@@ -21,7 +22,7 @@ def sync_children(doc, method):
         # 4) mirror the invoice if one exists
         row.custom_sales_invoice = doc.custom_sales_invoice or ""
 
-        # 5) flag “invoiced” if you’ve actually set an invoice
+        # 5) flag "invoiced" if you've actually set an invoice
         row.custom_invoiced = 1 if doc.custom_sales_invoice else 0
 
 
@@ -243,3 +244,216 @@ def create_sales_invoice_from_sales_order(sales_order):
 
     frappe.db.commit()
     return invoice.name
+
+@frappe.whitelist()
+def send_unpaid_student_notification(student_group_name, student_group_title, unpaid_students):
+	"""Send email notification to Accounts User and Accounts Manager roles for unpaid students"""
+	
+	# Get users with Accounts User and Accounts Manager roles
+	accounts_users = frappe.get_all(
+		"Has Role",
+		filters={"role": ["in", ["Accounts User", "Accounts Manager"]]},
+		fields=["parent"]
+	)
+	
+	if not accounts_users:
+		return
+	
+	# Get email addresses
+	email_addresses = []
+	for user in accounts_users:
+		email = frappe.db.get_value("User", user.parent, "email")
+		if email:
+			email_addresses.append(email)
+	
+	if not email_addresses:
+		return
+	
+	# Prepare email content
+	subject = f"Unpaid Students Alert - {student_group_title}"
+	
+	# Create HTML table for unpaid students
+	unpaid_table = """
+	<table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+		<thead>
+			<tr style="background-color: #f8f9fa;">
+				<th>Roll Number</th>
+				<th>Student ID</th>
+				<th>Student Name</th>
+			</tr>
+		</thead>
+		<tbody>
+	"""
+	
+	for student in unpaid_students:
+		unpaid_table += f"""
+			<tr>
+				<td>{student.get('group_roll_number', '')}</td>
+				<td>{student.get('student', '')}</td>
+				<td>{student.get('student_name', '')}</td>
+			</tr>
+		"""
+	
+	unpaid_table += """
+		</tbody>
+	</table>
+	"""
+	
+	# Email body
+	body = f"""
+	<p>Dear Accounts Team,</p>
+	
+	<p>This is an automated notification regarding unpaid students in the Student Group: <strong>{student_group_title}</strong></p>
+	
+	<p>The following students have not been marked as invoiced:</p>
+	
+	{unpaid_table}
+	
+	<p><strong>Total Unpaid Students:</strong> {len(unpaid_students)}</p>
+	
+	<p>Please review and take necessary action to ensure proper invoicing.</p>
+	
+	<p>You can view the Student Group details by clicking the link below:</p>
+	<p><a href="{get_url('/app/student-group/{0}'.format(student_group_name))}">View Student Group</a></p>
+	
+	<p>Best regards,<br>
+	Numero Uno System</p>
+	"""
+	
+	# Send email
+	try:
+		frappe.sendmail(
+			recipients=email_addresses,
+			subject=subject,
+			message=body,
+			now=True
+		)
+		
+		# Log the notification
+		frappe.logger().info(f"Unpaid student notification sent for Student Group: {student_group_name}")
+		
+	except Exception as e:
+		frappe.logger().error(f"Failed to send unpaid student notification: {str(e)}")
+
+
+def check_and_send_unpaid_notifications(doc, method):
+	"""Check for unpaid students and send email notifications"""
+	try:
+		unpaid_students = []
+		
+		# Check if students exist and have the custom_invoiced field
+		if hasattr(doc, 'students') and doc.students:
+			for student in doc.students:
+				# Check if custom_invoiced is False, 0, or None
+				if not student.get("custom_invoiced"):
+					unpaid_students.append({
+						"student": student.student,
+						"student_name": student.student_name,
+						"group_roll_number": student.group_roll_number
+					})
+		
+		if unpaid_students:
+			# Log the event
+			frappe.logger().info(f"Found {len(unpaid_students)} unpaid students in Student Group: {doc.name}")
+			
+			# Send email notification in background
+			enqueue(
+				"numerouno.numerouno.doctype.student_group.student_group.send_unpaid_student_notification",
+				student_group_name=doc.name,
+				student_group_title=doc.student_group_name,
+				unpaid_students=unpaid_students,
+				queue="short"
+			)
+			
+			frappe.logger().info(f"Email notification queued for Student Group: {doc.name}")
+		else:
+			frappe.logger().info(f"No unpaid students found in Student Group: {doc.name}")
+			
+	except Exception as e:
+		frappe.logger().error(f"Error in check_and_send_unpaid_notifications: {str(e)}")
+		# Don't raise the exception to avoid breaking the save process
+
+
+@frappe.whitelist()
+def send_daily_unpaid_notifications():
+	"""Send daily consolidated report of all unpaid students across all Student Groups"""
+	
+	# Get all Student Groups with unpaid students
+	unpaid_data = frappe.db.sql("""
+		SELECT 
+			sg.name as student_group_name,
+			sg.student_group_name as student_group_title,
+			sgs.student,
+			sgs.student_name,
+			sgs.group_roll_number,
+			sg.program,
+			sg.course
+		FROM `tabStudent Group` sg
+		JOIN `tabStudent Group Student` sgs ON sgs.parent = sg.name
+		WHERE sgs.custom_invoiced = 0 OR sgs.custom_invoiced IS NULL
+		ORDER BY sg.student_group_name, sgs.group_roll_number
+	""", as_dict=True)
+	
+	if not unpaid_data:
+		return
+	
+	# Get users with Accounts User and Accounts Manager roles
+	accounts_users = frappe.get_all(
+		"Has Role",
+		filters={"role": ["in", ["Accounts User", "Accounts Manager"]]},
+		fields=["parent"]
+	)
+	
+	if not accounts_users:
+		return
+	
+	# Get email addresses
+	email_addresses = []
+	for user in accounts_users:
+		email = frappe.db.get_value("User", user.parent, "email")
+		if email:
+			email_addresses.append(email)
+	
+	if not email_addresses:
+		return
+	
+	# Prepare email content
+	subject = f"Daily Unpaid Students Report - {nowdate()}"
+	
+	# Create summary
+	total_unpaid = len(unpaid_data)
+	unique_groups = len(set([row.student_group_name for row in unpaid_data]))
+	
+	# Email body
+	body = f"""
+	<p>Dear Accounts Team,</p>
+	
+	<p>This is your daily automated report of unpaid students across all Student Groups.</p>
+	
+	<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+		<h3>Summary</h3>
+		<p><strong>Total Student Groups with Unpaid Students:</strong> {unique_groups}</p>
+		<p><strong>Total Unpaid Students:</strong> {total_unpaid}</p>
+	</div>
+	
+	<p>Please review and take necessary action to ensure proper invoicing for all students.</p>
+	
+	<p>Best regards,<br>
+	Numero Uno System</p>
+	"""
+	
+	# Send email
+	try:
+		frappe.sendmail(
+			recipients=email_addresses,
+			subject=subject,
+			message=body,
+			now=True
+		)
+		
+		# Log the notification
+		frappe.logger().info(f"Daily unpaid student notification sent for {unique_groups} groups with {total_unpaid} unpaid students")
+		
+	except Exception as e:
+		frappe.logger().error(f"Failed to send daily unpaid student notification: {str(e)}")
+

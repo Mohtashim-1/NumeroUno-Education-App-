@@ -148,6 +148,7 @@ doc_events = {
 	"Student Group": {
 		"before_save": "numerouno.numerouno.doctype.student_group.student_group.create_academic_term",
         "validate": "numerouno.numerouno.doctype.student_group.student_group.sync_children",
+        "after_save": "numerouno.numerouno.doctype.student_group.student_group.check_and_send_unpaid_notifications",
 	},
     "Student": {
         "on_update": [
@@ -160,23 +161,11 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"numerouno.tasks.all"
-# 	],
-# 	"daily": [
-# 		"numerouno.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"numerouno.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"numerouno.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"numerouno.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"daily": [
+		"numerouno.numerouno.doctype.student_group.student_group.send_daily_unpaid_notifications"
+	]
+}
 
 # Testing
 # -------

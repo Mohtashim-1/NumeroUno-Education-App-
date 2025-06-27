@@ -1,0 +1,35 @@
+{
+ "add_total_row": 1,
+ "creation": "2025-01-15 10:00:00.000000",
+ "disable_prepared_report": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "idx": 0,
+ "is_standard": "No",
+ "modified": "2025-01-15 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Unpaid Students Dashboard",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "",
+ "ref_doctype": "Student Group",
+ "report_name": "Unpaid Students Dashboard",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Academics User"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": "numerouno.numerouno.report.unpaid_students_dashboard.unpaid_students_dashboard"
+} 
