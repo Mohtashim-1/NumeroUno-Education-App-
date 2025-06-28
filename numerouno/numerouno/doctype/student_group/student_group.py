@@ -499,6 +499,7 @@ def create_sales_order_for_purchase_order(doc, method):
     frappe.logger().info(f"custom_sales_order: {doc.custom_sales_order}")
     frappe.logger().info(f"custom_customer_po_number: {doc.custom_customer_po_number}")
     
+    sales_order_name = None
     if doc.custom_mode_of_payment == "PO":
         # Check if we need to create a new Sales Order
         should_create_so = False
@@ -551,6 +552,7 @@ def create_sales_order_for_purchase_order(doc, method):
                 
                 # Insert the Sales Order
                 sales_order.insert()
+                sales_order.submit()
                 frappe.logger().info(f"Sales Order inserted: {sales_order.name}")
                 
                 # Set the field value directly instead of calling doc.save()
@@ -563,28 +565,79 @@ def create_sales_order_for_purchase_order(doc, method):
                     frappe.logger().info(f"Verified Sales Order exists: {verify_so.name}")
                 except Exception as verify_error:
                     frappe.logger().error(f"Failed to verify Sales Order: {str(verify_error)}")
-                
+                sales_order_name = sales_order.name
             except Exception as e:
                 frappe.logger().error(f"Error creating Sales Order: {str(e)}")
                 frappe.throw(f"Error creating Sales Order: {str(e)}")
         else:
-            frappe.logger().info("No Sales Order created - conditions not met")
+            # Use the existing sales order if it exists
+            sales_order_name = doc.custom_sales_order
+            frappe.logger().info(f"Using existing Sales Order: {sales_order_name}")
+
+    # Now, only call the invoice/payment function if you have a valid sales_order_name
+    if getattr(doc, "custom_create_payment", 0) == 1 and sales_order_name:
+        create_sales_invoice_for_purchase_order(doc, sales_order_name)
 
 
+def create_sales_invoice_for_purchase_order(doc, sales_order_name):
+    if doc.custom_create_payment == 1:
+        # Create Sales Invoice from Sales Order
+        from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+        sales_invoice = make_sales_invoice(sales_order_name)
+        sales_invoice.due_date = doc.to_date
+        sales_invoice.posting_date = frappe.utils.today()
+        # Fetch students as the button would do
+        students_data = fetch_students_from_sg(sales_invoice.customer, [doc.name])
+
+        # If fetch_students_from_sg returns a Frappe Response object, get the data
+        if hasattr(students_data, 'get') and callable(students_data.get):
+            students_data = students_data.get('message', students_data)
+
+        # Add students to the child table
+        for student in students_data:
+            sales_invoice.append("student", {
+                "student": student["student"],
+                "student_name": student["student_name"],
+                # add other fields as needed
+            })
+        print(f"Fetched and added {len(students_data)} students to Sales Invoice")
+        sales_invoice.insert()
+        sales_invoice.submit()
+        # SAVE THE SALES INVOICE NAME TO THE STUDENT GROUP FIELD custom_sales_invoice
+        frappe.logger().info(f"Sales Invoice {sales_invoice.name} created and submitted.")
+        doc.custom_sales_invoice = sales_invoice.name
+
+        # Create Payment Entry against the Sales Invoice
+        from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+        try:
+            payment_entry = get_payment_entry("Sales Invoice", sales_invoice.name)
+            payment_entry.posting_date = frappe.utils.today()
+            payment_entry.reference_no = f"PO-{doc.name}"
+            payment_entry.reference_date = frappe.utils.today()
+            payment_entry.custom_student_group = doc.name  # if you have this custom field
+
+            payment_entry.insert()
+            payment_entry.submit()
+            frappe.logger().info(f"Payment Entry {payment_entry.name} created and submitted against Sales Invoice {sales_invoice.name}")
+
+            # Optionally, link the Payment Entry to the Student Group
+            doc.custom_payment_entry = payment_entry.name
+
+        except Exception as e:
+            frappe.logger().error(f"Error creating Payment Entry: {str(e)}")
 
 
 @frappe.whitelist()
 def create_sales_order_for_advance_payment(doc, method):
-    
+    sales_order_name = None
+
     if doc.custom_mode_of_payment == "PO (Advance Payment)":
-        # Check if we need to create a new Sales Order
         should_create_so = False
-        
+
         # Case 1: No existing Sales Order and has PO number
         if doc.custom_sales_order is None and doc.custom_customer_po_number is not None:
             should_create_so = True
-            # frappe.logger().info("Creating new Sales Order - no existing SO and has PO number")
-        
+
         # Case 2: Has existing Sales Order but it doesn't exist in database (was deleted)
         elif doc.custom_sales_order is not None:
             try:
@@ -595,164 +648,96 @@ def create_sales_order_for_advance_payment(doc, method):
             except frappe.DoesNotExistError:
                 should_create_so = True
                 frappe.logger().info("Creating new Sales Order - existing SO doesn't exist")
-        
+
         if should_create_so and doc.custom_customer_po_number is not None:
             try:
                 course_rate = frappe.db.get_value("Course", doc.course, "custom_course_rate")
                 if not course_rate:
                     frappe.logger().error(f"No course rate found for course: {doc.course}")
                     return
-                
+
                 # create a sales order from the student group
                 sales_order = frappe.new_doc("Sales Order")
                 sales_order.customer = doc.custom_customer
                 sales_order.delivery_date = doc.to_date
                 sales_order.po_no = doc.custom_customer_po_number
-                
-                # Add link back to Student Group
                 sales_order.custom_student_group = doc.name
-                
                 sales_order.append("items", {
                     "item_code": doc.course,
                     "qty": len(doc.students),
                     "rate": course_rate
                 })
-
-                sales_order.append("taxes",{
-                     "charge_type":"On Net Total",
-                     "account_head":"VAT 5% - NUTC",
-                     "description":"VAT 5%",
-                     "rate":5,
-                     "cost_center":"Main - NUTC",
+                sales_order.append("taxes", {
+                    "charge_type": "On Net Total",
+                    "account_head": "VAT 5% - NUTC",
+                    "description": "VAT 5%",
+                    "rate": 5,
+                    "cost_center": "Main - NUTC",
                 })
-                
-                # Insert the Sales Order
                 sales_order.insert()
                 sales_order.submit()
                 frappe.logger().info(f"Sales Order inserted: {sales_order.name}")
-                
-                # Set the field value directly instead of calling doc.save()
                 doc.custom_sales_order = sales_order.name
-                frappe.logger().info(f"Set custom_sales_order to: {sales_order.name}")
-                
-                # Create Payment Entry against the Sales Order
-                payment_entry_name = create_payment_entry_for_sales_order(sales_order, doc)
-                if payment_entry_name:
-                    frappe.logger().info(f"Payment Entry created: {payment_entry_name}")
-                    # Link the Payment Entry to Student Group
-                    doc.custom_payment_entry = payment_entry_name
-                
-                # Verify the Sales Order exists
-                try:
-                    verify_so = frappe.get_doc("Sales Order", sales_order.name)
-                    frappe.logger().info(f"Verified Sales Order exists: {verify_so.name}")
-                except Exception as verify_error:
-                    frappe.logger().error(f"Failed to verify Sales Order: {str(verify_error)}")
-                
+                sales_order_name = sales_order.name
             except Exception as e:
                 frappe.logger().error(f"Error creating Sales Order: {str(e)}")
                 frappe.throw(f"Error creating Sales Order: {str(e)}")
         else:
-            frappe.logger().info("No Sales Order created - conditions not met")
+            sales_order_name = doc.custom_sales_order
+            frappe.logger().info(f"Using existing Sales Order: {sales_order_name}")
+
+    # Now, only call the payment/invoice function if you have a valid sales_order_name
+    if getattr(doc, "custom_create_payment", 0) == 1 and sales_order_name:
+        create_advance_payment_and_invoice(doc, sales_order_name)
 
 
-def create_payment_entry_for_sales_order(sales_order, student_group_doc):
-    """Create a Payment Entry against a Sales Order"""
+def create_advance_payment_and_invoice(doc, sales_order_name):
+    # 1. Create Payment Entry against the Sales Order
+    from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
     try:
-        from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
-        
-        # Get the payment entry template
-        payment_entry = get_payment_entry("Sales Order", sales_order.name)
-        
-        # Get default accounts
-        paid_from = get_default_receivable_account()
-        paid_to = get_default_cash_account()
-        
-        if not paid_from or not paid_to:
-            frappe.logger().error("Default accounts not found. Cannot create Payment Entry.")
-            frappe.throw("Default accounts not configured. Please set up default receivable and cash accounts in Company settings.")
-        
-        # Set payment details
-        payment_entry.payment_type = "Receive"
-        payment_entry.party_type = "Customer"
-        payment_entry.party = sales_order.customer
-        payment_entry.paid_amount = sales_order.grand_total
-        payment_entry.received_amount = sales_order.grand_total
-        payment_entry.paid_from = paid_from
-        payment_entry.paid_to = paid_to
-        payment_entry.reference_no = student_group_doc.custom_customer_po_number
-        payment_entry.reference_date = frappe.utils.today()
-        
-        # Set posting date
+        payment_entry = get_payment_entry("Sales Order", sales_order_name)
         payment_entry.posting_date = frappe.utils.today()
-        
-        # Add reference to Student Group
-        payment_entry.custom_student_group = student_group_doc.name
-        
-        # Insert and submit the Payment Entry
+        payment_entry.reference_no = f"ADV-{doc.name}"
+        payment_entry.reference_date = frappe.utils.today()
+        payment_entry.custom_student_group = doc.name  # if you have this custom field
+
         payment_entry.insert()
         payment_entry.submit()
-        
-        frappe.logger().info(f"Payment Entry {payment_entry.name} created and submitted")
-        return payment_entry.name
-        
+        frappe.logger().info(f"Payment Entry {payment_entry.name} created and submitted against Sales Order {sales_order_name}")
+        doc.custom_payment_entry = payment_entry.name
     except Exception as e:
         frappe.logger().error(f"Error creating Payment Entry: {str(e)}")
-        frappe.throw(f"Error creating Payment Entry: {str(e)}")
-        return None
+        return
 
+    # 2. Create Sales Invoice from Sales Order
+    from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+    sales_invoice = make_sales_invoice(sales_order_name)
+    sales_invoice.due_date = doc.to_date
+    sales_invoice.posting_date = frappe.utils.today()
 
-def get_default_receivable_account():
-    """Get default receivable account"""
-    try:
-        # Try to get from Company settings
-        company = frappe.defaults.get_global_default('company')
-        if company:
-            receivable_account = frappe.db.get_value("Company", company, "default_receivable_account")
-            if receivable_account:
-                return receivable_account
-        
-        # Fallback to common receivable account names
-        common_accounts = ["Debtors - NUTC", "Accounts Receivable - NUTC", "Trade Receivables - NUTC"]
-        for account in common_accounts:
-            if frappe.db.exists("Account", account):
-                return account
-        
-        # If none found, return None and let user handle
-        return None
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting default receivable account: {str(e)}")
-        return None
+    # Fetch students as the button would do
+    students_data = fetch_students_from_sg(sales_invoice.customer, [doc.name])
+    if hasattr(students_data, 'get') and callable(students_data.get):
+        students_data = students_data.get('message', students_data)
+    for student in students_data:
+        sales_invoice.append("student", {
+            "student": student["student"],
+            "student_name": student["student_name"],
+        })
+    sales_invoice.allocate_advances_automatically = 1
+    sales_invoice.only_include_allocated_payments = 1
+    print(f"Fetched and added {len(students_data)} students to Sales Invoice")
 
-
-def get_default_cash_account():
-    """Get default cash account"""
-    try:
-        # Try to get from Company settings
-        company = frappe.defaults.get_global_default('company')
-        if company:
-            cash_account = frappe.db.get_value("Company", company, "default_cash_account")
-            if cash_account:
-                return cash_account
-        
-        # Fallback to common cash account names
-        common_accounts = ["Cash - NUTC", "Bank - NUTC", "Cash and Bank - NUTC"]
-        for account in common_accounts:
-            if frappe.db.exists("Account", account):
-                return account
-        
-        # If none found, return None and let user handle
-        return None
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting default cash account: {str(e)}")
-        return None
+    sales_invoice.insert()
+    sales_invoice.submit()
+    frappe.logger().info(f"Sales Invoice {sales_invoice.name} created and submitted.")
+    doc.custom_sales_invoice = sales_invoice.name
 
 
 @frappe.whitelist()
 def create_sales_invoice_for_cash_payment(doc, method):
-    if doc.custom_mode_of_payment == "Cash Payment":
+
+    if doc.custom_mode_of_payment == "Cash Payment" and doc.custom_create_payment == 1:
         # Check if we need to create a new Sales Invoice
         should_create_si = False
         
