@@ -49,7 +49,8 @@ doctype_js = {
     "Student" : "public/js/student.js",
     "Student Group" : "public/js/student_group.js",
     "Student Attendance" : "public/js/student_attendance.js",
-    "Student Card" : "public/js/student_card.js"
+    "Student Card" : "public/js/student_card.js",
+    "Sales Invoice" : "public/js/sales_invoice.js"
     }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -147,7 +148,10 @@ doctype_js = {
 doc_events = {
 	"Student Group": {
 		"before_save": "numerouno.numerouno.doctype.student_group.student_group.create_academic_term",
-        "validate": "numerouno.numerouno.doctype.student_group.student_group.sync_children",
+        "validate": ["numerouno.numerouno.doctype.student_group.student_group.sync_children",
+                    "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_for_purchase_order",
+                    "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_for_advance_payment",
+                    "numerouno.numerouno.doctype.student_group.student_group.create_sales_invoice_for_cash_payment"],
         "after_save": "numerouno.numerouno.doctype.student_group.student_group.check_and_send_unpaid_notifications",
 	},
     "Student": {

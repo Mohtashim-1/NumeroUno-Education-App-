@@ -483,32 +483,49 @@ function create_sales_invoice(frm) {
     return;
   }
 
-  // 3) Confirm
-  frappe.confirm(
-    __('Create Sales Invoice from Sales Order {0}?', [so]),
-    () => {
-      frappe.call({
-        method: 'numerouno.numerouno.doctype.student_group.student_group.create_sales_invoice',
-        args: {
-          student_group: frm.doc.name,
-          sales_order: so
-        },
-        freeze: true,
-        freeze_message: __('Creating Sales Invoice...'),
-        callback: (r) => {
-          if (!r.exc && r.message) {
-            const si = r.message;
-            frappe.show_alert({
-              message: __('Sales Invoice {0} Created', [si]),
-              indicator: 'green'
-            });
-            // reload to pull in custom_sales_invoice
-            frm.reload_doc().then(() => {
-              frappe.set_route('Form', 'Sales Invoice', si);
-            });
-          }
+  // 3) Verify the Sales Order exists before proceeding
+  frappe.call({
+    method: 'frappe.client.get',
+    args: {
+      doctype: 'Sales Order',
+      name: so
+    },
+    callback: (r) => {
+      if (r.exc || !r.message) {
+        frappe.msgprint(__('Sales Order {0} not found. Please create a new Sales Order first.', [so]));
+        return;
+      }
+      
+      // 4) Confirm creation
+      frappe.confirm(
+        __('Create Sales Invoice from Sales Order {0}?', [so]),
+        () => {
+          frappe.call({
+            method: 'numerouno.numerouno.doctype.student_group.student_group.create_sales_invoice',
+            args: {
+              student_group: frm.doc.name,
+              sales_order: so
+            },
+            freeze: true,
+            freeze_message: __('Creating Sales Invoice...'),
+            callback: (r) => {
+              if (!r.exc && r.message) {
+                const si = r.message;
+                frappe.show_alert({
+                  message: __('Sales Invoice {0} Created', [si]),
+                  indicator: 'green'
+                });
+                // reload to pull in custom_sales_invoice
+                frm.reload_doc().then(() => {
+                  frappe.set_route('Form', 'Sales Invoice', si);
+                });
+              } else if (r.exc) {
+                frappe.msgprint(__('Error creating Sales Invoice: {0}', [r.exc]));
+              }
+            }
+          });
         }
-      });
+      );
     }
-  );
+  });
 }
