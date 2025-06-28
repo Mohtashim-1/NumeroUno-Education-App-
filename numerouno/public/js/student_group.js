@@ -19,6 +19,10 @@ frappe.ui.form.on('Student Group', {
             create_sales_order(frm);
         }, __('Actions'));
 
+        frm.add_custom_button(__('Create Sales Orders (Multi)'), () => {
+            create_sales_orders_multi(frm);
+        }, __('Actions'));
+
         frm.add_custom_button(__('Create Sales Invoice'), () => {
             create_sales_invoice(frm);
         }, __('Actions'));
@@ -528,4 +532,40 @@ function create_sales_invoice(frm) {
       );
     }
   });
+}
+
+function create_sales_orders_multi(frm) {
+    // Check if there are students
+    const students = frm.doc.students || [];
+    if (students.length === 0) {
+        frappe.msgprint(__('No students found in this group.'));
+        return;
+    }
+
+    // Confirm creation
+    frappe.confirm(
+        __('Create separate Sales Orders for each customer and payment mode combination?'),
+        () => {
+            frappe.call({
+                method: "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_from_student_group",
+                args: {
+                    student_group_name: frm.doc.name
+                },
+                freeze: true,
+                freeze_message: __('Creating Sales Orders...'),
+                callback: function(r) {
+                    if (!r.exc) {
+                        frappe.show_alert({ 
+                            message: __('Sales Orders created successfully'), 
+                            indicator: 'green' 
+                        });
+                        // Reload the form to show updated data
+                        frm.reload_doc();
+                    } else {
+                        frappe.msgprint(__('Error creating Sales Orders: {0}', [r.exc]));
+                    }
+                }
+            });
+        }
+    );
 }

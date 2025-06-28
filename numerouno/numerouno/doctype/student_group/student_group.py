@@ -624,7 +624,7 @@ def create_sales_invoice_for_purchase_order(doc, sales_order_name):
             doc.custom_payment_entry = payment_entry.name
 
         except Exception as e:
-            frappe.logger().error(f"Error creating Payment Entry: {str(e)}")
+            print(f"Error creating Payment Entry: {str(e)}")
 
 
 @frappe.whitelist()
@@ -968,4 +968,150 @@ def create_manual_payment_entry_for_draft_invoice(sales_invoice, student_group_d
         frappe.logger().error(f"Error creating manual Payment Entry: {str(e)}")
         frappe.throw(f"Error creating manual Payment Entry: {str(e)}")
         return None
-         
+    
+
+@frappe.whitelist()
+def create_sales_order_from_student_group(doc, method):
+    """
+    Create separate sales orders for each customer and mode of payment combination.
+    If there are 2 customers, create 2 sales orders.
+    If a customer has multiple payment modes, create separate orders for each mode.
+    """
+    try:
+        print(f"=== Starting create_sales_order_from_student_group for {doc.name} ===")
+        
+        if not doc.students:
+            frappe.msgprint(_("No students found in this Student Group"))
+        
+        print(f"Found {len(doc.students)} students in Student Group")
+        
+        # Get course rate
+        course_rate = frappe.db.get_value("Course", doc.course, "custom_course_rate")
+        if not course_rate:
+            frappe.msgprint(_("No course rate found for course: {0}").format(doc.course))
+        
+        print(f"Course rate: {course_rate}")
+        
+        # Group students by customer and payment mode
+        customer_payment_groups = {}
+        students_with_orders = 0
+        students_without_orders = 0
+        
+        for row in doc.students:
+            print(f"Processing student: {row.student}, custom_sales_order: {row.custom_sales_order}")
+            
+            if not row.custom_sales_order:  # Only process students without sales orders
+                students_without_orders += 1
+                customer = row.customer_name or doc.custom_customer
+                payment_mode = row.custom_mode_of_payment or "Cash Payment"  # Default to Cash Payment
+                
+                print(f"Student {row.student}: customer={customer}, payment_mode={payment_mode}")
+                
+                if not customer:
+                    frappe.msgprint(f"Student {row.student} has no customer assigned")
+                    continue
+                
+                # Create key for grouping: (customer, payment_mode)
+                group_key = (customer, payment_mode)
+                
+                if group_key not in customer_payment_groups:
+                    customer_payment_groups[group_key] = {
+                        'customer': customer,
+                        'payment_mode': payment_mode,
+                        'students': [],
+                        'po_numbers': set()  # Track unique PO numbers
+                    }
+                
+                customer_payment_groups[group_key]['students'].append(row)
+                
+                # Collect PO numbers if available
+                if row.customer_purchase_order:
+                    customer_payment_groups[group_key]['po_numbers'].add(row.customer_purchase_order)
+            else:
+                students_with_orders += 1
+        
+        print(f"Students with orders: {students_with_orders}, Students without orders: {students_without_orders}")
+        print(f"Customer payment groups: {len(customer_payment_groups)}")
+        
+        created_orders = []
+        
+        # Create sales order for each customer-payment mode combination
+        for (customer, payment_mode), group_data in customer_payment_groups.items():
+            try:
+                print(f"Creating Sales Order for customer: {customer}, payment_mode: {payment_mode}, students: {len(group_data['students'])}")
+                
+                # Create Sales Order
+                sales_order = frappe.new_doc("Sales Order")
+                sales_order.customer = customer
+                sales_order.delivery_date = doc.to_date
+                sales_order.posting_date = frappe.utils.today()
+                
+                # Set PO number if available (use first one if multiple)
+                if group_data['po_numbers']:
+                    sales_order.po_no = list(group_data['po_numbers'])[0]
+                
+                # Add link back to Student Group
+                sales_order.custom_student_group = doc.name
+                
+                # Add item details
+                sales_order.append("items", {
+                    "item_code": doc.course,
+                    "qty": len(group_data['students']),
+                    "rate": course_rate,
+                    "description": f"Course: {doc.course} for {len(group_data['students'])} students"
+                })
+                
+                # Add taxes
+                sales_order.append("taxes", {
+                    "charge_type": "On Net Total",
+                    "account_head": "VAT 5% - NUTC",
+                    "description": "VAT 5%",
+                    "rate": 5,
+                    "cost_center": "Main - NUTC",
+                })
+                
+                # Insert and submit the Sales Order
+                sales_order.insert()
+                
+                print(f"Sales Order {sales_order.name} created for customer {customer} with payment mode {payment_mode}")
+                created_orders.append({
+                    'sales_order': sales_order.name,
+                    'customer': customer,
+                    'payment_mode': payment_mode,
+                    'student_count': len(group_data['students'])
+                })
+                
+                # Update student records with the sales order reference
+                for student_row in group_data['students']:
+                    # Update the student row in the child table
+                    frappe.db.set_value(
+                        "Student Group Student",
+                        student_row.name,
+                        "custom_sales_order",
+                        sales_order.name
+                    )
+                    # Update in-memory doc for immediate UI feedback (if returned)
+                    student_row.custom_sales_order = sales_order.name
+                
+                # Commit the changes to ensure they are saved
+                frappe.db.commit()
+                
+            except Exception as e:
+                print(f"Error creating Sales Order for customer {customer}, payment mode {payment_mode}: {str(e)}")
+                frappe.throw(f"Error creating Sales Order for customer {customer}: {str(e)}")
+        
+        # Show success message
+        if created_orders:
+            message = f"✅ Created {len(created_orders)} Sales Order(s):\n"
+            for order in created_orders:
+                message += f"• {order['sales_order']} for {order['customer']} ({order['payment_mode']}) - {order['student_count']} students\n"
+            
+            frappe.msgprint(message)
+            print(f"Successfully created {len(created_orders)} sales orders")
+        else:
+            frappe.msgprint("No Sales Orders created - all students already have sales orders")
+            print("No sales orders created - all students already have sales orders")
+            
+    except Exception as e:
+        print(f"Error in create_sales_order_from_student_group: {str(e)}")
+        frappe.throw(f"Error creating Sales Orders: {str(e)}")

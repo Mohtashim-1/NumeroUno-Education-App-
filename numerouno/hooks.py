@@ -149,9 +149,11 @@ doc_events = {
 	"Student Group": {
 		"before_save": "numerouno.numerouno.doctype.student_group.student_group.create_academic_term",
         "validate": ["numerouno.numerouno.doctype.student_group.student_group.sync_children",
-                    "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_for_purchase_order",
-                    "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_for_advance_payment",
-                    "numerouno.numerouno.doctype.student_group.student_group.create_sales_invoice_for_cash_payment"],
+                     "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_from_student_group",
+                    # "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_for_purchase_order",
+                    # "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_for_advance_payment",
+                    # "numerouno.numerouno.doctype.student_group.student_group.create_sales_invoice_for_cash_payment"
+                    ],
         "after_save": "numerouno.numerouno.doctype.student_group.student_group.check_and_send_unpaid_notifications",
 	},
     "Student": {
