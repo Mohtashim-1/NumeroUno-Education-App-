@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Statement of Account</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .customer-info {
+            margin-bottom: 20px;
+        }
+        .customer-info h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .customer-info p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .letterhead {
+            margin-bottom: 20px;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="letterhead">
+        {{ letterhead_content | safe }}
+    </div>
+    
+    <div class="header">
+        <h2>STATEMENT OF ACCOUNT</h2>
+    </div>
+    
+    <div class="customer-info">
+        <h4>Customer: {{ customer.customer_name }}</h4>
+        <p><strong>Customer ID:</strong> {{ customer.name }}</p>
+        <p><strong>Period:</strong> {{ doc.from_date }} to {{ doc.to_date }}</p>
+        <p><strong>Generated On:</strong> {{ frappe.utils.nowdate() }}</p>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Reference</th>
+                <th>Description</th>
+                <th>LPO Number</th>
+                <th class="text-right">Debit</th>
+                <th class="text-right">Credit</th>
+                <th class="text-right">Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            {% if row.posting_date %}
+            <tr>
+                <td>{{ frappe.utils.formatdate(row.posting_date) }}</td>
+                <td>
+                    {{ row.voucher_type }}<br>
+                    <strong>{{ row.voucher_no }}</strong>
+                </td>
+                <td>{{ row.description|safe }}</td>
+                <td>{{ row.lpo_number or row.po_no or '' }}</td>
+                <td class="text-right">{{ frappe.utils.fmt_money(row.invoiced, currency=currency) if row.invoiced else '' }}</td>
+                <td class="text-right">{{ frappe.utils.fmt_money(row.paid, currency=currency) if row.paid else '' }}</td>
+                <td class="text-right">{{ frappe.utils.fmt_money(row.outstanding, currency=currency) }}</td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="footer">
+        <p>This statement was generated automatically by the system.</p>
+        <p>For any queries, please contact our accounts department.</p>
+    </div>
+</body>
+</html> 
