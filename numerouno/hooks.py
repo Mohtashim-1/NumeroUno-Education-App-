@@ -155,12 +155,33 @@ doc_events = {
                     # "numerouno.numerouno.doctype.student_group.student_group.create_sales_invoice_for_cash_payment"
                     ],
         "after_save": "numerouno.numerouno.doctype.student_group.student_group.check_and_send_unpaid_notifications",
+        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_student_group_creation",
+        "on_update": "numerouno.numerouno.notifications.event_handlers.handle_student_group_instructor_update"
 	},
     "Student": {
         "on_update": [
             "numerouno.numerouno.doctype.student.student.send_email_notification_to_accountant",
             "numerouno.numerouno.doctype.student.student.send_welcome_email_to_student"
-        ]
+        ],
+        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_student_welcome"
+    },
+    "Sales Order": {
+        "on_update": "numerouno.numerouno.notifications.event_handlers.handle_missing_po",
+        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_sales_order_creation"
+    },
+    "Assessment Result": {
+        "on_update": "numerouno.numerouno.notifications.event_handlers.handle_assessment_pending",
+        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_assessment_creation"
+    },
+    "Student Attendance": {
+        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_student_absence",
+        "on_update": "numerouno.numerouno.notifications.event_handlers.handle_attendance_eligibility"
+    },
+    "Instructor Assignment": {
+        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_instructor_assignment"
+    },
+    "Cash Assignment": {
+        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_cash_assignment"
     }
 }
 
@@ -169,7 +190,7 @@ doc_events = {
 
 scheduler_events = {
 	"daily": [
-		"numerouno.numerouno.doctype.student_group.student_group.send_daily_unpaid_notifications"
+		"numerouno.numerouno.notifications.notification_manager.send_daily_consolidated_report"
 	]
 }
 

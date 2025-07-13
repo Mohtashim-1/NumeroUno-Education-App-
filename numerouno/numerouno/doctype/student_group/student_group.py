@@ -411,6 +411,12 @@ def check_and_send_unpaid_notifications(doc, method):
 def send_daily_unpaid_notifications():
 	"""Send daily consolidated report of all unpaid students across all Student Groups"""
 	
+	# Ensure frappe is properly imported
+	import frappe
+	from frappe.utils import nowdate
+	
+	print("🔍 Starting send_daily_unpaid_notifications function")
+	
 	# Get all Student Groups with unpaid students
 	unpaid_data = frappe.db.sql("""
 		SELECT 
@@ -427,7 +433,10 @@ def send_daily_unpaid_notifications():
 		ORDER BY sg.student_group_name, sgs.group_roll_number
 	""", as_dict=True)
 	
+	print(f"📊 Found {len(unpaid_data)} unpaid students")
+	
 	if not unpaid_data:
+		print("❌ No unpaid data found, returning early")
 		return
 	
 	# Get users with Accounts User and Accounts Manager roles
@@ -437,7 +446,10 @@ def send_daily_unpaid_notifications():
 		fields=["parent"]
 	)
 	
+	print(f"👥 Found {len(accounts_users)} users with Accounts roles")
+	
 	if not accounts_users:
+		print("❌ No accounts users found, returning early")
 		return
 	
 	# Get email addresses
@@ -447,48 +459,139 @@ def send_daily_unpaid_notifications():
 		if email:
 			email_addresses.append(email)
 	
+	print(f"📧 Found {len(email_addresses)} email addresses: {email_addresses}")
+	
 	if not email_addresses:
+		print("❌ No email addresses found, returning early")
 		return
 	
 	# Prepare email content
 	subject = f"Daily Unpaid Students Report - {nowdate()}"
-	
+
 	# Create summary
 	total_unpaid = len(unpaid_data)
 	unique_groups = len(set([row.student_group_name for row in unpaid_data]))
-	
-	# Email body
+
+	print(f"📋 Preparing email with {total_unpaid} unpaid students from {unique_groups} groups")
+
+	# Build HTML table for unpaid students (limit to first 100 for email size)
+	table_rows = ""
+	for i, row in enumerate(unpaid_data[:100]):  # Limit to first 100 rows
+		table_rows += f"""
+		<tr>
+			<td>{row['student_group_title']}</td>
+			<td>{row['student']}</td>
+			<td>{row['student_name']}</td>
+			<td>{row['program']}</td>
+			<td>{row['course']}</td>
+			<td>{row['group_roll_number']}</td>
+			<td><a href="{frappe.utils.get_url('/app/student-group/' + row['student_group_name'])}">View Group</a></td>
+		</tr>
+		"""
+
+	# Add note if there are more records
+	additional_note = ""
+	if total_unpaid > 100:
+		additional_note = f"<p><em>Note: Showing first 100 records. Total unpaid students: {total_unpaid}</em></p>"
+
 	body = f"""
 	<p>Dear Accounts Team,</p>
-	
+
 	<p>This is your daily automated report of unpaid students across all Student Groups.</p>
-	
+
 	<div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
 		<h3>Summary</h3>
 		<p><strong>Total Student Groups with Unpaid Students:</strong> {unique_groups}</p>
 		<p><strong>Total Unpaid Students:</strong> {total_unpaid}</p>
 	</div>
-	
+
+	<table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 20px;">
+		<thead style="background-color: #e9ecef;">
+			<tr>
+				<th>Student Group</th>
+				<th>Student ID</th>
+				<th>Student Name</th>
+				<th>Program</th>
+				<th>Course</th>
+				<th>Roll Number</th>
+				<th>Link</th>
+			</tr>
+		</thead>
+		<tbody>
+			{table_rows}
+		</tbody>
+	</table>
+
+	{additional_note}
+
 	<p>Please review and take necessary action to ensure proper invoicing for all students.</p>
-	
+
 	<p>Best regards,<br>
 	Numero Uno System</p>
 	"""
 	
-	# Send email
+	# Send email using multiple methods for reliability
 	try:
-		frappe.sendmail(
-			recipients=email_addresses,
-			subject=subject,
-			message=body,
-			now=True
-		)
+		print(f"📤 Attempting to send email to: {email_addresses}")
+		
+		# Method 1: Try frappe.sendmail with now=True
+		try:
+			frappe.sendmail(
+				recipients=email_addresses,
+				subject=subject,
+				message=body,
+				now=True
+			)
+			print("✅ Email sent successfully using frappe.sendmail!")
+			
+		except Exception as e1:
+			print(f"❌ frappe.sendmail failed: {str(e1)}")
+			
+			# Method 2: Try using Email Queue directly
+			try:
+				from frappe.email.doctype.email_queue.email_queue import QueueBuilder
+				
+				email_queue = frappe.new_doc("Email Queue")
+				email_queue.recipients = ",".join(email_addresses)
+				email_queue.subject = subject
+				email_queue.message = body
+				email_queue.status = "Not Sent"
+				email_queue.insert()
+				
+				print(f"✅ Email queued successfully: {email_queue.name}")
+				
+			except Exception as e2:
+				print(f"❌ Email queue method failed: {str(e2)}")
+				
+				# Method 3: Try using frappe.utils.email_lib
+				try:
+					import frappe.utils.email_lib
+					
+					frappe.utils.email_lib.sendmail(
+						recipients=email_addresses,
+						subject=subject,
+						message=body
+					)
+					print("✅ Email sent successfully using frappe.utils.email_lib!")
+					
+				except Exception as e3:
+					print(f"❌ frappe.utils.email_lib failed: {str(e3)}")
+					raise Exception(f"All email methods failed. Last error: {str(e3)}")
 		
 		# Log the notification
-		frappe.logger().info(f"Daily unpaid student notification sent for {unique_groups} groups with {total_unpaid} unpaid students")
+		frappe.log_error(f"Daily unpaid student notification sent for {unique_groups} groups with {total_unpaid} unpaid students")
 		
 	except Exception as e:
-		frappe.logger().error(f"Failed to send daily unpaid student notification: {str(e)}")
+		print(f"❌ Failed to send email: {str(e)}")
+		frappe.log_error(f"Failed to send daily unpaid student notification: {str(e)}")
+		
+		# Try to flush email queue
+		try:
+			import frappe.utils.email_lib
+			frappe.utils.email_lib.flush(from_test=True)
+			print("📧 Email queue flushed")
+		except Exception as flush_error:
+			print(f"❌ Failed to flush email queue: {str(flush_error)}")
 
 
 @frappe.whitelist()
@@ -1115,3 +1218,105 @@ def create_sales_order_from_student_group(doc, method):
     except Exception as e:
         print(f"Error in create_sales_order_from_student_group: {str(e)}")
         frappe.throw(f"Error creating Sales Orders: {str(e)}")
+
+
+@frappe.whitelist()
+def check_email_configuration():
+	"""Check and fix email configuration"""
+	
+	print("🔧 Checking Email Configuration...")
+	
+	try:
+		# Check Email Settings
+		email_settings = frappe.get_doc("Email Settings")
+		print(f"   - SMTP Server: {email_settings.smtp_server}")
+		print(f"   - SMTP Port: {email_settings.smtp_port}")
+		print(f"   - Login: {email_settings.login}")
+		print(f"   - Use SSL: {email_settings.use_ssl}")
+		print(f"   - Always use account settings: {email_settings.always_use_account_settings}")
+		
+		# Check System Settings
+		system_settings = frappe.get_doc("System Settings")
+		print(f"   - System email: {system_settings.mail_login}")
+		print(f"   - System email password: {'Set' if system_settings.mail_password else 'Not set'}")
+		
+		# Check if email is properly configured
+		if not email_settings.smtp_server:
+			print("❌ SMTP server not configured")
+			return False
+		
+		if not email_settings.login:
+			print("❌ Email login not configured")
+			return False
+		
+		# Test email sending
+		print("🧪 Testing email sending...")
+		try:
+			frappe.sendmail(
+				recipients=["test@example.com"],
+				subject="Test Email",
+				message="This is a test email",
+				now=True
+			)
+			print("✅ Test email sent successfully!")
+			return True
+		except Exception as e:
+			print(f"❌ Test email failed: {str(e)}")
+			return False
+			
+	except Exception as e:
+		print(f"❌ Error checking email configuration: {str(e)}")
+		return False
+
+
+@frappe.whitelist()
+def flush_email_queue():
+	"""Flush the email queue to send pending emails"""
+	
+	print("📧 Flushing Email Queue...")
+	
+	try:
+		import frappe.utils.email_lib
+		frappe.utils.email_lib.flush(from_test=True)
+		print("✅ Email queue flushed successfully!")
+		
+		# Check remaining emails
+		pending_emails = frappe.db.sql("""
+			SELECT COUNT(*) as count 
+			FROM `tabEmail Queue` 
+			WHERE status = 'Not Sent'
+		""", as_dict=True)
+		
+		print(f"📊 Remaining pending emails: {pending_emails[0]['count'] if pending_emails else 0}")
+		
+		return True
+		
+	except Exception as e:
+		print(f"❌ Failed to flush email queue: {str(e)}")
+		return False
+
+
+@frappe.whitelist()
+def send_test_email(recipient_email):
+	"""Send a test email to verify email configuration"""
+	
+	print(f"🧪 Sending test email to: {recipient_email}")
+	
+	try:
+		frappe.sendmail(
+			recipients=[recipient_email],
+			subject="Test Email from Numero Uno System",
+			message="""
+			<p>This is a test email from the Numero Uno System.</p>
+			<p>If you receive this email, the email configuration is working correctly.</p>
+			<p>Best regards,<br>Numero Uno System</p>
+			""",
+			now=True
+		)
+		
+		print("✅ Test email sent successfully!")
+		return {"status": "success", "message": "Test email sent successfully!"}
+		
+	except Exception as e:
+		print(f"❌ Test email failed: {str(e)}")
+		return {"status": "error", "message": str(e)}

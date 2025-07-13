@@ -4,6 +4,31 @@ import frappe
 from frappe import _
 from frappe.utils import nowdate, add_days
 
+def get_filter_conditions(filters):
+    conditions = ["(sgs.paid = 0 OR sgs.paid IS NULL)"]
+    values = {}
+
+    if filters.get("student_group"):
+        conditions.append("sg.name = %(student_group)s")
+        values["student_group"] = filters["student_group"]
+    if filters.get("program"):
+        conditions.append("sg.program = %(program)s")
+        values["program"] = filters["program"]
+    if filters.get("course"):
+        conditions.append("sg.course = %(course)s")
+        values["course"] = filters["course"]
+    if filters.get("instructor"):
+        conditions.append("sgi.instructor_name = %(instructor)s")
+        values["instructor"] = filters["instructor"]
+    # Apply from_date/to_date to group creation date (date only)
+    if filters.get("from_date"):
+        conditions.append("DATE(sg.creation) >= %(from_date)s")
+        values["from_date"] = filters["from_date"]
+    if filters.get("to_date"):
+        conditions.append("DATE(sg.creation) <= %(to_date)s")
+        values["to_date"] = filters["to_date"]
+    return conditions, values
+
 def execute(filters=None):
     filters = filters or {}
     
@@ -18,6 +43,7 @@ def execute(filters=None):
     
     # Create columns for recent data
     columns = [
+        {"label": "Group Creation Date", "fieldname": "group_creation_date", "fieldtype": "Date", "width": 120},
         {"label": "Student Group",       "fieldname": "student_group_name", "fieldtype": "Link", "options": "Student Group", "width": 150},
         {"label": "Student",             "fieldname": "student",            "fieldtype": "Link", "options": "Student",        "width": 150},
         {"label": "Student Name",        "fieldname": "student_name",       "fieldtype": "Data",  "width": 150},
@@ -25,6 +51,8 @@ def execute(filters=None):
         {"label": "Course",              "fieldname": "course",             "fieldtype": "Data",  "width": 150},
         {"label": "Days Unpaid",         "fieldname": "days_unpaid",        "fieldtype": "Int",   "width": 100},
         {"label": "Instructor",          "fieldname": "instructor_name",    "fieldtype": "Data",  "width": 150},
+        {"label": "Sales Order",         "fieldname": "custom_sales_order", "fieldtype": "Link",  "options": "Sales Order", "width": 150},
+        {"label": "Sales Order Amount",  "fieldname": "sales_order_amount", "fieldtype": "Currency", "width": 120},
     ]
     
     # Create summary message
@@ -81,17 +109,7 @@ def get_summary_data(filters):
     """Get summary statistics"""
     
     # Base conditions
-    conditions = ["(sgs.custom_invoiced = 0 OR sgs.custom_invoiced IS NULL)"]
-    values = {}
-    
-    if filters.get("program"):
-        conditions.append("sg.program = %(program)s")
-        values["program"] = filters["program"]
-    
-    if filters.get("course"):
-        conditions.append("sg.course = %(course)s")
-        values["course"] = filters["course"]
-    
+    conditions, values = get_filter_conditions(filters)
     where_clause = "WHERE " + " AND ".join(conditions)
     
     # Get all unpaid students with their details
@@ -109,6 +127,9 @@ def get_summary_data(filters):
         LEFT JOIN `tabStudent Group Student` sgs
           ON sgs.parent = sg.name
          AND sgs.parentfield = 'students'
+        LEFT JOIN `tabStudent Group Instructor` sgi
+          ON sgi.parent = sg.name
+         AND sgi.parentfield = 'instructors'
         {where_clause}
     """, values, as_dict=True)
     
@@ -139,17 +160,7 @@ def get_chart_data(filters):
     """Get data for charts"""
     
     # Base conditions
-    conditions = ["(sgs.custom_invoiced = 0 OR sgs.custom_invoiced IS NULL)"]
-    values = {}
-    
-    if filters.get("program"):
-        conditions.append("sg.program = %(program)s")
-        values["program"] = filters["program"]
-    
-    if filters.get("course"):
-        conditions.append("sg.course = %(course)s")
-        values["course"] = filters["course"]
-    
+    conditions, values = get_filter_conditions(filters)
     where_clause = "WHERE " + " AND ".join(conditions)
     
     # Chart 1: By Student Group
@@ -161,6 +172,9 @@ def get_chart_data(filters):
         LEFT JOIN `tabStudent Group Student` sgs
           ON sgs.parent = sg.name
          AND sgs.parentfield = 'students'
+        LEFT JOIN `tabStudent Group Instructor` sgi
+          ON sgi.parent = sg.name
+         AND sgi.parentfield = 'instructors'
         {where_clause}
         GROUP BY sg.student_group_name
         ORDER BY count DESC
@@ -181,6 +195,9 @@ def get_chart_data(filters):
         LEFT JOIN `tabStudent Group Student` sgs
           ON sgs.parent = sg.name
          AND sgs.parentfield = 'students'
+        LEFT JOIN `tabStudent Group Instructor` sgi
+          ON sgi.parent = sg.name
+         AND sgi.parentfield = 'instructors'
         {where_clause}
         GROUP BY sg.program
         ORDER BY count DESC
@@ -207,6 +224,9 @@ def get_chart_data(filters):
         LEFT JOIN `tabStudent Group Student` sgs
           ON sgs.parent = sg.name
          AND sgs.parentfield = 'students'
+        LEFT JOIN `tabStudent Group Instructor` sgi
+          ON sgi.parent = sg.name
+         AND sgi.parentfield = 'instructors'
         {where_clause}
         GROUP BY days_range
         ORDER BY 
@@ -234,29 +254,22 @@ def get_recent_unpaid_students(filters):
     """Get recent unpaid students for the table"""
     
     # Base conditions
-    conditions = ["(sgs.custom_invoiced = 0 OR sgs.custom_invoiced IS NULL)"]
-    values = {}
-    
-    if filters.get("program"):
-        conditions.append("sg.program = %(program)s")
-        values["program"] = filters["program"]
-    
-    if filters.get("course"):
-        conditions.append("sg.course = %(course)s")
-        values["course"] = filters["course"]
-    
+    conditions, values = get_filter_conditions(filters)
     where_clause = "WHERE " + " AND ".join(conditions)
     
-    # Get recent unpaid students
+    # Get all unpaid students (no LIMIT)
     recent_data = frappe.db.sql(f"""
         SELECT 
+            DATE(sg.creation) as group_creation_date,
             sg.student_group_name,
             sgs.student,
             sgs.student_name,
             sg.program,
             sg.course,
             DATEDIFF(CURDATE(), COALESCE(sg.from_date, CURDATE())) as days_unpaid,
-            sgi.instructor_name
+            sgi.instructor_name,
+            sgs.custom_sales_order,
+            so.grand_total as sales_order_amount
         FROM `tabStudent Group` sg
         LEFT JOIN `tabStudent Group Student` sgs
           ON sgs.parent = sg.name
@@ -264,9 +277,10 @@ def get_recent_unpaid_students(filters):
         LEFT JOIN `tabStudent Group Instructor` sgi
           ON sgi.parent = sg.name
          AND sgi.parentfield = 'instructors'
+        LEFT JOIN `tabSales Order` so
+          ON so.name = sgs.custom_sales_order
         {where_clause}
         ORDER BY days_unpaid DESC, sg.student_group_name
-        LIMIT 50
     """, values, as_dict=True)
     
     return recent_data
