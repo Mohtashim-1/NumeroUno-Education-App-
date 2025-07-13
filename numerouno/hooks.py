@@ -190,7 +190,7 @@ doc_events = {
 
 scheduler_events = {
 	"daily": [
-		"numerouno.numerouno.notifications.notification_manager.send_daily_consolidated_report"
+		"numerouno.numerouno.doctype.student_group.student_group.send_daily_unpaid_notifications"
 	]
 }
 

@@ -7,6 +7,28 @@ from frappe.utils.background_jobs import enqueue
 from numerouno.numerouno.doctype.sales_invoice.sales_invoice import fetch_students_from_sg
 
 
+def get_default_receivable_account():
+    """Get the default receivable account for the company"""
+    try:
+        company = frappe.defaults.get_global_default("company")
+        if company:
+            return frappe.db.get_value("Company", company, "default_receivable_account")
+        return None
+    except Exception:
+        return None
+
+
+def get_default_cash_account():
+    """Get the default cash account for the company"""
+    try:
+        company = frappe.defaults.get_global_default("company")
+        if company:
+            return frappe.db.get_value("Company", company, "default_cash_account")
+        return None
+    except Exception:
+        return None
+
+
 
 def sync_children(doc, method):
     for row in doc.students:
