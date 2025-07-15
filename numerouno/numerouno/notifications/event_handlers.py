@@ -573,6 +573,29 @@ def handle_assessment_creation(doc, method):
         print(f"Failed to send assessment creation notification: {str(e)}")
         print(f"Exception details: {frappe.get_traceback()}")
 
+def handle_course_schedule_creation(doc, method):
+    try:
+        instructor = doc.instructor
+        if not instructor:
+            return
+        instructor_email = frappe.db.get_value("Instructor", instructor, "custom_email")
+        if not instructor_email:
+            return
+        instructor_name = frappe.db.get_value("Instructor", instructor, "instructor_name") or instructor
+        course = doc.course
+        program = doc.program
+        schedule_date = doc.schedule_date
+        from_time = doc.from_time
+        to_time = doc.to_time
+        room = doc.room
+
+        # Use NotificationManager for consistency
+        NotificationManager.send_course_schedule_created_notification(
+            instructor_name, instructor_email, course, program, schedule_date, from_time, to_time, room
+        )
+    except Exception as e:
+        frappe.log_error(f"Failed to send course schedule notification: {str(e)}")
+
 # Register event handlers
 def register_notification_handlers():
     """Register all notification event handlers"""
@@ -583,7 +606,8 @@ def register_notification_handlers():
         "Assessment Result": [handle_assessment_pending, handle_assessment_creation],
         "Student Attendance": [handle_student_absence, handle_attendance_eligibility],
         "Instructor Assignment": [handle_instructor_assignment],
-        "Cash Assignment": [handle_cash_assignment]
+        "Cash Assignment": [handle_cash_assignment],
+        "Course Schedule": [handle_course_schedule_creation]
     }
     
     return handlers 

@@ -182,6 +182,9 @@ doc_events = {
     },
     "Cash Assignment": {
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_cash_assignment"
+    },
+    "Course Schedule": {
+        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_course_schedule_creation"
     }
 }
 

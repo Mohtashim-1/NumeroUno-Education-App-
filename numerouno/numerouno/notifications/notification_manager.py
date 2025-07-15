@@ -561,6 +561,29 @@ class NotificationManager:
         except Exception as e:
             frappe.logger().error(f"Failed to send consolidated report: {str(e)}")
 
+    @staticmethod
+    def send_course_schedule_created_notification(instructor_name, email, course, program, schedule_date, from_time, to_time, room):
+        subject = f"New Course Schedule Created: {course}"
+        body = f"""
+        <p>Dear {instructor_name},</p>
+        <p>A new course schedule has been created for you:</p>
+        <ul>
+            <li><strong>Course:</strong> {course}</li>
+            <li><strong>Program:</strong> {program}</li>
+            <li><strong>Date:</strong> {schedule_date}</li>
+            <li><strong>Time:</strong> {from_time} - {to_time}</li>
+            <li><strong>Room:</strong> {room}</li>
+        </ul>
+        <p>Please check your dashboard for more details.</p>
+        <p>Best regards,<br>Numero Uno Training Team</p>
+        """
+        frappe.sendmail(
+            recipients=[email],
+            subject=subject,
+            message=body,
+            now=True
+        )
+
 
 # Convenience functions for easy calling
 def send_welcome_email(student_name, email, program_name):
