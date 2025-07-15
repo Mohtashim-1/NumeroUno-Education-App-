@@ -47,6 +47,7 @@ def handle_student_group_creation(doc, method):
                             <li><strong>Student Count:</strong> {student_count}</li>
                             <li><strong>Created By:</strong> {doc.owner}</li>
                             <li><strong>Creation Date:</strong> {doc.creation}</li>
+                            <li><strong>Coarse Location:</strong> {doc.custom_coarse_location}</li>
                         </ul>
                     </div>
                     
