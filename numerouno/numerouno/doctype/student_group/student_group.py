@@ -1165,38 +1165,73 @@ def create_sales_order_from_student_group(doc, method):
             try:
                 print(f"Creating Sales Order for customer: {customer}, payment_mode: {payment_mode}, students: {len(group_data['students'])}")
                 
-                # Create Sales Order
-                sales_order = frappe.new_doc("Sales Order")
-                sales_order.customer = customer
-                sales_order.delivery_date = doc.to_date
-                sales_order.posting_date = frappe.utils.today()
-                
-                # Set PO number if available (use first one if multiple)
-                if group_data['po_numbers']:
-                    sales_order.po_no = list(group_data['po_numbers'])[0]
-                
-                # Add link back to Student Group
-                sales_order.custom_student_group = doc.name
-                
-                # Add item details
-                sales_order.append("items", {
-                    "item_code": doc.course,
-                    "qty": len(group_data['students']),
-                    "rate": course_rate,
-                    "description": f"Course: {doc.course} for {len(group_data['students'])} students"
-                })
-                
-                # Add taxes
-                sales_order.append("taxes", {
-                    "charge_type": "On Net Total",
-                    "account_head": "VAT 5% - NUTC",
-                    "description": "VAT 5%",
-                    "rate": 5,
-                    "cost_center": "Main - NUTC",
-                })
-                
-                # Insert and submit the Sales Order
-                sales_order.insert()
+                # Try to find an existing Sales Order for this group, customer, payment mode, and course
+                existing_so = frappe.get_all(
+                    "Sales Order",
+                    filters={
+                        "customer": customer,
+                        "custom_mode_of_payment": payment_mode,
+                        "custom_student_group": doc.name,
+                        "docstatus": ["!=", 2],  # not cancelled
+                    },
+                    fields=["name"]
+                )
+
+                if existing_so:
+                    # Update the existing Sales Order
+                    so = frappe.get_doc("Sales Order", existing_so[0].name)
+                    so.custom_mode_of_payment = payment_mode  # <-- Add this line to ensure it is updated!
+                    # Find the item row for this course
+                    for item in so.items:
+                        if item.item_code == doc.course:
+                            item.qty += len(group_data['students'])
+                            item.description = f"Course: {doc.course} for {item.qty} students"
+                            break
+                    else:
+                        # If not found, add a new item row
+                        so.append("items", {
+                            "item_code": doc.course,
+                            "qty": len(group_data['students']),
+                            "rate": course_rate,
+                            "description": f"Course: {doc.course} for {len(group_data['students'])} students"
+                        })
+                    so.save()
+                    sales_order = so
+                else:
+                    # ... your existing code to create a new Sales Order ...
+                    sales_order = frappe.new_doc("Sales Order")
+                    # ... rest of your creation logic ...
+                    sales_order.customer = customer
+                    sales_order.delivery_date = doc.to_date
+                    sales_order.posting_date = frappe.utils.today()
+                    sales_order.custom_mode_of_payment = payment_mode  # <-- Make sure this line is present!
+                    
+                    # Set PO number if available (use first one if multiple)
+                    if group_data['po_numbers']:
+                        sales_order.po_no = list(group_data['po_numbers'])[0]
+                    
+                    # Add link back to Student Group
+                    sales_order.custom_student_group = doc.name
+                    
+                    # Add item details
+                    sales_order.append("items", {
+                        "item_code": doc.course,
+                        "qty": len(group_data['students']),
+                        "rate": course_rate,
+                        "description": f"Course: {doc.course} for {len(group_data['students'])} students"
+                    })
+                    
+                    # Add taxes
+                    sales_order.append("taxes", {
+                        "charge_type": "On Net Total",
+                        "account_head": "VAT 5% - NUTC",
+                        "description": "VAT 5%",
+                        "rate": 5,
+                        "cost_center": "Main - NUTC",
+                    })
+                    
+                    # Insert and submit the Sales Order
+                    sales_order.insert()
                 
                 print(f"Sales Order {sales_order.name} created for customer {customer} with payment mode {payment_mode}")
                 created_orders.append({
