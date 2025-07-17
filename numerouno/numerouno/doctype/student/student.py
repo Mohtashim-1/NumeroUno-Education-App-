@@ -61,19 +61,77 @@ def create_student_group(student, group_name, academic_year, group_based_on, fro
 
 @frappe.whitelist()
 def assign_student_group(student, student_group):
-    # assign student group 
-    group = frappe.get_doc("Student Group", student_group)
-    
-    if not any(s.student == student for s in group.students):
-        group.append("students",{
-            "student": student
-        })
-        group.save(ignore_permissions=True)
-        
-    return {
-        "name":group.name,
-        "url":frappe.utils.get_url_to_form("Student Group",group.name)
-    }
+    import traceback
+    try:
+        group = frappe.get_doc("Student Group", student_group)
+        if not any(s.student == student for s in group.students):
+            group.append("students",{"student": student})
+            group.save(ignore_permissions=True)
+
+        # --- LMS ENROLLMENT LOGIC ---
+        course_title = group.course
+        # frappe.msgprint(f"[DEBUG] course_title: {course_title}")
+        if course_title:
+            lms_course_filter = {"title": course_title}
+            # frappe.msgprint(f"[DEBUG] LMS Course filter: {lms_course_filter}")
+            lms_course = frappe.get_all("LMS Course", filters=lms_course_filter)
+            # frappe.msgprint(f"[DEBUG] LMS Course found: {lms_course}")
+            if not lms_course:
+                lms_course_doc = frappe.new_doc("LMS Course")
+                lms_course_doc.title = course_title
+                lms_course_doc.append("instructors", {"instructor": "Administrator"})
+                lms_course_doc.image = "/files/Screenshot from 2025-07-15 08-49-45.png"
+                lms_course_doc.short_introduction = course_title
+                lms_course_doc.description = course_title
+                lms_course_doc.insert(ignore_permissions=True)
+                # frappe.msgprint(f"[DEBUG] Created new LMS Course: {lms_course_doc.name}")
+            else:
+                lms_course_doc = frappe.get_doc("LMS Course", lms_course[0].name)
+                # frappe.msgprint(f"[DEBUG] Using existing LMS Course: {lms_course_doc.name}")
+
+            # --- USER & LMS MEMBER LOGIC ---
+            student_doc = frappe.get_doc("Student", student)
+            user_email = student_doc.student_email_id
+            user_first_name = student_doc.first_name
+            user_last_name = student_doc.last_name
+
+            # 1. Get or create User
+            user = frappe.db.get_value("User", {"email": user_email})
+            if not user:
+                user_doc = frappe.new_doc("User")
+                user_doc.email = user_email
+                user_doc.first_name = user_first_name
+                user_doc.last_name = user_last_name
+                user_doc.enabled = 1
+                user_doc.send_welcome_email = 0
+                user_doc.insert(ignore_permissions=True)
+                user = user_doc.name
+                # frappe.msgprint(f"[DEBUG] Created new User: {user}")
+            else:
+                pass
+                # frappe.msgprint(f"[DEBUG] Found existing User: {user}")
+
+            # 2. Use the User as the member
+            member = user  # user is the User's name (email or user ID)
+
+            # 3. Enroll User in LMS Course
+            enrollment = frappe.get_all("LMS Enrollment", filters={"course": lms_course_doc.name, "member": member})
+            # frappe.msgprint(f"[DEBUG] LMS Enrollment found: {enrollment}")
+            if not enrollment:
+                enrollment_doc = frappe.new_doc("LMS Enrollment")
+                enrollment_doc.course = lms_course_doc.name
+                enrollment_doc.member = member
+                enrollment_doc.insert(ignore_permissions=True)
+                # frappe.msgprint(f"[DEBUG] Created new LMS Enrollment: {enrollment_doc.name}")
+
+        return {
+            "name": group.name,
+            "url": frappe.utils.get_url_to_form("Student Group", group.name)
+        }
+    except Exception as e:
+        # frappe.msgprint(f"[ERROR] Exception in assign_student_group: {str(e)}\nTraceback:\n{traceback.format_exc()}")
+        frappe.log_error(f"assign_student_group error: {str(e)}\n{traceback.format_exc()}")
+        raise
 
 #  run this function when document created it is custom app so i guess it will run on student application created through hooks.py
 

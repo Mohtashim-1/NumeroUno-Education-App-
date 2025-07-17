@@ -185,6 +185,9 @@ doc_events = {
     },
     "Course Schedule": {
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_course_schedule_creation"
+    },
+    "LMS Quiz Submission": {
+        "validate": "numerouno.numerouno.doctype.lms_quiz_submission.lms_quiz_submission.on_submit"
     }
 }
 
