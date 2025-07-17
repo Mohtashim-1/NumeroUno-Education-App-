@@ -131,18 +131,22 @@ def on_submit(doc, method=None):
         if hasattr(ar, "custom_company"):
             ar.custom_company = frappe.defaults.get_global_default("company")
         print(_(f"[DEBUG] Saving Assessment Result for student: {student}, plan: {assessment_plan}"))
-        assessment_result = frappe.get_list(
+        # Count existing attempts
+        existing_attempts = frappe.get_list(
             "Assessment Result",
             filters={"assessment_plan": assessment_plan, "student": student},
             ignore_permissions=True
         )
-        if assessment_result:
-            ar.name = assessment_result[0].name
-            print(_(f"[DEBUG] Assessment Result already exists, updating: {ar.name}"))
-        else:
-            ar.save(ignore_permissions=True)
-            ar.submit()
-            print(_(f"[DEBUG] Assessment Result created: {ar.name}"))
+        if len(existing_attempts) >= 2:
+            frappe.throw(_("Maximum attempts reached for this quiz."))
+
+        # Set attempt number if you have such a field
+        if hasattr(ar, "attempt_number"):
+            ar.attempt_number = len(existing_attempts) + 1
+
+        ar.save(ignore_permissions=True)
+        ar.submit()
+        print(_(f"[DEBUG] Assessment Result created: {ar.name}"))
     except Exception as e:
         print(_(f"[DEBUG] Exception: {frappe.get_traceback()}"))
         frappe.log_error(frappe.get_traceback(), "LMSQuizSubmission on_submit error")
