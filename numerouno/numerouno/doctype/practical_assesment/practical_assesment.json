@@ -8,13 +8,16 @@
  "field_order": [
   "posting_date",
   "student_group",
+  "assessment_plan",
   "column_break_hbln",
   "posting_time",
   "student",
+  "assesment_group",
   "section_break_crvm",
   "practical_assesment_template",
   "practical_assesment_table",
-  "amended_from"
+  "amended_from",
+  "obtained_rating"
  ],
  "fields": [
   {
@@ -30,8 +33,7 @@
    "fieldname": "student",
    "fieldtype": "Link",
    "label": "Student",
-   "options": "Student",
-   "get_query": "numerouno.numerouno.doctype.practical_assesment.practical_assesment.get_students_by_group"
+   "options": "Student"
   },
   {
    "fieldname": "column_break_hbln",
@@ -74,13 +76,30 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "obtained_rating",
+   "fieldtype": "Rating",
+   "label": "Obtained Rating"
+  },
+  {
+   "fieldname": "assessment_plan",
+   "fieldtype": "Link",
+   "label": "Assessment Plan",
+   "options": "Assessment Plan"
+  },
+  {
+   "fieldname": "assesment_group",
+   "fieldtype": "Link",
+   "label": "Assesment Group",
+   "options": "Assessment Group"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-26 02:10:52.153373",
+ "modified": "2025-07-26 10:59:20.307462",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Practical Assesment",

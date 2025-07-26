@@ -8,6 +8,7 @@ from frappe.model.document import Document
 class PracticalAssesment(Document):
 	def validate(self):
 		self.get_practical_assesment_table_from_template()
+		self.total_rating()
 
 	def get_practical_assesment_table_from_template(self):
 		if self.practical_assesment_template and not self.practical_assesment_table:
@@ -19,6 +20,150 @@ class PracticalAssesment(Document):
 				self.append("practical_assesment_table", {
 					"assesment_type": template_row.assesment_type,
 				})
+
+	def total_rating(self):
+		"""
+		Calculate total rating from practical assessment table
+		"""
+		total = 0
+		count = 0
+		
+		if self.practical_assesment_table:
+			for row in self.practical_assesment_table:
+				if row.rating:
+					total += row.rating
+					count += 1
+		
+		# Calculate average rating
+		if count > 0:
+			average_rating = total / count
+			self.obtained_rating = round(average_rating, 2)
+		else:
+			self.obtained_rating = 0
+		
+		# Also set total score for assessment result
+		self.total_score = total
+
+	def on_submit(self):
+		self.create_assesment_result()
+
+	def create_assesment_result(self):
+		"""
+		Create or update Assessment Result document when Practical Assessment is submitted
+		"""
+		# Check if Assessment Result already exists for this student and student group
+		existing_result = frappe.db.exists("Assessment Result", {
+			"student": self.student,
+			"student_group": self.student_group,
+			"docstatus": 1  # Submitted
+		})
+
+		if existing_result:
+			# Update existing Assessment Result by adding new row
+			self.update_existing_assessment_result(existing_result)
+		else:
+			# Create new Assessment Result
+			self.create_new_assessment_result()
+
+	def create_new_assessment_result(self):
+		"""
+		Create a new Assessment Result document
+		"""
+		# Get student details
+		student_doc = frappe.get_doc("Student", self.student)
+		
+		# Create Assessment Result
+		assessment_result = frappe.new_doc("Assessment Result")
+		company = frappe.defaults.get_defaults().company
+		assessment_result.update({
+			"custom_company":company,
+			"student": self.student,
+			"student_name": student_doc.student_name,
+			"student_group": self.student_group,
+			"assessment_plan": self.assessment_plan,
+			"assessment_group": self.assesment_group,  # Fixed: use assesment_group (one 's')
+			"academic_year": frappe.defaults.get_defaults().academic_year,
+			"comment": f"Practical Assessment submitted on {self.posting_date}"
+		})
+
+		# Add assessment details with proper maximum_score
+		for row in self.practical_assesment_table:
+			score = row.rating or 0
+			maximum_score = 50  # Set maximum score for each assessment
+			
+		detail_row = assessment_result.append("details", {
+			"assessment_criteria": "Practical Assessment",
+			"maximum_score":maximum_score,
+			"score": maximum_score * self.obtained_rating,
+			"grade": self.get_grade(score, maximum_score)
+		})
+		# Set maximum_score directly on the row object
+		detail_row.maximum_score = maximum_score
+
+		# Set total score and overall grade using calculated values
+		assessment_result.total_score = self.total_score
+		assessment_result.maximum_score = len(self.practical_assesment_table) * 5
+		assessment_result.grade = self.get_grade(self.total_score, assessment_result.maximum_score)
+
+		# Save and submit
+		assessment_result.insert(ignore_permissions=True)
+		assessment_result.submit()
+
+		frappe.msgprint(f"Assessment Result created: {assessment_result.name}")
+
+	def update_existing_assessment_result(self, existing_result_name):
+		"""
+		Update existing Assessment Result by adding new assessment details
+		"""
+		assessment_result = frappe.get_doc("Assessment Result", existing_result_name)
+		
+		# Add new assessment details
+		for row in self.practical_assesment_table:
+			score = row.rating or 0
+			maximum_score = 5  # Set maximum score for each assessment
+			
+		detail_row = assessment_result.append("details", {
+			"assessment_criteria": row.assesment_type,
+			"score": score,
+			"grade": self.get_grade(score, maximum_score)
+		})
+		# Set maximum_score directly on the row object
+		detail_row.maximum_score = maximum_score
+
+		# Update total score and overall grade using calculated values
+		assessment_result.total_score += self.total_score
+		assessment_result.maximum_score += len(self.practical_assesment_table) * 5
+		assessment_result.grade = self.get_grade(assessment_result.total_score, assessment_result.maximum_score)
+
+		# Save
+		assessment_result.save(ignore_permissions=True)
+
+		frappe.msgprint(f"Assessment Result updated: {assessment_result.name}")
+
+	def get_grade(self, score, maximum_score):
+		"""
+		Calculate grade based on score and maximum score
+		You can customize this grading logic as needed
+		"""
+		if maximum_score == 0:
+			return "N/A"
+		
+		percentage = (score / maximum_score) * 100
+		
+		if percentage >= 90:
+			return "A+"
+		elif percentage >= 80:
+			return "A"
+		elif percentage >= 70:
+			return "B+"
+		elif percentage >= 60:
+			return "B"
+		elif percentage >= 50:
+			return "C+"
+		elif percentage >= 40:
+			return "C"
+		else:
+			return "F"
 
 
 @frappe.whitelist()
@@ -64,8 +209,6 @@ def get_students_by_group(doctype, txt, searchfield, start, page_len, filters):
 		LIMIT {start}, {page_len}
 	"""
 	
-	# Debug logging
-	
 	result = frappe.db.sql(query, as_dict=True)
 	
 	# Convert to list format that Frappe expects for dropdowns
@@ -74,3 +217,4 @@ def get_students_by_group(doctype, txt, searchfield, start, page_len, filters):
 		dropdown_result.append([row['name'], row['student_name']])
 	
 	return dropdown_result
+
