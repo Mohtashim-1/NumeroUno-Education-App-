@@ -8,7 +8,9 @@ from frappe.model.document import Document
 class PracticalAssesment(Document):
 	def validate(self):
 		self.get_practical_assesment_table_from_template()
+		self.get_assesment_criteria()
 		self.total_rating()
+
 
 	def get_practical_assesment_table_from_template(self):
 		if self.practical_assesment_template and not self.practical_assesment_table:
@@ -20,6 +22,22 @@ class PracticalAssesment(Document):
 				self.append("practical_assesment_table", {
 					"assesment_type": template_row.assesment_type,
 				})
+
+	def get_assesment_criteria(self):
+		"""
+		Get maximum score from Assessment Plan for the selected assessment criteria
+		"""
+		if self.assessment_plan and self.assesment_criteria:
+			assesment_plan = frappe.get_doc("Assessment Plan", self.assessment_plan)
+			
+			# Look for the assessment criteria in the plan's child table
+			for criteria_row in assesment_plan.assessment_criteria:
+				if criteria_row.assessment_criteria == self.assesment_criteria:
+					self.maximum_score = criteria_row.maximum_score
+					break
+			else:
+				# If not found, set default maximum score
+				self.maximum_score = 5
 
 	def total_rating(self):
 		"""
@@ -71,10 +89,10 @@ class PracticalAssesment(Document):
 		"""
 		# Get student details
 		student_doc = frappe.get_doc("Student", self.student)
+		company = frappe.defaults.get_defaults().company
 		
 		# Create Assessment Result
 		assessment_result = frappe.new_doc("Assessment Result")
-		company = frappe.defaults.get_defaults().company
 		assessment_result.update({
 			"custom_company":company,
 			"student": self.student,
@@ -89,12 +107,11 @@ class PracticalAssesment(Document):
 		# Add assessment details with proper maximum_score
 		for row in self.practical_assesment_table:
 			score = row.rating or 0
-			maximum_score = 50  # Set maximum score for each assessment
+			maximum_score = self.maximum_score or 5  # Use the maximum_score from assessment criteria
 			
 		detail_row = assessment_result.append("details", {
-			"assessment_criteria": "Practical Assessment",
-			"maximum_score":maximum_score,
-			"score": maximum_score * self.obtained_rating,
+			"assessment_criteria": self.assesment_criteria,
+			"score": self.maximum_score * self.obtained_rating,
 			"grade": self.get_grade(score, maximum_score)
 		})
 		# Set maximum_score directly on the row object
@@ -102,7 +119,7 @@ class PracticalAssesment(Document):
 
 		# Set total score and overall grade using calculated values
 		assessment_result.total_score = self.total_score
-		assessment_result.maximum_score = len(self.practical_assesment_table) * 5
+		assessment_result.maximum_score = len(self.practical_assesment_table) * (self.maximum_score or 5)
 		assessment_result.grade = self.get_grade(self.total_score, assessment_result.maximum_score)
 
 		# Save and submit
@@ -120,19 +137,19 @@ class PracticalAssesment(Document):
 		# Add new assessment details
 		for row in self.practical_assesment_table:
 			score = row.rating or 0
-			maximum_score = 5  # Set maximum score for each assessment
+			maximum_score = self.maximum_score or 5
 			
-		detail_row = assessment_result.append("details", {
-			"assessment_criteria": row.assesment_type,
-			"score": score,
-			"grade": self.get_grade(score, maximum_score)
-		})
-		# Set maximum_score directly on the row object
-		detail_row.maximum_score = maximum_score
+			detail_row = assessment_result.append("details", {
+				"assessment_criteria": row.assesment_type,
+				"score": score,
+				"grade": self.get_grade(score, maximum_score)
+			})
+			# Set maximum_score directly on the row object
+			detail_row.maximum_score = maximum_score
 
 		# Update total score and overall grade using calculated values
 		assessment_result.total_score += self.total_score
-		assessment_result.maximum_score += len(self.practical_assesment_table) * 5
+		assessment_result.maximum_score += len(self.practical_assesment_table) * (self.maximum_score or 5)
 		assessment_result.grade = self.get_grade(assessment_result.total_score, assessment_result.maximum_score)
 
 		# Save

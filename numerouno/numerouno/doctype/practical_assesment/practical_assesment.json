@@ -9,10 +9,12 @@
   "posting_date",
   "student_group",
   "assessment_plan",
+  "assesment_criteria",
   "column_break_hbln",
   "posting_time",
   "student",
   "assesment_group",
+  "maximum_score",
   "section_break_crvm",
   "practical_assesment_template",
   "practical_assesment_table",
@@ -93,13 +95,25 @@
    "fieldtype": "Link",
    "label": "Assesment Group",
    "options": "Assessment Group"
+  },
+  {
+   "fieldname": "assesment_criteria",
+   "fieldtype": "Link",
+   "label": "Assesment Criteria",
+   "options": "Assessment Criteria"
+  },
+  {
+   "fieldname": "maximum_score",
+   "fieldtype": "Float",
+   "label": "Maximum Score",
+   "precision": "0"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-26 10:59:20.307462",
+ "modified": "2025-07-26 11:50:46.711404",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Practical Assesment",
