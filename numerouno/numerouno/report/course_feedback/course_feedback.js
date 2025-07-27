@@ -18,20 +18,6 @@ frappe.query_reports["Course Feedback"] = {
 			"reqd": 0
 		},
 		{
-			"fieldname": "student",
-			"label": __("Student"),
-			"fieldtype": "Link",
-			"options": "Student",
-			"reqd": 0,
-			"get_query": function() {
-				return {
-					filters: {
-						"enabled": 1
-					}
-				}
-			}
-		},
-		{
 			"fieldname": "student_group",
 			"label": __("Student Group"),
 			"fieldtype": "Link",
@@ -44,38 +30,18 @@ frappe.query_reports["Course Feedback"] = {
 					}
 				}
 			}
-		},
-		{
-			"fieldname": "feedback_category",
-			"label": __("Course Feedback Type"),
-			"fieldtype": "Link",
-			"options": "Course Feedback Type",
-			"reqd": 0
 		}
 	],
 	
 	"formatter": function(value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
 		
-		// Color code sentiment scores
-		if (column.fieldname === "sentiment_score") {
-			const score = parseFloat(data.sentiment_score);
-			if (score > 0.3) {
-				value = `<span class="text-green">${value}</span>`;
-			} else if (score < -0.3) {
-				value = `<span class="text-red">${value}</span>`;
-			} else {
-				value = `<span class="text-gray">${value}</span>`;
-			}
-		}
-		
 		// Color code priority levels
-		if (column.fieldname === "priority_level") {
+		if (column.fieldname === "priority_level" && data && data.priority_level) {
 			const colors = {
 				"High": "red",
 				"Medium": "orange", 
-				"Low": "green",
-				"Positive": "blue"
+				"Low": "green"
 			};
 			
 			if (colors[data.priority_level]) {
@@ -83,25 +49,43 @@ frappe.query_reports["Course Feedback"] = {
 			}
 		}
 		
-		// Color code feedback categories
-		if (column.fieldname === "feedback_category") {
-			const colors = {
-				"Positive": "green",
-				"Negative": "red", 
-				"Suggestions": "blue",
-				"Technical": "purple",
-				"General": "gray",
-				"Empty": "light-gray"
-			};
-			
-			if (colors[data.feedback_category]) {
-				value = `<span class="text-${colors[data.feedback_category]}">${value}</span>`;
+		// Color code negative percentage
+		if (column.fieldname === "negative_percentage" && data && data.negative_percentage !== undefined) {
+			const percentage = parseFloat(data.negative_percentage);
+			if (!isNaN(percentage)) {
+				if (percentage >= 50) {
+					value = `<span class="text-red text-bold">${value}</span>`;
+				} else if (percentage >= 25) {
+					value = `<span class="text-orange text-bold">${value}</span>`;
+				} else {
+					value = `<span class="text-green">${value}</span>`;
+				}
 			}
 		}
 		
-		// Highlight long feedback
-		if (column.fieldname === "feedback_length" && data.feedback_length > 100) {
-			value = `<span class="text-bold">${value}</span>`;
+		// Color code average sentiment
+		if (column.fieldname === "avg_sentiment" && data && data.avg_sentiment !== undefined) {
+			const sentiment = parseFloat(data.avg_sentiment);
+			if (!isNaN(sentiment)) {
+				if (sentiment < -0.3) {
+					value = `<span class="text-red">${value}</span>`;
+				} else if (sentiment > 0.3) {
+					value = `<span class="text-green">${value}</span>`;
+				} else {
+					value = `<span class="text-gray">${value}</span>`;
+				}
+			}
+		}
+		
+		// Highlight action required based on priority
+		if (column.fieldname === "action_required" && data && data.priority_level) {
+			if (data.priority_level === "High") {
+				value = `<span class="text-red text-bold">${value}</span>`;
+			} else if (data.priority_level === "Medium") {
+				value = `<span class="text-orange text-bold">${value}</span>`;
+			} else {
+				value = `<span class="text-green">${value}</span>`;
+			}
 		}
 		
 		return value;
@@ -115,21 +99,17 @@ frappe.query_reports["Course Feedback"] = {
 			report.export_to_excel();
 		});
 		
-		report.page.add_inner_button(__("Business Insights"), function() {
-			show_business_insights(report);
+		report.page.add_inner_button(__("Issue Summary"), function() {
+			show_issue_summary(report);
 		});
 		
-		report.page.add_inner_button(__("Issue Analysis"), function() {
-			show_issue_analysis(report);
-		});
-		
-		report.page.add_inner_button(__("Trend Analysis"), function() {
-			show_trend_analysis(report);
+		report.page.add_inner_button(__("Action Plan"), function() {
+			show_action_plan(report);
 		});
 	}
 };
 
-function show_business_insights(report) {
+function show_issue_summary(report) {
 	const data = report.data;
 	
 	if (!data || data.length === 0) {
@@ -137,15 +117,15 @@ function show_business_insights(report) {
 		return;
 	}
 	
-	const insights = calculate_business_insights(data);
+	const summary = generate_issue_summary(data);
 	
 	const dialog = new frappe.ui.Dialog({
-		title: __("Business Intelligence Dashboard"),
+		title: __("Feedback Type Issue Summary"),
 		fields: [
 			{
-				fieldname: "insights",
+				fieldname: "summary",
 				fieldtype: "HTML",
-				options: insights
+				options: summary
 			}
 		],
 		size: "extra-large"
@@ -154,73 +134,68 @@ function show_business_insights(report) {
 	dialog.show();
 }
 
-function calculate_business_insights(data) {
-	let insights = "<div style='padding: 20px;'>";
+function generate_issue_summary(data) {
+	let summary = "<div style='padding: 20px;'>";
 	
 	// Executive Summary
-	insights += `<h3 style='color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;'>📊 Executive Summary</h3>`;
-	insights += `<p><strong>Total Feedback Analyzed:</strong> ${data.length}</p>`;
+	summary += `<h3 style='color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;'>📊 Executive Summary</h3>`;
 	
-	// Sentiment Analysis
-	const sentiment_scores = data.map(row => row.sentiment_score || 0);
-	const avg_sentiment = (sentiment_scores.reduce((a, b) => a + b, 0) / sentiment_scores.length).toFixed(2);
-	const positive_count = sentiment_scores.filter(s => s > 0.3).length;
-	const negative_count = sentiment_scores.filter(s => s < -0.3).length;
-	const neutral_count = sentiment_scores.filter(s => s >= -0.3 && s <= 0.3).length;
+	const total_types = data.length;
+	const high_priority = data.filter(row => row.priority_level === "High");
+	const medium_priority = data.filter(row => row.priority_level === "Medium");
+	const total_negative_issues = data.reduce((sum, row) => sum + (row.negative_count || 0), 0);
 	
-	insights += `<h4>🎯 Sentiment Analysis</h4>`;
-	insights += `<p><strong>Average Sentiment:</strong> <span style='color: ${avg_sentiment > 0 ? 'green' : 'red'}; font-weight: bold;'>${avg_sentiment}</span></p>`;
-	insights += `<p><strong>Positive Feedback:</strong> ${positive_count} (${((positive_count/data.length)*100).toFixed(1)}%)</p>`;
-	insights += `<p><strong>Negative Feedback:</strong> ${negative_count} (${((negative_count/data.length)*100).toFixed(1)}%)</p>`;
-	insights += `<p><strong>Neutral Feedback:</strong> ${neutral_count} (${((neutral_count/data.length)*100).toFixed(1)}%)</p>`;
+	summary += `<p><strong>Total Feedback Types Analyzed:</strong> ${total_types}</p>`;
+	summary += `<p><strong>High Priority Types:</strong> <span style='color: red; font-weight: bold;'>${high_priority.length}</span></p>`;
+	summary += `<p><strong>Medium Priority Types:</strong> <span style='color: orange; font-weight: bold;'>${medium_priority.length}</span></p>`;
+	summary += `<p><strong>Total Negative Issues:</strong> <span style='color: red; font-weight: bold;'>${total_negative_issues}</span></p>`;
 	
-	// Priority Analysis
-	const priorities = {};
-	data.forEach(row => {
-		const priority = row.priority_level || "Low";
-		priorities[priority] = (priorities[priority] || 0) + 1;
-	});
+	// High Priority Issues
+	if (high_priority.length > 0) {
+		summary += `<h4 style='color: #e74c3c; border-bottom: 1px solid #e74c3c; padding-bottom: 5px;'>🚨 CRITICAL ISSUES - IMMEDIATE ACTION REQUIRED</h4>`;
+		high_priority.forEach(row => {
+			summary += `<div style='background-color: #fdf2f2; padding: 10px; margin: 5px 0; border-left: 4px solid #e74c3c;'>`;
+			summary += `<p><strong>${row.course_feedback_type || 'Unknown'}</strong></p>`;
+			summary += `<p><strong>Negative Issues:</strong> ${row.negative_count || 0} (${(row.negative_percentage || 0).toFixed(1)}%)</p>`;
+			summary += `<p><strong>Average Sentiment:</strong> ${row.avg_sentiment || 0}</p>`;
+			summary += `<p><strong>Action:</strong> ${row.action_required || 'No action specified'}</p>`;
+			summary += `<p><strong>Key Issues:</strong> ${row.key_issues || 'No key issues identified'}</p>`;
+			summary += `</div>`;
+		});
+	}
 	
-	insights += `<h4>🚨 Priority Analysis</h4>`;
-	Object.entries(priorities).forEach(([priority, count]) => {
-		const percentage = ((count / data.length) * 100).toFixed(1);
-		const color = priority === "High" ? "red" : priority === "Medium" ? "orange" : "green";
-		insights += `<p><strong style='color: ${color};'>${priority} Priority:</strong> ${count} (${percentage}%)</p>`;
-	});
+	// Medium Priority Issues
+	if (medium_priority.length > 0) {
+		summary += `<h4 style='color: #f39c12; border-bottom: 1px solid #f39c12; padding-bottom: 5px;'>⚠️ MODERATE ISSUES - ATTENTION NEEDED</h4>`;
+		medium_priority.forEach(row => {
+			summary += `<div style='background-color: #fef9e7; padding: 10px; margin: 5px 0; border-left: 4px solid #f39c12;'>`;
+			summary += `<p><strong>${row.course_feedback_type || 'Unknown'}</strong></p>`;
+			summary += `<p><strong>Negative Issues:</strong> ${row.negative_count || 0} (${(row.negative_percentage || 0).toFixed(1)}%)</p>`;
+			summary += `<p><strong>Action:</strong> ${row.action_required || 'No action specified'}</p>`;
+			summary += `</div>`;
+		});
+	}
 	
-	// Student Engagement
-	const student_counts = {};
-	data.forEach(row => {
-		student_counts[row.student] = (student_counts[row.student] || 0) + 1;
-	});
+	// Most Problematic Type
+	const most_problematic = data.reduce((max, row) => 
+		(row.negative_percentage || 0) > (max.negative_percentage || 0) ? row : max, data[0]);
 	
-	const unique_students = Object.keys(student_counts).length;
-	const avg_feedback_per_student = (data.length / unique_students).toFixed(1);
-	const most_engaged = Object.entries(student_counts).sort((a, b) => b[1] - a[1])[0];
+	if (most_problematic) {
+		summary += `<h4 style='color: #8e44ad; border-bottom: 1px solid #8e44ad; padding-bottom: 5px;'>🎯 MOST PROBLEMATIC FEEDBACK TYPE</h4>`;
+		summary += `<div style='background-color: #f4f1f8; padding: 15px; margin: 10px 0; border: 2px solid #8e44ad;'>`;
+		summary += `<p><strong>Type:</strong> ${most_problematic.course_feedback_type || 'Unknown'}</p>`;
+		summary += `<p><strong>Negative Percentage:</strong> <span style='color: red; font-weight: bold;'>${(most_problematic.negative_percentage || 0).toFixed(1)}%</span></p>`;
+		summary += `<p><strong>Total Issues:</strong> ${most_problematic.negative_count || 0}</p>`;
+		summary += `<p><strong>Priority:</strong> <span style='color: ${most_problematic.priority_level === "High" ? "red" : "orange"}; font-weight: bold;'>${most_problematic.priority_level || 'Unknown'}</span></p>`;
+		summary += `<p><strong>Immediate Action:</strong> ${most_problematic.action_required || 'No action specified'}</p>`;
+		summary += `</div>`;
+	}
 	
-	insights += `<h4>👥 Student Engagement</h4>`;
-	insights += `<p><strong>Unique Students:</strong> ${unique_students}</p>`;
-	insights += `<p><strong>Average Feedback per Student:</strong> ${avg_feedback_per_student}</p>`;
-	insights += `<p><strong>Most Engaged Student:</strong> ${most_engaged[0]} (${most_engaged[1]} feedback)</p>`;
-	
-	// Category Analysis
-	const categories = {};
-	data.forEach(row => {
-		const category = row.feedback_category || "Unknown";
-		categories[category] = (categories[category] || 0) + 1;
-	});
-	
-	insights += `<h4>📋 Category Distribution</h4>`;
-	Object.entries(categories).forEach(([category, count]) => {
-		const percentage = ((count / data.length) * 100).toFixed(1);
-		insights += `<p><strong>${category}:</strong> ${count} (${percentage}%)</p>`;
-	});
-	
-	insights += "</div>";
-	return insights;
+	summary += "</div>";
+	return summary;
 }
 
-function show_issue_analysis(report) {
+function show_action_plan(report) {
 	const data = report.data;
 	
 	if (!data || data.length === 0) {
@@ -228,15 +203,15 @@ function show_issue_analysis(report) {
 		return;
 	}
 	
-	const issues = identify_issues(data);
+	const action_plan = generate_action_plan(data);
 	
 	const dialog = new frappe.ui.Dialog({
-		title: __("Issue Analysis & Action Items"),
+		title: __("Strategic Action Plan"),
 		fields: [
 			{
-				fieldname: "issues",
+				fieldname: "action_plan",
 				fieldtype: "HTML",
-				options: issues
+				options: action_plan
 			}
 		],
 		size: "extra-large"
@@ -245,183 +220,75 @@ function show_issue_analysis(report) {
 	dialog.show();
 }
 
-function identify_issues(data) {
-	let issues = "<div style='padding: 20px;'>";
+function generate_action_plan(data) {
+	let action_plan = "<div style='padding: 20px;'>";
 	
-	// High Priority Issues
+	action_plan += `<h3 style='color: #27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 10px;'>🎯 STRATEGIC ACTION PLAN</h3>`;
+	
+	// Immediate Actions (High Priority)
 	const high_priority = data.filter(row => row.priority_level === "High");
 	if (high_priority.length > 0) {
-		issues += `<h3 style='color: #e74c3c; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;'>🚨 Critical Issues Requiring Immediate Attention</h3>`;
-		issues += `<p><strong>Count:</strong> ${high_priority.length} high-priority feedback items</p>`;
-		issues += `<p><strong>Action Required:</strong> Immediate review and response</p>`;
-		issues += `<ul>`;
-		high_priority.slice(0, 5).forEach(row => {
-			issues += `<li><strong>${row.student_name || row.student}:</strong> "${row.feedback.substring(0, 100)}..."</li>`;
+		action_plan += `<h4 style='color: #e74c3c;'>🚨 IMMEDIATE ACTIONS (24-48 HOURS)</h4>`;
+		action_plan += `<ol>`;
+		high_priority.forEach((row, index) => {
+			action_plan += `<li><strong>${row.course_feedback_type || 'Unknown'}:</strong> ${row.action_required || 'No action specified'}</li>`;
+			action_plan += `<ul>`;
+			action_plan += `<li>Review all negative feedback for this type</li>`;
+			action_plan += `<li>Identify root causes of issues</li>`;
+			action_plan += `<li>Implement immediate fixes where possible</li>`;
+			action_plan += `<li>Assign dedicated resources for improvement</li>`;
+			action_plan += `</ul>`;
 		});
-		issues += `</ul>`;
+		action_plan += `</ol>`;
 	}
 	
-	// Negative Sentiment Issues
-	const negative_feedback = data.filter(row => (row.sentiment_score || 0) < -0.3);
-	if (negative_feedback.length > 0) {
-		issues += `<h3 style='color: #f39c12; border-bottom: 2px solid #f39c12; padding-bottom: 10px;'>⚠️ Negative Sentiment Issues</h3>`;
-		issues += `<p><strong>Count:</strong> ${negative_feedback.length} negative feedback items</p>`;
-		issues += `<p><strong>Action Required:</strong> Root cause analysis and improvement implementation</p>`;
-	}
-	
-	// Student Group Issues
-	const group_issues = {};
-	data.forEach(row => {
-		if (row.student_group) {
-			if (!group_issues[row.student_group]) {
-				group_issues[row.student_group] = [];
-			}
-			group_issues[row.student_group].push(row);
-		}
-	});
-	
-	const problematic_groups = Object.entries(group_issues).filter(([group, feedback]) => {
-		const avg_sentiment = feedback.reduce((sum, row) => sum + (row.sentiment_score || 0), 0) / feedback.length;
-		const high_priority_count = feedback.filter(row => row.priority_level === "High").length;
-		return avg_sentiment < -0.2 || high_priority_count > 0;
-	});
-	
-	if (problematic_groups.length > 0) {
-		issues += `<h3 style='color: #9b59b6; border-bottom: 2px solid #9b59b6; padding-bottom: 10px;'>👥 Student Group Issues</h3>`;
-		problematic_groups.forEach(([group, feedback]) => {
-			const avg_sentiment = feedback.reduce((sum, row) => sum + (row.sentiment_score || 0), 0) / feedback.length;
-			const high_priority_count = feedback.filter(row => row.priority_level === "High").length;
-			issues += `<p><strong>${group}:</strong> ${high_priority_count} high-priority issues, avg sentiment: ${avg_sentiment.toFixed(2)}</p>`;
+	// Short-term Actions (Medium Priority)
+	const medium_priority = data.filter(row => row.priority_level === "Medium");
+	if (medium_priority.length > 0) {
+		action_plan += `<h4 style='color: #f39c12;'>⚠️ SHORT-TERM ACTIONS (1-2 WEEKS)</h4>`;
+		action_plan += `<ol>`;
+		medium_priority.forEach((row, index) => {
+			action_plan += `<li><strong>${row.course_feedback_type || 'Unknown'}:</strong> ${row.action_required || 'No action specified'}</li>`;
+			action_plan += `<ul>`;
+			action_plan += `<li>Analyze feedback patterns</li>`;
+			action_plan += `<li>Develop improvement strategies</li>`;
+			action_plan += `<li>Implement targeted solutions</li>`;
+			action_plan += `</ul>`;
 		});
+		action_plan += `</ol>`;
 	}
 	
-	// Engagement Issues
-	const student_counts = {};
-	data.forEach(row => {
-		student_counts[row.student] = (student_counts[row.student] || 0) + 1;
-	});
+	// Long-term Strategy
+	action_plan += `<h4 style='color: #3498db;'>📈 LONG-TERM STRATEGY (1-3 MONTHS)</h4>`;
+	action_plan += `<ol>`;
+	action_plan += `<li><strong>Continuous Monitoring:</strong> Set up regular feedback monitoring systems</li>`;
+	action_plan += `<li><strong>Process Improvement:</strong> Establish feedback-driven improvement cycles</li>`;
+	action_plan += `<li><strong>Training & Development:</strong> Address skill gaps identified in feedback</li>`;
+	action_plan += `<li><strong>Communication:</strong> Improve communication channels with students</li>`;
+	action_plan += `<li><strong>Quality Assurance:</strong> Implement quality checks for all feedback types</li>`;
+	action_plan += `</ol>`;
 	
-	const low_engagement = Object.entries(student_counts).filter(([student, count]) => count === 1);
-	if (low_engagement.length > Object.keys(student_counts).length * 0.7) {
-		issues += `<h3 style='color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 10px;'>📉 Engagement Issues</h3>`;
-		issues += `<p><strong>Issue:</strong> Low student engagement - ${low_engagement.length} students only provided 1 feedback</p>`;
-		issues += `<p><strong>Action Required:</strong> Implement strategies to increase feedback participation</p>`;
-	}
+	// Success Metrics
+	action_plan += `<h4 style='color: #27ae60;'>📊 SUCCESS METRICS TO TRACK</h4>`;
+	action_plan += `<ul>`;
+	action_plan += `<li><strong>Reduction in Negative Feedback:</strong> Target 50% reduction in high-priority types</li>`;
+	action_plan += `<li><strong>Improvement in Sentiment Scores:</strong> Target positive sentiment for all types</li>`;
+	action_plan += `<li><strong>Response Time:</strong> Address high-priority issues within 48 hours</li>`;
+	action_plan += `<li><strong>Student Satisfaction:</strong> Regular satisfaction surveys</li>`;
+	action_plan += `</ul>`;
 	
-	// Recommendations
-	issues += `<h3 style='color: #27ae60; border-bottom: 2px solid #27ae60; padding-bottom: 10px;'>💡 Strategic Recommendations</h3>`;
-	issues += `<ol>`;
+	// Resource Allocation
+	action_plan += `<h4 style='color: #8e44ad;'>💼 RESOURCE ALLOCATION RECOMMENDATIONS</h4>`;
+	action_plan += `<ul>`;
 	if (high_priority.length > 0) {
-		issues += `<li><strong>Immediate Action:</strong> Address all high-priority feedback within 24-48 hours</li>`;
+		action_plan += `<li><strong>High Priority Types:</strong> Allocate 60% of resources to immediate fixes</li>`;
 	}
-	if (negative_feedback.length > 0) {
-		issues += `<li><strong>Process Improvement:</strong> Conduct root cause analysis for negative feedback patterns</li>`;
+	if (medium_priority.length > 0) {
+		action_plan += `<li><strong>Medium Priority Types:</strong> Allocate 30% of resources to improvements</li>`;
 	}
-	if (problematic_groups.length > 0) {
-		issues += `<li><strong>Targeted Support:</strong> Provide additional support to problematic student groups</li>`;
-	}
-	issues += `<li><strong>Feedback Culture:</strong> Encourage more frequent and constructive feedback</li>`;
-	issues += `<li><strong>Monitoring:</strong> Set up regular feedback monitoring and alert systems</li>`;
-	issues += `</ol>`;
+	action_plan += `<li><strong>Monitoring & Analysis:</strong> Allocate 10% of resources to ongoing monitoring</li>`;
+	action_plan += `</ul>`;
 	
-	issues += "</div>";
-	return issues;
-}
-
-function show_trend_analysis(report) {
-	const data = report.data;
-	
-	if (!data || data.length === 0) {
-		frappe.msgprint(__("No data available for analysis"));
-		return;
-	}
-	
-	const trends = calculate_trends(data);
-	
-	const dialog = new frappe.ui.Dialog({
-		title: __("Trend Analysis"),
-		fields: [
-			{
-				fieldname: "trends",
-				fieldtype: "HTML",
-				options: trends
-			}
-		],
-		size: "large"
-	});
-	
-	dialog.show();
-}
-
-function calculate_trends(data) {
-	let trends = "<div style='padding: 20px;'>";
-	
-	// Group by date
-	const date_groups = {};
-	data.forEach(row => {
-		const date = row.posting_date;
-		if (date) {
-			if (!date_groups[date]) {
-				date_groups[date] = [];
-			}
-			date_groups[date].push(row);
-		}
-	});
-	
-	const sorted_dates = Object.keys(date_groups).sort();
-	
-	if (sorted_dates.length > 1) {
-		// Sentiment trend
-		const first_sentiment = date_groups[sorted_dates[0]].reduce((sum, row) => sum + (row.sentiment_score || 0), 0) / date_groups[sorted_dates[0]].length;
-		const last_sentiment = date_groups[sorted_dates[sorted_dates.length - 1]].reduce((sum, row) => sum + (row.sentiment_score || 0), 0) / date_groups[sorted_dates[sorted_dates.length - 1]].length;
-		const sentiment_change = last_sentiment - first_sentiment;
-		
-		trends += `<h3 style='color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;'>📈 Trend Analysis</h3>`;
-		
-		if (sentiment_change > 0.1) {
-			trends += `<p style='color: green; font-weight: bold;'>📈 Sentiment is improving (+${sentiment_change.toFixed(2)})</p>`;
-		} else if (sentiment_change < -0.1) {
-			trends += `<p style='color: red; font-weight: bold;'>📉 Sentiment is declining (${sentiment_change.toFixed(2)})</p>`;
-		} else {
-			trends += `<p style='color: gray; font-weight: bold;'>➡️ Sentiment is stable (${sentiment_change.toFixed(2)})</p>`;
-		}
-		
-		// Volume trend
-		const first_volume = date_groups[sorted_dates[0]].length;
-		const last_volume = date_groups[sorted_dates[sorted_dates.length - 1]].length;
-		const volume_change = ((last_volume - first_volume) / first_volume) * 100;
-		
-		if (volume_change > 20) {
-			trends += `<p style='color: green; font-weight: bold;'>📈 Feedback volume is increasing (+${volume_change.toFixed(1)}%)</p>`;
-		} else if (volume_change < -20) {
-			trends += `<p style='color: red; font-weight: bold;'>📉 Feedback volume is decreasing (${volume_change.toFixed(1)}%)</p>`;
-		} else {
-			trends += `<p style='color: gray; font-weight: bold;'>➡️ Feedback volume is stable (${volume_change.toFixed(1)}%)</p>`;
-		}
-		
-		// Daily breakdown
-		trends += `<h4>📅 Daily Breakdown</h4>`;
-		trends += `<table style='width: 100%; border-collapse: collapse;'>`;
-		trends += `<tr style='background-color: #f8f9fa;'><th style='border: 1px solid #ddd; padding: 8px;'>Date</th><th style='border: 1px solid #ddd; padding: 8px;'>Count</th><th style='border: 1px solid #ddd; padding: 8px;'>Avg Sentiment</th><th style='border: 1px solid #ddd; padding: 8px;'>High Priority</th></tr>`;
-		
-		sorted_dates.forEach(date => {
-			const day_data = date_groups[date];
-			const avg_sentiment = day_data.reduce((sum, row) => sum + (row.sentiment_score || 0), 0) / day_data.length;
-			const high_priority = day_data.filter(row => row.priority_level === "High").length;
-			
-			trends += `<tr>`;
-			trends += `<td style='border: 1px solid #ddd; padding: 8px;'>${date}</td>`;
-			trends += `<td style='border: 1px solid #ddd; padding: 8px;'>${day_data.length}</td>`;
-			trends += `<td style='border: 1px solid #ddd; padding: 8px; color: ${avg_sentiment > 0 ? 'green' : avg_sentiment < 0 ? 'red' : 'gray'};'>${avg_sentiment.toFixed(2)}</td>`;
-			trends += `<td style='border: 1px solid #ddd; padding: 8px; color: ${high_priority > 0 ? 'red' : 'green'};'>${high_priority}</td>`;
-			trends += `</tr>`;
-		});
-		
-		trends += `</table>`;
-	} else {
-		trends += `<p>Insufficient data for trend analysis. Need at least 2 days of data.</p>`;
-	}
-	
-	trends += "</div>";
-	return trends;
+	action_plan += "</div>";
+	return action_plan;
 }
