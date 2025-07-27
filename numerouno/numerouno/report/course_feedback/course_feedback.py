@@ -4,13 +4,14 @@
 import frappe
 from frappe import _
 from datetime import datetime, timedelta
+import json
 
 def execute(filters=None):
 	columns = get_columns()
 	data = get_data(filters)
 	
-	# Add summary data
-	summary = get_summary(data, filters)
+	# Add summary data with business insights
+	summary = get_business_insights(data, filters)
 	
 	return columns, data, None, None, summary
 
@@ -50,13 +51,25 @@ def get_columns():
 		},
 		{
 			"fieldname": "feedback_length",
-			"label": _("Feedback Length"),
+			"label": _("Length"),
 			"fieldtype": "Int",
+			"width": 80
+		},
+		{
+			"fieldname": "sentiment_score",
+			"label": _("Sentiment"),
+			"fieldtype": "Float",
 			"width": 100
 		},
 		{
 			"fieldname": "feedback_category",
 			"label": _("Category"),
+			"fieldtype": "Data",
+			"width": 120
+		},
+		{
+			"fieldname": "priority_level",
+			"label": _("Priority"),
 			"fieldtype": "Data",
 			"width": 100
 		},
@@ -102,14 +115,62 @@ def get_data(filters):
 	
 	data = frappe.db.sql(query, filters, as_dict=1)
 	
-	# Add feedback category analysis if course_feedback_type is empty
+	# Enhanced analysis for each row
 	for row in data:
+		# Add sentiment analysis
+		row["sentiment_score"] = analyze_sentiment(row.get("feedback", ""))
+		
+		# Add feedback category
 		if not row.get("course_feedback_type"):
 			row["feedback_category"] = analyze_feedback_category(row.get("feedback", ""))
 		else:
 			row["feedback_category"] = row.get("course_feedback_type")
+		
+		# Add priority level
+		row["priority_level"] = determine_priority(row.get("sentiment_score", 0), row.get("feedback_length", 0))
 	
 	return data
+
+def analyze_sentiment(feedback):
+	"""Analyze sentiment score from -1 (very negative) to 1 (very positive)"""
+	if not feedback:
+		return 0
+	
+	feedback_lower = feedback.lower()
+	
+	# Positive words with weights
+	positive_words = {
+		"excellent": 1.0, "amazing": 1.0, "fantastic": 1.0, "wonderful": 1.0,
+		"great": 0.8, "good": 0.6, "nice": 0.5, "helpful": 0.7, "useful": 0.6,
+		"love": 0.9, "enjoy": 0.7, "like": 0.5, "perfect": 1.0, "outstanding": 1.0
+	}
+	
+	# Negative words with weights
+	negative_words = {
+		"terrible": -1.0, "awful": -1.0, "horrible": -1.0, "worst": -1.0,
+		"bad": -0.6, "poor": -0.7, "hate": -0.9, "dislike": -0.6, "difficult": -0.4,
+		"confusing": -0.5, "boring": -0.6, "useless": -0.8, "waste": -0.7
+	}
+	
+	score = 0
+	word_count = 0
+	
+	for word, weight in positive_words.items():
+		if word in feedback_lower:
+			score += weight
+			word_count += 1
+	
+	for word, weight in negative_words.items():
+		if word in feedback_lower:
+			score += weight
+			word_count += 1
+	
+	# Normalize score
+	if word_count > 0:
+		score = score / word_count
+	
+	# Cap at -1 to 1
+	return max(-1.0, min(1.0, score))
 
 def analyze_feedback_category(feedback):
 	"""Analyze feedback and categorize it based on content"""
@@ -133,18 +194,27 @@ def analyze_feedback_category(feedback):
 	
 	return "General"
 
-def get_summary(data, filters):
-	"""Generate summary statistics"""
+def determine_priority(sentiment_score, feedback_length):
+	"""Determine priority level based on sentiment and length"""
+	if sentiment_score <= -0.5 and feedback_length > 50:
+		return "High"
+	elif sentiment_score <= -0.3 or feedback_length > 100:
+		return "Medium"
+	elif sentiment_score >= 0.5 and feedback_length > 30:
+		return "Positive"
+	else:
+		return "Low"
+
+def get_business_insights(data, filters):
+	"""Generate business-focused insights"""
 	if not data:
 		return []
 	
 	total_feedback = len(data)
-	total_students = len(set(row.get("student") for row in data))
-	total_groups = len(set(row.get("student_group") for row in data))
 	
-	# Calculate average feedback length
-	feedback_lengths = [row.get("feedback_length", 0) for row in data]
-	avg_length = sum(feedback_lengths) / len(feedback_lengths) if feedback_lengths else 0
+	# Sentiment analysis
+	sentiment_scores = [row.get("sentiment_score", 0) for row in data]
+	avg_sentiment = sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
 	
 	# Category distribution
 	categories = {}
@@ -152,20 +222,22 @@ def get_summary(data, filters):
 		category = row.get("feedback_category", "Unknown")
 		categories[category] = categories.get(category, 0) + 1
 	
-	# Most active students
+	# Priority distribution
+	priorities = {}
+	for row in data:
+		priority = row.get("priority_level", "Low")
+		priorities[priority] = priorities.get(priority, 0) + 1
+	
+	# Student engagement
 	student_counts = {}
 	for row in data:
 		student = row.get("student")
 		student_counts[student] = student_counts.get(student, 0) + 1
 	
-	most_active_student = max(student_counts.items(), key=lambda x: x[1]) if student_counts else ("None", 0)
+	most_engaged = max(student_counts.items(), key=lambda x: x[1]) if student_counts else ("None", 0)
 	
-	# Date range
-	dates = [row.get("posting_date") for row in data if row.get("posting_date")]
-	min_date = min(dates) if dates else None
-	max_date = max(dates) if dates else None
-	
-	summary = [
+	# Business insights
+	insights = [
 		{
 			"value": total_feedback,
 			"label": _("Total Feedback"),
@@ -173,51 +245,32 @@ def get_summary(data, filters):
 			"indicator": "Blue"
 		},
 		{
-			"value": total_students,
-			"label": _("Unique Students"),
-			"datatype": "Int",
-			"indicator": "Green"
-		},
-		{
-			"value": total_groups,
-			"label": _("Student Groups"),
-			"datatype": "Int",
-			"indicator": "Orange"
-		},
-		{
-			"value": round(avg_length, 1),
-			"label": _("Avg Feedback Length"),
+			"value": f"{avg_sentiment:.2f}",
+			"label": _("Avg Sentiment Score"),
 			"datatype": "Float",
-			"indicator": "Purple"
+			"indicator": "Green" if avg_sentiment > 0 else "Red"
 		}
 	]
 	
-	# Add category breakdown
+	# Add priority breakdown
+	for priority, count in priorities.items():
+		percentage = (count / total_feedback) * 100 if total_feedback > 0 else 0
+		indicator = "Red" if priority == "High" else "Orange" if priority == "Medium" else "Green"
+		insights.append({
+			"value": f"{count} ({percentage:.1f}%)",
+			"label": f"{priority} Priority",
+			"datatype": "Data",
+			"indicator": indicator
+		})
+	
+	# Add category insights
 	for category, count in categories.items():
 		percentage = (count / total_feedback) * 100 if total_feedback > 0 else 0
-		summary.append({
+		insights.append({
 			"value": f"{count} ({percentage:.1f}%)",
 			"label": f"{category} Feedback",
 			"datatype": "Data",
 			"indicator": "Gray"
 		})
 	
-	# Add most active student
-	if most_active_student[1] > 1:
-		summary.append({
-			"value": f"{most_active_student[0]} ({most_active_student[1]} feedback)",
-			"label": _("Most Active Student"),
-			"datatype": "Data",
-			"indicator": "Yellow"
-		})
-	
-	# Add date range
-	if min_date and max_date:
-		summary.append({
-			"value": f"{min_date} to {max_date}",
-			"label": _("Date Range"),
-			"datatype": "Data",
-			"indicator": "Gray"
-		})
-	
-	return summary
+	return insights
