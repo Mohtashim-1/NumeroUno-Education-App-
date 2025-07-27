@@ -1,12 +1,14 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:{student}-{student_group}-{###}",
  "creation": "2025-07-27 14:09:18.478756",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "posting_date",
   "student",
+  "course_feedback_type",
   "column_break_rfld",
   "posting_time",
   "student_group",
@@ -66,16 +68,23 @@
    "fieldname": "feedback",
    "fieldtype": "Small Text",
    "label": "Feedback"
+  },
+  {
+   "fieldname": "course_feedback_type",
+   "fieldtype": "Link",
+   "label": "Course Feedback Type",
+   "options": "Course Feedback Type"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-27 14:14:56.683262",
+ "modified": "2025-07-27 14:31:50.650593",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Course Feedback",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -95,5 +104,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
