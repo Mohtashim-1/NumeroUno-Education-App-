@@ -193,6 +193,9 @@ doc_events = {
     },
     "User": {
         "after_insert": "numerouno.numerouno.doctype.student.student.send_lms_welcome_email_to_user"
+    },
+    "Assessment Result": {
+        "on_submit": "numerouno.numerouno.unified_assessment_system.trigger_assessment_result_events"
     }
 }
 
