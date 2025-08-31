@@ -30,6 +30,25 @@ def get_default_cash_account():
 
 
 
+def validate_course_location(doc, method):
+    """Validate and copy custom_course_location to custom_coarse_location if exists"""
+    
+    # Check if custom_course_location field exists and has a value
+    if hasattr(doc, 'custom_course_location') and doc.custom_course_location:
+        # Copy the value to custom_coarse_location
+        doc.custom_coarse_location = doc.custom_course_location
+        # frappe.msgprint(_("Course location copied to coarse location: {0}").format(doc.custom_course_location))
+
+    if hasattr(doc, 'from_date') and doc.from_date:
+        doc.custom_from_date = doc.from_date
+
+    if hasattr(doc, 'to_date') and doc.to_date:   
+        doc.custom_to_date = doc.to_date
+
+    if hasattr(doc, 'end_date') and doc.end_date:   
+        doc.custom_end_date = doc.end_date
+
+
 def sync_children(doc, method):
     for row in doc.students:
         # 1) always store the link back to this parent
@@ -76,6 +95,7 @@ def create_coarse_schedule(student_group, from_time, to_time):
 
         from_date = getdate(doc.from_date)
         to_date = getdate(doc.to_date)
+        today = getdate(nowdate())
 
         for i in doc.instructors:
             instructor = i.instructor
@@ -95,31 +115,41 @@ def create_coarse_schedule(student_group, from_time, to_time):
                 cs.flags.ignore_permissions = True
                 cs.insert()
 
+                # Create attendance for ALL dates (including future dates)
                 for s in doc.students:
                     student = s.student
 
-                    # Student Attendance
-                    sa = frappe.new_doc("Student Attendance")
-                    sa.student = student
-                    sa.date = current_date
-                    sa.course_schedule = cs.name
-                    sa.student_group = doc.name
-                    sa.status = "Present"
-                    sa.flags.ignore_permissions = True
-                    sa.insert()
+                    # Student Attendance - for all dates (past, present, and future)
+                    try:
+                        sa = frappe.new_doc("Student Attendance")
+                        sa.student = student
+                        sa.date = current_date
+                        sa.course_schedule = cs.name
+                        sa.student_group = doc.name
+                        sa.status = "Present"
+                        sa.flags.ignore_permissions = True
+                        sa.insert()
+                        print(f"✅ Created attendance for student {student} on {current_date}")
+                    except Exception as attendance_error:
+                        print(f"❌ Failed to create attendance for student {student} on {current_date}: {str(attendance_error)}")
+                        frappe.log_error(f"Attendance creation failed for {student} on {current_date}: {str(attendance_error)}", "Attendance Creation Error")
 
-                    # Student Card - only once
-                    if not frappe.db.exists("Student Card", {"student": student, "student_group": doc.name}):
-                        sc = frappe.new_doc("Student Card")
-                        sc.student = student
-                        sc.student_group = doc.name
-                        sc.flags.ignore_permissions = True
-                        sc.insert()
+                # Create Student Cards once per student (outside the date loop)
+                if current_date == from_date:  # Only create cards on the first iteration
+                    for s in doc.students:
+                        student = s.student
+                        # Student Card - only once per student
+                        if not frappe.db.exists("Student Card", {"student": student, "student_group": doc.name}):
+                            sc = frappe.new_doc("Student Card")
+                            sc.student = student
+                            sc.student_group = doc.name
+                            sc.flags.ignore_permissions = True
+                            sc.insert()
 
                 frappe.db.commit()
                 current_date = add_days(current_date, 1)
 
-        frappe.msgprint(_("✅ All Course Schedule, Attendance, and Cards created from {0} to {1}").format(from_date, to_date))
+        frappe.msgprint(_("✅ Course Schedules and Student Attendance created from {0} to {1} (including future dates). Student Cards created.").format(from_date, to_date))
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "❌ Error in create_coarse_schedule")
