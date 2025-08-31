@@ -62,6 +62,24 @@ class PracticalAssesment(Document):
 		self.total_score = self.total_marks
 
 	def on_submit(self):
+		"""Use the unified assessment system for Practical Assessment submissions"""
+		try:
+			# Import the unified assessment system
+			from numerouno.numerouno.unified_assessment_system import UnifiedAssessmentSystem
+			
+			# Process through unified system
+			assessment_result_name = UnifiedAssessmentSystem.handle_practical_assessment_submission(self)
+			
+			if assessment_result_name:
+				frappe.msgprint(f"Assessment Result updated: {assessment_result_name}")
+		
+		except Exception as e:
+			frappe.log_error(frappe.get_traceback(), "Practical Assessment on_submit error")
+			# Fallback to old method
+			self.create_assesment_result_old()
+
+	def create_assesment_result_old(self):
+		"""OLD METHOD - Kept for reference"""
 		self.create_assesment_result()
 
 	def create_assesment_result(self):
