@@ -137,9 +137,9 @@ doctype_js = {
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+    "Student Attendance": "numerouno.numerouno.doctype.student_attendance.student_attendance.StudentAttendance"
+}
 
 # Document Events
 # ---------------
@@ -148,7 +148,8 @@ doctype_js = {
 doc_events = {
 	"Student Group": {
 		"before_save": "numerouno.numerouno.doctype.student_group.student_group.create_academic_term",
-        "validate": ["numerouno.numerouno.doctype.student_group.student_group.sync_children",
+        "validate": ["numerouno.numerouno.doctype.student_group.student_group.validate_course_location",
+                     "numerouno.numerouno.doctype.student_group.student_group.sync_children",
                      "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_from_student_group",
                     # "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_for_purchase_order",
                     # "numerouno.numerouno.doctype.student_group.student_group.create_sales_order_for_advance_payment",
@@ -159,6 +160,7 @@ doc_events = {
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_student_group_instructor_update"
 	},
     "Student": {
+        "validate": "numerouno.numerouno.doctype.student.student.validate_student_contact_type",
         "on_update": [
             "numerouno.numerouno.doctype.student.student.send_email_notification_to_accountant",
             "numerouno.numerouno.doctype.student.student.send_welcome_email_to_student"
@@ -188,6 +190,9 @@ doc_events = {
     },
     "LMS Quiz Submission": {
         "validate": "numerouno.numerouno.doctype.lms_quiz_submission.lms_quiz_submission.on_submit"
+    },
+    "User": {
+        "after_insert": "numerouno.numerouno.doctype.student.student.send_lms_welcome_email_to_user"
     }
 }
 
