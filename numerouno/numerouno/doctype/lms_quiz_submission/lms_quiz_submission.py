@@ -7,6 +7,26 @@ from frappe.desk.doctype.notification_log.notification_log import make_notificat
 
 
 def on_submit(doc, method=None):
+    """Use the unified assessment system for LMS Quiz submissions"""
+    try:
+        print(_("[DEBUG] on_submit called for LMS Quiz Submission: {}".format(doc.name)))
+        
+        # Import the unified assessment system
+        from numerouno.numerouno.unified_assessment_system import UnifiedAssessmentSystem
+        
+        # Process through unified system
+        assessment_result_name = UnifiedAssessmentSystem.handle_lms_quiz_submission(doc)
+        
+        if assessment_result_name:
+            frappe.msgprint(f"Assessment Result updated: {assessment_result_name}")
+        
+    except Exception as e:
+        print(_(f"[DEBUG] Exception: {frappe.get_traceback()}"))
+        frappe.log_error(frappe.get_traceback(), "LMSQuizSubmission on_submit error")
+
+# Keep the old function for reference but comment it out
+def on_submit_old(doc, method=None):
+    """OLD FUNCTION - Kept for reference"""
     try:
         print(_("[DEBUG] on_submit called for LMS Quiz Submission: {}".format(doc.name)))
         # 1. Find the Student linked to this User (member)
