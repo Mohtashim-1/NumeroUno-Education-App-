@@ -1,19 +1,47 @@
 import frappe
 import os
 import base64
-from frappe.utils import today
+from frappe.utils import today, getdate
 from frappe import _
+from education.education.doctype.student_attendance.student_attendance import StudentAttendance
 
-@frappe.whitelist()
-def attendance_restriction(doc, method):
-    if not doc.custom_student_signature:
-        frappe.throw("""
-            <div style="text-align:center; padding: 10px;">
-                        <img src="https://cdn-icons-png.flaticon.com/512/463/463612.png" width="60" style="margin-bottom: 10px;" />
-                        <h3 style="color:#d9534f;">Signature Missing</h3>
-                        <p style="font-size:14px;">Please provide your signature in the <b>Signature</b> field before submitting the attendance.</p>
-                    </div>
-        """)
+class StudentAttendance(StudentAttendance):
+    """Custom Student Attendance class that overrides the standard validation"""
+    
+    def validate_date(self):
+        """Override the standard validate_date to allow future dates"""
+        
+        # We're removing the future date restriction
+        # Original code was: if not self.leave_application and getdate(self.date) > getdate():
+        #                       frappe.throw(_("Attendance cannot be marked for future dates."))
+        
+        # Keep the academic year validation but remove future date restriction
+        if self.student_group:
+            academic_year = frappe.db.get_value(
+                "Student Group", self.student_group, "academic_year"
+            )
+            if academic_year:
+                year_start_date, year_end_date = frappe.db.get_value(
+                    "Academic Year", academic_year, ["year_start_date", "year_end_date"]
+                )
+                if year_start_date and year_end_date:
+                    if not (getdate(year_start_date) <= getdate(self.date) <= getdate(year_end_date)):
+                        frappe.throw(
+                            _("Attendance date {0} is not within the Academic Year {1}").format(
+                                self.date, academic_year
+                            )
+                        )
+
+# @frappe.whitelist()
+# def attendance_restriction(doc, method):
+#     if not doc.custom_student_signature:
+#         frappe.throw("""
+#             <div style="text-align:center; padding: 10px;">
+#                         <img src="https://cdn-icons-png.flaticon.com/512/463/463612.png" width="60" style="margin-bottom: 10px;" />
+#                         <h3 style="color:#d9534f;">Signature Missing</h3>
+#                         <p style="font-size:14px;">Please provide your signature in the <b>Signature</b> field before submitting the attendance.</p>
+#                     </div>
+#         """)
         
 
 
