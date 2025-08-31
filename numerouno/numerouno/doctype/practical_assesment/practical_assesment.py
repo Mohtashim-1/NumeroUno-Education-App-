@@ -9,58 +9,57 @@ class PracticalAssesment(Document):
 	def validate(self):
 		self.get_practical_assesment_table_from_template()
 		self.get_assesment_criteria()
-		self.total_rating()
+		self.calculate_total_marks()
 
 
 	def get_practical_assesment_table_from_template(self):
-		if self.practical_assesment_template and not self.practical_assesment_table:
-			# Get the template document
-			template_doc = frappe.get_doc("Practical Assesment Template", self.practical_assesment_template)
-			
-			# Copy practical assessment table from template to current document
-			for template_row in template_doc.practical_assesment_table:
+		"""
+		Populate practical assessment table from template if not already populated
+		"""
+		if not self.practical_assesment_table and self.practical_assesment_template:
+			template = frappe.get_doc("Practical Assesment Template", self.practical_assesment_template)
+			for row in template.practical_assesment_table:
 				self.append("practical_assesment_table", {
-					"assesment_type": template_row.assesment_type,
+					"assesment_type": row.assesment_type
 				})
 
 	def get_assesment_criteria(self):
 		"""
-		Get maximum score from Assessment Plan for the selected assessment criteria
+		Get maximum score from assessment plan
 		"""
-		if self.assessment_plan and self.assesment_criteria:
-			assesment_plan = frappe.get_doc("Assessment Plan", self.assessment_plan)
-			
-			# Look for the assessment criteria in the plan's child table
-			for criteria_row in assesment_plan.assessment_criteria:
-				if criteria_row.assessment_criteria == self.assesment_criteria:
-					self.maximum_score = criteria_row.maximum_score
+		if self.assessment_plan:
+			assessment_plan = frappe.get_doc("Assessment Plan", self.assessment_plan)
+			for criteria in assessment_plan.assessment_criteria:
+				if criteria.assessment_criteria == self.assesment_criteria:
+					self.maximum_score = criteria.maximum_score
 					break
 			else:
-				# If not found, set default maximum score
 				self.maximum_score = 5
 
-	def total_rating(self):
+	def calculate_total_marks(self):
 		"""
-		Calculate total rating from practical assessment table
+		Calculate total marks from practical assessment table
+		Formula: total_marks = (maximum_score / total_items) * checked_items
 		"""
-		total = 0
-		count = 0
+		checked_items = 0
+		total_items = 0
 		
 		if self.practical_assesment_table:
 			for row in self.practical_assesment_table:
-				if row.rating:
-					total += row.rating
-					count += 1
+				if row.mark:  # If checkbox is checked (mark = 1)
+					checked_items += 1
+				total_items += 1
 		
-		# Calculate average rating
-		if count > 0:
-			average_rating = total / count
-			self.obtained_rating = round(average_rating, 2)
+		# Calculate total marks using the formula
+		if total_items > 0 and self.maximum_score:
+			marks_per_item = self.maximum_score / total_items
+			total_marks = marks_per_item * checked_items
+			self.total_marks = round(total_marks, 2)
 		else:
-			self.obtained_rating = 0
+			self.total_marks = 0
 		
-		# Also set total score for assessment result
-		self.total_score = total
+		# Set total_score same as total_marks
+		self.total_score = self.total_marks
 
 	def on_submit(self):
 		self.create_assesment_result()
@@ -106,20 +105,20 @@ class PracticalAssesment(Document):
 
 		# Add assessment details with proper maximum_score
 		for row in self.practical_assesment_table:
-			score = row.rating or 0
-			maximum_score = self.maximum_score or 5  # Use the maximum_score from assessment criteria
+			score = 1 if row.mark else 0  # Convert checkbox to score (1 if checked, 0 if not)
+			maximum_score = 1  # Each item has max score of 1
 			
 		detail_row = assessment_result.append("details", {
 			"assessment_criteria": self.assesment_criteria,
-			"score": self.maximum_score * self.obtained_rating,
-			"grade": self.get_grade(score, maximum_score)
+			"score": self.total_score,  # Use total passed items as score
+			"grade": self.get_grade(self.total_score, len(self.practical_assesment_table))
 		})
 		# Set maximum_score directly on the row object
-		detail_row.maximum_score = maximum_score
+		detail_row.maximum_score = len(self.practical_assesment_table)
 
 		# Set total score and overall grade using calculated values
 		assessment_result.total_score = self.total_score
-		assessment_result.maximum_score = len(self.practical_assesment_table) * (self.maximum_score or 5)
+		assessment_result.maximum_score = len(self.practical_assesment_table)  # Total number of items
 		assessment_result.grade = self.get_grade(self.total_score, assessment_result.maximum_score)
 
 		# Save and submit
@@ -136,8 +135,8 @@ class PracticalAssesment(Document):
 		
 		# Add new assessment details
 		for row in self.practical_assesment_table:
-			score = row.rating or 0
-			maximum_score = self.maximum_score or 5
+			score = 1 if row.mark else 0  # Convert checkbox to score (1 if checked, 0 if not)
+			maximum_score = 1  # Each item has max score of 1
 			
 			detail_row = assessment_result.append("details", {
 				"assessment_criteria": row.assesment_type,
@@ -149,7 +148,7 @@ class PracticalAssesment(Document):
 
 		# Update total score and overall grade using calculated values
 		assessment_result.total_score += self.total_score
-		assessment_result.maximum_score += len(self.practical_assesment_table) * (self.maximum_score or 5)
+		assessment_result.maximum_score += len(self.practical_assesment_table)  # Add total number of items
 		assessment_result.grade = self.get_grade(assessment_result.total_score, assessment_result.maximum_score)
 
 		# Save

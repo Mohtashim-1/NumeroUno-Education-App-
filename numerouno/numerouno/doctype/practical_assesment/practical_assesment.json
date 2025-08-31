@@ -18,8 +18,9 @@
   "section_break_crvm",
   "practical_assesment_template",
   "practical_assesment_table",
-  "amended_from",
-  "obtained_rating"
+  "total_marks",
+  "total_score",
+  "amended_from"
  ],
  "fields": [
   {
@@ -80,11 +81,6 @@
    "search_index": 1
   },
   {
-   "fieldname": "obtained_rating",
-   "fieldtype": "Rating",
-   "label": "Obtained Rating"
-  },
-  {
    "fieldname": "assessment_plan",
    "fieldtype": "Link",
    "label": "Assessment Plan",
@@ -107,13 +103,24 @@
    "fieldtype": "Float",
    "label": "Maximum Score",
    "precision": "0"
+  },
+  {
+   "fieldname": "total_marks",
+   "fieldtype": "Float",
+   "label": "Total Marks"
+  },
+  {
+   "fieldname": "total_score",
+   "fieldtype": "Float",
+   "label": "Total Score",
+   "precision": "0"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-26 11:50:46.711404",
+ "modified": "2025-07-27 18:25:38.213218",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Practical Assesment",

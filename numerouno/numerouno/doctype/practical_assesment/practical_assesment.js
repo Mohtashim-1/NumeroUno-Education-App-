@@ -16,8 +16,56 @@ frappe.ui.form.on("Practical Assesment", {
 	}
 });
 
+// Handle changes in the practical assessment table
+frappe.ui.form.on("Practical Assesment Table", {
+	mark(frm, cdt, cdn) {
+		// When mark checkbox changes, update total_marks
+		updateTotalMarks(frm);
+	},
+	
+	assesment_type(frm, cdt, cdn) {
+		// When assessment type changes, update total_marks
+		updateTotalMarks(frm);
+	}
+});
+
+function updateTotalMarks(frm) {
+	// Calculate total marks from checked items using the formula
+	// Formula: total_marks = (maximum_score / total_items) * checked_items
+	let checked_items = 0;
+	let total_items = 0;
+	
+	if (frm.doc.practical_assesment_table) {
+		frm.doc.practical_assesment_table.forEach(function(row) {
+			if (row.mark) {
+				checked_items += 1;
+			}
+			total_items += 1;
+		});
+	}
+	
+	// Calculate total marks using the formula
+	let total_marks = 0;
+	if (total_items > 0 && frm.doc.maximum_score) {
+		const marks_per_item = frm.doc.maximum_score / total_items;
+		total_marks = marks_per_item * checked_items;
+		total_marks = Math.round(total_marks * 100) / 100; // Round to 2 decimal places
+	}
+	
+	// Update the total_marks field (only if it exists)
+	if (frm.get_field('total_marks')) {
+		frm.set_value('total_marks', total_marks);
+		frm.refresh_field('total_marks');
+	}
+	
+	// Update total_score field (only if it exists)
+	if (frm.get_field('total_score')) {
+		frm.set_value('total_score', total_marks);
+		frm.refresh_field('total_score');
+	}
+}
+
 function setupStudentFiltering(frm) {
-	// Set up the student field with filtering
 	updateStudentFilter(frm);
 }
 
