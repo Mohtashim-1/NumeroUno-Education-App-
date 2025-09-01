@@ -1,4 +1,5 @@
-[
+{
+ "custom_fields": [
   {
    "_assign": null,
    "_comments": null,
@@ -189,4 +190,10 @@
    "unique": 0,
    "width": null
   }
-] 
+ ],
+ "custom_perms": [],
+ "doctype": "Payment Entry",
+ "links": [],
+ "property_setters": [],
+ "sync_on_migrate": 1
+} 
