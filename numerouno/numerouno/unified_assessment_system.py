@@ -58,7 +58,7 @@ class UnifiedAssessmentSystem:
         for criteria in assessment_plan_doc.assessment_criteria:
             if criteria.assessment_criteria == criteria_name:
                 return {
-                    "maximum_score": criteria.maximum_score,
+                    "maximum_score": criteria.maximum_score or 100,  # Default to 100 if None
                     "weightage": getattr(criteria, "weightage", 0)
                 }
         
@@ -87,7 +87,7 @@ class UnifiedAssessmentSystem:
             assessment_result.assessment_plan, 
             criteria_name
         )
-        target_max_score = criteria_info["maximum_score"]
+        target_max_score = criteria_info["maximum_score"] or 100  # Ensure not None
         
         # Scale the score properly
         scaled_score = UnifiedAssessmentSystem.scale_score(raw_score, raw_max_score, target_max_score)
@@ -109,6 +109,9 @@ class UnifiedAssessmentSystem:
                 # Let's replace for now, but you can modify this logic
                 existing_detail.score = scaled_score
                 existing_detail.comment = f"Practical Assessment: {raw_score}/{raw_max_score} (scaled to {scaled_score}/{target_max_score})"
+            # Set maximum_score for existing detail
+            if existing_detail.maximum_score in (None, 0):
+                existing_detail.maximum_score = target_max_score
         else:
             # Add new detail
             comment = f"{source_type}: {raw_score}/{raw_max_score} (scaled to {scaled_score}/{target_max_score})"
@@ -120,11 +123,59 @@ class UnifiedAssessmentSystem:
             # Set maximum_score directly on the detail row
             new_detail.maximum_score = target_max_score
         
+        # Ensure all details have valid maximum_score (safety check)
+        for detail in assessment_result.details:
+            if detail.maximum_score in (None, 0):
+                detail.maximum_score = target_max_score
+        
         # Recalculate total score
         total_score = sum([flt(detail.score) for detail in assessment_result.details])
         assessment_result.total_score = total_score
         
         return scaled_score
+    
+    @staticmethod
+    def ensure_student_in_group(student, student_group):
+        """
+        Ensure the given student is a member of the specified Student Group.
+        Adds the student to the group if missing.
+        """
+        if not student_group or not student:
+            return
+        exists = frappe.db.exists(
+            "Student Group Student",
+            {"parent": student_group, "student": student}
+        )
+        if not exists:
+            sg_doc = frappe.get_doc("Student Group", student_group)
+            sg_doc.append("students", {"student": student})
+            sg_doc.save(ignore_permissions=True)
+    
+    @staticmethod
+    def ensure_assessment_plan_criteria(assessment_plan_doc, criteria_name, maximum_score):
+        """
+        Ensure the Assessment Plan has the specified criteria with the given maximum score
+        """
+        # Check if criteria already exists
+        criteria_exists = False
+        for criteria in assessment_plan_doc.assessment_criteria:
+            if criteria.assessment_criteria == criteria_name:
+                criteria_exists = True
+                # Update maximum_score if different
+                if criteria.maximum_score != maximum_score:
+                    criteria.maximum_score = maximum_score
+                break
+        
+        if not criteria_exists:
+            # Add the criteria
+            assessment_plan_doc.append("assessment_criteria", {
+                "assessment_criteria": criteria_name,
+                "maximum_score": maximum_score
+            })
+            print(f"[UNIFIED] Added criteria '{criteria_name}' to Assessment Plan")
+        
+        assessment_plan_doc.save(ignore_permissions=True)
+        print(f"[UNIFIED] Updated Assessment Plan with criteria '{criteria_name}' (max_score: {maximum_score})")
     
     @staticmethod
     def handle_lms_quiz_submission(lms_quiz_doc):
@@ -159,10 +210,9 @@ class UnifiedAssessmentSystem:
                 frappe.log_error(f"No Assessment Plan found for course: {edu_course}", "Unified Assessment System")
                 return
             
-            # Get or create unified assessment result
-            assessment_result = UnifiedAssessmentSystem.find_or_create_assessment_result(
-                student, assessment_plan
-            )
+            # Ensure the student belongs to the assessment plan's student group
+            assessment_plan_doc = frappe.get_doc("Assessment Plan", assessment_plan)
+            UnifiedAssessmentSystem.ensure_student_in_group(student, assessment_plan_doc.student_group)
             
             # Get assessment criteria from Assessment Settings
             try:
@@ -180,9 +230,17 @@ class UnifiedAssessmentSystem:
                     
                 print(f"[UNIFIED] Using quiz assessment criteria from settings: {criteria_name}")
                 
+                # Ensure the Assessment Plan has this criteria
+                UnifiedAssessmentSystem.ensure_assessment_plan_criteria(assessment_plan_doc, criteria_name, 100)
+                
             except Exception as e:
                 frappe.log_error(f"Failed to get assessment criteria from Assessment Settings: {str(e)}", "Unified Assessment System")
                 return
+            
+            # Get or create unified assessment result
+            assessment_result = UnifiedAssessmentSystem.find_or_create_assessment_result(
+                student, assessment_plan
+            )
             
             # Update with LMS Quiz results
             scaled_score = UnifiedAssessmentSystem.update_assessment_result_details(
@@ -193,8 +251,30 @@ class UnifiedAssessmentSystem:
                 "LMS Quiz"
             )
             
+            # DEBUG: Check details before final guard
+            print(f"[UNIFIED DEBUG] Details before final guard:")
+            for i, d in enumerate(assessment_result.details):
+                print(f"  Detail {i}: criteria={d.assessment_criteria}, score={d.score}, max_score={d.maximum_score} (type: {type(d.maximum_score)})")
+            
+            # Final guard: ensure all details have numeric maximum_score before save
+            for d in assessment_result.details:
+                if d.maximum_score in (None, 0):
+                    d.maximum_score = 100
+            
+            # DEBUG: Check details after final guard
+            print(f"[UNIFIED DEBUG] Details after final guard:")
+            for i, d in enumerate(assessment_result.details):
+                print(f"  Detail {i}: criteria={d.assessment_criteria}, score={d.score}, max_score={d.maximum_score} (type: {type(d.maximum_score)})")
+            
+            # DEBUG: Check Assessment Plan criteria
+            print(f"[UNIFIED DEBUG] Assessment Plan criteria:")
+            assessment_plan_doc = frappe.get_doc("Assessment Plan", assessment_result.assessment_plan)
+            for criteria in assessment_plan_doc.assessment_criteria:
+                print(f"  Plan criteria: {criteria.assessment_criteria}, max_score={criteria.maximum_score}")
+            
             # Save the assessment result
             if assessment_result.docstatus == 0:  # Draft
+                print(f"[UNIFIED DEBUG] About to save Assessment Result...")
                 assessment_result.save(ignore_permissions=True)
                 print(f"[UNIFIED] Updated Assessment Result: {assessment_result.name}")
             
