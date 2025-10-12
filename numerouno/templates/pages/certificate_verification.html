@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
+    <title>Certificate Verification</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .verification-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .verification-form {
+            padding: 2rem;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            padding: 12px 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+        }
+        .btn-verify {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-verify:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+        .verified-section {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            display: none;
+        }
+        .certificate-details {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #374151;
+        }
+        .detail-value {
+            color: #6b7280;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-valid {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-expired {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .loading {
+            display: none;
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            display: none;
+        }
+        .qr-section {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .qr-code {
+            max-width: 150px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="verification-container">
+                    <!-- Header Section -->
+                    <div class="header-section">
+                        <i class="fas fa-certificate fa-3x mb-3"></i>
+                        <h2 class="mb-0">Certificate Verification</h2>
+                        <p class="mb-0">Verify the authenticity of your certificate</p>
+                    </div>
+
+                    <!-- Verification Form -->
+                    <div class="verification-form" id="verificationForm">
+                        <form id="certificateForm" novalidate>
+                            <div class="mb-3">
+                                <label for="certificateNumber" class="form-label">
+                                    <i class="fas fa-certificate me-2"></i>Certificate Number
+                                </label>
+                                <input type="text" class="form-control" id="certificateNumber" 
+                                       placeholder="Enter certificate number" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="studentName" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Student Name <small class="text-muted">(Optional)</small>
+                                </label>
+                                <input type="text" class="form-control" id="studentName" 
+                                       placeholder="Enter student name as per certificate (optional)">
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-verify" id="verifyBtn">
+                                    <span class="btn-text">
+                                        <i class="fas fa-search me-2"></i>Verify Certificate
+                                    </span>
+                                    <span class="loading">
+                                        <span class="spinner-border spinner-border-sm me-2"></span>Verifying...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Error Message -->
+                        <div class="error-message" id="errorMessage">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="errorText"></span>
+                        </div>
+                    </div>
+
+                    <!-- Verified Section -->
+                    <div class="verified-section" id="verifiedSection">
+                        <i class="fas fa-check-circle fa-4x mb-3"></i>
+                        <h3 class="mb-3">Certificate Verified</h3>
+                        <p class="mb-4">This certificate has been successfully verified and is authentic.</p>
+                        
+                        <div class="certificate-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Full Name:</span>
+                                <span class="detail-value" id="verifiedName"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Certificate Number:</span>
+                                <span class="detail-value" id="verifiedCertNumber"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Course:</span>
+                                <span class="detail-value" id="verifiedCourse"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Program:</span>
+                                <span class="detail-value" id="verifiedProgram"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Score:</span>
+                                <span class="detail-value" id="verifiedScore"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Grade:</span>
+                                <span class="detail-value" id="verifiedGrade"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Issue Date:</span>
+                                <span class="detail-value" id="verifiedIssueDate"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Validity:</span>
+                                <span class="detail-value" id="verifiedValidity"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Status:</span>
+                                <span class="detail-value">
+                                    <span class="status-badge" id="statusBadge"></span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- QR Code Section -->
+                        <div class="qr-section">
+                            <p class="text-muted mb-2">Scan QR Code to verify</p>
+                            <div id="qrCodeContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up form submission
+            document.getElementById('certificateForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                verifyCertificate();
+            });
+
+            // Auto-fill form from URL parameters and verify if both are provided
+            const urlParams = new URLSearchParams(window.location.search);
+            const certNumber = urlParams.get('cert');
+            const studentName = urlParams.get('name');
+            
+            if (certNumber) {
+                document.getElementById('certificateNumber').value = certNumber;
+            }
+            if (studentName) {
+                document.getElementById('studentName').value = studentName;
+            }
+            
+            // If certificate number is provided, auto-verify (student name is optional)
+            if (certNumber) {
+                verifyCertificate();
+            }
+        });
+
+        function verifyCertificate() {
+            const certificateNumber = document.getElementById('certificateNumber').value.trim();
+            const studentName = document.getElementById('studentName').value.trim();
+            
+            if (!certificateNumber) {
+                showError('Please enter certificate number');
+                return;
+            }
+
+            // Show loading state
+            showLoading(true);
+            hideError();
+
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            
+            // Choose API endpoint based on whether student name is provided
+            let apiEndpoint, requestBody;
+            
+            if (studentName) {
+                // Use full verification with student name
+                apiEndpoint = '/api/method/numerouno.numerouno.api.certificate_verification.verify_certificate';
+                requestBody = {
+                    certificate_number: certificateNumber,
+                    student_name: studentName
+                };
+            } else {
+                // Use QR verification with certificate number only
+                apiEndpoint = '/api/method/numerouno.numerouno.api.certificate_verification.get_certificate_by_qr';
+                requestBody = {
+                    certificate_number: certificateNumber
+                };
+            }
+            
+            // Make API call to verify certificate
+            fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Frappe-CSRF-Token': csrfToken
+                },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                if (data.message && data.message.status === 'success') {
+                    showVerifiedCertificate(data.message.certificate);
+                } else {
+                    showError(data.message?.message || 'Certificate not found or invalid');
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                showError('Error verifying certificate. Please try again.');
+                console.error('Error:', error);
+            });
+        }
+
+        function showLoading(show) {
+            const btn = document.getElementById('verifyBtn');
+            const btnText = btn.querySelector('.btn-text');
+            const loading = btn.querySelector('.loading');
+            
+            if (show) {
+                btn.disabled = true;
+                btnText.style.display = 'none';
+                loading.style.display = 'inline-block';
+            } else {
+                btn.disabled = false;
+                btnText.style.display = 'inline-block';
+                loading.style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function showVerifiedCertificate(certificate) {
+            // Hide form and show verified section
+            document.getElementById('verificationForm').style.display = 'none';
+            document.getElementById('verifiedSection').style.display = 'block';
+
+            // Populate certificate details
+            document.getElementById('verifiedName').textContent = certificate.student_name || 'N/A';
+            document.getElementById('verifiedCertNumber').textContent = certificate.name || 'N/A';
+            document.getElementById('verifiedCourse').textContent = certificate.course || 'N/A';
+            document.getElementById('verifiedProgram').textContent = certificate.program || 'N/A';
+            document.getElementById('verifiedScore').textContent = `${certificate.total_score || 0}/${certificate.maximum_score || 0}`;
+            document.getElementById('verifiedGrade').textContent = certificate.grade || 'N/A';
+            document.getElementById('verifiedIssueDate').textContent = certificate.creation ? new Date(certificate.creation).toLocaleDateString() : 'N/A';
+            
+            // Display certificate validity date
+            let validityText = 'N/A';
+            if (certificate.certificate_validity_date) {
+                validityText = new Date(certificate.certificate_validity_date).toLocaleDateString();
+            }
+            document.getElementById('verifiedValidity').textContent = validityText;
+
+            // Set status badge
+            const statusBadge = document.getElementById('statusBadge');
+            if (certificate.is_expired) {
+                statusBadge.textContent = 'Expired';
+                statusBadge.className = 'status-badge status-expired';
+            } else if (certificate.needs_renewal) {
+                statusBadge.textContent = 'Expires Soon';
+                statusBadge.className = 'status-badge status-warning';
+            } else {
+                statusBadge.textContent = 'Valid';
+                statusBadge.className = 'status-badge status-valid';
+            }
+
+            // Generate QR code
+            generateQRCode(certificate.name);
+        }
+
+        function generateQRCode(certificateNumber) {
+            const qrContainer = document.getElementById('qrCodeContainer');
+            const verificationUrl = `${window.location.origin}/certificate-verification?cert=${encodeURIComponent(certificateNumber)}`;
+            
+            QRCode.toCanvas(qrContainer, verificationUrl, {
+                width: 150,
+                height: 150,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function (error) {
+                if (error) {
+                    console.error('QR Code generation error:', error);
+                    qrContainer.innerHTML = '<p class="text-muted">QR Code unavailable</p>';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
