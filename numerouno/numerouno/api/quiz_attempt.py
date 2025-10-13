@@ -184,6 +184,9 @@ def submit_quiz_attempt(quiz_name, student, student_group, answers):
         submission.quiz = quiz_name
         submission.member = user_email
         submission.course = quiz_doc.course
+        submission.passing_percentage = quiz_doc.passing_percentage or 80  # Add missing field
+        submission.max_attempts = quiz_doc.max_attempts or 0  # Add max attempts
+        submission.attempt = 1  # Set attempt number
         
         # Parse answers and calculate score
         if isinstance(answers, str):
@@ -224,42 +227,18 @@ def submit_quiz_attempt(quiz_name, student, student_group, answers):
         submission.percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
         
         # Save submission
-        submission.insert(ignore_permissions=True)
-        submission.submit()
+        try:
+            submission.insert(ignore_permissions=True)
+            submission.submit()
+        except Exception as e:
+            frappe.log_error(f"Error saving quiz submission: {str(e)}", "Quiz Submission Error")
+            return {
+                "status": "error",
+                "message": f"Failed to save quiz submission: {str(e)}"
+            }
         
-        # Return HTML response for form submission
-        passed = submission.percentage >= 80  # Assuming 80% is passing
-        html_response = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Quiz Submission Result</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }}
-                .container {{ background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }}
-                .success {{ color: #28a745; font-size: 24px; margin-bottom: 20px; }}
-                .score {{ font-size: 18px; margin: 10px 0; color: #333; }}
-                .button {{ background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; }}
-                .button:hover {{ background: #0056b3; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="success">✅ Quiz Submitted Successfully!</div>
-                <div class="score"><strong>Score:</strong> {total_score}/{total_marks}</div>
-                <div class="score"><strong>Percentage:</strong> {submission.percentage:.1f}%</div>
-                <div class="score"><strong>Status:</strong> {'PASSED' if passed else 'FAILED'}</div>
-                <br>
-                <a href="javascript:window.close()" class="button">Close Tab</a>
-            </div>
-        </body>
-        </html>
-        """
-        
-        frappe.local.response.update({
-            "type": "page",
-            "message": html_response
-        })
+        # Return JSON response
+        passed = submission.percentage >= (submission.passing_percentage or 80)
         
         return {
             "status": "success",
@@ -267,7 +246,8 @@ def submit_quiz_attempt(quiz_name, student, student_group, answers):
             "submission_id": submission.name,
             "score": total_score,
             "total_marks": total_marks,
-            "percentage": submission.percentage
+            "percentage": submission.percentage,
+            "passed": passed
         }
     except Exception as e:
         frappe.log_error(f"Error submitting quiz attempt: {str(e)}", "Quiz Attempt API")
