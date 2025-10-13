@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
-    <title>Public Quiz Attempt</title>
+    <title>Quiz Attempt - {{ quiz_title }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -25,19 +24,37 @@
             padding: 2rem;
             text-align: center;
         }
-        .quiz-form {
+        .quiz-content {
             padding: 2rem;
         }
-        .form-control {
+        .question-card {
+            background: #f8fafc;
             border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        .question-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+        .option-item {
+            background: white;
             border: 2px solid #e5e7eb;
-            padding: 12px 15px;
-            font-size: 16px;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
-        .form-control:focus {
+        .option-item:hover {
             border-color: #4f46e5;
-            box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+            background: #f8fafc;
+        }
+        .option-item.selected {
+            border-color: #4f46e5;
+            background: #eef2ff;
         }
         .btn-primary {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -52,47 +69,6 @@
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
-        }
-        .quiz-list {
-            background: #f8fafc;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-top: 1rem;
-        }
-        .quiz-item {
-            background: white;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border: 1px solid #e5e7eb;
-            transition: all 0.3s ease;
-        }
-        .quiz-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-        }
-        .quiz-title {
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 0.5rem;
-        }
-        .quiz-details {
-            color: #6b7280;
-            font-size: 14px;
-        }
-        .btn-attempt {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            border: none;
-            border-radius: 6px;
-            padding: 8px 16px;
-            font-size: 14px;
-            font-weight: 500;
-            color: white;
-            transition: all 0.3s ease;
-        }
-        .btn-attempt:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
         .loading {
             display: none;
@@ -117,11 +93,6 @@
             margin-top: 1rem;
             display: none;
         }
-        .no-quizzes {
-            text-align: center;
-            color: #6b7280;
-            padding: 2rem;
-        }
     </style>
 </head>
 <body>
@@ -132,68 +103,31 @@
                     <!-- Header Section -->
                     <div class="header-section">
                         <i class="fas fa-question-circle fa-3x mb-3"></i>
-                        <h2 class="mb-0">Public Quiz Attempt</h2>
-                        <p class="mb-0">Select your student group and student to attempt quizzes</p>
+                        <h2 class="mb-0" id="quizTitle">{{ quiz_title }}</h2>
+                        <p class="mb-0" id="quizSubtitle">Student: {{ student_name }} | Group: {{ student_group_title }}</p>
                     </div>
 
-                    <!-- Quiz Form -->
-                    <div class="quiz-form" id="quizForm">
-                        <form id="studentSelectionForm" novalidate>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="studentGroup" class="form-label">
-                                        <i class="fas fa-users me-2"></i>Student Group
-                                    </label>
-                                    <select class="form-control" id="studentGroup" required>
-                                        <option value="">Select Student Group</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="student" class="form-label">
-                                        <i class="fas fa-user me-2"></i>Student
-                                    </label>
-                                    <select class="form-control" id="student" required disabled>
-                                        <option value="">Select Student</option>
-                                    </select>
-                                </div>
+                    <!-- Quiz Content -->
+                    <div class="quiz-content" id="quizContent">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
                             </div>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary" id="loadQuizzesBtn">
-                                    <span class="btn-text">
-                                        <i class="fas fa-search me-2"></i>Load Available Quizzes
-                                    </span>
-                                    <span class="loading">
-                                        <span class="spinner-border spinner-border-sm me-2"></span>Loading...
-                                    </span>
-                                </button>
-                            </div>
-                        </form>
-
-                        <!-- Error Message -->
-                        <div class="error-message" id="errorMessage">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <span id="errorText"></span>
+                            <p class="mt-3">Loading Quiz...</p>
+                            <p class="text-muted">Please wait while we load the quiz</p>
                         </div>
+                    </div>
 
-                        <!-- Success Message -->
-                        <div class="success-message" id="successMessage">
-                            <i class="fas fa-check-circle me-2"></i>
-                            <span id="successText"></span>
-                        </div>
+                    <!-- Error Message -->
+                    <div class="error-message" id="errorMessage">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="errorText"></span>
+                    </div>
 
-                        <!-- Quiz List -->
-                        <div class="quiz-list" id="quizList" style="display: none;">
-                            <h5 class="mb-3">
-                                <i class="fas fa-list me-2"></i>Available Quizzes
-                            </h5>
-                            <div id="quizItems"></div>
-                        </div>
-
-                        <!-- No Quizzes Message -->
-                        <div class="no-quizzes" id="noQuizzes" style="display: none;">
-                            <i class="fas fa-info-circle fa-2x mb-3"></i>
-                            <p>No quizzes available for the selected student group and student.</p>
-                        </div>
+                    <!-- Success Message -->
+                    <div class="success-message" id="successMessage">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span id="successText"></span>
                     </div>
                 </div>
             </div>
@@ -202,214 +136,217 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('studentSelectionForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            loadQuizzes();
-        });
+        let quizData = null;
+        let answers = {};
+        const quizName = "{{ quiz_name }}";
+        const student = "{{ student }}";
+        const studentGroup = "{{ student_group }}";
 
-        document.getElementById('studentGroup').addEventListener('change', function() {
-            const studentGroup = this.value;
-            const studentSelect = document.getElementById('student');
-            
-            if (studentGroup) {
-                loadStudents(studentGroup);
-                studentSelect.disabled = false;
+        // Load quiz on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, quizName:', quizName);
+            if (quizName) {
+                loadQuiz();
             } else {
-                studentSelect.disabled = true;
-                studentSelect.innerHTML = '<option value="">Select Student</option>';
+                showError('Quiz not specified');
             }
         });
 
-        // Load student groups on page load
-        loadStudentGroups();
+        document.getElementById('submitQuizBtn')?.addEventListener('click', function() {
+            submitQuiz();
+        });
 
-        function loadStudentGroups() {
+        function loadQuiz() {
             showLoading(true);
             hideMessages();
 
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            
-            fetch('/api/method/numerouno.numerouno.api.quiz_attempt.get_student_groups', {
-                method: 'POST',
+            fetch(`/api/method/numerouno.numerouno.api.quiz_attempt.get_quiz_questions?quiz_name=${encodeURIComponent(quizName)}`, {
+                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Frappe-CSRF-Token': csrfToken
+                    'Content-Type': 'application/json'
                 }
             })
             .then(response => response.json())
             .then(data => {
                 showLoading(false);
                 if (data.message && data.message.status === 'success') {
-                    populateStudentGroups(data.message.student_groups);
+                    quizData = data.message;
+                    displayQuiz();
                 } else {
-                    showError(data.message?.message || 'Failed to load student groups');
+                    showError(data.message?.message || 'Failed to load quiz');
                 }
             })
             .catch(error => {
                 showLoading(false);
-                showError('Error loading student groups. Please try again.');
+                showError('Error loading quiz. Please try again.');
                 console.error('Error:', error);
             });
         }
 
-        function loadStudents(studentGroup) {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            
-            fetch('/api/method/numerouno.numerouno.api.quiz_attempt.get_students_by_group', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Frappe-CSRF-Token': csrfToken
-                },
-                body: JSON.stringify({ student_group: studentGroup })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message && data.message.status === 'success') {
-                    populateStudents(data.message.students);
-                } else {
-                    showError(data.message?.message || 'Failed to load students');
-                }
-            })
-            .catch(error => {
-                showError('Error loading students. Please try again.');
-                console.error('Error:', error);
+        function displayQuiz() {
+            if (!quizData || !quizData.quiz || !quizData.questions) {
+                showError('Invalid quiz data');
+                return;
+            }
+
+            document.getElementById('quizTitle').textContent = quizData.quiz.title;
+            document.getElementById('quizSubtitle').textContent = `Student: {{ student_name }} | Group: {{ student_group_title }}`;
+
+            const quizContent = document.getElementById('quizContent');
+            quizContent.innerHTML = '';
+
+            // Quiz info
+            const quizInfo = document.createElement('div');
+            quizInfo.className = 'mb-4 p-3 bg-light rounded';
+            quizInfo.innerHTML = `
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <strong>Total Marks:</strong> ${quizData.quiz.total_marks}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Passing %:</strong> ${quizData.quiz.passing_percentage}%
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Max Attempts:</strong> ${quizData.quiz.max_attempts || 'Unlimited'}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Questions:</strong> ${quizData.questions.length}
+                    </div>
+                </div>
+            `;
+            quizContent.appendChild(quizInfo);
+
+            // Questions
+            quizData.questions.forEach((question, index) => {
+                const questionCard = document.createElement('div');
+                questionCard.className = 'question-card';
+                questionCard.innerHTML = `
+                    <div class="question-title">
+                        Question ${index + 1}: ${question.question}
+                        <span class="badge bg-primary ms-2">${question.marks} mark${question.marks > 1 ? 's' : ''}</span>
+                    </div>
+                    <div class="options" data-question="${question.name}">
+                        ${question.options.map(option => `
+                            <div class="option-item" data-option="${option.id}">
+                                <input type="radio" name="question_${question.name}" value="${option.id}" id="q${question.name}_${option.id}">
+                                <label for="q${question.name}_${option.id}" class="ms-2">${option.text}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                quizContent.appendChild(questionCard);
+            });
+
+            // Submit button
+            const submitBtn = document.createElement('div');
+            submitBtn.className = 'text-center mt-4';
+            submitBtn.innerHTML = `
+                <button class="btn btn-primary btn-lg" id="submitQuizBtn">
+                    <i class="fas fa-paper-plane me-2"></i>Submit Quiz
+                </button>
+            `;
+            quizContent.appendChild(submitBtn);
+
+            // Add event listeners for options
+            document.querySelectorAll('.option-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const questionName = this.closest('.options').dataset.question;
+                    const optionId = this.dataset.option;
+                    
+                    // Remove selection from other options in same question
+                    this.closest('.options').querySelectorAll('.option-item').forEach(opt => {
+                        opt.classList.remove('selected');
+                        opt.querySelector('input[type="radio"]').checked = false;
+                    });
+                    
+                    // Select this option
+                    this.classList.add('selected');
+                    this.querySelector('input[type="radio"]').checked = true;
+                    
+                    // Store answer
+                    answers[questionName] = [parseInt(optionId)];
+                });
+            });
+
+            // Add submit button event listener
+            document.getElementById('submitQuizBtn').addEventListener('click', function() {
+                submitQuiz();
             });
         }
 
-        function loadQuizzes() {
-            const studentGroup = document.getElementById('studentGroup').value;
-            const student = document.getElementById('student').value;
-            
-            if (!studentGroup || !student) {
-                showError('Please select both student group and student');
+        function submitQuiz() {
+            if (!quizData) {
+                showError('No quiz data available');
+                return;
+            }
+
+            // Collect answers
+            const submissionAnswers = quizData.questions.map(question => {
+                const answer = answers[question.name] || [];
+                return {
+                    question: question.name,
+                    answers: answer,
+                    marks: question.marks
+                };
+            });
+
+            // Check if all questions are answered
+            const unansweredQuestions = submissionAnswers.filter(a => a.answers.length === 0);
+            if (unansweredQuestions.length > 0) {
+                showError(`Please answer all questions. ${unansweredQuestions.length} question(s) remaining.`);
                 return;
             }
 
             showLoading(true);
             hideMessages();
 
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            
-            fetch('/api/method/numerouno.numerouno.api.quiz_attempt.get_available_quizzes', {
+            fetch('/api/method/numerouno.numerouno.api.quiz_attempt.submit_quiz_attempt', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Frappe-CSRF-Token': csrfToken
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
+                    quiz_name: quizName,
+                    student: student,
                     student_group: studentGroup,
-                    student: student
+                    answers: JSON.stringify(submissionAnswers)
                 })
             })
             .then(response => response.json())
             .then(data => {
                 showLoading(false);
                 if (data.message && data.message.status === 'success') {
-                    displayQuizzes(data.message.quizzes);
+                    showSuccess(`Quiz submitted successfully! Score: ${data.message.score}/${data.message.total_marks} (${data.message.percentage.toFixed(1)}%)`);
+                    
+                    // Disable submit button
+                    const submitBtn = document.getElementById('submitQuizBtn');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Quiz Submitted';
+                    }
                 } else {
-                    showError(data.message?.message || 'Failed to load quizzes');
+                    showError(data.message?.message || 'Failed to submit quiz');
                 }
             })
             .catch(error => {
                 showLoading(false);
-                showError('Error loading quizzes. Please try again.');
+                showError('Error submitting quiz. Please try again.');
                 console.error('Error:', error);
             });
         }
 
-        function populateStudentGroups(studentGroups) {
-            const select = document.getElementById('studentGroup');
-            select.innerHTML = '<option value="">Select Student Group</option>';
-            
-            studentGroups.forEach(group => {
-                const option = document.createElement('option');
-                option.value = group.name;
-                option.textContent = `${group.title} (${group.course})`;
-                select.appendChild(option);
-            });
-        }
-
-        function populateStudents(students) {
-            const select = document.getElementById('student');
-            select.innerHTML = '<option value="">Select Student</option>';
-            
-            students.forEach(student => {
-                const option = document.createElement('option');
-                option.value = student.student;
-                option.textContent = student.student_name;
-                select.appendChild(option);
-            });
-        }
-
-        function displayQuizzes(quizzes) {
-            const quizList = document.getElementById('quizList');
-            const quizItems = document.getElementById('quizItems');
-            const noQuizzes = document.getElementById('noQuizzes');
-            
-            if (quizzes.length === 0) {
-                quizList.style.display = 'none';
-                noQuizzes.style.display = 'block';
-                return;
-            }
-            
-            quizItems.innerHTML = '';
-            quizzes.forEach(quiz => {
-                const quizItem = document.createElement('div');
-                quizItem.className = 'quiz-item';
-                quizItem.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="quiz-title">${quiz.title}</div>
-                            <div class="quiz-details">
-                                <i class="fas fa-star me-1"></i>Total Marks: ${quiz.total_marks || 'N/A'}
-                                <span class="ms-3">
-                                    <i class="fas fa-percentage me-1"></i>Passing: ${quiz.passing_percentage || 'N/A'}%
-                                </span>
-                                <span class="ms-3">
-                                    <i class="fas fa-clock me-1"></i>Max Attempts: ${quiz.max_attempts || 'Unlimited'}
-                                </span>
-                            </div>
+        function showLoading(show) {
+            const quizContent = document.getElementById('quizContent');
+            if (show) {
+                quizContent.innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
                         </div>
-                        <button class="btn btn-attempt" onclick="attemptQuiz('${quiz.name}', '${quiz.title}')">
-                            <i class="fas fa-play me-1"></i>Attempt Quiz
-                        </button>
+                        <p class="mt-3">Loading Quiz...</p>
+                        <p class="text-muted">Please wait while we load the quiz</p>
                     </div>
                 `;
-                quizItems.appendChild(quizItem);
-            });
-            
-            quizList.style.display = 'block';
-            noQuizzes.style.display = 'none';
-        }
-
-        function attemptQuiz(quizName, quizTitle) {
-            const student = document.getElementById('student').value;
-            const studentGroup = document.getElementById('studentGroup').value;
-            
-            if (!student || !studentGroup) {
-                showError('Please select student group and student first');
-                return;
-            }
-
-            // Redirect to quiz attempt page
-            const quizUrl = `/quiz-attempt/${quizName}?student=${student}&student_group=${studentGroup}`;
-            window.location.href = quizUrl;
-        }
-
-        function showLoading(show) {
-            const btn = document.getElementById('loadQuizzesBtn');
-            const btnText = btn.querySelector('.btn-text');
-            const loading = btn.querySelector('.loading');
-            
-            if (show) {
-                btn.disabled = true;
-                btnText.style.display = 'none';
-                loading.style.display = 'inline-block';
-            } else {
-                btn.disabled = false;
-                btnText.style.display = 'inline-block';
-                loading.style.display = 'none';
             }
         }
 

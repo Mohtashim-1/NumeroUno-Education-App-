@@ -199,8 +199,16 @@
         studentGroup = urlParams.get('student_group');
         quizName = urlParams.get('quiz');
 
+        // Debug logging
+        console.log('URL:', window.location.href);
+        console.log('URL Search:', window.location.search);
+        console.log('Quiz Name:', quizName);
+        console.log('Student:', student);
+        console.log('Student Group:', studentGroup);
+
         // Load quiz on page load
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, quizName:', quizName);
             if (quizName) {
                 loadQuiz();
             } else {
@@ -216,12 +224,11 @@
             showLoading(true);
             hideMessages();
 
-            fetch('/api/method/numerouno.numerouno.api.quiz_attempt.get_quiz_questions', {
-                method: 'POST',
+            fetch(`/api/method/numerouno.numerouno.api.quiz_attempt.get_quiz_questions?quiz_name=${encodeURIComponent(quizName)}`, {
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ quiz_name: quizName })
+                }
             })
             .then(response => response.json())
             .then(data => {

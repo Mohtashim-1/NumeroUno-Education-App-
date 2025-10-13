@@ -131,10 +131,15 @@ def get_available_quizzes(student_group, student):
             "message": "Failed to load quizzes"
         }
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
 def submit_quiz_attempt(quiz_name, student, student_group, answers):
     """Submit quiz attempt for a student"""
     try:
+        print(f"=== QUIZ SUBMISSION DEBUG ===")
+        print(f"Method: {frappe.request.method}")
+        print(f"Quiz: {quiz_name}, Student: {student}, Group: {student_group}")
+        print(f"Answers: {answers}")
+        
         if not quiz_name or not student or not student_group:
             return {
                 "status": "error",

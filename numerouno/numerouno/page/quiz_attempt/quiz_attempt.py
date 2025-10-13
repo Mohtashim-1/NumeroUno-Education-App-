@@ -6,7 +6,7 @@ def get_context(context):
     context.no_cache = 1
     context.no_breadcrumbs = 1
     
-    # Get quiz name from URL
+    # Get quiz name from URL query parameter
     quiz_name = frappe.form_dict.get('quiz_name')
     if not quiz_name:
         frappe.throw(_("Quiz not found"), frappe.PermissionError)
