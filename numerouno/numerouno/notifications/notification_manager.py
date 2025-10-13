@@ -565,17 +565,31 @@ class NotificationManager:
     def send_course_schedule_created_notification(instructor_name, email, course, program, schedule_date, from_time, to_time, room):
         subject = f"New Course Schedule Created: {course}"
         body = f"""
-        <p>Dear {instructor_name},</p>
-        <p>A new course schedule has been created for you:</p>
-        <ul>
-            <li><strong>Course:</strong> {course}</li>
-            <li><strong>Program:</strong> {program}</li>
-            <li><strong>Date:</strong> {schedule_date}</li>
-            <li><strong>Time:</strong> {from_time} - {to_time}</li>
-            <li><strong>Room:</strong> {room}</li>
-        </ul>
-        <p>Please check your dashboard for more details.</p>
-        <p>Best regards,<br>Numero Uno Training Team</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background-color: #d4edda; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                <h3 style="color: #155724; margin: 0;">📅 New Course Schedule</h3>
+            </div>
+            
+            <p>Dear <strong>{instructor_name}</strong>,</p>
+            
+            <p>A new course schedule has been created for you.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <h4>Schedule Details:</h4>
+                <ul>
+                    <li><strong>Course:</strong> {course}</li>
+                    <li><strong>Program:</strong> {program}</li>
+                    <li><strong>Date:</strong> {schedule_date}</li>
+                    <li><strong>Time:</strong> {from_time} - {to_time}</li>
+                    <li><strong>Room:</strong> {room}</li>
+                </ul>
+            </div>
+            
+            <p>Please check your dashboard for more details and prepare accordingly.</p>
+            
+            <p>Best regards,<br>
+            <strong>Numero Uno Training Team</strong></p>
+        </div>
         """
         frappe.sendmail(
             recipients=[email],

@@ -1,0 +1,133 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-27 10:00:00.000000",
+ "doctype": "Page",
+ "editable_grid": 1,
+ "field_order": [
+  "title",
+  "module",
+  "page_name",
+  "content_type",
+  "is_public",
+  "column_break_6",
+  "published",
+  "show_sidebar",
+  "show_title",
+  "section_break_10",
+  "content",
+  "content_md",
+  "content_html",
+  "javascript",
+  "css"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "module",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Module",
+   "options": "Module Def"
+  },
+  {
+   "fieldname": "page_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Page Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "content_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Content Type",
+   "options": "Page Builder\nJinja Template\nJS Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "is_public",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Is Public",
+   "default": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Published",
+   "default": 1
+  },
+  {
+   "fieldname": "show_sidebar",
+   "fieldtype": "Check",
+   "label": "Show Sidebar",
+   "default": 0
+  },
+  {
+   "fieldname": "show_title",
+   "fieldtype": "Check",
+   "label": "Show Title",
+   "default": 0
+  },
+  {
+   "fieldname": "section_break_10",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text",
+   "label": "Content"
+  },
+  {
+   "fieldname": "content_md",
+   "fieldtype": "Markdown Editor",
+   "label": "Content (Markdown)"
+  },
+  {
+   "fieldname": "content_html",
+   "fieldtype": "HTML Editor",
+   "label": "Content (HTML)"
+  },
+  {
+   "fieldname": "javascript",
+   "fieldtype": "Code",
+   "label": "JavaScript",
+   "options": "Javascript"
+  },
+  {
+   "fieldname": "css",
+   "fieldtype": "Code",
+   "label": "CSS",
+   "options": "CSS"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-01-27 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "quiz_attempt",
+ "owner": "Administrator",
+ "page_name": "quiz_attempt",
+ "permissions": [],
+ "published": 1,
+ "show_sidebar": 0,
+ "show_title": 0,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title": "Quiz Attempt"
+}

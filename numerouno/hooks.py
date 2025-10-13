@@ -8,8 +8,21 @@ app_license = "mit"
 
 
 website_route_rules = [
-    {"from_route": "/assessment-result1", "to_route": "numerouno/assessment_result1"}
+    {"from_route": "/assessment-result1", "to_route": "numerouno/assessment_result1"},
+    {"from_route": "/quiz", "to_route": "numerouno/quiz_index"},
+    {"from_route": "/quiz-attempt", "to_route": "numerouno/quiz_attempt"},
+    {"from_route": "/quiz-attempt/<quiz_name>", "to_route": "numerouno/quiz_attempt"}
 ]
+
+# Website pages accessible to guests
+website_pages = [
+    {"page_name": "quiz_attempt", "module": "Numerouno"}
+]
+
+# Website context
+website_context = {
+    "quiz_attempt": "numerouno.numerouno.page.quiz_attempt.quiz_attempt.get_context"
+}
 
 portal_menu_items = [
     {
