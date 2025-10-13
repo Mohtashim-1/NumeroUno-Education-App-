@@ -137,8 +137,11 @@ def submit_quiz_attempt(quiz_name, student, student_group, answers):
     try:
         print(f"=== QUIZ SUBMISSION DEBUG ===")
         print(f"Method: {frappe.request.method}")
+        print(f"URL: {frappe.request.url}")
+        print(f"Headers: {dict(frappe.request.headers)}")
         print(f"Quiz: {quiz_name}, Student: {student}, Group: {student_group}")
         print(f"Answers: {answers}")
+        print(f"Form Dict: {frappe.form_dict}")
         
         if not quiz_name or not student or not student_group:
             return {
@@ -223,6 +226,40 @@ def submit_quiz_attempt(quiz_name, student, student_group, answers):
         # Save submission
         submission.insert(ignore_permissions=True)
         submission.submit()
+        
+        # Return HTML response for form submission
+        passed = submission.percentage >= 80  # Assuming 80% is passing
+        html_response = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Quiz Submission Result</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }}
+                .container {{ background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }}
+                .success {{ color: #28a745; font-size: 24px; margin-bottom: 20px; }}
+                .score {{ font-size: 18px; margin: 10px 0; color: #333; }}
+                .button {{ background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; }}
+                .button:hover {{ background: #0056b3; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="success">✅ Quiz Submitted Successfully!</div>
+                <div class="score"><strong>Score:</strong> {total_score}/{total_marks}</div>
+                <div class="score"><strong>Percentage:</strong> {submission.percentage:.1f}%</div>
+                <div class="score"><strong>Status:</strong> {'PASSED' if passed else 'FAILED'}</div>
+                <br>
+                <a href="javascript:window.close()" class="button">Close Tab</a>
+            </div>
+        </body>
+        </html>
+        """
+        
+        frappe.local.response.update({
+            "type": "page",
+            "message": html_response
+        })
         
         return {
             "status": "success",

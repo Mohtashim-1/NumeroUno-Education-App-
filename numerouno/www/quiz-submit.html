@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Submission</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .success {
+            color: #28a745;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .score {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #333;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .loading {
+            color: #6c757d;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loading" id="loading">Processing quiz submission...</div>
+        <div id="result" style="display: none;">
+            <div class="success">✅ Quiz Submitted Successfully!</div>
+            <div class="score" id="score"></div>
+            <div class="score" id="percentage"></div>
+            <div class="score" id="status"></div>
+            <br>
+            <a href="javascript:window.close()" class="button">Close Tab</a>
+        </div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const quizName = urlParams.get('quiz_name');
+        const student = urlParams.get('student');
+        const studentGroup = urlParams.get('student_group');
+        const answers = urlParams.get('answers');
+
+        console.log('Quiz submission page loaded with params:', {
+            quizName, student, studentGroup, answers
+        });
+
+        // Submit quiz using GET request to avoid CSRF
+        if (quizName && student && studentGroup && answers) {
+            submitQuiz();
+        } else {
+            document.getElementById('loading').innerHTML = 'Error: Missing quiz parameters';
+        }
+
+        function submitQuiz() {
+            const params = new URLSearchParams({
+                quiz_name: quizName,
+                student: student,
+                student_group: studentGroup,
+                answers: answers
+            });
+
+            fetch(`/api/method/numerouno.numerouno.api.quiz_attempt.submit_quiz_attempt?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Quiz submission response:', data);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').style.display = 'block';
+                
+                if (data.message && data.message.status === 'success') {
+                    document.getElementById('score').innerHTML = `<strong>Score:</strong> ${data.message.score}/${data.message.total_marks}`;
+                    document.getElementById('percentage').innerHTML = `<strong>Percentage:</strong> ${data.message.percentage.toFixed(1)}%`;
+                    document.getElementById('status').innerHTML = `<strong>Status:</strong> ${data.message.percentage >= 80 ? 'PASSED' : 'FAILED'}`;
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: #dc3545; font-size: 18px;">❌ Error: ${data.message?.message || 'Failed to submit quiz'}</div>
+                        <a href="javascript:window.close()" class="button">Close Tab</a>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting quiz:', error);
+                document.getElementById('loading').innerHTML = 'Error submitting quiz. Please try again.';
+            });
+        }
+    </script>
+</body>
+</html>
