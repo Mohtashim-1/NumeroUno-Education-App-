@@ -234,8 +234,33 @@ def extract_text_from_attachment(attachment_name):
 			except:
 				pass
 		
+		# Method 4: Search in database for similar files
+		if not file_doc:
+			try:
+				# Extract filename from path
+				filename = attachment_name.split('/')[-1]
+				# Search for files with similar names
+				files = frappe.db.sql("""
+					SELECT name, file_name, file_url 
+					FROM `tabFile` 
+					WHERE file_name LIKE %s OR file_url LIKE %s
+					ORDER BY creation DESC
+					LIMIT 5
+				""", (f"%{filename}%", f"%{filename}%"), as_dict=True)
+				
+				if files:
+					print(f"DEBUG: Found similar files: {files}")
+					# Use the first match
+					file_doc = frappe.get_doc("File", files[0]['name'])
+					print(f"DEBUG: Using similar file: {file_doc.name}")
+			except Exception as e:
+				print(f"DEBUG: Similar file search failed: {e}")
+				pass
+		
 		if not file_doc:
 			print(f"DEBUG: File not found with any method for: {attachment_name}")
+			# List recent files to help debug
+			debug_files()
 			return {
 				'text': '',
 				'confidence': 0,
@@ -370,19 +395,29 @@ def extract_specific_data_from_ocr(ocr_text):
 			opito_match = re.search(pattern, ocr_text, re.IGNORECASE)
 			if opito_match:
 				learner_no = opito_match.group(1)
-				if not learner_no.startswith('L'):
+				print(f"DEBUG: Pattern matched: {pattern}, Group 1: {learner_no}")
+				
+				# Handle different patterns
+				if pattern.startswith(r'OPITO\s+Learner\s+No\s+(\d+)') or pattern.startswith(r'Learner\s+No\s+(\d+)'):
+					# For patterns that match just numbers, add L prefix (not L0)
+					if not learner_no.startswith('L'):
+						learner_no = 'L' + learner_no
+				elif not learner_no.startswith('L'):
 					learner_no = 'L' + learner_no
+				
 				extracted_data['opito_learner_no'] = learner_no
 				print(f"DEBUG: Found OPITO Learner No: {learner_no}")
 				break
 		
 		# Extract Unique Certificate No (multiple patterns)
 		cert_patterns = [
-			r'Unique\s+Certificate\s+No\s+([A-Za-z0-9]+)',
-			r'Certificate\s+No\s+([A-Za-z0-9]+)',
+			r'Unique\s+Certificate\s+No\s+OPITOKRK([A-Za-z0-9]+)',  # Specific for OPITOKRK pattern
+			r'Unique\s+Certificate\s+No\s+([A-Za-z0-9]+)',  # General pattern
+			r'Certificate\s+No\s+OPITOKRK([A-Za-z0-9]+)',  # Specific for OPITOKRK pattern
+			r'Certificate\s+No\s+([A-Za-z0-9]+)',  # General pattern
+			r'OPITOKRK([A-Za-z0-9]+)',  # Direct OPITOKRK pattern
 			r'OPITO([A-Za-z0-9]+)',
 			r'Cert\s+No\s+([A-Za-z0-9]+)',
-			r'OPITOKRK([A-Za-z0-9]+)',  # Specific pattern for OPITOKRK
 			r'OPITO([A-Za-z0-9]{10,})',  # OPITO followed by 10+ alphanumeric
 			r'([A-Z]{5}[A-Za-z0-9]{10,})',  # 5 letters followed by 10+ alphanumeric
 			r'([A-Za-z0-9]{15,})',  # Any 15+ alphanumeric characters
@@ -394,8 +429,21 @@ def extract_specific_data_from_ocr(ocr_text):
 			cert_match = re.search(pattern, ocr_text, re.IGNORECASE)
 			if cert_match:
 				cert_no = cert_match.group(1)
-				if not cert_no.startswith('OPITO'):
+				print(f"DEBUG: Certificate pattern matched: {pattern}, Group 1: {cert_no}")
+				
+				# Clean the certificate number (remove spaces)
+				cert_no = cert_no.replace(' ', '')
+				
+				# Handle different patterns
+				if 'OPITOKRK' in pattern:
+					# For OPITOKRK patterns, add OPITOKRK prefix
+					cert_no = 'OPITOKRK' + cert_no
+				elif pattern.startswith(r'Unique\s+Certificate\s+No\s+([A-Za-z0-9]+)') or pattern.startswith(r'Certificate\s+No\s+([A-Za-z0-9]+)'):
+					# For patterns that already include the full certificate number, use as is
+					pass  # cert_no is already the full number
+				elif not cert_no.startswith('OPITO'):
 					cert_no = 'OPITO' + cert_no
+				
 				extracted_data['unique_certificate_no'] = cert_no
 				print(f"DEBUG: Found Unique Certificate No: {cert_no}")
 				break
