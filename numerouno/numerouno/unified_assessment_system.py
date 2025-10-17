@@ -238,11 +238,14 @@ class UnifiedAssessmentSystem:
                 return
             
             # Get or create unified assessment result
+            print(f"[UNIFIED DEBUG] About to find or create assessment result for student: {student}, plan: {assessment_plan}")
             assessment_result = UnifiedAssessmentSystem.find_or_create_assessment_result(
                 student, assessment_plan
             )
+            print(f"[UNIFIED DEBUG] Assessment result found/created: {assessment_result.name if assessment_result else 'None'}")
             
             # Update with LMS Quiz results
+            print(f"[UNIFIED DEBUG] About to update assessment result details...")
             scaled_score = UnifiedAssessmentSystem.update_assessment_result_details(
                 assessment_result,
                 criteria_name,
@@ -250,6 +253,7 @@ class UnifiedAssessmentSystem:
                 lms_quiz_doc.score_out_of,
                 "LMS Quiz"
             )
+            print(f"[UNIFIED DEBUG] Assessment result details updated, scaled_score: {scaled_score}")
             
             # DEBUG: Check details before final guard
             print(f"[UNIFIED DEBUG] Details before final guard:")
@@ -272,11 +276,15 @@ class UnifiedAssessmentSystem:
             for criteria in assessment_plan_doc.assessment_criteria:
                 print(f"  Plan criteria: {criteria.assessment_criteria}, max_score={criteria.maximum_score}")
             
-            # Save the assessment result
-            if assessment_result.docstatus == 0:  # Draft
-                print(f"[UNIFIED DEBUG] About to save Assessment Result...")
+            # Save the assessment result (always save, regardless of docstatus)
+            print(f"[UNIFIED DEBUG] About to save Assessment Result... (docstatus: {assessment_result.docstatus})")
+            try:
                 assessment_result.save(ignore_permissions=True)
                 print(f"[UNIFIED] Updated Assessment Result: {assessment_result.name}")
+            except Exception as save_error:
+                print(f"[UNIFIED ERROR] Failed to save Assessment Result: {str(save_error)}")
+                frappe.log_error(f"Assessment Result save error: {str(save_error)}", "Unified Assessment System")
+                # Don't re-raise - let the LMS Quiz Submission continue
             
             return assessment_result.name
             

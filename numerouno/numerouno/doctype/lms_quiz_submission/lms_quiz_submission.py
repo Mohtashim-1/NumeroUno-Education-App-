@@ -21,8 +21,11 @@ def on_submit(doc, method=None):
             frappe.msgprint(f"Assessment Result updated: {assessment_result_name}")
         
     except Exception as e:
-        print(_(f"[DEBUG] Exception: {frappe.get_traceback()}"))
+        print(_(f"[DEBUG] Exception in on_submit: {str(e)}"))
+        print(_(f"[DEBUG] Traceback: {frappe.get_traceback()}"))
         frappe.log_error(frappe.get_traceback(), "LMSQuizSubmission on_submit error")
+        # DON'T RE-RAISE THE EXCEPTION - This prevents rollback of the main document
+        # The LMS Quiz Submission should still be saved even if assessment system fails
 
 # Keep the old function for reference but comment it out
 def on_submit_old(doc, method=None):

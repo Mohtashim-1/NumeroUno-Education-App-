@@ -228,9 +228,24 @@ def submit_quiz_attempt(quiz_name, student, student_group, answers):
         
         # Save submission
         try:
+            print(f"[DEBUG] About to insert LMS Quiz Submission: {submission.as_dict()}")
             submission.insert(ignore_permissions=True)
+            print(f"[DEBUG] LMS Quiz Submission inserted successfully: {submission.name}")
+            
+            # Force commit to ensure the document is saved
+            frappe.db.commit()
+            print(f"[DEBUG] Database committed after insert: {submission.name}")
+            
+            print(f"[DEBUG] About to submit LMS Quiz Submission: {submission.name}")
             submission.submit()
+            print(f"[DEBUG] LMS Quiz Submission submitted successfully: {submission.name}")
+            
+            # Force commit again after submit
+            frappe.db.commit()
+            print(f"[DEBUG] Database committed after submit: {submission.name}")
+            
         except Exception as e:
+            print(f"[DEBUG] Error in quiz submission process: {str(e)}")
             frappe.log_error(f"Error saving quiz submission: {str(e)}", "Quiz Submission Error")
             return {
                 "status": "error",
