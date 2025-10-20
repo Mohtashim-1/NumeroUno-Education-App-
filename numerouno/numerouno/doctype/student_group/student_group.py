@@ -685,8 +685,18 @@ def create_sales_order_for_purchase_order(doc, method):
                 # create a sales order from the student group
                 sales_order = frappe.new_doc("Sales Order")
                 sales_order.customer = doc.custom_customer
-                sales_order.delivery_date = doc.to_date
+                sales_order.posting_date = frappe.utils.today()
                 sales_order.po_no = doc.custom_customer_po_number
+                
+                # Ensure delivery date is after posting date to avoid validation error
+                posting_date = getdate(sales_order.posting_date)
+                course_end_date = getdate(doc.to_date)
+                
+                if course_end_date > posting_date:
+                    sales_order.delivery_date = doc.to_date
+                else:
+                    # If course has ended, set delivery date to 7 days after posting date
+                    sales_order.delivery_date = add_days(posting_date, 7)
                 
                 # Add link back to Student Group
                 sales_order.custom_student_group = doc.name
@@ -814,9 +824,19 @@ def create_sales_order_for_advance_payment(doc, method):
                 # create a sales order from the student group
                 sales_order = frappe.new_doc("Sales Order")
                 sales_order.customer = doc.custom_customer
-                sales_order.delivery_date = doc.to_date
+                sales_order.posting_date = frappe.utils.today()
                 sales_order.po_no = doc.custom_customer_po_number
                 sales_order.custom_student_group = doc.name
+                
+                # Ensure delivery date is after posting date to avoid validation error
+                posting_date = getdate(sales_order.posting_date)
+                course_end_date = getdate(doc.to_date)
+                
+                if course_end_date > posting_date:
+                    sales_order.delivery_date = doc.to_date
+                else:
+                    # If course has ended, set delivery date to 7 days after posting date
+                    sales_order.delivery_date = add_days(posting_date, 7)
                 sales_order.append("items", {
                     "item_code": doc.course,
                     "qty": len(doc.students),
@@ -928,8 +948,17 @@ def create_sales_invoice_for_cash_payment(doc, method):
                 # First create a Sales Order (required for items that mandate Sales Order)
                 sales_order = frappe.new_doc("Sales Order")
                 sales_order.customer = doc.custom_customer
-                sales_order.delivery_date = doc.to_date
                 sales_order.posting_date = frappe.utils.today()
+                
+                # Ensure delivery date is after posting date to avoid validation error
+                posting_date = getdate(sales_order.posting_date)
+                course_end_date = getdate(doc.to_date)
+                
+                if course_end_date > posting_date:
+                    sales_order.delivery_date = doc.to_date
+                else:
+                    # If course has ended, set delivery date to 7 days after posting date
+                    sales_order.delivery_date = add_days(posting_date, 7)
                 
                 # Add link back to Student Group (now it has a proper name)
                 sales_order.custom_student_group = doc.name
@@ -1232,9 +1261,18 @@ def create_sales_order_from_student_group(doc, method):
                     sales_order = frappe.new_doc("Sales Order")
                     # ... rest of your creation logic ...
                     sales_order.customer = customer
-                    sales_order.delivery_date = doc.to_date
                     sales_order.posting_date = frappe.utils.today()
                     sales_order.custom_mode_of_payment = payment_mode  # <-- Make sure this line is present!
+                    
+                    # Ensure delivery date is after posting date to avoid validation error
+                    posting_date = getdate(sales_order.posting_date)
+                    course_end_date = getdate(doc.to_date)
+                    
+                    if course_end_date > posting_date:
+                        sales_order.delivery_date = doc.to_date
+                    else:
+                        # If course has ended, set delivery date to 7 days after posting date
+                        sales_order.delivery_date = add_days(posting_date, 7)
                     
                     # Set PO number if available (use first one if multiple)
                     if group_data['po_numbers']:
