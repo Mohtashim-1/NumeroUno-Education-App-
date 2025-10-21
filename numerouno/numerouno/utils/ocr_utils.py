@@ -5,10 +5,84 @@ import frappe
 import os
 import io
 from PIL import Image
-import pytesseract
-import cv2
 import numpy as np
 from frappe.utils import get_files_path
+
+# Try to import pytesseract with fallback handling
+try:
+    import pytesseract
+    TESSERACT_AVAILABLE = True
+except ImportError as e:
+    TESSERACT_AVAILABLE = False
+    frappe.log_error(f"pytesseract not available: {e}", "OCR Utils")
+
+# Try to import OpenCV with fallback handling
+try:
+    import cv2
+    OPENCV_AVAILABLE = True
+except ImportError as e:
+    OPENCV_AVAILABLE = False
+    frappe.log_error(f"OpenCV not available: {e}", "OCR Utils")
+
+# Configure Tesseract path if needed
+def configure_tesseract():
+    """Configure Tesseract path for different environments"""
+    if not TESSERACT_AVAILABLE:
+        return False
+    
+    try:
+        # Try to find tesseract in common locations
+        possible_paths = [
+            '/usr/bin/tesseract',
+            '/usr/local/bin/tesseract',
+            '/opt/homebrew/bin/tesseract',  # macOS with Homebrew
+            '/usr/bin/tesseract-ocr',
+            '/usr/local/bin/tesseract-ocr'
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                pytesseract.pytesseract.tesseract_cmd = path
+                frappe.logger().info(f"Tesseract configured at: {path}")
+                return True
+        
+        # Try to use system PATH
+        pytesseract.get_tesseract_version()
+        frappe.logger().info("Tesseract found in system PATH")
+        return True
+        
+    except Exception as e:
+        frappe.logger().error(f"Tesseract configuration failed: {e}")
+        return False
+
+# Configure tesseract on import
+TESSERACT_CONFIGURED = configure_tesseract()
+
+@frappe.whitelist()
+def check_ocr_availability():
+    """
+    Check if OCR functionality is available
+    
+    Returns:
+        dict: Status of OCR availability
+    """
+    status = {
+        'pytesseract_available': TESSERACT_AVAILABLE,
+        'opencv_available': OPENCV_AVAILABLE,
+        'tesseract_configured': TESSERACT_CONFIGURED,
+        'ocr_available': TESSERACT_AVAILABLE and TESSERACT_CONFIGURED
+    }
+    
+    if not TESSERACT_AVAILABLE:
+        status['error'] = "pytesseract module is not installed. Please add it to requirements.txt and restart the server."
+    elif not OPENCV_AVAILABLE:
+        status['error'] = "OpenCV is not available. This might be due to missing system dependencies (libGL.so.1)."
+    elif not TESSERACT_CONFIGURED:
+        status['error'] = "Tesseract OCR binary is not found. Please install Tesseract OCR on your system."
+    else:
+        status['message'] = "OCR functionality is available and ready to use."
+    
+    return status
 
 def extract_text_from_image(file_path):
 	"""
@@ -21,6 +95,33 @@ def extract_text_from_image(file_path):
 		dict: Dictionary containing extracted text and confidence scores
 	"""
 	print(f"DEBUG: extract_text_from_image called with file_path: {file_path}")
+	
+	# Check if Tesseract is available
+	if not TESSERACT_AVAILABLE:
+		error_msg = "pytesseract module is not available. Please install it using: pip install pytesseract"
+		print(f"DEBUG: {error_msg}")
+		frappe.log_error(error_msg, "OCR Utils")
+		return {
+			'text': '',
+			'confidence': 0,
+			'text_blocks': [],
+			'confidences': [],
+			'success': False,
+			'error': error_msg
+		}
+	
+	if not TESSERACT_CONFIGURED:
+		error_msg = "Tesseract OCR binary is not configured or not found. Please install Tesseract OCR on your system."
+		print(f"DEBUG: {error_msg}")
+		frappe.log_error(error_msg, "OCR Utils")
+		return {
+			'text': '',
+			'confidence': 0,
+			'text_blocks': [],
+			'confidences': [],
+			'success': False,
+			'error': error_msg
+		}
 	
 	try:
 		# Check if file exists
@@ -38,15 +139,21 @@ def extract_text_from_image(file_path):
 			print("DEBUG: Converting image to RGB")
 			image = image.convert('RGB')
 		
-		print("DEBUG: Converting PIL image to OpenCV format")
-		# Convert PIL image to OpenCV format
-		opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-		print(f"DEBUG: OpenCV image shape: {opencv_image.shape}")
-		
-		print("DEBUG: Preprocessing image for better OCR")
-		# Preprocess image for better OCR
-		processed_image = preprocess_image(opencv_image)
-		print("DEBUG: Image preprocessing completed")
+		# Handle OpenCV availability
+		if OPENCV_AVAILABLE:
+			print("DEBUG: Converting PIL image to OpenCV format")
+			# Convert PIL image to OpenCV format
+			opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+			print(f"DEBUG: OpenCV image shape: {opencv_image.shape}")
+			
+			print("DEBUG: Preprocessing image for better OCR")
+			# Preprocess image for better OCR
+			processed_image = preprocess_image(opencv_image)
+			print("DEBUG: Image preprocessing completed")
+		else:
+			print("DEBUG: OpenCV not available, using PIL image directly")
+			# Use PIL image directly if OpenCV is not available
+			processed_image = image
 		
 		print("DEBUG: Running Tesseract OCR with multiple PSM modes")
 		# Try multiple PSM modes to capture different text layouts
@@ -95,19 +202,22 @@ def extract_text_from_image(file_path):
 				print(f"DEBUG: PSM {psm} failed: {e}")
 				continue
 		
-		# Also try with different image preprocessing
-		print("DEBUG: Trying alternative image preprocessing")
-		try:
-			# Try with different preprocessing
-			alt_processed = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
-			alt_processed = cv2.threshold(alt_processed, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-			
-			alt_text = pytesseract.image_to_string(alt_processed, config='--psm 3')
-			all_texts.append(alt_text)
-			print(f"DEBUG: Alternative preprocessing text: {alt_text[:200]}...")
-			
-		except Exception as e:
-			print(f"DEBUG: Alternative preprocessing failed: {e}")
+		# Also try with different image preprocessing (only if OpenCV is available)
+		if OPENCV_AVAILABLE:
+			print("DEBUG: Trying alternative image preprocessing")
+			try:
+				# Try with different preprocessing
+				alt_processed = cv2.cvtColor(opencv_image, cv2.COLOR_BGR2GRAY)
+				alt_processed = cv2.threshold(alt_processed, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+				
+				alt_text = pytesseract.image_to_string(alt_processed, config='--psm 3')
+				all_texts.append(alt_text)
+				print(f"DEBUG: Alternative preprocessing text: {alt_text[:200]}...")
+				
+			except Exception as e:
+				print(f"DEBUG: Alternative preprocessing failed: {e}")
+		else:
+			print("DEBUG: Skipping alternative preprocessing (OpenCV not available)")
 		
 		# Combine all texts and find the most complete one
 		combined_all_text = '\n'.join(all_texts)
@@ -162,11 +272,16 @@ def preprocess_image(image):
 	Preprocess image for better OCR results
 	
 	Args:
-		image: OpenCV image
+		image: OpenCV image or PIL image
 		
 	Returns:
 		Preprocessed image
 	"""
+	if not OPENCV_AVAILABLE:
+		# If OpenCV is not available, return the image as is
+		frappe.logger().info("OpenCV not available, skipping image preprocessing")
+		return image
+	
 	try:
 		# Convert to grayscale
 		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
