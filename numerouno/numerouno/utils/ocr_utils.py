@@ -37,7 +37,12 @@ def configure_tesseract():
             '/usr/local/bin/tesseract',
             '/opt/homebrew/bin/tesseract',  # macOS with Homebrew
             '/usr/bin/tesseract-ocr',
-            '/usr/local/bin/tesseract-ocr'
+            '/usr/local/bin/tesseract-ocr',
+            '/usr/share/tesseract-ocr/tesseract',  # Some Linux distributions
+            '/usr/bin/tesseract-ocr/tesseract',    # Alternative location
+            '/snap/bin/tesseract',                 # Snap package
+            '/app/.local/bin/tesseract',           # AppImage or container
+            '/usr/local/share/tesseract-ocr/tesseract'  # Another common location
         ]
         
         for path in possible_paths:
@@ -47,9 +52,26 @@ def configure_tesseract():
                 return True
         
         # Try to use system PATH
-        pytesseract.get_tesseract_version()
-        frappe.logger().info("Tesseract found in system PATH")
-        return True
+        try:
+            version = pytesseract.get_tesseract_version()
+            frappe.logger().info(f"Tesseract found in system PATH - Version: {version}")
+            return True
+        except Exception as path_error:
+            frappe.logger().error(f"Tesseract not found in system PATH: {path_error}")
+        
+        # If all else fails, try to find tesseract using which command
+        import subprocess
+        try:
+            result = subprocess.run(['which', 'tesseract'], capture_output=True, text=True)
+            if result.returncode == 0:
+                tesseract_path = result.stdout.strip()
+                pytesseract.pytesseract.tesseract_cmd = tesseract_path
+                frappe.logger().info(f"Tesseract found via 'which' command: {tesseract_path}")
+                return True
+        except Exception as which_error:
+            frappe.logger().error(f"Failed to find tesseract using 'which' command: {which_error}")
+        
+        return False
         
     except Exception as e:
         frappe.logger().error(f"Tesseract configuration failed: {e}")
@@ -60,29 +82,94 @@ TESSERACT_CONFIGURED = configure_tesseract()
 
 @frappe.whitelist()
 def check_ocr_availability():
-    """
-    Check if OCR functionality is available
-    
-    Returns:
-        dict: Status of OCR availability
-    """
-    status = {
-        'pytesseract_available': TESSERACT_AVAILABLE,
-        'opencv_available': OPENCV_AVAILABLE,
-        'tesseract_configured': TESSERACT_CONFIGURED,
-        'ocr_available': TESSERACT_AVAILABLE and TESSERACT_CONFIGURED
-    }
-    
-    if not TESSERACT_AVAILABLE:
-        status['error'] = "pytesseract module is not installed. Please add it to requirements.txt and restart the server."
-    elif not OPENCV_AVAILABLE:
-        status['error'] = "OpenCV is not available. This might be due to missing system dependencies (libGL.so.1)."
-    elif not TESSERACT_CONFIGURED:
-        status['error'] = "Tesseract OCR binary is not found. Please install Tesseract OCR on your system."
-    else:
-        status['message'] = "OCR functionality is available and ready to use."
-    
-    return status
+	"""
+	Check if OCR functionality is available
+	
+	Returns:
+		dict: Status of OCR availability
+	"""
+	status = {
+		'pytesseract_available': TESSERACT_AVAILABLE,
+		'opencv_available': OPENCV_AVAILABLE,
+		'tesseract_configured': TESSERACT_CONFIGURED,
+		'ocr_available': TESSERACT_AVAILABLE and TESSERACT_CONFIGURED
+	}
+	
+	if not TESSERACT_AVAILABLE:
+		status['error'] = "pytesseract module is not installed. Please add it to requirements.txt and restart the server."
+	elif not OPENCV_AVAILABLE:
+		status['error'] = "OpenCV is not available. This might be due to missing system dependencies (libGL.so.1)."
+	elif not TESSERACT_CONFIGURED:
+		status['error'] = "Tesseract OCR binary is not found. Please install Tesseract OCR on your system."
+	else:
+		status['message'] = "OCR functionality is available and ready to use."
+	
+	return status
+
+@frappe.whitelist()
+def test_tesseract_installation():
+	"""
+	Test Tesseract installation and provide detailed information
+	
+	Returns:
+		dict: Detailed test results
+	"""
+	result = {
+		'success': False,
+		'message': '',
+		'details': {}
+	}
+	
+	try:
+		if not TESSERACT_AVAILABLE:
+			result['message'] = "pytesseract module is not available"
+			return result
+		
+		# Test basic import
+		result['details']['pytesseract_import'] = "Success"
+		
+		# Test tesseract binary
+		try:
+			version = pytesseract.get_tesseract_version()
+			result['details']['tesseract_version'] = version
+			result['details']['tesseract_binary'] = "Found"
+		except Exception as e:
+			result['details']['tesseract_binary'] = f"Error: {str(e)}"
+			result['message'] = f"Tesseract binary not working: {str(e)}"
+			return result
+		
+		# Test OCR on a simple image (if possible)
+		try:
+			# Create a simple test image
+			from PIL import Image, ImageDraw, ImageFont
+			import io
+			
+			# Create a simple white image with black text
+			img = Image.new('RGB', (200, 50), color='white')
+			draw = ImageDraw.Draw(img)
+			
+			# Try to use a default font
+			try:
+				font = ImageFont.load_default()
+			except:
+				font = None
+			
+			draw.text((10, 10), "Test OCR", fill='black', font=font)
+			
+			# Test OCR
+			text = pytesseract.image_to_string(img)
+			result['details']['test_ocr'] = f"Success: '{text.strip()}'"
+			result['success'] = True
+			result['message'] = "Tesseract is working correctly"
+			
+		except Exception as e:
+			result['details']['test_ocr'] = f"Error: {str(e)}"
+			result['message'] = f"Tesseract test failed: {str(e)}"
+		
+	except Exception as e:
+		result['message'] = f"Test failed: {str(e)}"
+	
+	return result
 
 def extract_text_from_image(file_path):
 	"""
@@ -339,6 +426,29 @@ def extract_text_from_attachment(attachment_name):
 			except:
 				pass
 		
+		# Method 2.5: Lookup by file_url with different path formats
+		if not file_doc:
+			try:
+				# Try with different path formats
+				path_variants = [
+					attachment_name,
+					attachment_name.lstrip('/'),
+					attachment_name.replace('/files/', ''),
+					f"/files/{attachment_name.split('/')[-1]}",
+					attachment_name.split('/')[-1]
+				]
+				
+				for variant in path_variants:
+					try:
+						file_doc = frappe.get_doc("File", {"file_url": variant})
+						print(f"DEBUG: File found by file_url variant '{variant}': {file_doc.name}")
+						break
+					except:
+						continue
+			except Exception as e:
+				print(f"DEBUG: Path variant lookup failed: {e}")
+				pass
+		
 		# Method 3: Lookup by attachment name pattern
 		if not file_doc:
 			try:
@@ -372,18 +482,40 @@ def extract_text_from_attachment(attachment_name):
 				print(f"DEBUG: Similar file search failed: {e}")
 				pass
 		
+		# Method 5: Try to construct file path directly and check if it exists
 		if not file_doc:
-			print(f"DEBUG: File not found with any method for: {attachment_name}")
-			# List recent files to help debug
-			debug_files()
-			return {
-				'text': '',
-				'confidence': 0,
-				'text_blocks': [],
-				'confidences': [],
-				'success': False,
-				'error': f'File not found: {attachment_name}'
-			}
+			try:
+				# Try to get the file path directly from Frappe's file system
+				from frappe.utils import get_files_path
+				import os
+				
+				# Extract just the filename
+				filename = attachment_name.split('/')[-1]
+				
+				# Try different possible file paths
+				possible_paths = [
+					os.path.join(get_files_path(), filename),
+					os.path.join(get_files_path(), attachment_name.lstrip('/')),
+					os.path.join(get_files_path(), attachment_name.replace('/files/', '')),
+					attachment_name  # Try the original path as absolute
+				]
+				
+				for file_path in possible_paths:
+					if os.path.exists(file_path):
+						print(f"DEBUG: File found at path: {file_path}")
+						# Create a mock file document for this path
+						file_doc = type('FileDoc', (), {
+							'name': filename,
+							'file_name': filename,
+							'file_url': attachment_name,
+							'get_full_path': lambda: file_path
+						})()
+						print(f"DEBUG: Created mock file document for: {file_path}")
+						break
+						
+			except Exception as e:
+				frappe.log_error(f"DEBUG: Direct file path search failed: {e}", "OCR Utils")
+				pass		
 		
 		file_path = file_doc.get_full_path()
 		print(f"DEBUG: File path: {file_path}")
