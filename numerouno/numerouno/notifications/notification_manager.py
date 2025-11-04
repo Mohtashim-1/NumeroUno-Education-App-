@@ -4,6 +4,7 @@ from frappe.utils import nowdate, getdate, add_days
 from frappe.utils.background_jobs import enqueue
 from frappe.utils import get_url
 import json
+from .notification_config import NotificationConfig
 
 class NotificationManager:
     """Centralized notification manager for all system notifications"""
@@ -12,6 +13,11 @@ class NotificationManager:
     def send_welcome_email(student_name, email, program_name):
         """Send welcome email to new students"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping welcome email.")
+                return
+                
             subject = f"Welcome to {program_name} - Numero Uno Training"
             
             body = f"""
@@ -64,6 +70,11 @@ class NotificationManager:
     def send_unpaid_student_report(student_group_name, student_group_title, unpaid_students):
         """Send unpaid student report to accounts team"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping unpaid student report.")
+                return
+                
             # Get accounts team emails
             accounts_users = frappe.get_all(
                 "Has Role",
@@ -138,6 +149,11 @@ class NotificationManager:
     def send_cash_assignment_notification(student_name, email, program_name, instructor_name):
         """Send notification when student is assigned to cash payment"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping cash assignment notification.")
+                return
+                
             subject = f"Cash Payment Assignment - {program_name}"
             
             body = f"""
@@ -182,6 +198,11 @@ class NotificationManager:
     def send_missing_po_notification(program_name, customer_name, sales_order_name):
         """Send notification for missing Purchase Order"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping missing PO notification.")
+                return
+                
             # Get relevant users (Sales, Accounts, Management)
             relevant_users = frappe.get_all(
                 "Has Role",
@@ -239,6 +260,11 @@ class NotificationManager:
     def send_instructor_task_assignment(instructor_name, email, task_details):
         """Send notification when instructor is assigned to a task"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping instructor task assignment notification.")
+                return
+                
             subject = f"New Task Assignment - {task_details.get('program_name', 'Training Program')}"
             
             body = f"""
@@ -286,6 +312,11 @@ class NotificationManager:
     def send_assessment_pending_notification(student_name, email, program_name, assessment_plan):
         """Send notification for pending assessment"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping assessment pending notification.")
+                return
+                
             subject = f"Assessment Pending - {program_name}"
             
             body = f"""
@@ -330,6 +361,11 @@ class NotificationManager:
     def send_student_absent_notification(student_name, email, program_name, absent_date, instructor_name):
         """Send notification for student absence"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping student absent notification.")
+                return
+                
             subject = f"Absence Notification - {program_name}"
             
             body = f"""
@@ -374,6 +410,11 @@ class NotificationManager:
     def send_attendance_eligibility_notification(student_name, email, program_name, attendance_percentage, required_percentage):
         """Send notification when student is not eligible for assessment due to attendance"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping attendance eligibility notification.")
+                return
+                
             subject = f"Assessment Eligibility Alert - {program_name}"
             
             body = f"""
@@ -419,6 +460,11 @@ class NotificationManager:
     def send_daily_consolidated_report():
         """Send daily consolidated report of all notifications"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping daily consolidated report.")
+                return
+                
             # Get all pending notifications for the day
             today = nowdate()
             
@@ -481,6 +527,11 @@ class NotificationManager:
     def send_consolidated_report(notifications):
         """Send consolidated daily report"""
         try:
+            # Check if emails are disabled
+            if not NotificationConfig.should_send_emails():
+                print("📧 Emails are temporarily disabled. Skipping consolidated report.")
+                return
+                
             # Get management team emails
             management_users = frappe.get_all(
                 "Has Role",
@@ -563,6 +614,11 @@ class NotificationManager:
 
     @staticmethod
     def send_course_schedule_created_notification(instructor_name, email, course, program, schedule_date, from_time, to_time, room):
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping course schedule notification.")
+            return
+            
         subject = f"New Course Schedule Created: {course}"
         body = f"""
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

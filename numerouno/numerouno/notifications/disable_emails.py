@@ -22,18 +22,9 @@ def disable_emails_until(date):
         disable_emails_until('2025-01-15')  # Disable until January 15, 2025
     """
     try:
-        # First, add the custom field if it doesn't exist
-        if not frappe.db.exists("Custom Field", {"dt": "System Settings", "fieldname": "custom_disable_emails_until"}):
-            custom_field = frappe.get_doc({
-                "doctype": "Custom Field",
-                "dt": "System Settings",
-                "fieldname": "custom_disable_emails_until",
-                "label": "Disable Emails Until",
-                "fieldtype": "Date",
-                "insert_after": "custom_attendance_requirement"
-            })
-            custom_field.insert()
-            print("✅ Created custom field 'custom_disable_emails_until'")
+        # Ensure custom field exists (will be created by NotificationConfig if needed)
+        from numerouno.numerouno.notifications.notification_config import NotificationConfig
+        NotificationConfig.ensure_custom_field_exists()
         
         # Set the date
         NotificationConfig.disable_emails_until(date)

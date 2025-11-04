@@ -6,6 +6,11 @@ from .notification_config import NotificationConfig
 def handle_student_welcome(doc, method):
     """Handle welcome email for new students"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping welcome email.")
+            return
+            
         if method == "after_insert":
             # Get student details
             student_name = doc.student_name or doc.name
@@ -22,6 +27,11 @@ def handle_student_welcome(doc, method):
 def handle_student_group_creation(doc, method):
     """Handle notifications when student group is created"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping student group creation notification.")
+            return
+            
         if method == "after_insert":
             # Send notification to management about new student group
             student_count = len(doc.students) if hasattr(doc, 'students') else 0
@@ -76,6 +86,11 @@ def handle_student_group_creation(doc, method):
 def handle_instructor_assignment_to_student_group(doc):
     """Handle notifications when instructors are assigned to student groups"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping instructor assignment notification.")
+            return
+            
         # Check if instructors are assigned to this student group
         if hasattr(doc, 'instructors') and doc.instructors:
             for instructor_row in doc.instructors:
@@ -141,6 +156,11 @@ def handle_instructor_assignment_to_student_group(doc):
 def handle_student_group_instructor_update(doc, method):
     """Handle notifications when instructors are added to existing student groups"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping instructor update notification.")
+            return
+            
         if method == "on_update":
             # Get the previous version of the document to compare
             doc_before = doc.get_doc_before_save()
@@ -228,6 +248,11 @@ def handle_student_group_instructor_update(doc, method):
 def handle_cash_assignment(doc, method):
     """Handle cash assignment notification"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping cash assignment notification.")
+            return
+            
         if doc.payment_method == "Cash" and method == "after_insert":
             student_name = doc.student_name
             email = doc.email or frappe.db.get_value("User", doc.user, "email")
@@ -245,6 +270,11 @@ def handle_cash_assignment(doc, method):
 def handle_sales_order_creation(doc, method):
     """Handle notifications when sales order is created"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping sales order creation notification.")
+            return
+            
         if method == "after_insert":
             print(f"Sales order creation handler triggered for: {doc.name}")
             
@@ -331,6 +361,11 @@ def handle_sales_order_creation(doc, method):
 def handle_missing_po(doc, method):
     """Handle missing PO notification"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping missing PO notification.")
+            return
+            
         if method == "on_update":
             # Check if PO is missing
             if not doc.po_no or doc.po_no == "":
@@ -354,6 +389,11 @@ def handle_missing_po(doc, method):
 def handle_instructor_assignment(doc, method):
     """Handle instructor task assignment notification"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping instructor assignment notification.")
+            return
+            
         if method == "after_insert":
             instructor_name = doc.instructor_name or doc.instructor
             email = frappe.db.get_value("User", doc.instructor, "email")
@@ -378,6 +418,11 @@ def handle_instructor_assignment(doc, method):
 def handle_assessment_pending(doc, method):
     """Handle assessment pending notification"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping assessment pending notification.")
+            return
+            
         if method == "on_update":
             # Check if assessment is pending (no grade assigned)
             if not doc.grade and doc.docstatus == 0:
@@ -397,6 +442,11 @@ def handle_assessment_pending(doc, method):
 def handle_student_absence(doc, method):
     """Handle student absence notification"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping student absence notification.")
+            return
+            
         if method == "after_insert":
             print(f"Student absence handler triggered for: {doc.name}")
             print(f"Student status: {doc.status}")
@@ -452,6 +502,11 @@ def handle_student_absence(doc, method):
 def handle_attendance_eligibility(doc, method):
     """Handle attendance eligibility notification"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping attendance eligibility notification.")
+            return
+            
         if method == "on_update":
             # Calculate attendance percentage
             student = doc.student
@@ -495,6 +550,11 @@ def handle_attendance_eligibility(doc, method):
 def handle_unpaid_students(doc, method):
     """Handle unpaid students notification"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping unpaid students notification.")
+            return
+            
         if method == "on_update":
             # Check for unpaid students in the group
             unpaid_students = []
@@ -519,6 +579,11 @@ def handle_unpaid_students(doc, method):
 def handle_assessment_creation(doc, method):
     """Handle notifications when assessment result is created"""
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping assessment creation notification.")
+            return
+            
         if method == "after_insert":
             print(f"Assessment creation handler triggered for: {doc.name}")
             
@@ -576,6 +641,11 @@ def handle_assessment_creation(doc, method):
 
 def handle_course_schedule_creation(doc, method):
     try:
+        # Check if emails are disabled
+        if not NotificationConfig.should_send_emails():
+            print("📧 Emails are temporarily disabled. Skipping course schedule creation notification.")
+            return
+            
         instructor = doc.instructor
         if not instructor:
             return

@@ -6,9 +6,43 @@ class NotificationConfig:
     """Configuration class for notification settings"""
     
     @staticmethod
+    def ensure_custom_field_exists():
+        """Ensure the custom_disable_emails_until field exists in System Settings"""
+        try:
+            if not frappe.db.exists("Custom Field", {"dt": "System Settings", "fieldname": "custom_disable_emails_until"}):
+                # Try to find a good field to insert after
+                insert_after = None
+                if frappe.db.exists("Custom Field", {"dt": "System Settings", "fieldname": "custom_attendance_requirement"}):
+                    insert_after = "custom_attendance_requirement"
+                elif frappe.db.exists("Custom Field", {"dt": "System Settings", "fieldname": "enable_email_queue"}):
+                    insert_after = "enable_email_queue"
+                else:
+                    # Just insert after any field or at the beginning
+                    insert_after = None
+                
+                custom_field = frappe.get_doc({
+                    "doctype": "Custom Field",
+                    "dt": "System Settings",
+                    "fieldname": "custom_disable_emails_until",
+                    "label": "Disable Emails Until",
+                    "fieldtype": "Date",
+                    "insert_after": insert_after
+                })
+                custom_field.insert(ignore_permissions=True)
+                frappe.db.commit()
+                print("✅ Created custom field 'custom_disable_emails_until' in System Settings")
+                return True
+        except Exception as e:
+            print(f"⚠️ Failed to create custom field (may already exist): {str(e)}")
+            return False
+    
+    @staticmethod
     def get_notification_settings():
         """Get notification settings from system"""
         try:
+            # Ensure custom field exists
+            NotificationConfig.ensure_custom_field_exists()
+            
             settings = frappe.get_doc("System Settings")
             
             # Default settings
@@ -34,10 +68,14 @@ class NotificationConfig:
             if hasattr(settings, 'custom_attendance_requirement'):
                 default_settings["attendance_requirement_percentage"] = settings.custom_attendance_requirement or 80
             
-            # Check for disable emails until date
-            disable_until = frappe.db.get_single_value("System Settings", "custom_disable_emails_until")
-            if disable_until:
-                default_settings["disable_emails_until"] = disable_until
+            # Check for disable emails until date - use get_single_value which handles missing fields gracefully
+            try:
+                disable_until = frappe.db.get_single_value("System Settings", "custom_disable_emails_until")
+                if disable_until:
+                    default_settings["disable_emails_until"] = disable_until
+            except Exception:
+                # Field doesn't exist yet, will be created on next call
+                pass
                 
             return default_settings
             
@@ -72,6 +110,9 @@ class NotificationConfig:
     def should_send_emails():
         """Check if emails should be sent (not disabled temporarily)"""
         try:
+            # Ensure custom field exists (will be created if needed)
+            NotificationConfig.ensure_custom_field_exists()
+            
             settings = NotificationConfig.get_notification_settings()
             disable_until = settings.get("disable_emails_until")
             
@@ -251,13 +292,25 @@ class NotificationConfig:
     def disable_emails_until(date):
         """Disable all email notifications until a specific date (YYYY-MM-DD format)"""
         try:
+            # Ensure custom field exists first
+            NotificationConfig.ensure_custom_field_exists()
+            
             frappe.db.set_value("System Settings", "System Settings", "custom_disable_emails_until", date)
             frappe.db.commit()
             print(f"📧 Emails disabled until {date}")
             return True
         except Exception as e:
             print(f"Failed to disable emails: {str(e)}")
-            return False
+            # Try to create the field and retry
+            try:
+                NotificationConfig.ensure_custom_field_exists()
+                frappe.db.set_value("System Settings", "System Settings", "custom_disable_emails_until", date)
+                frappe.db.commit()
+                print(f"📧 Emails disabled until {date} (after creating field)")
+                return True
+            except Exception as e2:
+                print(f"Failed to disable emails after retry: {str(e2)}")
+                return False
     
     @staticmethod
     def enable_emails():

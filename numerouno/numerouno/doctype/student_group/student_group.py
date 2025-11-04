@@ -66,6 +66,12 @@ def sync_children(doc, method):
 
         # 5) flag "invoiced" if you've actually set an invoice
         row.custom_invoiced = 1 if doc.custom_sales_invoice else 0
+        
+        # 6) Auto-populate student_applicant from Student when student is assigned
+        if row.student and not row.student_applicant:
+            student_applicant = frappe.db.get_value("Student", row.student, "student_applicant")
+            if student_applicant:
+                row.student_applicant = student_applicant
 
 
 @frappe.whitelist()

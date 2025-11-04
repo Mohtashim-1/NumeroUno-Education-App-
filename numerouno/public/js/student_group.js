@@ -27,6 +27,25 @@ frappe.ui.form.on('Student Group', {
             create_sales_invoice(frm);
         }, __('Actions'));
         
+        // Remove all filters from student field in child table
+        frm.set_query('student', 'students', function(doc, cdt, cdn) {
+            // Return empty filters to remove all restrictions
+            return {};
+        });
+    }
+});
+
+// Auto-populate student_applicant when student is selected
+frappe.ui.form.on('Student Group Student', {
+    student: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        if (row.student) {
+            frappe.db.get_value('Student', row.student, 'student_applicant', function(r) {
+                if (r && r.student_applicant) {
+                    frappe.model.set_value(cdt, cdn, 'student_applicant', r.student_applicant);
+                }
+            });
+        }
     }
 });
 
