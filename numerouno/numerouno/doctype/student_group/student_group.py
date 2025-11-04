@@ -466,6 +466,12 @@ def send_daily_unpaid_notifications():
 	# Ensure frappe is properly imported
 	import frappe
 	from frappe.utils import nowdate
+	from numerouno.numerouno.notifications.notification_config import NotificationConfig
+	
+	# Check if emails are disabled temporarily
+	if not NotificationConfig.should_send_emails():
+		print("📧 Emails are temporarily disabled. Skipping unpaid notifications.")
+		return
 	
 	print("🔍 Starting send_daily_unpaid_notifications function")
 	

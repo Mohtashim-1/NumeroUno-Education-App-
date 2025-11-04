@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import getdate, today
 
 class NotificationConfig:
     """Configuration class for notification settings"""
@@ -22,7 +23,8 @@ class NotificationConfig:
                 "daily_consolidated_reports": True,
                 "attendance_requirement_percentage": 80,
                 "notification_retention_days": 30,
-                "email_template_language": "en"
+                "email_template_language": "en",
+                "disable_emails_until": None
             }
             
             # Override with custom settings if available
@@ -31,6 +33,11 @@ class NotificationConfig:
                 
             if hasattr(settings, 'custom_attendance_requirement'):
                 default_settings["attendance_requirement_percentage"] = settings.custom_attendance_requirement or 80
+            
+            # Check for disable emails until date
+            disable_until = frappe.db.get_single_value("System Settings", "custom_disable_emails_until")
+            if disable_until:
+                default_settings["disable_emails_until"] = disable_until
                 
             return default_settings
             
@@ -47,14 +54,49 @@ class NotificationConfig:
                 "daily_consolidated_reports": True,
                 "attendance_requirement_percentage": 80,
                 "notification_retention_days": 30,
-                "email_template_language": "en"
+                "email_template_language": "en",
+                "disable_emails_until": None
             }
     
     @staticmethod
     def is_notification_enabled(notification_type):
         """Check if a specific notification type is enabled"""
+        # First check if emails are disabled temporarily
+        if not NotificationConfig.should_send_emails():
+            return False
+            
         settings = NotificationConfig.get_notification_settings()
         return settings.get(f"{notification_type}_enabled", True)
+    
+    @staticmethod
+    def should_send_emails():
+        """Check if emails should be sent (not disabled temporarily)"""
+        try:
+            settings = NotificationConfig.get_notification_settings()
+            disable_until = settings.get("disable_emails_until")
+            
+            if not disable_until:
+                return True
+            
+            # Convert to date if it's a string
+            if isinstance(disable_until, str):
+                disable_until = getdate(disable_until)
+            
+            current_date = getdate(today())
+            
+            # If current date is before or equal to disable_until date, emails are disabled
+            if current_date <= disable_until:
+                print(f"📧 Emails are disabled until {disable_until}. Current date: {current_date}")
+                return False
+            
+            # If current date is after disable_until, emails are enabled
+            print(f"📧 Emails are enabled. Disable period ended on {disable_until}")
+            return True
+            
+        except Exception as e:
+            print(f"Failed to check email disable status: {str(e)}")
+            # Default to allowing emails if check fails
+            return True
     
     @staticmethod
     def get_attendance_requirement():
@@ -203,4 +245,28 @@ class NotificationConfig:
             return template.format(**kwargs)
         except Exception as e:
             print(f"Failed to format notification content: {str(e)}")
-            return template 
+            return template
+    
+    @staticmethod
+    def disable_emails_until(date):
+        """Disable all email notifications until a specific date (YYYY-MM-DD format)"""
+        try:
+            frappe.db.set_value("System Settings", "System Settings", "custom_disable_emails_until", date)
+            frappe.db.commit()
+            print(f"📧 Emails disabled until {date}")
+            return True
+        except Exception as e:
+            print(f"Failed to disable emails: {str(e)}")
+            return False
+    
+    @staticmethod
+    def enable_emails():
+        """Re-enable all email notifications"""
+        try:
+            frappe.db.set_value("System Settings", "System Settings", "custom_disable_emails_until", None)
+            frappe.db.commit()
+            print("📧 Emails re-enabled")
+            return True
+        except Exception as e:
+            print(f"Failed to enable emails: {str(e)}")
+            return False 
