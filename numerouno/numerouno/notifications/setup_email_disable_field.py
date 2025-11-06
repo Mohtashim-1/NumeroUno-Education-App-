@@ -56,4 +56,3 @@ def setup_email_disable_field():
 
 if __name__ == "__main__":
     setup_email_disable_field()
-
