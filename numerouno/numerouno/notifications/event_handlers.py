@@ -68,12 +68,12 @@ def handle_student_group_creation(doc, method):
                 </div>
                 """
                 
-                frappe.sendmail(
-                    recipients=management_emails,
-                    subject=subject,
-                    message=body,
-                    now=True
-                )
+                # frappe.sendmail(
+                #     recipients=management_emails,
+                #     subject=subject,
+                #     message=body,
+                #     now=True
+                # )
                 
                 print(f"Student group creation notification sent for: {doc.student_group_name}")
             
@@ -137,12 +137,12 @@ def handle_instructor_assignment_to_student_group(doc):
                     </div>
                     """
                     
-                    frappe.sendmail(
-                        recipients=[instructor_email],
-                        subject=subject,
-                        message=body,
-                        now=True
-                    )
+                    # frappe.sendmail(
+                    #     recipients=[instructor_email],
+                    #     subject=subject,
+                    #     message=body,
+                    #     now=True
+                    # )
                     
                     print(f"Instructor assignment notification sent to: {instructor_name} ({instructor_email})")
                 else:
@@ -227,12 +227,12 @@ def handle_student_group_instructor_update(doc, method):
                             </div>
                             """
                             
-                            frappe.sendmail(
-                                recipients=[instructor_email],
-                                subject=subject,
-                                message=body,
-                                now=True
-                            )
+                            # frappe.sendmail(
+                            #     recipients=[instructor_email],
+                            #     subject=subject,
+                            #     message=body,
+                            #     now=True
+                            # )
                             
                             print(f"Instructor assignment notification sent to: {instructor_name} ({instructor_email})")
                         else:
@@ -343,12 +343,12 @@ def handle_sales_order_creation(doc, method):
                 </div>
                 """
                 
-                frappe.sendmail(
-                    recipients=sales_emails,
-                    subject=subject,
-                    message=body,
-                    now=True
-                )
+                # frappe.sendmail(
+                #     recipients=sales_emails,
+                #     subject=subject,
+                #     message=body,
+                #     now=True
+                # )
                 
                 print(f"Sales order creation notification sent for: {doc.name}")
             else:
@@ -624,12 +624,12 @@ def handle_assessment_creation(doc, method):
                 </div>
                 """
                 
-                frappe.sendmail(
-                    recipients=instructor_emails,
-                    subject=subject,
-                    message=body,
-                    now=True
-                )
+                # frappe.sendmail(
+                #     recipients=instructor_emails,
+                #     subject=subject,
+                #     message=body,
+                #     now=True
+                # )
                 
                 print(f"Assessment creation notification sent for: {doc.student_name}")
             else:

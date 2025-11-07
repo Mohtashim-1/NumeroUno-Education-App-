@@ -374,21 +374,23 @@ def trigger_assessment_result_events(doc, method=None):
             student_doc = frappe.get_doc("Student", doc.student)
             if student_doc.student_email_id:
                 try:
-                    frappe.sendmail(
-                        recipients=[student_doc.student_email_id],
-                        subject=f"Assessment Result Available - {doc.name}",
-                        message=f"""
-                        <h3>Assessment Result Notification</h3>
-                        <p>Dear {student_doc.student_name},</p>
-                        <p>Your assessment result for <strong>{doc.assessment_plan}</strong> has been published.</p>
-                        <p>Total Score: <strong>{doc.total_score}</strong></p>
-                        <p>Please check your student portal for detailed results.</p>
-                        <br>
-                        <p>Best regards,<br>Numerouno Team</p>
-                        """
-                    )
+                    pass
+                    # frappe.sendmail(
+                    #     recipients=[student_doc.student_email_id],
+                    #     subject=f"Assessment Result Available - {doc.name}",
+                    #     message=f"""
+                    #     <h3>Assessment Result Notification</h3>
+                    #     <p>Dear {student_doc.student_name},</p>
+                    #     <p>Your assessment result for <strong>{doc.assessment_plan}</strong> has been published.</p>
+                    #     <p>Total Score: <strong>{doc.total_score}</strong></p>
+                    #     <p>Please check your student portal for detailed results.</p>
+                    #     <br>
+                    #     <p>Best regards,<br>Numerouno Team</p>
+                    #     """
+                    # )
                 except Exception as e:
-                    frappe.log_error(f"Failed to send assessment notification: {str(e)}")
+                    pass
+                    # frappe.log_error(f"Failed to send assessment notification: {str(e)}")
 
 # Helper function to setup Assessment Settings
 @frappe.whitelist()

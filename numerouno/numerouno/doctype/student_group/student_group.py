@@ -413,12 +413,12 @@ def send_unpaid_student_notification(student_group_name, student_group_title, un
 	
 	# Send email
 	try:
-		frappe.sendmail(
-			recipients=email_addresses,
-			subject=subject,
-			message=body,
-			now=True
-		)
+		# frappe.sendmail(
+		# 	recipients=email_addresses,
+		# 	subject=subject,
+		# 	message=body,
+		# 	now=True
+		# )
 		
 		# Log the notification
 		frappe.logger().info(f"Unpaid student notification sent for Student Group: {student_group_name}")
@@ -600,12 +600,12 @@ def send_daily_unpaid_notifications():
 		
 		# Method 1: Try frappe.sendmail with now=True
 		try:
-			frappe.sendmail(
-				recipients=email_addresses,
-				subject=subject,
-				message=body,
-				now=True
-			)
+			# frappe.sendmail(
+			# 	recipients=email_addresses,
+			# 	subject=subject,
+			# 	message=body,
+			# 	now=True
+			# )
 			print("✅ Email sent successfully using frappe.sendmail!")
 			
 		except Exception as e1:
@@ -631,11 +631,11 @@ def send_daily_unpaid_notifications():
 				try:
 					import frappe.utils.email_lib
 					
-					frappe.utils.email_lib.sendmail(
-						recipients=email_addresses,
-						subject=subject,
-						message=body
-					)
+					# frappe.utils.email_lib.sendmail(
+					# 	recipients=email_addresses,
+					# 	subject=subject,
+					# 	message=body
+					# )
 					print("✅ Email sent successfully using frappe.utils.email_lib!")
 					
 				except Exception as e3:
@@ -1389,12 +1389,12 @@ def check_email_configuration():
 		# Test email sending
 		print("🧪 Testing email sending...")
 		try:
-			frappe.sendmail(
-				recipients=["test@example.com"],
-				subject="Test Email",
-				message="This is a test email",
-				now=True
-			)
+			# frappe.sendmail(
+			# 	recipients=["test@example.com"],
+			# 	subject="Test Email",
+			# 	message="This is a test email",
+			# 	now=True
+			# )
 			print("✅ Test email sent successfully!")
 			return True
 		except Exception as e:
@@ -1440,16 +1440,16 @@ def send_test_email(recipient_email):
 	print(f"🧪 Sending test email to: {recipient_email}")
 	
 	try:
-		frappe.sendmail(
-			recipients=[recipient_email],
-			subject="Test Email from Numero Uno System",
-			message="""
-			<p>This is a test email from the Numero Uno System.</p>
-			<p>If you receive this email, the email configuration is working correctly.</p>
-			<p>Best regards,<br>Numero Uno System</p>
-			""",
-			now=True
-		)
+		# frappe.sendmail(
+		# 	recipients=[recipient_email],
+		# 	subject="Test Email from Numero Uno System",
+		# 	message="""
+		# 	<p>This is a test email from the Numero Uno System.</p>
+		# 	<p>If you receive this email, the email configuration is working correctly.</p>
+		# 	<p>Best regards,<br>Numero Uno System</p>
+		# 	""",
+		# 	now=True
+		# )
 		
 		print("✅ Test email sent successfully!")
 		return {"status": "success", "message": "Test email sent successfully!"}

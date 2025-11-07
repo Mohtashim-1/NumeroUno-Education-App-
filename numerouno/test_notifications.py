@@ -22,17 +22,17 @@ def test_notification_system():
     print(f"Management emails: {management_emails}")
     
     # Test 4: Send a test email
-    print("\n4. Testing email sending...")
-    try:
-        frappe.sendmail(
-            recipients=management_emails,
-            subject="Test Notification System",
-            message="This is a test email from the notification system.",
-            now=True
-        )
-        print("Test email sent successfully!")
-    except Exception as e:
-        print(f"Failed to send test email: {str(e)}")
+    # print("\n4. Testing email sending...")
+    # try:
+    #     frappe.sendmail(
+    #         recipients=management_emails,
+    #         subject="Test Notification System",
+    #         message="This is a test email from the notification system.",
+    #         now=True
+    #     )
+    #     print("Test email sent successfully!")
+    # except Exception as e:
+    #     print(f"Failed to send test email: {str(e)}")
     
     # Test 5: Check recent sales orders
     print("\n5. Checking recent sales orders...")

@@ -54,12 +54,12 @@ class NotificationManager:
             </div>
             """
             
-            frappe.sendmail(
-                recipients=[email],
-                subject=subject,
-                message=body,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=[email],
+            #     subject=subject,
+            #     message=body,
+            #     now=True
+            # )
             
             frappe.logger().info(f"Welcome email sent to {student_name} ({email})")
             
@@ -133,12 +133,12 @@ class NotificationManager:
             </div>
             """
             
-            frappe.sendmail(
-                recipients=email_addresses,
-                subject=subject,
-                message=body,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=email_addresses,
+            #     subject=subject,
+            #     message=body,
+            #     now=True
+            # )
             
             frappe.logger().info(f"Unpaid student report sent for {student_group_title}")
             
@@ -182,12 +182,12 @@ class NotificationManager:
             </div>
             """
             
-            frappe.sendmail(
-                recipients=[email],
-                subject=subject,
-                message=body,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=[email],
+            #     subject=subject,
+            #     message=body,
+            #     now=True
+            # )
             
             frappe.logger().info(f"Cash assignment notification sent to {student_name}")
             
@@ -244,12 +244,12 @@ class NotificationManager:
             </div>
             """
             
-            frappe.sendmail(
-                recipients=email_addresses,
-                subject=subject,
-                message=body,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=email_addresses,
+            #     subject=subject,
+            #     message=body,
+            #     now=True
+            # )
             
             frappe.logger().info(f"Missing PO notification sent for {program_name}")
             
@@ -296,12 +296,12 @@ class NotificationManager:
             </div>
             """
             
-            frappe.sendmail(
-                recipients=[email],
-                subject=subject,
-                message=body,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=[email],
+            #     subject=subject,
+            #     message=body,
+            #     now=True
+            # )
             
             frappe.logger().info(f"Instructor task assignment sent to {instructor_name}")
             
@@ -345,12 +345,12 @@ class NotificationManager:
             </div>
             """
             
-            frappe.sendmail(
-                recipients=[email],
-                subject=subject,
-                message=body,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=[email],
+            #     subject=subject,
+            #     message=body,
+            #     now=True
+            # )
             
             frappe.logger().info(f"Assessment pending notification sent to {student_name}")
             
@@ -394,12 +394,12 @@ class NotificationManager:
             </div>
             """
             
-            frappe.sendmail(
-                recipients=[email],
-                subject=subject,
-                message=body,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=[email],
+            #     subject=subject,
+            #     message=body,
+            #     now=True
+            # )
             
             frappe.logger().info(f"Student absent notification sent to {student_name}")
             
@@ -444,12 +444,12 @@ class NotificationManager:
             </div>
             """
             
-            frappe.sendmail(
-                recipients=[email],
-                subject=subject,
-                message=body,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=[email],
+            #     subject=subject,
+            #     message=body,
+            #     now=True
+            # )
             
             frappe.logger().info(f"Attendance eligibility notification sent to {student_name}")
             
@@ -600,12 +600,12 @@ class NotificationManager:
             </div>
             """
             
-            frappe.sendmail(
-                recipients=email_addresses,
-                subject=subject,
-                message=body,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=email_addresses,
+            #     subject=subject,
+            #     message=body,
+            #     now=True
+            # )
             
             frappe.logger().info(f"Daily consolidated report sent")
             
@@ -647,12 +647,12 @@ class NotificationManager:
             <strong>Numero Uno Training Team</strong></p>
         </div>
         """
-        frappe.sendmail(
-            recipients=[email],
-            subject=subject,
-            message=body,
-            now=True
-        )
+        # frappe.sendmail(
+        #     recipients=[email],
+        #     subject=subject,
+        #     message=body,
+        #     now=True
+        # )
 
 
 # Convenience functions for easy calling

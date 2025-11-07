@@ -196,22 +196,22 @@ def send_email_notification_to_accountant(doc, method):
         recipient_emails = [user.email for user in accountant_users]
         
         # send email notification to accountant
-        frappe.sendmail(
-            recipients=recipient_emails,
-            subject=f"Cash Payment for {doc.student_name}",
-            message=f"Payment for the student {doc.student_name} Payment Mode is Cash and joining date is {doc.joining_date}\n\nView Student: {frappe.utils.get_url_to_form('Student', doc.name)}"
-        )
+        # frappe.sendmail(
+        #     recipients=recipient_emails,
+        #     subject=f"Cash Payment for {doc.student_name}",
+        #     message=f"Payment for the student {doc.student_name} Payment Mode is Cash and joining date is {doc.joining_date}\n\nView Student: {frappe.utils.get_url_to_form('Student', doc.name)}"
+        # )
     elif doc.custom_mode_of_payment == "Service Order":
         # get all the users who have the role of "Accounts User"
         accountant_users = frappe.get_all("User", filters={"role": "Accounts User"}, fields=["email"])
         recipient_emails = [user.email for user in accountant_users]
         
         # send email notification to accountant
-        frappe.sendmail(
-            recipients=recipient_emails,
-            subject=f"Service Order Payment for {doc.student_name}",
-            message=f"Service Order for the student {doc.student_name} Payment Mode is Service Order and joining date is {doc.joining_date}\n\nView Student: {frappe.utils.get_url_to_form('Student', doc.name)}"
-        )
+        # frappe.sendmail(
+        #     recipients=recipient_emails,
+        #     subject=f"Service Order Payment for {doc.student_name}",
+        #     message=f"Service Order for the student {doc.student_name} Payment Mode is Service Order and joining date is {doc.joining_date}\n\nView Student: {frappe.utils.get_url_to_form('Student', doc.name)}"
+        # )
 
 
 def send_lms_welcome_email_to_user(doc, method):
@@ -289,13 +289,14 @@ def send_lms_welcome_email_to_user(doc, method):
         """
         
         try:
-            frappe.sendmail(
-                recipients=[doc.email],
-                subject=subject,
-                message=message,
-                header=['Welcome to Numerouno LMS', 'green']
-            )
-            frappe.msgprint(f"LMS welcome email sent to {doc.email}")
+            pass
+            # frappe.sendmail(
+            #     recipients=[doc.email],
+            #     subject=subject,
+            #     message=message,
+            #     header=['Welcome to Numerouno LMS', 'green']
+            # )
+            # frappe.msgprint(f"LMS welcome email sent to {doc.email}")
         except Exception as e:
             frappe.log_error(f"Failed to send LMS welcome email to {doc.email}: {str(e)}", "LMS Welcome Email Error")
 
@@ -314,8 +315,8 @@ def send_welcome_email_to_student(doc, method):
     # send welcome email to student andd a welcome message to student and good message to student
     if doc.student_email_id:
         frappe.msgprint(f"Email sent to {doc.student_name}")
-        frappe.sendmail(
-            recipients=[doc.student_email_id],
-            subject="Welcome to Numerouno",
-            message="Welcome to Numerouno and good luck for your future studies"
-        )
+        # frappe.sendmail(
+        #     recipients=[doc.student_email_id],
+        #     subject="Welcome to Numerouno",
+        #     message="Welcome to Numerouno and good luck for your future studies"
+        # )

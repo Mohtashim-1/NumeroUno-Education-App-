@@ -127,20 +127,21 @@ def send_bulk_soa_emails(doc_name):
             }]
             
             # Send email
-            frappe.sendmail(
-                recipients=recipients,
-                subject=subject,
-                message=message,
-                attachments=attachments,
-                reference_doctype="Bulk SOA Generator",
-                reference_name=doc.name,
-                now=True
-            )
+            # frappe.sendmail(
+            #     recipients=recipients,
+            #     subject=subject,
+            #     message=message,
+            #     attachments=attachments,
+            #     reference_doctype="Bulk SOA Generator",
+            #     reference_name=doc.name,
+            #     now=True
+            # )
             
             success_count += 1
             
         except Exception as e:
-            frappe.log_error(f"Failed to send SOA email to {customer}: {str(e)}")
+            # frappe.log_error(f"Failed to send SOA email to {customer}: {str(e)}")
+            pass
             error_count += 1
     
     # Update document

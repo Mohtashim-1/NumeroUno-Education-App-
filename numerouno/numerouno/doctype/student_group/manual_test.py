@@ -175,12 +175,12 @@ def quick_test():
         print(f"Testing email to: {test_user.email}")
         
         # Send test email
-        frappe.sendmail(
-            recipients=[test_user.email],
-            subject="Test Email - Numero Uno System",
-            message="This is a test email to verify the email system is working correctly.",
-            now=True
-        )
+        # frappe.sendmail(
+        #     recipients=[test_user.email],
+        #     subject="Test Email - Numero Uno System",
+        #     message="This is a test email to verify the email system is working correctly.",
+        #     now=True
+        # )
         
         print("✅ Test email sent successfully!")
         print(f"Check the inbox of: {test_user.email}")

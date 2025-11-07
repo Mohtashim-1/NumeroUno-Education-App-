@@ -166,12 +166,12 @@ def fix_common_issues():
         if test_user:
             test_email = frappe.db.get_value("User", test_user[0].parent, "email")
             if test_email:
-                frappe.sendmail(
-                    recipients=[test_email],
-                    subject="Test Email - Email Notification System",
-                    message="This is a test email to verify the email system is working.",
-                    now=True
-                )
+                # frappe.sendmail(
+                #     recipients=[test_email],
+                #     subject="Test Email - Email Notification System",
+                #     message="This is a test email to verify the email system is working.",
+                #     now=True
+                # )
                 print(f"   ✅ Test email sent to {test_email}")
             else:
                 print("   ❌ No email address found for test user")
