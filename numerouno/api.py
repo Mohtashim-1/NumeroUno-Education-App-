@@ -1,7 +1,14 @@
 import os
 import base64
+import io
 import frappe
 from frappe.utils import today
+from frappe import _
+try:
+    import qrcode
+    QRCODE_AVAILABLE = True
+except ImportError:
+    QRCODE_AVAILABLE = False
 
 @frappe.whitelist()
 def get_challenge():
@@ -95,3 +102,53 @@ def can_show_quiz(quiz_id, user_id=None):
         failed_both = all(sub["percentage"] < sub["passing_percentage"] for sub in submissions)
         return not failed_both
     return True
+
+
+@frappe.whitelist(allow_guest=True)
+def generate_qr_code(data, size=120, box_size=10, border=4):
+    """
+    Generate QR code image as base64 data URI
+    
+    Args:
+        data: The data to encode in QR code
+        size: Output image size in pixels (default: 120)
+        box_size: Size of each box in pixels (default: 10)
+        border: Border thickness in boxes (default: 4)
+    
+    Returns:
+        Base64 encoded data URI of the QR code image
+    """
+    if not QRCODE_AVAILABLE:
+        frappe.throw(_("QR code library not installed. Please install qrcode[pil] package."))
+    
+    try:
+        # Create QR code instance
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=box_size,
+            border=border,
+        )
+        
+        # Add data
+        qr.add_data(data)
+        qr.make(fit=True)
+        
+        # Create image
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Resize if needed
+        if size and size != 120:
+            from PIL import Image
+            img = img.resize((size, size), Image.Resampling.LANCZOS)
+        
+        # Convert to base64
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        img_str = base64.b64encode(buffer.getvalue()).decode()
+        
+        return f"data:image/png;base64,{img_str}"
+        
+    except Exception as e:
+        frappe.log_error(f"QR Code generation error: {str(e)}", "QR Code Generation")
+        frappe.throw(_("Error generating QR code: {0}").format(str(e)))
