@@ -208,6 +208,115 @@ def test_function():
 
 
 @frappe.whitelist()
+def get_student_groups_for_instructor(doctype, txt, searchfield, start, page_len, filters):
+	"""
+	Filter student groups based on the logged-in user's instructor assignments
+	Only show student groups where the user is assigned as an instructor
+	"""
+	user = frappe.session.user
+	
+	# Commented out: System Managers should also only see student groups where they are assigned as instructors
+	if "System Manager" in frappe.get_roles(user):
+		conditions = ["disabled = 0"]
+		params = []
+		if txt:
+			conditions.append("name LIKE %s")
+			params.append(f"%{txt}%")
+		
+		where_clause = " AND ".join(conditions)
+		query = f"""
+			SELECT name, name as student_group_name
+			FROM `tabStudent Group`
+			WHERE {where_clause}
+			ORDER BY name
+			LIMIT {start}, {page_len}
+		"""
+		result = frappe.db.sql(query, tuple(params), as_dict=True)
+		return [[row['name'], row['student_group_name']] for row in result]
+	
+	# Find Instructor records linked to this user
+	# Check via custom_email field (direct link to User)
+	instructors_via_email = frappe.get_all(
+		"Instructor",
+		filters={"custom_email": user},
+		fields=["name"]
+	)
+	
+	# Check via employee.user_id (indirect link through Employee)
+	employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
+	instructors_via_employee = []
+	if employee:
+		instructors_via_employee = frappe.get_all(
+			"Instructor",
+			filters={"employee": employee},
+			fields=["name"]
+		)
+	
+	# Combine all instructor names
+	all_instructor_names = [inst["name"] for inst in instructors_via_email]
+	all_instructor_names.extend([inst["name"] for inst in instructors_via_employee])
+	
+	if not all_instructor_names:
+		# User is not linked to any instructor, return empty
+		return []
+	
+	# Find all Student Groups where these instructors are assigned
+	# Only show student groups that have at least one instructor assigned
+	# Query the Student Group Instructor table to get student groups with instructors
+	student_group_links = frappe.get_all(
+		"Student Group Instructor",
+		filters={"instructor": ["in", all_instructor_names]},
+		fields=["parent"],
+		group_by="parent"
+	)
+	
+	if not student_group_links:
+		return []
+	
+	student_group_names = [link["parent"] for link in student_group_links]
+	
+	if not student_group_names:
+		return []
+	
+	# Build SQL query with proper parameterized queries
+	# Only show student groups that:
+	# 1. Have the user's instructor assigned (already filtered above)
+	# 2. Are not disabled
+	# 3. Have at least one instructor in the Student Group Instructor table
+	placeholders = ",".join(["%s"] * len(student_group_names))
+	conditions = [
+		f"sg.name IN ({placeholders})",
+		"sg.disabled = 0",
+		# Ensure student group has at least one instructor assigned
+		"EXISTS (SELECT 1 FROM `tabStudent Group Instructor` sgi WHERE sgi.parent = sg.name)"
+	]
+	params = list(student_group_names)
+	
+	if txt:
+		conditions.append("sg.name LIKE %s")
+		params.append(f"%{txt}%")
+	
+	where_clause = " AND ".join(conditions)
+	
+	query = f"""
+		SELECT sg.name, sg.name as student_group_name
+		FROM `tabStudent Group` sg
+		WHERE {where_clause}
+		ORDER BY sg.name
+		LIMIT {start}, {page_len}
+	"""
+	
+	result = frappe.db.sql(query, tuple(params), as_dict=True)
+	
+	# Convert to list format that Frappe expects for dropdowns
+	dropdown_result = []
+	for row in result:
+		dropdown_result.append([row['name'], row['student_group_name']])
+	
+	return dropdown_result
+
+
+@frappe.whitelist()
 def get_students_by_group(doctype, txt, searchfield, start, page_len, filters):
 	"""
 	Filter students based on the selected student group

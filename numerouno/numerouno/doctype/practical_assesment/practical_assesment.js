@@ -5,6 +5,9 @@ frappe.ui.form.on("Practical Assesment", {
 	refresh(frm) {
 		// Set up student filtering when form loads
 		setupStudentFiltering(frm);
+		
+		// Set up student group filtering based on instructor assignment
+		setupStudentGroupFiltering(frm);
 	},
 
 	student_group(frm) {
@@ -67,6 +70,16 @@ function updateTotalMarks(frm) {
 
 function setupStudentFiltering(frm) {
 	updateStudentFilter(frm);
+}
+
+function setupStudentGroupFiltering(frm) {
+	// Set the get_query function for student_group field
+	// This will filter student groups to only show those where the user is assigned as instructor
+	frm.set_query('student_group', function() {
+		return {
+			query: "numerouno.numerouno.doctype.practical_assesment.practical_assesment.get_student_groups_for_instructor"
+		};
+	});
 }
 
 function updateStudentFilter(frm) {
