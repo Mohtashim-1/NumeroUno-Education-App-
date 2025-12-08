@@ -1169,15 +1169,20 @@ def create_manual_payment_entry_for_draft_invoice(sales_invoice, student_group_d
 @frappe.whitelist()
 def create_sales_order_from_student_group(doc, method):
     """
-    Create separate sales orders for each customer and mode of payment combination.
-    If there are 2 customers, create 2 sales orders.
-    If a customer has multiple payment modes, create separate orders for each mode.
+    Create or update Sales Orders based on Customer + Purchase Order (PO) combination.
+    
+    Rules:
+    1. Single Sales Order for Same Customer + Same PO (if not submitted)
+    2. Multiple Student Groups with same PO update the same Sales Order
+    3. Only create new Sales Order if existing one is submitted (docstatus == 1)
+    4. If no PO exists, group by customer + payment mode (fallback behavior)
     """
     try:
         print(f"=== Starting create_sales_order_from_student_group for {doc.name} ===")
         
         if not doc.students:
             frappe.msgprint(_("No students found in this Student Group"))
+            return
         
         print(f"Found {len(doc.students)} students in Student Group")
         
@@ -1185,11 +1190,12 @@ def create_sales_order_from_student_group(doc, method):
         course_rate = frappe.db.get_value("Course", doc.course, "custom_course_rate")
         if not course_rate:
             frappe.msgprint(_("No course rate found for course: {0}").format(doc.course))
+            return
         
         print(f"Course rate: {course_rate}")
         
-        # Group students by customer and payment mode
-        customer_payment_groups = {}
+        # Group students by customer and PO (or customer + payment_mode if no PO)
+        customer_po_groups = {}
         students_with_orders = 0
         students_without_orders = 0
         
@@ -1200,65 +1206,121 @@ def create_sales_order_from_student_group(doc, method):
                 students_without_orders += 1
                 customer = row.customer_name or doc.custom_customer
                 payment_mode = row.custom_mode_of_payment or "Cash Payment"  # Default to Cash Payment
+                po_number = row.customer_purchase_order or None
                 
-                print(f"Student {row.student}: customer={customer}, payment_mode={payment_mode}")
+                print(f"Student {row.student}: customer={customer}, payment_mode={payment_mode}, PO={po_number}")
                 
                 if not customer:
                     frappe.msgprint(f"Student {row.student} has no customer assigned")
                     continue
                 
-                # Create key for grouping: (customer, payment_mode)
-                group_key = (customer, payment_mode)
+                # Create key for grouping: (customer, PO) if PO exists, else (customer, payment_mode)
+                if po_number:
+                    group_key = (customer, po_number, "PO")
+                else:
+                    group_key = (customer, payment_mode, "NO_PO")
                 
-                if group_key not in customer_payment_groups:
-                    customer_payment_groups[group_key] = {
+                if group_key not in customer_po_groups:
+                    customer_po_groups[group_key] = {
                         'customer': customer,
+                        'po_number': po_number,
                         'payment_mode': payment_mode,
                         'students': [],
-                        'po_numbers': set()  # Track unique PO numbers
+                        'group_type': "PO" if po_number else "NO_PO"
                     }
                 
-                customer_payment_groups[group_key]['students'].append(row)
-                
-                # Collect PO numbers if available
-                if row.customer_purchase_order:
-                    customer_payment_groups[group_key]['po_numbers'].add(row.customer_purchase_order)
+                customer_po_groups[group_key]['students'].append(row)
             else:
                 students_with_orders += 1
         
         print(f"Students with orders: {students_with_orders}, Students without orders: {students_without_orders}")
-        print(f"Customer payment groups: {len(customer_payment_groups)}")
+        print(f"Customer-PO groups: {len(customer_po_groups)}")
         
         created_orders = []
+        updated_orders = []
         
-        # Create sales order for each customer-payment mode combination
-        for (customer, payment_mode), group_data in customer_payment_groups.items():
+        # Create or update sales order for each customer-PO combination
+        for group_key, group_data in customer_po_groups.items():
             try:
-                print(f"Creating Sales Order for customer: {customer}, payment_mode: {payment_mode}, students: {len(group_data['students'])}")
+                customer = group_data['customer']
+                po_number = group_data['po_number']
+                payment_mode = group_data['payment_mode']
+                group_type = group_data['group_type']
                 
-                # Try to find an existing Sales Order for this group, customer, payment mode, and course
-                existing_so = frappe.get_all(
-                    "Sales Order",
-                    filters={
-                        "customer": customer,
-                        "custom_mode_of_payment": payment_mode,
-                        "custom_student_group": doc.name,
-                        "docstatus": ["!=", 2],  # not cancelled
-                    },
-                    fields=["name"]
-                )
-
-                if existing_so:
+                print(f"Processing group: customer={customer}, PO={po_number}, payment_mode={payment_mode}, type={group_type}, students={len(group_data['students'])}")
+                
+                existing_so = None
+                should_create_new = False
+                
+                # Logic for finding existing Sales Order
+                if group_type == "PO" and po_number:
+                    # For PO-based groups: Find SO by customer + PO (not submitted)
+                    existing_so_list = frappe.get_all(
+                        "Sales Order",
+                        filters={
+                            "customer": customer,
+                            "po_no": po_number,
+                            "docstatus": ["!=", 2],  # not cancelled
+                        },
+                        fields=["name", "docstatus"],
+                        order_by="creation desc"  # Get most recent first
+                    )
+                    
+                    if existing_so_list:
+                        # Check if any existing SO is not submitted (docstatus == 0)
+                        for so_item in existing_so_list:
+                            if so_item.docstatus == 0:  # Draft/Not submitted
+                                existing_so = so_item
+                                print(f"Found existing draft Sales Order: {existing_so.name} for customer {customer} and PO {po_number}")
+                                break
+                        
+                        # If all existing SOs are submitted, create a new one
+                        if not existing_so:
+                            should_create_new = True
+                            print(f"All existing Sales Orders for customer {customer} and PO {po_number} are submitted. Creating new one.")
+                    else:
+                        should_create_new = True
+                        print(f"No existing Sales Order found for customer {customer} and PO {po_number}. Creating new one.")
+                else:
+                    # For non-PO groups: Find SO by customer + payment_mode + student_group (fallback to old behavior)
+                    existing_so_list = frappe.get_all(
+                        "Sales Order",
+                        filters={
+                            "customer": customer,
+                            "custom_mode_of_payment": payment_mode,
+                            "custom_student_group": doc.name,
+                            "docstatus": ["!=", 2],  # not cancelled
+                        },
+                        fields=["name", "docstatus"]
+                    )
+                    
+                    if existing_so_list:
+                        existing_so = existing_so_list[0]
+                        print(f"Found existing Sales Order (no PO): {existing_so.name}")
+                    else:
+                        should_create_new = True
+                
+                # Update existing SO or create new one
+                if existing_so and not should_create_new:
                     # Update the existing Sales Order
-                    so = frappe.get_doc("Sales Order", existing_so[0].name)
-                    so.custom_mode_of_payment = payment_mode  # <-- Add this line to ensure it is updated!
+                    so = frappe.get_doc("Sales Order", existing_so.name)
+                    print(f"Updating existing Sales Order: {so.name}")
+                    
+                    # Update payment mode if needed
+                    if group_type == "NO_PO":
+                        so.custom_mode_of_payment = payment_mode
+                    
                     # Find the item row for this course
+                    item_found = False
                     for item in so.items:
                         if item.item_code == doc.course:
                             item.qty += len(group_data['students'])
                             item.description = f"Course: {doc.course} for {item.qty} students"
+                            item_found = True
+                            print(f"Updated existing item row: qty={item.qty}")
                             break
-                    else:
+                    
+                    if not item_found:
                         # If not found, add a new item row
                         so.append("items", {
                             "item_code": doc.course,
@@ -1266,15 +1328,41 @@ def create_sales_order_from_student_group(doc, method):
                             "rate": course_rate,
                             "description": f"Course: {doc.course} for {len(group_data['students'])} students"
                         })
+                        print(f"Added new item row for course: {doc.course}")
+                    
+                    # Ensure PO number is set if it wasn't before
+                    if po_number and not so.po_no:
+                        so.po_no = po_number
+                        print(f"Set PO number: {po_number}")
+                    
+                    # Note: custom_student_group is preserved if it exists
+                    # Multiple student groups can update the same SO, so we don't overwrite
+                    # The SO will contain items from multiple student groups
+                    if not so.custom_student_group:
+                        so.custom_student_group = doc.name
+                        print(f"Set Student Group link: {doc.name}")
+                    
                     so.save()
                     sales_order = so
+                    updated_orders.append({
+                        'sales_order': sales_order.name,
+                        'customer': customer,
+                        'po_number': po_number or "N/A",
+                        'payment_mode': payment_mode,
+                        'student_count': len(group_data['students'])
+                    })
+                    print(f"✅ Updated Sales Order {sales_order.name}")
+                    
                 else:
-                    # ... your existing code to create a new Sales Order ...
+                    # Create a new Sales Order
                     sales_order = frappe.new_doc("Sales Order")
-                    # ... rest of your creation logic ...
                     sales_order.customer = customer
                     sales_order.posting_date = frappe.utils.today()
-                    sales_order.custom_mode_of_payment = payment_mode  # <-- Make sure this line is present!
+                    sales_order.custom_mode_of_payment = payment_mode
+                    
+                    # Set PO number if available
+                    if po_number:
+                        sales_order.po_no = po_number
                     
                     # Ensure delivery date is after posting date to avoid validation error
                     posting_date = getdate(sales_order.posting_date)
@@ -1286,11 +1374,7 @@ def create_sales_order_from_student_group(doc, method):
                         # If course has ended, set delivery date to 7 days after posting date
                         sales_order.delivery_date = add_days(posting_date, 7)
                     
-                    # Set PO number if available (use first one if multiple)
-                    if group_data['po_numbers']:
-                        sales_order.po_no = list(group_data['po_numbers'])[0]
-                    
-                    # Add link back to Student Group
+                    # Add link back to Student Group (first one that creates this SO)
                     sales_order.custom_student_group = doc.name
                     
                     # Add item details
@@ -1310,16 +1394,17 @@ def create_sales_order_from_student_group(doc, method):
                         "cost_center": "Main - NUTC",
                     })
                     
-                    # Insert and submit the Sales Order
+                    # Insert the Sales Order
                     sales_order.insert()
-                
-                print(f"Sales Order {sales_order.name} created for customer {customer} with payment mode {payment_mode}")
-                created_orders.append({
-                    'sales_order': sales_order.name,
-                    'customer': customer,
-                    'payment_mode': payment_mode,
-                    'student_count': len(group_data['students'])
-                })
+                    print(f"✅ Created new Sales Order: {sales_order.name}")
+                    
+                    created_orders.append({
+                        'sales_order': sales_order.name,
+                        'customer': customer,
+                        'po_number': po_number or "N/A",
+                        'payment_mode': payment_mode,
+                        'student_count': len(group_data['students'])
+                    })
                 
                 # Update student records with the sales order reference
                 for student_row in group_data['students']:
@@ -1337,23 +1422,32 @@ def create_sales_order_from_student_group(doc, method):
                 frappe.db.commit()
                 
             except Exception as e:
-                print(f"Error creating Sales Order for customer {customer}, payment mode {payment_mode}: {str(e)}")
-                frappe.throw(f"Error creating Sales Order for customer {customer}: {str(e)}")
+                print(f"Error processing group {group_key}: {str(e)}")
+                frappe.log_error(f"Error in create_sales_order_from_student_group for group {group_key}: {str(e)}", "Sales Order Creation Error")
+                frappe.throw(f"Error creating/updating Sales Order: {str(e)}")
         
         # Show success message
-        if created_orders:
-            message = f"✅ Created {len(created_orders)} Sales Order(s):\n"
-            for order in created_orders:
-                message += f"• {order['sales_order']} for {order['customer']} ({order['payment_mode']}) - {order['student_count']} students\n"
+        if created_orders or updated_orders:
+            message = ""
+            if created_orders:
+                message += f"✅ Created {len(created_orders)} new Sales Order(s):\n"
+                for order in created_orders:
+                    message += f"• {order['sales_order']} for {order['customer']} (PO: {order['po_number']}, Mode: {order['payment_mode']}) - {order['student_count']} students\n"
+            
+            if updated_orders:
+                message += f"\n🔄 Updated {len(updated_orders)} existing Sales Order(s):\n"
+                for order in updated_orders:
+                    message += f"• {order['sales_order']} for {order['customer']} (PO: {order['po_number']}, Mode: {order['payment_mode']}) - {order['student_count']} students\n"
             
             frappe.msgprint(message)
-            print(f"Successfully created {len(created_orders)} sales orders")
+            print(f"Successfully processed {len(created_orders)} new and {len(updated_orders)} updated sales orders")
         else:
-            frappe.msgprint("No Sales Orders created - all students already have sales orders")
-            print("No sales orders created - all students already have sales orders")
+            frappe.msgprint("No Sales Orders created or updated - all students already have sales orders")
+            print("No sales orders created or updated - all students already have sales orders")
             
     except Exception as e:
         print(f"Error in create_sales_order_from_student_group: {str(e)}")
+        frappe.log_error(frappe.get_traceback(), "Sales Order Creation Error")
         frappe.throw(f"Error creating Sales Orders: {str(e)}")
 
 
