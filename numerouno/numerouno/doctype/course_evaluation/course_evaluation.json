@@ -1,14 +1,251 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "naming_series:series",
  "creation": "2025-12-09 01:26:32.203151",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "course_info_section",
+  "course_name",
+  "company",
+  "naming_series",
+  "column_break_nkix",
+  "instructor_name",
+  "dates",
+  "trainee_info_section",
+  "trainee_name",
+  "email_id",
+  "trainee_mobile",
+  "column_break_coaf",
+  "signature",
+  "training_environment_section",
+  "joining_instructions_clear",
+  "column_break_olcg",
+  "training_room_environment",
+  "column_break_orhl",
+  "administration_support",
+  "course_content_section",
+  "objectives_clearly_defined",
+  "content_organization",
+  "column_break_fsbw",
+  "materials_aligned",
+  "course_pace",
+  "instructor_performance_section",
+  "presentation_skills",
+  "teaching_effectiveness",
+  "column_break_smfm",
+  "knowledge_accessibility",
+  "assignments_exercises",
+  "resources_technology_section",
+  "handouts_tools_equipment",
+  "column_break_wmpt",
+  "technology_effectiveness",
+  "training_impact_section",
+  "skills_improve_job_performance",
+  "column_break_oxbi",
+  "recommend_course",
+  "course_duration_section",
+  "course_duration",
+  "additional_comments_section",
+  "additional_comments",
   "section_break_firg",
   "amended_from"
  ],
  "fields": [
+  {
+   "fieldname": "course_info_section",
+   "fieldtype": "Section Break",
+   "label": "Course Information"
+  },
+  {
+   "fieldname": "course_name",
+   "fieldtype": "Link",
+   "label": "Course Name",
+   "options": "Course"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "instructor_name",
+   "fieldtype": "Link",
+   "label": "Instructor Name",
+   "options": "Instructor"
+  },
+  {
+   "default": "Today",
+   "fieldname": "dates",
+   "fieldtype": "Date",
+   "label": "Dates"
+  },
+  {
+   "fieldname": "trainee_info_section",
+   "fieldtype": "Section Break",
+   "label": "Trainee Information"
+  },
+  {
+   "fieldname": "trainee_name",
+   "fieldtype": "Link",
+   "label": "Trainee Name",
+   "options": "Student"
+  },
+  {
+   "fetch_from": "trainee_name.student_email_id",
+   "fieldname": "email_id",
+   "fieldtype": "Data",
+   "label": "Email ID"
+  },
+  {
+   "fetch_from": "trainee_name.custom_phone",
+   "fieldname": "trainee_mobile",
+   "fieldtype": "Data",
+   "label": "Trainee Mobile"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Signature",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "training_environment_section",
+   "fieldtype": "Section Break",
+   "label": "Training Environment & Administration"
+  },
+  {
+   "fieldname": "joining_instructions_clear",
+   "fieldtype": "Select",
+   "label": "Joining instructions were clear",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "training_room_environment",
+   "fieldtype": "Select",
+   "label": "Training room, Learning environment (ambience, comfort) & facilities",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "administration_support",
+   "fieldtype": "Select",
+   "label": "Administration support",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "course_content_section",
+   "fieldtype": "Section Break",
+   "label": "Course Content & Structure"
+  },
+  {
+   "fieldname": "objectives_clearly_defined",
+   "fieldtype": "Select",
+   "label": "Objectives were clearly defined",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "content_organization",
+   "fieldtype": "Select",
+   "label": "Content organization & relevance",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "materials_aligned",
+   "fieldtype": "Select",
+   "label": "Materials aligned with learning goals",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "course_pace",
+   "fieldtype": "Select",
+   "label": "Course pace was appropriate",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "instructor_performance_section",
+   "fieldtype": "Section Break",
+   "label": "Instructor Performance"
+  },
+  {
+   "fieldname": "presentation_skills",
+   "fieldtype": "Select",
+   "label": "Presentation skills",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "teaching_effectiveness",
+   "fieldtype": "Select",
+   "label": "Teaching effectiveness",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "knowledge_accessibility",
+   "fieldtype": "Select",
+   "label": "Knowledge & accessibility",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "assignments_exercises",
+   "fieldtype": "Select",
+   "label": "Assignments/exercises helpful",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "resources_technology_section",
+   "fieldtype": "Section Break",
+   "label": "Resources & Technology"
+  },
+  {
+   "fieldname": "handouts_tools_equipment",
+   "fieldtype": "Select",
+   "label": "Handouts/tools/equipment availability",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "technology_effectiveness",
+   "fieldtype": "Select",
+   "label": "Technology effectiveness (AV, screens)",
+   "options": "Excellent\nGood\nAverage\nPoor"
+  },
+  {
+   "fieldname": "training_impact_section",
+   "fieldtype": "Section Break",
+   "label": "Training Impact"
+  },
+  {
+   "fieldname": "skills_improve_job_performance",
+   "fieldtype": "Select",
+   "label": "Will the skills gained improve your job performance?",
+   "options": "Yes\nNo\nMaybe"
+  },
+  {
+   "fieldname": "recommend_course",
+   "fieldtype": "Select",
+   "label": "Would you recommend this course to colleagues?",
+   "options": "Yes\nNo\nMaybe"
+  },
+  {
+   "fieldname": "course_duration_section",
+   "fieldtype": "Section Break",
+   "label": "Course Duration"
+  },
+  {
+   "fieldname": "course_duration",
+   "fieldtype": "Select",
+   "label": "Course Duration",
+   "options": "Too Long\nAbout Right\nShort"
+  },
+  {
+   "fieldname": "additional_comments_section",
+   "fieldtype": "Section Break",
+   "label": "Additional Comments"
+  },
+  {
+   "fieldname": "additional_comments",
+   "fieldtype": "Text Editor",
+   "label": "Additional Comments"
+  },
   {
    "fieldname": "section_break_firg",
    "fieldtype": "Section Break"
@@ -22,16 +259,55 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "column_break_nkix",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_coaf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_olcg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_orhl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_fsbw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_smfm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_wmpt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_oxbi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "CE-.MM.-.#."
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-12-09 01:26:32.203151",
+ "modified": "2025-12-09 01:43:53.112011",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Course Evaluation",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -51,5 +327,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
