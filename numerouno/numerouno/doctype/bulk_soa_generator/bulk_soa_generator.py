@@ -199,25 +199,45 @@ def get_soa_filters(doc, customer):
 
 
 def generate_soa_html(doc, customer_doc, columns, data, filters):
-    """Generate HTML for SOA with LPO columns"""
+    """Generate HTML for SOA with LPO columns matching Accounts Receivable format"""
     
     # Get LPO data for the customer
     lpo_data = get_customer_lpo_data(customer_doc.name, doc.from_date, doc.to_date)
     
-    # Add LPO numbers to data
+    # Add LPO numbers to data (already done in add_lpo_to_ar_rows, but ensure it's there)
     for row in data:
-        if row.get('posting_date'):
+        if row.get('posting_date') and not row.get('lpo_number'):
             row['lpo_number'] = get_lpo_for_transaction(row, lpo_data)
+        
+        # Ensure all required fields exist with defaults
+        if not row.get('due_date') and row.get('voucher_type') == 'Sales Invoice':
+            # Try to get due date from Sales Invoice
+            try:
+                si_doc = frappe.get_doc("Sales Invoice", row.get('voucher_no'))
+                row['due_date'] = si_doc.due_date
+            except:
+                pass
+        
+        # Ensure age is calculated if missing
+        if not row.get('age') and row.get('due_date') and doc.to_date:
+            from frappe.utils import date_diff, getdate
+            due_date = getdate(row.get('due_date'))
+            report_date = getdate(doc.to_date)
+            row['age'] = date_diff(report_date, due_date)
     
     # Get letterhead content
     letterhead_content = get_letterhead_html(doc)
+    
+    # Get company details
+    company_doc = frappe.get_doc("Company", doc.company)
 
     # Render the HTML template
     context = {
         "doc": doc,
         "customer": customer_doc,
+        "company": company_doc,
         "data": data,
-        "currency": filters.get('presentation_currency'),
+        "currency": filters.get('presentation_currency') or get_company_currency(doc.company),
         "letterhead_content": letterhead_content,
         "frappe": frappe  # Pass the whole frappe module
     }

@@ -2,41 +2,63 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Statement of Account</title>
+    <title>Accounts Receivable</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-size: 11px;
             line-height: 1.4;
-            margin: 20px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .customer-info {
-            margin-bottom: 20px;
-        }
-        .customer-info h4 {
-            margin: 0 0 10px 0;
+            margin: 15px;
             color: #333;
         }
-        .customer-info p {
-            margin: 5px 0;
+        .letterhead {
+            margin-bottom: 15px;
+        }
+        .report-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .report-header h2 {
+            margin: 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .report-params {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .report-params table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .report-params td {
+            padding: 4px 8px;
+            border: none;
+        }
+        .report-params td.label {
+            font-weight: bold;
+            width: 30%;
+        }
+        .report-params td.value {
+            width: 70%;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 15px;
         }
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            border: 1px solid #333;
+            padding: 6px 8px;
             text-align: left;
+            font-size: 10px;
         }
         th {
-            background-color: #f8f9fa;
+            background-color: #e9ecef;
             font-weight: bold;
+            text-align: center;
         }
         .text-right {
             text-align: right;
@@ -48,16 +70,19 @@
             font-weight: bold;
             background-color: #f8f9fa;
         }
+        .total-row td {
+            border-top: 2px solid #333;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
         .page-break {
             page-break-after: always;
         }
-        .letterhead {
-            margin-bottom: 20px;
-        }
         .footer {
-            margin-top: 30px;
+            margin-top: 20px;
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             color: #666;
         }
     </style>
@@ -67,51 +92,89 @@
         {{ letterhead_content | safe }}
     </div>
     
-    <div class="header">
-        <h2>STATEMENT OF ACCOUNT</h2>
+    <div class="report-header">
+        <h2>ACCOUNTS RECEIVABLE</h2>
     </div>
     
-    <div class="customer-info">
-        <h4>Customer: {{ customer.customer_name }}</h4>
-        <p><strong>Customer ID:</strong> {{ customer.name }}</p>
-        <p><strong>Period:</strong> {{ doc.from_date }} to {{ doc.to_date }}</p>
-        <p><strong>Generated On:</strong> {{ frappe.utils.nowdate() }}</p>
+    <div class="report-params">
+        <table>
+            <tr>
+                <td class="label">Company:</td>
+                <td class="value">{{ doc.company }}</td>
+                <td class="label">Posting Date:</td>
+                <td class="value">{{ frappe.utils.formatdate(doc.to_date) }}</td>
+            </tr>
+            <tr>
+                <td class="label">Party Type:</td>
+                <td class="value">Customer</td>
+                <td class="label">Party:</td>
+                <td class="value">{{ customer.customer_name }}</td>
+            </tr>
+            <tr>
+                <td class="label">Ageing Based On:</td>
+                <td class="value">{{ doc.ageing_based_on or 'Due Date' }}</td>
+                <td class="label">Calculate Ageing With:</td>
+                <td class="value">Report Date</td>
+            </tr>
+            <tr>
+                <td class="label">Ageing Range:</td>
+                <td class="value">30, 60, 90, 120</td>
+                <td class="label">Customer Group:</td>
+                <td class="value">{{ customer.customer_group or '' }}</td>
+            </tr>
+        </table>
     </div>
     
     <table>
         <thead>
             <tr>
-                <th>Date</th>
-                <th>Reference</th>
-                <th>Description</th>
-                <th>LPO Number</th>
-                <th class="text-right">Debit</th>
-                <th class="text-right">Credit</th>
-                <th class="text-right">Balance</th>
+                <th style="width: 3%;">#</th>
+                <th style="width: 10%;">POSTING DATE</th>
+                <th style="width: 15%;">VOUCHER NO</th>
+                <th style="width: 10%;">DUE DATE</th>
+                <th style="width: 12%;" class="text-right">INVOICED AMOUNT</th>
+                <th style="width: 12%;" class="text-right">OUTSTANDING AMOUNT</th>
+                <th style="width: 8%;" class="text-right">AGE (DAYS)</th>
+                <th style="width: 20%;">CUSTOMER LPO</th>
             </tr>
         </thead>
         <tbody>
+            {% set row_num = 1 %}
+            {% set total_invoiced = 0 %}
+            {% set total_outstanding = 0 %}
+            {% set total_age = 0 %}
             {% for row in data %}
-            {% if row.posting_date %}
+            {% if row.get('posting_date') or row.get('voucher_no') %}
             <tr>
-                <td>{{ frappe.utils.formatdate(row.posting_date) }}</td>
-                <td>
-                    {{ row.voucher_type }}<br>
-                    <strong>{{ row.voucher_no }}</strong>
-                </td>
-                <td>{{ row.description|safe }}</td>
+                <td class="text-center">{{ row_num }}</td>
+                <td>{{ frappe.utils.formatdate(row.posting_date) if row.posting_date else '' }}</td>
+                <td>{{ row.voucher_no or '' }}</td>
+                <td>{{ frappe.utils.formatdate(row.due_date) if row.due_date else '' }}</td>
+                <td class="text-right">{{ frappe.utils.fmt_money(row.invoiced, currency=currency) if row.invoiced else frappe.utils.fmt_money(0, currency=currency) }}</td>
+                <td class="text-right">{{ frappe.utils.fmt_money(row.outstanding, currency=currency) if row.outstanding else frappe.utils.fmt_money(0, currency=currency) }}</td>
+                <td class="text-right">{{ row.age if row.age else 0 }}</td>
                 <td>{{ row.lpo_number or row.po_no or '' }}</td>
-                <td class="text-right">{{ frappe.utils.fmt_money(row.invoiced, currency=currency) if row.invoiced else '' }}</td>
-                <td class="text-right">{{ frappe.utils.fmt_money(row.paid, currency=currency) if row.paid else '' }}</td>
-                <td class="text-right">{{ frappe.utils.fmt_money(row.outstanding, currency=currency) }}</td>
             </tr>
+            {% set row_num = row_num + 1 %}
+            {% set total_invoiced = total_invoiced + (row.invoiced or 0) %}
+            {% set total_outstanding = total_outstanding + (row.outstanding or 0) %}
+            {% set total_age = total_age + (row.age or 0) %}
             {% endif %}
             {% endfor %}
+            {% if row_num > 1 %}
+            <tr class="total-row">
+                <td class="text-center" colspan="4"><strong>Total</strong></td>
+                <td class="text-right"><strong>{{ frappe.utils.fmt_money(total_invoiced, currency=currency) }}</strong></td>
+                <td class="text-right"><strong>{{ frappe.utils.fmt_money(total_outstanding, currency=currency) }}</strong></td>
+                <td class="text-right"><strong>{{ total_age }}</strong></td>
+                <td></td>
+            </tr>
+            {% endif %}
         </tbody>
     </table>
     
     <div class="footer">
-        <p>This statement was generated automatically by the system.</p>
+        <p>This report was generated automatically by the system on {{ frappe.utils.format_datetime(frappe.utils.now()) }}.</p>
         <p>For any queries, please contact our accounts department.</p>
     </div>
 </body>
