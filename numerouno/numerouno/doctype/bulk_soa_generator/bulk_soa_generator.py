@@ -231,6 +231,12 @@ def generate_soa_html(doc, customer_doc, columns, data, filters):
     # Get company details
     company_doc = frappe.get_doc("Company", doc.company)
 
+    # Calculate totals for the template
+    total_invoiced = sum((row.get('invoiced') or 0) for row in data if row.get('posting_date') or row.get('voucher_no'))
+    total_outstanding = sum((row.get('outstanding') or 0) for row in data if row.get('posting_date') or row.get('voucher_no'))
+    total_age = sum((row.get('age') or 0) for row in data if row.get('posting_date') or row.get('voucher_no'))
+    has_data = any(row.get('posting_date') or row.get('voucher_no') for row in data)
+    
     # Render the HTML template
     context = {
         "doc": doc,
@@ -239,6 +245,10 @@ def generate_soa_html(doc, customer_doc, columns, data, filters):
         "data": data,
         "currency": filters.get('presentation_currency') or get_company_currency(doc.company),
         "letterhead_content": letterhead_content,
+        "total_invoiced": total_invoiced,
+        "total_outstanding": total_outstanding,
+        "total_age": total_age,
+        "has_data": has_data,
         "frappe": frappe  # Pass the whole frappe module
     }
     
