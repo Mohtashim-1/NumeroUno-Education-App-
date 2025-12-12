@@ -63,8 +63,149 @@ def generate_bulk_soa_pdf(doc_name):
         if not data:
             continue
         
+        # Debug: Print initial data structure
+        if doc.report_type == "Accounts Receivable":
+            print(f"\n=== INITIAL AR DATA DEBUG - Customer: {customer} ===")
+            print(f"Total rows from AR report: {len(data)}")
+            if len(data) > 0:
+                print(f"Sample row keys: {list(data[0].keys())}")
+                print(f"First 3 rows sample:")
+                for idx, row in enumerate(data[:3]):
+                    print(f"  Row {idx}: voucher_no={row.get('voucher_no')}, voucher_type={row.get('voucher_type')}")
+                    print(f"    outstanding={row.get('outstanding')}, outstanding_amount={row.get('outstanding_amount')}, outstanding_balance={row.get('outstanding_balance')}")
+                    print(f"    invoiced={row.get('invoiced')}, invoiced_amount={row.get('invoiced_amount')}")
+            print(f"=== END INITIAL AR DATA DEBUG ===\n")
+        
+        # For Accounts Receivable: Filter out zero outstanding transactions early
+        # This prevents processing invoices that are fully paid (not receivable)
+        if doc.report_type == "Accounts Receivable":
+            from frappe.utils import flt
+            precision = frappe.get_precision("Sales Invoice", "outstanding_amount") or 2
+            epsilon = 0.5 / (10 ** precision)
+            
+            print(f"\n=== EARLY FILTER DEBUG - Customer: {customer} ===")
+            print(f"Total rows from AR report: {len(data)}")
+            print(f"Epsilon value: {epsilon}")
+            
+            filtered_data = []
+            skipped_count = 0
+            for idx, row in enumerate(data):
+                # Skip summary rows or header rows that don't have voucher information
+                # Only filter actual transaction rows
+                voucher_no = row.get('voucher_no') or ''
+                voucher_type = row.get('voucher_type') or ''
+                
+                # Check outstanding amount using multiple possible field names
+                # Try all common field names for outstanding amount
+                outstanding = (
+                    row.get('outstanding') or 
+                    row.get('outstanding_amount') or 
+                    row.get('outstanding_balance') or
+                    row.get('outstanding_in_account_currency') or
+                    0
+                )
+                outstanding_abs = abs(flt(outstanding))
+                
+                # Debug print for first few rows
+                if idx < 5:
+                    print(f"Row {idx}: voucher_no={voucher_no}, voucher_type={voucher_type}")
+                    print(f"  outstanding={row.get('outstanding')}, outstanding_amount={row.get('outstanding_amount')}, outstanding_balance={row.get('outstanding_balance')}")
+                    print(f"  Calculated outstanding_abs={outstanding_abs}, epsilon={epsilon}")
+                
+                # For transaction rows: Skip if outstanding is zero (fully paid)
+                if voucher_no:
+                    # This is a transaction row - must have outstanding > 0
+                    if outstanding_abs <= epsilon:
+                        # Skip this row - no outstanding amount means it's fully paid (not receivable)
+                        skipped_count += 1
+                        if skipped_count <= 10:  # Print first 10 skipped
+                            print(f"  SKIPPED Row {idx}: {voucher_no} - outstanding={outstanding_abs} <= epsilon")
+                        continue
+                else:
+                    # For non-transaction rows (summary/header), only include if they have outstanding > 0
+                    # or if they're clearly summary rows (check for party or other summary indicators)
+                    if outstanding_abs <= epsilon and not row.get('party'):
+                        # Skip empty summary rows
+                        skipped_count += 1
+                        continue
+                
+                filtered_data.append(row)
+            
+            print(f"After early filter: {len(filtered_data)} rows kept, {skipped_count} rows skipped")
+            print(f"=== END EARLY FILTER DEBUG ===\n")
+            
+            data = filtered_data
+            
+            if not data:
+                continue
+        
         # Add LPO numbers to data
         data = add_lpo_to_ar_rows(data)
+        
+        # Final filter for AR reports - catch any zero outstanding that slipped through
+        # Check both doc.report_type and filters to determine if this is AR report
+        is_ar_for_filter = (
+            doc.report_type == "Accounts Receivable" or 
+            (filters and filters.get('report_name') == 'Accounts Receivable')
+        )
+        if is_ar_for_filter:
+            from frappe.utils import flt
+            precision = frappe.get_precision("Sales Invoice", "outstanding_amount") or 2
+            epsilon = 0.5 / (10 ** precision)
+            
+            print(f"\n=== FINAL FILTER DEBUG - Customer: {customer} ===")
+            print(f"Rows before final filter: {len(data)}")
+            
+            final_filtered_data = []
+            skipped_final_count = 0
+            for idx, row in enumerate(data):
+                voucher_no = row.get('voucher_no') or ''
+                
+                # For transaction rows, verify outstanding > 0
+                if voucher_no:
+                    # Check outstanding using all possible field names
+                    outstanding = (
+                        row.get('outstanding') or 
+                        row.get('outstanding_amount') or 
+                        row.get('outstanding_balance') or
+                        row.get('outstanding_in_account_currency') or
+                        0
+                    )
+                    outstanding_abs = abs(flt(outstanding))
+                    
+                    # Debug print for first few rows
+                    if idx < 5:
+                        print(f"Final Filter Row {idx}: {voucher_no}")
+                        print(f"  outstanding={row.get('outstanding')}, outstanding_amount={row.get('outstanding_amount')}")
+                        print(f"  Calculated outstanding_abs={outstanding_abs}")
+                    
+                    # If still zero, try fetching directly from Sales Invoice
+                    if outstanding_abs <= epsilon and row.get('voucher_type') == 'Sales Invoice':
+                        try:
+                            si_doc = frappe.get_doc("Sales Invoice", voucher_no)
+                            source_outstanding = abs(flt(si_doc.outstanding_amount))
+                            print(f"  Fetched from source: {voucher_no} -> outstanding={source_outstanding}")
+                            outstanding_abs = source_outstanding
+                            row['outstanding'] = flt(si_doc.outstanding_amount)
+                        except Exception as e:
+                            print(f"  Error fetching {voucher_no}: {str(e)}")
+                    
+                    # Skip if outstanding is still zero
+                    if outstanding_abs <= epsilon:
+                        skipped_final_count += 1
+                        if skipped_final_count <= 10:
+                            print(f"  SKIPPED Final Row {idx}: {voucher_no} - outstanding={outstanding_abs} <= epsilon")
+                        continue
+                
+                final_filtered_data.append(row)
+            
+            print(f"After final filter: {len(final_filtered_data)} rows kept, {skipped_final_count} rows skipped")
+            print(f"=== END FINAL FILTER DEBUG ===\n")
+            
+            data = final_filtered_data
+            
+            if not data:
+                continue
         
         # Generate HTML with LPO columns
         html = generate_soa_html(doc, customer_doc, col, data, filters)
@@ -201,29 +342,216 @@ def get_soa_filters(doc, customer):
 def generate_soa_html(doc, customer_doc, columns, data, filters):
     """Generate HTML for SOA with LPO columns matching Accounts Receivable format"""
     
+    # Determine if this is an Accounts Receivable report
+    # Check multiple sources to determine report type
+    is_ar_report = False
+    
+    # Method 1: Check filters (most reliable)
+    if filters and filters.get('report_name') == 'Accounts Receivable':
+        is_ar_report = True
+    
+    # Method 2: Check doc.report_type
+    if not is_ar_report:
+        report_type_str = str(doc.report_type or '').strip()
+        is_ar_report = (
+            report_type_str == "Accounts Receivable" or 
+            report_type_str.lower() == "accounts receivable" or
+            "receivable" in report_type_str.lower()
+        )
+    
+    # Method 3: Check data structure - if data has 'outstanding' field, it's likely AR
+    if not is_ar_report and data and len(data) > 0:
+        sample_row = data[0]
+        # AR reports typically have 'outstanding' or 'outstanding_amount' fields
+        if 'outstanding' in sample_row or 'outstanding_amount' in sample_row:
+            # Check if we have any rows with voucher_type = 'Sales Invoice' (typical of AR)
+            has_sales_invoices = any(
+                row.get('voucher_type') == 'Sales Invoice' 
+                for row in data[:10]  # Check first 10 rows
+            )
+            if has_sales_invoices:
+                is_ar_report = True
+    
+    print(f"\n=== REPORT TYPE CHECK ===")
+    print(f"doc.report_type = '{doc.report_type}' (type: {type(doc.report_type).__name__})")
+    print(f"filters.report_name = '{filters.get('report_name', '') if filters else 'N/A'}'")
+    print(f"Data has outstanding fields: {data[0].get('outstanding') is not None if data and len(data) > 0 else 'N/A'}")
+    print(f"is_ar_report = {is_ar_report}")
+    print(f"=== END REPORT TYPE CHECK ===\n")
+    
     # Get LPO data for the customer
     lpo_data = get_customer_lpo_data(customer_doc.name, doc.from_date, doc.to_date)
     
     # Add LPO numbers to data (already done in add_lpo_to_ar_rows, but ensure it's there)
     for row in data:
-        if row.get('posting_date') and not row.get('lpo_number'):
-            row['lpo_number'] = get_lpo_for_transaction(row, lpo_data)
+            if row.get('posting_date') and not row.get('lpo_number'):
+                row['lpo_number'] = get_lpo_for_transaction(row, lpo_data)
+            
+            # Ensure all required fields exist with defaults
+            if not row.get('due_date') and row.get('voucher_type') == 'Sales Invoice':
+                # Try to get due date from Sales Invoice
+                try:
+                    si_doc = frappe.get_doc("Sales Invoice", row.get('voucher_no'))
+                    row['due_date'] = si_doc.due_date
+                except:
+                    pass
+            
+            # Ensure age is calculated if missing
+            if not row.get('age') and row.get('due_date') and doc.to_date:
+                from frappe.utils import date_diff, getdate
+                due_date = getdate(row.get('due_date'))
+                report_date = getdate(doc.to_date)
+                row['age'] = date_diff(report_date, due_date)
+            
+            # Ensure invoiced and outstanding amounts are properly set
+            # Handle different possible field names and convert to float
+            from frappe.utils import flt
+            voucher_no = row.get('voucher_no')
+            voucher_type = row.get('voucher_type')
+            
+            # Get invoiced amount - try multiple field names
+            invoiced = row.get('invoiced')
+            if invoiced is None:
+                invoiced = row.get('invoiced_amount') or row.get('invoice_amount')
+            
+            # If still None or 0 for Sales Invoice, fetch from source document
+            # This handles cases where the report data might not have the values populated
+            if (invoiced is None or flt(invoiced) == 0) and voucher_type == 'Sales Invoice' and voucher_no:
+                try:
+                    si_doc = frappe.get_doc("Sales Invoice", voucher_no)
+                    # Use grand_total for invoiced amount
+                    # Note: Currency conversion should be handled by the report via presentation_currency
+                    invoiced = si_doc.grand_total
+                except:
+                    invoiced = invoiced if invoiced is not None else 0
+            
+            # Payment entries don't have invoiced amounts
+            if voucher_type == 'Payment Entry':
+                invoiced = 0
+            
+            row['invoiced'] = flt(invoiced or 0)
+            
+            # Get outstanding amount - try multiple field names
+            outstanding = (
+                row.get('outstanding') or 
+                row.get('outstanding_amount') or 
+                row.get('outstanding_balance') or
+                row.get('outstanding_in_account_currency') or
+                None
+            )
+            
+            # If still None or seems incorrect (0 outstanding but has invoiced amount), fetch from source
+            if (outstanding is None or (flt(outstanding) == 0 and flt(row.get('invoiced', 0)) != 0)) and voucher_type == 'Sales Invoice' and voucher_no:
+                try:
+                    si_doc = frappe.get_doc("Sales Invoice", voucher_no)
+                    # Note: Currency conversion should be handled by the report via presentation_currency
+                    outstanding = si_doc.outstanding_amount
+                except:
+                    outstanding = outstanding if outstanding is not None else 0
+            
+            row['outstanding'] = flt(outstanding or 0)
+    
+    # Filter out rows that are not relevant for Accounts Receivable
+    # For AR reports, we only want transactions with outstanding amounts > 0
+    # Excludes: Fully paid invoices (outstanding = 0), zero-amount transactions, etc.
+    print(f"\n=== HTML GENERATION FILTER DEBUG - Customer: {customer_doc.name} ===")
+    print(f"Rows before HTML filter: {len(data)}")
+    
+    filtered_data = []
+    precision = frappe.get_precision("Sales Invoice", "outstanding_amount") or 2
+    epsilon = 0.5 / (10 ** precision)  # Small value for floating point comparison
+    
+    skipped_html_count = 0
+    for idx, row in enumerate(data):
+        invoiced = flt(row.get('invoiced') or 0)
+        outstanding = flt(row.get('outstanding') or 0)
+        voucher_type = row.get('voucher_type', '')
+        voucher_no = row.get('voucher_no', '')
         
-        # Ensure all required fields exist with defaults
-        if not row.get('due_date') and row.get('voucher_type') == 'Sales Invoice':
-            # Try to get due date from Sales Invoice
-            try:
-                si_doc = frappe.get_doc("Sales Invoice", row.get('voucher_no'))
-                row['due_date'] = si_doc.due_date
-            except:
-                pass
+        # Use absolute value comparison to handle floating point precision issues
+        invoiced_abs = abs(invoiced)
+        outstanding_abs = abs(outstanding)
         
-        # Ensure age is calculated if missing
-        if not row.get('age') and row.get('due_date') and doc.to_date:
-            from frappe.utils import date_diff, getdate
-            due_date = getdate(row.get('due_date'))
-            report_date = getdate(doc.to_date)
-            row['age'] = date_diff(report_date, due_date)
+        # Debug print for first few rows
+        if idx < 5:
+            print(f"HTML Filter Row {idx}: voucher_no='{voucher_no}' (type={type(voucher_no).__name__}), voucher_type='{voucher_type}'")
+            print(f"  invoiced={invoiced}, outstanding={outstanding}")
+            print(f"  invoiced_abs={invoiced_abs}, outstanding_abs={outstanding_abs}, epsilon={epsilon}")
+            print(f"  is_ar_report={is_ar_report}")
+        
+        # For Accounts Receivable reports: Exclude transactions with zero outstanding amount
+        # If outstanding = 0, the invoice is fully paid and not receivable anymore
+        # This filters out:
+        # - Fully paid invoices (outstanding = 0, even if invoiced > 0)
+        # - Zero-amount transactions (both invoiced and outstanding = 0)
+        # - Payment entries with zero outstanding
+        
+        if is_ar_report:
+            # For AR reports: Skip if outstanding amount is zero or very close to zero
+            # This is the key filter - only show what's actually owed (receivable)
+            # Even if invoiced > 0, if outstanding = 0, it's fully paid and not receivable
+            
+            # Skip rows with no voucher_no (empty/invalid rows)
+            voucher_no_empty = not voucher_no or (isinstance(voucher_no, str) and voucher_no.strip() == '')
+            if idx < 5:
+                print(f"  Checking empty voucher_no: voucher_no='{voucher_no}', empty={voucher_no_empty}")
+            if voucher_no_empty:
+                skipped_html_count += 1
+                if skipped_html_count <= 10:
+                    print(f"  SKIPPED HTML Row {idx}: Empty voucher_no (value='{voucher_no}')")
+                continue
+            
+            # For Sales Invoices: Double-check from source document before filtering
+            # This handles cases where report data might be incorrect
+            if voucher_type == 'Sales Invoice' and voucher_no:
+                try:
+                    si_doc = frappe.get_doc("Sales Invoice", voucher_no)
+                    source_outstanding = abs(flt(si_doc.outstanding_amount))
+                    if idx < 5:
+                        print(f"  Source check: {voucher_no} -> source_outstanding={source_outstanding}, report_outstanding={outstanding_abs}")
+                    if source_outstanding <= epsilon:
+                        # Source confirms it's fully paid, skip it
+                        skipped_html_count += 1
+                        if skipped_html_count <= 10:
+                            print(f"  SKIPPED HTML Row {idx}: {voucher_no} - source confirms outstanding=0")
+                        continue
+                    else:
+                        # Use source value (more reliable than report data)
+                        outstanding_abs = source_outstanding
+                        row['outstanding'] = flt(si_doc.outstanding_amount)
+                except Exception as e:
+                    # If we can't verify, skip it to be safe
+                    skipped_html_count += 1
+                    if skipped_html_count <= 10:
+                        print(f"  SKIPPED HTML Row {idx}: {voucher_no} - ERROR verifying source: {str(e)}")
+                    continue
+            
+            # Skip ALL rows with zero outstanding (regardless of voucher type)
+            # This is the main filter - only show what's actually receivable
+            should_skip_zero = outstanding_abs <= epsilon
+            if idx < 5:
+                print(f"  Checking zero outstanding: outstanding_abs={outstanding_abs}, epsilon={epsilon}, should_skip={should_skip_zero}")
+            if should_skip_zero:
+                skipped_html_count += 1
+                if skipped_html_count <= 10:
+                    print(f"  SKIPPED HTML Row {idx}: {voucher_no} (type={voucher_type}) - outstanding={outstanding_abs} <= epsilon")
+                continue
+            
+            if idx < 5:
+                print(f"  KEEPING HTML Row {idx}: {voucher_no} - outstanding={outstanding_abs} > epsilon")
+        else:
+            # For General Ledger: Skip if both amounts are zero (no meaningful transaction)
+            if invoiced_abs <= epsilon and outstanding_abs <= epsilon:
+                # Skip this row - both amounts are effectively zero
+                continue
+        
+        # Include the row if it passed all filters (has outstanding amount > 0)
+        filtered_data.append(row)
+    
+    print(f"After HTML filter: {len(filtered_data)} rows kept, {skipped_html_count} rows skipped")
+    print(f"=== END HTML GENERATION FILTER DEBUG ===\n")
+    
+    data = filtered_data
     
     # Get letterhead content
     letterhead_content = get_letterhead_html(doc)

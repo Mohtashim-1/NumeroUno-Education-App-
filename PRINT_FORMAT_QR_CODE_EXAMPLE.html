@@ -1,0 +1,89 @@
+<!-- 
+EXAMPLE: How to use QR Code filter in Print Formats
+
+This file shows examples of how to replace external QR code services
+with your own QR code generation using the qr_code filter.
+-->
+
+<!-- ============================================ -->
+<!-- EXAMPLE 1: Basic QR Code Usage -->
+<!-- ============================================ -->
+{% set verify_url = frappe.utils.get_url() ~ "/certificate-verification?cert=" ~ doc.name %}
+<img src="{{ verify_url | qr_code }}" alt="QR Code">
+
+<!-- ============================================ -->
+<!-- EXAMPLE 2: QR Code with Custom Size -->
+<!-- ============================================ -->
+{% set verify_url = frappe.utils.get_url() ~ "/certificate-verification?cert=" ~ doc.name %}
+<img src="{{ verify_url | qr_code(150) }}" style="width: 150px; height: 150px;" alt="QR Code">
+
+<!-- ============================================ -->
+<!-- EXAMPLE 3: Replace External QR Service -->
+<!-- ============================================ -->
+
+<!-- BEFORE (using external service): -->
+<!-- 
+<img src="https://barcode.tec-it.com/barcode.ashx?data={{ verify_url|urlencode }}&code=QRCode&dpi=150">
+-->
+
+<!-- AFTER (using your own QR code filter): -->
+{% set verify_url = frappe.utils.get_url() ~ "/certificate-verification?cert=" ~ doc.name %}
+<img src="{{ verify_url | qr_code(120) }}" style="width: 16mm; height: 16mm;" alt="QR Code">
+
+<!-- ============================================ -->
+<!-- EXAMPLE 4: QR Code in Table Cell -->
+<!-- ============================================ -->
+<td class="qr-cell">
+  {% set verify_url = frappe.utils.get_url() ~ "/certificate-verification?cert=" ~ doc.name %}
+  <img src="{{ verify_url | qr_code(120) }}" width="120" height="120" alt="QR Code">
+</td>
+
+<!-- ============================================ -->
+<!-- EXAMPLE 5: Bulk QR Codes (Multiple Items) -->
+<!-- ============================================ -->
+{% for item in doc.items %}
+  <div class="item-row">
+    <h3>{{ item.name }}</h3>
+    {% set item_url = frappe.utils.get_url() ~ "/item-details?item=" ~ item.name %}
+    <img src="{{ item_url | qr_code(100) }}" alt="QR Code for {{ item.name }}">
+  </div>
+{% endfor %}
+
+<!-- ============================================ -->
+<!-- EXAMPLE 6: QR Code with Custom Data -->
+<!-- ============================================ -->
+
+<!-- Encode document name -->
+<img src="{{ doc.name | qr_code }}" alt="QR Code">
+
+<!-- Encode custom URL -->
+{% set custom_data = "https://example.com/verify/" ~ doc.name %}
+<img src="{{ custom_data | qr_code(150) }}" alt="QR Code">
+
+<!-- Encode JSON data -->
+{% set json_data = '{"doc": "' ~ doc.name ~ '", "type": "' ~ doc.doctype ~ '"}' %}
+<img src="{{ json_data | qr_code }}" alt="QR Code">
+
+<!-- ============================================ -->
+<!-- EXAMPLE 7: Complete Print Format Section -->
+<!-- ============================================ -->
+<style>
+  .qr-code-section {
+    text-align: center;
+    margin: 20px 0;
+  }
+  .qr-code-section img {
+    width: 120px;
+    height: 120px;
+    display: block;
+    margin: 10px auto;
+  }
+</style>
+
+<div class="qr-code-section">
+  <p>Scan QR Code to verify certificate:</p>
+  {% set verify_url = frappe.utils.get_url() ~ "/certificate-verification?cert=" ~ doc.name %}
+  <img src="{{ verify_url | qr_code(150) }}" class="qr-code" alt="Verification QR Code">
+  <p style="font-size: 10px; color: #666;">Certificate No: {{ doc.name }}</p>
+</div>
+
