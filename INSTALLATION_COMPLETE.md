@@ -62,3 +62,4 @@ If you still encounter the "QR code library not installed" error:
 🎉 **Installation Complete** - The QR code functionality is now ready to use in print formats!
 
 
+
