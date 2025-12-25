@@ -64,3 +64,7 @@ If you still encounter the "QR code library not installed" error:
 
 
 
+
+
+
+
