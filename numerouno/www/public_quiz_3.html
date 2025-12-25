@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Public Quiz Attempt v3.0.0</title>
+
+  <script>
+    // Force page reload if version mismatch
+    if (localStorage.getItem("quizVersion") !== "3.0.0") {
+      localStorage.setItem("quizVersion", "3.0.0");
+      if (window.location.search.indexOf("v=") === -1) {
+        window.location.href =
+          window.location.href + (window.location.search ? "&" : "?") + "v=3.0.0";
+      }
+    }
+  </script>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+
+  <!-- ✅ Awesomplete (Frappe-like link field typeahead) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css"/>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .quiz-container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .header-section {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    .quiz-form { padding: 2rem; }
+
+    /* input look */
+    .form-control {
+      border-radius: 10px;
+      border: 2px solid #e5e7eb;
+      padding: 12px 15px;
+      font-size: 16px;
+      transition: all 0.2s ease;
+    }
+    .form-control:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+    }
+
+    .quiz-list {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-top: 1rem;
+    }
+    .quiz-item {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #e5e7eb;
+      transition: all 0.3s ease;
+    }
+    .quiz-item:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+    .quiz-title { font-weight: 600; color: #374151; margin-bottom: 0.5rem; }
+    .quiz-details { color: #6b7280; font-size: 14px; }
+
+    .btn-attempt {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: white;
+      transition: all 0.3s ease;
+    }
+    .btn-attempt:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .loading { display: none; }
+    .spinner-border-sm { width: 1rem; height: 1rem; }
+
+    .error-message {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-top: 1rem;
+      display: none;
+    }
+    .success-message {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .no-quizzes {
+      text-align: center;
+      color: #6b7280;
+      padding: 2rem;
+    }
+
+    /* ✅ Awesomplete dropdown styling to look like Frappe */
+    .awesomplete {
+      width: 100%;
+      display: block;
+    }
+    .awesomplete > ul {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      max-height: 260px;
+      overflow: auto;
+      margin-top: 6px;
+      padding: 6px;
+      background: #fff;
+      z-index: 9999;
+    }
+    .awesomplete > ul > li {
+      border-radius: 8px;
+      padding: 10px 10px;
+      font-size: 14px;
+    }
+    .awesomplete > ul > li[aria-selected="true"] {
+      background: #eef2ff;
+      color: #111827;
+    }
+
+    /* small helper text like frappe "type to search" */
+    .hint {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-10 col-lg-8">
+        <div class="quiz-container">
+          <div class="header-section">
+            <i class="fas fa-question-circle fa-3x mb-3"></i>
+            <h2 class="mb-0">Public Quiz Attempt</h2>
+            <p class="mb-0">Select your student group and student to attempt quizzes</p>
+          </div>
+
+          <div class="quiz-form" id="quizForm">
+            <form id="studentSelectionForm" novalidate>
+              <!-- Filter Section -->
+              <div class="row mb-4">
+                <div class="col-12">
+                  <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Options</h5>
+                </div>
+
+                <!-- Academic Year (Frappe-like Link Field UI) -->
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-calendar-alt me-2"></i>Academic Year
+                  </label>
+                  <input type="text" class="form-control" id="academicYearTxt" placeholder="All Academic Years" autocomplete="off">
+                  <input type="hidden" id="academicYearVal" value="">
+                  <div class="hint">Type to search</div>
+                </div>
+
+                <!-- Course -->
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-graduation-cap me-2"></i>Course
+                  </label>
+                  <input type="text" class="form-control" id="courseTxt" placeholder="All Courses" autocomplete="off">
+                  <input type="hidden" id="courseVal" value="">
+                  <div class="hint">Type to search</div>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                  <label for="fromDate" class="form-label">
+                    <i class="fas fa-calendar me-2"></i>From Date
+                  </label>
+                  <input type="date" class="form-control" id="fromDate">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                  <label for="toDate" class="form-label">
+                    <i class="fas fa-calendar me-2"></i>To Date
+                  </label>
+                  <input type="date" class="form-control" id="toDate">
+                </div>
+              </div>
+
+              <!-- Student Selection -->
+              <div class="row mb-4">
+                <div class="col-12">
+                  <h5 class="mb-3"><i class="fas fa-users me-2"></i>Student Selection</h5>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-users me-2"></i>Student Group
+                  </label>
+                  <input type="text" class="form-control" id="studentGroupTxt" placeholder="Select Student Group" autocomplete="off" disabled>
+                  <input type="hidden" id="studentGroupVal" value="">
+                  <div class="hint">Type to search</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-user me-2"></i>Student
+                  </label>
+                  <input type="text" class="form-control" id="studentTxt" placeholder="Select Student" autocomplete="off" disabled>
+                  <input type="hidden" id="studentVal" value="">
+                  <div class="hint">Type to search</div>
+                </div>
+              </div>
+
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary" id="loadQuizzesBtn">
+                  <span class="btn-text"><i class="fas fa-search me-2"></i>Load Available Quizzes</span>
+                  <span class="loading"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</span>
+                </button>
+              </div>
+            </form>
+
+            <div class="error-message" id="errorMessage">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <span id="errorText"></span>
+            </div>
+
+            <div class="success-message" id="successMessage">
+              <i class="fas fa-check-circle me-2"></i>
+              <span id="successText"></span>
+            </div>
+
+            <div class="quiz-list" id="quizList" style="display:none;">
+              <h5 class="mb-3"><i class="fas fa-list me-2"></i>Available Quizzes</h5>
+              <div id="quizItems"></div>
+            </div>
+
+            <div class="no-quizzes" id="noQuizzes" style="display:none;">
+              <i class="fas fa-info-circle fa-2x mb-3"></i>
+              <p>No quizzes available for the selected student group and student.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
+
+ <script>
+  const VERSION = "3.0.0";
+
+  // ====== Data caches ======
+  let academicYearsData = [];   // [{value,label}]
+  let coursesData = [];         // [{value,label}]
+  let studentGroupsData = [];   // [{value,label}]
+  let studentsData = [];        // [{value,label}]
+
+  function debounce(fn, delay = 250) {
+    let t = null;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  // ====== Frappe-like Link Field (Awesomplete) ======
+  function makeLinkField({ txtId, valId, placeholder, getItems, onSelect }) {
+    const txtEl = document.getElementById(txtId);
+    const valEl = document.getElementById(valId);
+
+    txtEl.setAttribute("placeholder", placeholder || "");
+
+    const lf = {
+      txtEl,
+      valEl,
+      lastItems: [],
+      aw: null,
+      setList(items) {
+        lf.lastItems = items || [];
+        lf.aw.list = lf.lastItems.map(x => x.label);
+      },
+      clear() {
+        txtEl.value = "";
+        valEl.value = "";
+      },
+      setDisabled(disabled) {
+        txtEl.disabled = !!disabled;
+      }
+    };
+
+    lf.aw = new Awesomplete(txtEl, {
+      minChars: 0,
+      autoFirst: true,
+      maxItems: 50
+    });
+
+    const refresh = debounce(async () => {
+      const q = txtEl.value || "";
+      const items = await getItems(q);
+      lf.setList(items);
+      lf.aw.evaluate(); // open dropdown
+    }, 200);
+
+    txtEl.addEventListener("input", refresh);
+    txtEl.addEventListener("focus", refresh);
+    txtEl.addEventListener("click", refresh);
+
+
+    txtEl.addEventListener("awesomplete-selectcomplete", (evt) => {
+      const selectedLabel = evt?.text?.value || txtEl.value;
+
+      const found = lf.lastItems.find(x => x.label === selectedLabel);
+      if (found) {
+        txtEl.value = found.label;
+        valEl.value = found.value;
+      } else {
+        valEl.value = "";
+      }
+
+      if (typeof onSelect === "function") {
+        onSelect({ label: txtEl.value, value: valEl.value });
+      }
+    });
+
+    // If user types random text and leaves, clear value (like frappe)
+    txtEl.addEventListener("blur", () => {
+      const exact = lf.lastItems.find(x => x.label === txtEl.value);
+      if (!exact && txtEl.value) {
+        // user typed something not selected
+        valEl.value = "";
+      }
+    });
+
+    return lf;
+  }
+
+  // ====== API fetchers ======
+  async function fetchAcademicYears() {
+    const res = await fetch("/api/method/numerouno.numerouno.api.quiz_api.get_academic_years");
+    const data = await res.json();
+    if (data.message?.status !== "success") return [];
+    return (data.message.academic_years || []).map(y => ({
+      value: y.name,
+      label: y.academic_year
+    }));
+  }
+
+  async function fetchCourses() {
+    const res = await fetch("/api/method/numerouno.numerouno.api.quiz_api.get_courses");
+    const data = await res.json();
+    if (data.message?.status !== "success") return [];
+    return (data.message.courses || []).map(c => ({
+      value: c.name,
+      label: c.course_name
+    }));
+  }
+
+  async function fetchStudentGroupsFiltered() {
+    const academicYear = document.getElementById("academicYearVal").value;
+    const course = document.getElementById("courseVal").value;
+    const fromDate = document.getElementById("fromDate").value;
+    const toDate = document.getElementById("toDate").value;
+
+    let url = "/api/method/numerouno.numerouno.api.quiz_api.get_student_groups";
+    const params = new URLSearchParams();
+    if (academicYear) params.append("academic_year", academicYear);
+    if (course) params.append("course", course);
+    if (fromDate) params.append("from_date", fromDate);
+    if (toDate) params.append("to_date", toDate);
+    if (params.toString()) url += "?" + params.toString();
+
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.message?.status !== "success") return [];
+
+    return (data.message.student_groups || []).map(g => ({
+      value: g.name,
+      label: `${g.student_group_name} (${g.course})`
+    }));
+  }
+
+  async function fetchStudentsByGroup(studentGroupName) {
+    const url =
+      `/api/method/numerouno.numerouno.api.quiz_api.get_students_by_group` +
+      `?student_group=${encodeURIComponent(studentGroupName)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.message?.status !== "success") return [];
+    return (data.message.students || []).map(s => ({
+      value: s.student,
+      label: s.student_name
+    }));
+  }
+
+  // ====== UI helpers ======
+  function showLoading(show) {
+    const btn = document.getElementById("loadQuizzesBtn");
+    const btnText = btn.querySelector(".btn-text");
+    const loading = btn.querySelector(".loading");
+    if (show) {
+      btn.disabled = true;
+      btnText.style.display = "none";
+      loading.style.display = "inline-block";
+    } else {
+      btn.disabled = false;
+      btnText.style.display = "inline-block";
+      loading.style.display = "none";
+    }
+  }
+
+  function showError(message) {
+    document.getElementById("errorText").textContent = message;
+    document.getElementById("errorMessage").style.display = "block";
+    document.getElementById("successMessage").style.display = "none";
+  }
+
+  function showSuccess(message) {
+    document.getElementById("successText").textContent = message;
+    document.getElementById("successMessage").style.display = "block";
+    document.getElementById("errorMessage").style.display = "none";
+  }
+
+  function hideMessages() {
+    document.getElementById("errorMessage").style.display = "none";
+    document.getElementById("successMessage").style.display = "none";
+  }
+
+  // ====== Link fields ======
+  let academicYearLF, courseLF, studentGroupLF, studentLF;
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    // init fields
+    academicYearLF = makeLinkField({
+      txtId: "academicYearTxt",
+      valId: "academicYearVal",
+      placeholder: "All Academic Years",
+      getItems: async (q) => {
+        const qq = (q || "").toLowerCase();
+        return academicYearsData.filter(x => x.label.toLowerCase().includes(qq));
+      },
+      onSelect: () => reloadStudentGroups()
+    });
+
+    courseLF = makeLinkField({
+      txtId: "courseTxt",
+      valId: "courseVal",
+      placeholder: "All Courses",
+      getItems: async (q) => {
+        const qq = (q || "").toLowerCase();
+        return coursesData.filter(x => x.label.toLowerCase().includes(qq));
+      },
+      onSelect: () => reloadStudentGroups()
+    });
+
+    studentGroupLF = makeLinkField({
+      txtId: "studentGroupTxt",
+      valId: "studentGroupVal",
+      placeholder: "Select Student Group",
+      getItems: async (q) => {
+        const qq = (q || "").toLowerCase();
+        return studentGroupsData.filter(x => x.label.toLowerCase().includes(qq));
+      },
+      onSelect: async ({ value }) => reloadStudents(value)
+    });
+
+    studentLF = makeLinkField({
+      txtId: "studentTxt",
+      valId: "studentVal",
+      placeholder: "Select Student",
+      getItems: async (q) => {
+        const qq = (q || "").toLowerCase();
+        return studentsData.filter(x => x.label.toLowerCase().includes(qq));
+      }
+    });
+
+    // initial disable states
+    // studentGroupLF.setDisabled(true);
+    studentLF.setDisabled(true);
+
+    // load base datasets
+    academicYearsData = await fetchAcademicYears();
+    coursesData = await fetchCourses();
+
+    // load student groups initially (based on empty filters)
+    await reloadStudentGroups();
+
+    // filter change events
+    document.getElementById("fromDate").addEventListener("change", reloadStudentGroups);
+    document.getElementById("toDate").addEventListener("change", reloadStudentGroups);
+
+    // submit
+    document.getElementById("studentSelectionForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      loadQuizzes();
+    });
+  });
+
+  // ====== reload groups/students ======
+//   async function reloadStudentGroups() {
+//     showLoading(true);
+//     hideMessages();
+
+//     // reset dependent fields like frappe
+//     studentGroupLF.clear();
+//     studentLF.clear();
+//     document.getElementById("studentTxt").disabled = true;
+//     // document.getElementById("studentGroupTxt").disabled = true;
+//     studentsData = [];
+
+//     try {
+//       studentGroupsData = await fetchStudentGroupsFiltered();
+//       showLoading(false);
+
+//       if (studentGroupsData.length) {
+//         document.getElementById("studentGroupTxt").disabled = false;
+//         showSuccess("Student groups loaded. Type to search.");
+//       } else {
+//         showError("No student groups found for selected filters.");
+//       }
+//     } catch (e) {
+//       showLoading(false);
+//       showError("Error loading student groups. Please try again.");
+//       console.error(e);
+//     }
+//   }
+
+async function reloadStudentGroups() {
+  showLoading(true);
+  hideMessages();
+
+  // reset dependent fields
+  studentGroupLF.clear();
+  studentLF.clear();
+  document.getElementById("studentTxt").disabled = true;
+  studentsData = [];
+
+  try {
+    studentGroupsData = await fetchStudentGroupsFiltered();
+    showLoading(false);
+
+    // ✅ Always enable student group (even if filters empty)
+    document.getElementById("studentGroupTxt").disabled = false;
+
+    if (studentGroupsData.length) {
+      showSuccess("Student groups loaded. Type to search.");
+    } else {
+      showError("No student groups found (try different filters).");
+    }
+  } catch (e) {
+    showLoading(false);
+    document.getElementById("studentGroupTxt").disabled = false;
+    showError("Error loading student groups. Please try again.");
+    console.error(e);
+  }
+}
+
+
+  async function reloadStudents(studentGroupName) {
+    if (!studentGroupName) return;
+
+    showLoading(true);
+    hideMessages();
+
+    studentLF.clear();
+    studentsData = [];
+    document.getElementById("studentTxt").disabled = true;
+
+    try {
+      studentsData = await fetchStudentsByGroup(studentGroupName);
+      showLoading(false);
+
+      if (studentsData.length) {
+        document.getElementById("studentTxt").disabled = false;
+        showSuccess("Students loaded. Type to search.");
+      } else {
+        showError("No students found in this group.");
+      }
+    } catch (e) {
+      showLoading(false);
+      showError("Error loading students. Please try again.");
+      console.error(e);
+    }
+  }
+
+  // ====== quizzes ======
+  function loadQuizzes() {
+    const studentGroup = document.getElementById("studentGroupVal").value;
+    const student = document.getElementById("studentVal").value;
+
+    if (!studentGroup || !student) {
+      showError("Please select Student Group and Student from suggestions.");
+      return;
+    }
+
+    showLoading(true);
+    hideMessages();
+
+    const url =
+      `/api/method/numerouno.numerouno.api.quiz_api.get_available_quizzes_from_mcqs` +
+      `?student_group=${encodeURIComponent(studentGroup)}&student=${encodeURIComponent(student)}`;
+
+    console.log("=".repeat(80));
+    console.log("LOADING QUIZZES - Frontend Debug");
+    console.log("Student Group:", studentGroup);
+    console.log("Student:", student);
+    console.log("API URL:", url);
+    console.log("=".repeat(80));
+    
+    fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } })
+      .then((r) => r.json())
+      .then((data) => {
+        showLoading(false);
+        console.log("=".repeat(80));
+        console.log("QUIZ API RESPONSE - Full Data:");
+        console.log(JSON.stringify(data, null, 2));
+        console.log("=".repeat(80));
+        
+        if (data.message?.status === "success") {
+          const quizzes = data.message.quizzes || [];
+          const debugInfo = data.message.debug_info || {};
+          
+          console.log("Quizzes found:", quizzes.length);
+          console.log("Debug Info:", debugInfo);
+          
+          if (quizzes.length === 0) {
+            const debugMsg = data.message.debug || "No quizzes available";
+            const debugDetails = data.message.debug_details || {};
+            
+            console.error("NO QUIZZES FOUND!");
+            console.error("Debug Message:", debugMsg);
+            console.error("Debug Details:", debugDetails);
+            
+            let errorMsg = `${debugMsg}. `;
+            if (debugDetails.quiz_names_from_mcqs && debugDetails.quiz_names_from_mcqs.length > 0) {
+              errorMsg += `Quiz names found in MCQS Assignment: ${debugDetails.quiz_names_from_mcqs.join(", ")}. `;
+            }
+            if (debugDetails.assignments_found !== undefined) {
+              errorMsg += `MCQS Assignments found: ${debugDetails.assignments_found}. `;
+            }
+            errorMsg += `Please check that MCQS Assignment exists for student group: ${studentGroup} and has quizzes linked.`;
+            
+            showError(errorMsg);
+          } else {
+            console.log("Quizzes to display:", quizzes);
+            displayQuizzes(quizzes);
+            showSuccess("Quizzes loaded successfully!");
+          }
+        } else {
+          const errorMsg = data.message?.message || data.message?.debug || "Failed to load quizzes";
+          console.error("API Error:", errorMsg);
+          console.error("Full error response:", data.message);
+          showError(errorMsg);
+        }
+      })
+      .catch((err) => {
+        showLoading(false);
+        console.error("=".repeat(80));
+        console.error("FETCH ERROR:");
+        console.error(err);
+        console.error("=".repeat(80));
+        showError("Error loading quizzes. Please try again. Check browser console for details.");
+      });
+  }
+
+  function displayQuizzes(quizzes) {
+    const quizList = document.getElementById("quizList");
+    const quizItems = document.getElementById("quizItems");
+    const noQuizzes = document.getElementById("noQuizzes");
+
+    if (!quizzes || quizzes.length === 0) {
+      quizList.style.display = "none";
+      noQuizzes.style.display = "block";
+      return;
+    }
+
+    quizItems.innerHTML = "";
+    quizzes.forEach((quiz) => {
+      const quizItem = document.createElement("div");
+      quizItem.className = "quiz-item";
+      quizItem.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="quiz-title">${quiz.title}</div>
+            <div class="quiz-details">
+              <i class="fas fa-star me-1"></i>Total Marks: ${quiz.total_marks || "N/A"}
+              <span class="ms-3">
+                <i class="fas fa-percentage me-1"></i>Passing: ${quiz.passing_percentage || "N/A"}%
+              </span>
+              <span class="ms-3">
+                <i class="fas fa-clock me-1"></i>Max Attempts: ${quiz.max_attempts || "Unlimited"}
+              </span>
+            </div>
+          </div>
+          <button class="btn btn-attempt" onclick="attemptQuiz('${quiz.name}', '${(quiz.title || "").replaceAll("'", "\\'")}')">
+            <i class="fas fa-play me-1"></i>Attempt Quiz
+          </button>
+        </div>
+      `;
+      quizItems.appendChild(quizItem);
+    });
+
+    quizList.style.display = "block";
+    noQuizzes.style.display = "none";
+  }
+
+  // ====== Quiz Attempt Flow ======
+  function attemptQuiz(quizName, quizTitle) {
+    const studentGroup = document.getElementById("studentGroupVal").value;
+    const student = document.getElementById("studentVal").value;
+    
+    if (!studentGroup || !student) {
+      showError("Please select student group and student first");
+      return;
+    }
+
+    loadQuizForAttempt(quizName, quizTitle, student, studentGroup);
+  }
+
+  function loadQuizForAttempt(quizName, quizTitle, student, studentGroup) {
+    showLoading(true);
+    hideMessages();
+
+    const url = `/api/method/numerouno.numerouno.api.quiz_api.get_quiz_questions_from_quiz?quiz_name=${encodeURIComponent(quizName)}`;
+    
+    fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" }
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        showLoading(false);
+        if (data.message?.status === "success") {
+          displayQuizForAttempt(data.message, quizName, student, studentGroup);
+        } else {
+          showError(data.message?.message || "Failed to load quiz");
+        }
+      })
+      .catch((err) => {
+        showLoading(false);
+        showError("Error loading quiz. Please try again.");
+        console.error(err);
+      });
+  }
+
+  function displayQuizForAttempt(quizData, quizName, student, studentGroup) {
+    // Hide the form and show quiz
+    document.getElementById("quizForm").style.display = "none";
+    document.getElementById("quizList").style.display = "none";
+    document.getElementById("noQuizzes").style.display = "none";
+    
+    // Create quiz container
+    const quizContainer = document.createElement("div");
+    quizContainer.id = "quizAttemptContainer";
+    quizContainer.innerHTML = `
+      <div class="quiz-container">
+        <div class="header-section">
+          <i class="fas fa-question-circle fa-3x mb-3"></i>
+          <h2 class="mb-0">${quizData.quiz.title}</h2>
+          <p class="mb-0">Student: ${student} | Group: ${studentGroup}</p>
+        </div>
+        <div class="quiz-form">
+          <div class="quiz-content" id="quizContent">
+            <div class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-3">Loading Quiz...</p>
+            </div>
+          </div>
+          <div class="text-center mt-3">
+            <button class="btn btn-secondary" onclick="goBackToQuizList()">
+              <i class="fas fa-arrow-left me-2"></i>Back to Quiz List
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Insert quiz container after the main container
+    const mainContainer = document.querySelector(".quiz-container");
+    mainContainer.parentNode.insertBefore(quizContainer, mainContainer.nextSibling);
+    
+    // Load quiz questions
+    setTimeout(() => {
+      displayQuizQuestions(quizData, quizName, student, studentGroup);
+    }, 500);
+  }
+
+  function displayQuizQuestions(quizData, quizName, student, studentGroup) {
+    const quizContent = document.getElementById("quizContent");
+    quizContent.innerHTML = "";
+
+    // Quiz info
+    const quizInfo = document.createElement("div");
+    quizInfo.className = "mb-4 p-3 bg-light rounded";
+    quizInfo.innerHTML = `
+      <div class="row text-center">
+        <div class="col-md-3"><strong>Total Marks:</strong> ${quizData.quiz.total_marks}</div>
+        <div class="col-md-3"><strong>Passing %:</strong> ${quizData.quiz.passing_percentage}%</div>
+        <div class="col-md-3"><strong>Max Attempts:</strong> ${quizData.quiz.max_attempts || "Unlimited"}</div>
+        <div class="col-md-3"><strong>Questions:</strong> ${quizData.questions.length}</div>
+      </div>
+    `;
+    quizContent.appendChild(quizInfo);
+
+    // Questions
+    quizData.questions.forEach((question, index) => {
+      const questionCard = document.createElement("div");
+      questionCard.className = "question-card mb-4 p-3 border rounded";
+      questionCard.innerHTML = `
+        <div class="question-title mb-3">
+          <strong>Question ${index + 1}:</strong> ${question.question}
+          <span class="badge bg-primary ms-2">${question.marks} mark${question.marks > 1 ? "s" : ""}</span>
+        </div>
+        <div class="options" data-question="${question.name}">
+          ${question.options.map(option => `
+            <div class="option-item mb-2 p-2 border rounded cursor-pointer" data-option="${option.id}" style="cursor: pointer;">
+              <input type="radio" name="question_${question.name}" value="${option.id}" id="q${question.name}_${option.id}">
+              <label for="q${question.name}_${option.id}" class="ms-2 cursor-pointer" style="cursor: pointer;">${option.text}</label>
+            </div>
+          `).join("")}
+        </div>
+      `;
+      quizContent.appendChild(questionCard);
+    });
+
+    // Submit button
+    const submitBtn = document.createElement("div");
+    submitBtn.className = "text-center mt-4";
+    submitBtn.innerHTML = `
+      <button class="btn btn-primary btn-lg" id="submitQuizBtn">
+        <i class="fas fa-paper-plane me-2"></i>Submit Quiz
+      </button>
+    `;
+    quizContent.appendChild(submitBtn);
+
+    // Add event listeners for options
+    document.querySelectorAll(".option-item").forEach((item) => {
+      item.addEventListener("click", function() {
+        const questionName = this.closest(".options").dataset.question;
+        const optionId = this.dataset.option;
+        
+        // Remove selection from other options in same question
+        this.closest(".options").querySelectorAll(".option-item").forEach((opt) => {
+          opt.classList.remove("selected");
+          opt.querySelector('input[type="radio"]').checked = false;
+        });
+        
+        // Select this option
+        this.classList.add("selected");
+        this.querySelector('input[type="radio"]').checked = true;
+      });
+    });
+
+    // Add submit button event listener
+    document.getElementById("submitQuizBtn").addEventListener("click", function() {
+      submitQuiz(quizData, quizName, student, studentGroup);
+    });
+  }
+
+  function submitQuiz(quizData, quizName, student, studentGroup) {
+    // Collect answers
+    const answers = {};
+    document.querySelectorAll(".options").forEach((optionGroup) => {
+      const questionName = optionGroup.dataset.question;
+      const selectedOption = optionGroup.querySelector('input[type="radio"]:checked');
+      answers[questionName] = selectedOption ? [parseInt(selectedOption.value)] : [];
+    });
+
+    // Check if all questions are answered
+    const unansweredQuestions = Object.keys(answers).filter((q) => answers[q].length === 0);
+    if (unansweredQuestions.length > 0) {
+      showError(`Please answer all questions. ${unansweredQuestions.length} question(s) remaining.`);
+      return;
+    }
+
+    // Prepare submission data
+    const submissionAnswers = quizData.questions.map((question) => {
+      const answer = answers[question.name] || [];
+      return {
+        question: question.name,
+        answers: answer,
+        marks: question.marks
+      };
+    });
+
+    showLoading(true);
+    hideMessages();
+
+    // Submit quiz - Use GET method to avoid CSRF token issues for public pages
+    console.log("=".repeat(80));
+    console.log("SUBMITTING QUIZ");
+    console.log("Quiz:", quizName);
+    console.log("Student:", student);
+    console.log("Student Group:", studentGroup);
+    console.log("Answers:", submissionAnswers);
+    console.log("=".repeat(80));
+    
+    // Build URL with query parameters (GET method to avoid CSRF)
+    const params = new URLSearchParams();
+    params.append("quiz_name", quizName);
+    params.append("student", student);
+    params.append("student_group", studentGroup);
+    params.append("answers", JSON.stringify(submissionAnswers));
+    
+    const url = `/api/method/numerouno.numerouno.api.quiz_api.submit_quiz_from_mcqs?${params.toString()}`;
+    
+    console.log("Submitting quiz via GET:", url);
+    
+    fetch(url, {
+      method: "GET",
+      headers: { 'Content-Type': 'application/json' }
+    })
+      .then((r) => {
+        if (!r.ok) {
+          throw new Error(`HTTP error! status: ${r.status}`);
+        }
+        return r.json();
+      })
+      .then((data) => {
+        showLoading(false);
+        console.log("Submission response:", data);
+        if (data.message?.status === "success") {
+          const result = data.message;
+          showSuccess(
+            `Quiz submitted successfully! Score: ${result.score}/${result.total_marks} (${result.percentage.toFixed(1)}%) - ${result.passed ? "Passed" : "Failed"}`
+          );
+          
+          // Disable submit button
+          const submitBtn = document.getElementById("submitQuizBtn");
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Quiz Submitted';
+          }
+        } else {
+          showError(data.message?.message || "Failed to submit quiz");
+        }
+      })
+      .catch((err) => {
+        showLoading(false);
+        console.error("Error submitting quiz:", err);
+        showError("Error submitting quiz. Please try again. Check browser console for details.");
+      });
+  }
+
+  function goBackToQuizList() {
+    // Remove quiz container
+    const quizContainer = document.getElementById("quizAttemptContainer");
+    if (quizContainer) {
+      quizContainer.remove();
+    }
+    
+    // Show form and quiz list again
+    document.getElementById("quizForm").style.display = "block";
+    if (document.getElementById("quizList").style.display !== "none") {
+      document.getElementById("quizList").style.display = "block";
+    }
+  }
+</script>
+
+</body>
+</html>
