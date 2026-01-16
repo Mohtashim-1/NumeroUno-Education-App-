@@ -337,7 +337,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 							<span>AT</span>
 							<div>
 								<h3>Student Attendance</h3>
-								<p class="panel-subtitle">Attendance records ordered by date (oldest to newest).</p>
+								<p class="panel-subtitle">Attendance records ordered by date (newest to oldest).</p>
 							</div>
 						</div>
 					</div>
@@ -398,16 +398,35 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		</div>
 	`).appendTo(page.body);
 
+	var attendanceOffset = 0;
+	var cardsOffset = 0;
+	var pageSize = 50;
+
 	load_portal_data();
+	init_tabs();
 
 	function load_portal_data() {
 		frappe.call({
 			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_portal_data",
+			args: {
+				attendance_limit: pageSize,
+				attendance_offset: attendanceOffset,
+				card_limit: pageSize,
+				card_offset: cardsOffset
+			},
 			callback: function (r) {
 				var message = r.message || {};
-				render_attendance(message.attendance || []);
-				render_cards(message.cards || []);
-				render_metrics(message.attendance || [], message.cards || []);
+				render_attendance(message.attendance || [], attendanceOffset > 0);
+				render_cards(message.cards || [], cardsOffset > 0);
+				if (attendanceOffset === 0 && cardsOffset === 0) {
+					render_metrics(
+						message.attendance || [],
+						message.cards || [],
+						message.attendance_total,
+						message.present_total,
+						message.cards_total
+					);
+				}
 			},
 			error: function () {
 				render_attendance([]);
@@ -428,20 +447,25 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		});
 	}
 
-	function render_attendance(records) {
-		var $body = $("#instructor-attendance-body").empty();
-		records = records.slice().sort(function (a, b) {
-			var dateA = a.date ? new Date(a.date) : new Date(0);
-			var dateB = b.date ? new Date(b.date) : new Date(0);
-			return dateB - dateA;
-		});
+	function render_attendance(records, append) {
+		var $body = $("#instructor-attendance-body");
+		if (!append) {
+			$body.empty();
+			records = records.slice().sort(function (a, b) {
+				var dateA = a.date ? new Date(a.date) : new Date(0);
+				var dateB = b.date ? new Date(b.date) : new Date(0);
+				return dateB - dateA;
+			});
+		}
 
 		if (!records.length) {
-			$body.append(`
-				<tr>
-					<td colspan="7" class="empty-state">No attendance records found.</td>
-				</tr>
-			`);
+			if (!append) {
+				$body.append(`
+					<tr>
+						<td colspan="7" class="empty-state">No attendance records found.</td>
+					</tr>
+				`);
+			}
 			return;
 		}
 
@@ -510,22 +534,28 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 
 		init_signature_canvases('att-sign-');
 		bind_attendance_actions();
+		bind_attendance_load_more(records.length);
 	}
 
-	function render_cards(records) {
-		var $body = $("#instructor-cards-body").empty();
-		records = records.slice().sort(function (a, b) {
-			var nameA = (a.student_name || a.student || "").toLowerCase();
-			var nameB = (b.student_name || b.student || "").toLowerCase();
-			return nameA.localeCompare(nameB);
-		});
+	function render_cards(records, append) {
+		var $body = $("#instructor-cards-body");
+		if (!append) {
+			$body.empty();
+			records = records.slice().sort(function (a, b) {
+				var nameA = (a.student_name || a.student || "").toLowerCase();
+				var nameB = (b.student_name || b.student || "").toLowerCase();
+				return nameA.localeCompare(nameB);
+			});
+		}
 
 		if (!records.length) {
-			$body.append(`
-				<tr>
-					<td colspan="5" class="empty-state">No student cards found.</td>
-				</tr>
-			`);
+			if (!append) {
+				$body.append(`
+					<tr>
+						<td colspan="5" class="empty-state">No student cards found.</td>
+					</tr>
+				`);
+			}
 			return;
 		}
 
@@ -588,19 +618,50 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 
 		init_signature_canvases('card-sign-');
 		bind_card_actions();
+		bind_cards_load_more(records.length);
 	}
 
-	function render_metrics(attendance, cards) {
+	function render_metrics(attendance, cards, attendanceTotal, presentTotal, cardsTotal) {
 		var presentCount = attendance.filter(function (row) {
 			return row.status === "Present";
 		}).length;
 
-		$("#metric-attendance").text(attendance.length);
-		$("#metric-present").text(presentCount);
-		$("#metric-cards").text(cards.length);
+		$("#metric-attendance").text(attendanceTotal || attendance.length);
+		$("#metric-present").text(presentTotal || presentCount);
+		$("#metric-cards").text(cardsTotal || cards.length);
 	}
 
-	init_tabs();
+	function bind_attendance_load_more(count) {
+		$("#attendance-load-more").remove();
+		if (count < pageSize) return;
+
+		$("#attendance-section .portal-panel").append(`
+			<div class="mt-2 text-center">
+				<button type="button" class="portal-btn portal-btn-ghost" id="attendance-load-more">Load more</button>
+			</div>
+		`);
+
+		$("#attendance-load-more").off('click').on('click', function () {
+			attendanceOffset += pageSize;
+			load_portal_data();
+		});
+	}
+
+	function bind_cards_load_more(count) {
+		$("#cards-load-more").remove();
+		if (count < pageSize) return;
+
+		$("#cards-section .portal-panel").append(`
+			<div class="mt-2 text-center">
+				<button type="button" class="portal-btn portal-btn-ghost" id="cards-load-more">Load more</button>
+			</div>
+		`);
+
+		$("#cards-load-more").off('click').on('click', function () {
+			cardsOffset += pageSize;
+			load_portal_data();
+		});
+	}
 
 	function init_signature_canvases(prefix) {
 		$(`canvas[id^="${prefix}"]`).each(function () {

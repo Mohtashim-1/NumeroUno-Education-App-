@@ -714,6 +714,7 @@ async function reloadStudentGroups() {
 
     quizItems.innerHTML = "";
     quizzes.forEach((quiz) => {
+      const totalMarks = 100;
       const quizItem = document.createElement("div");
       quizItem.className = "quiz-item";
       quizItem.innerHTML = `
@@ -721,7 +722,7 @@ async function reloadStudentGroups() {
           <div>
             <div class="quiz-title">${quiz.title}</div>
             <div class="quiz-details">
-              <i class="fas fa-star me-1"></i>Total Marks: ${quiz.total_marks || "N/A"}
+              <i class="fas fa-star me-1"></i>Total Marks: ${totalMarks}
               <span class="ms-3">
                 <i class="fas fa-percentage me-1"></i>Passing: ${quiz.passing_percentage || "N/A"}%
               </span>
@@ -828,13 +829,14 @@ async function reloadStudentGroups() {
   function displayQuizQuestions(quizData, quizName, student, studentGroup) {
     const quizContent = document.getElementById("quizContent");
     quizContent.innerHTML = "";
+    const totalMarks = 100;
 
     // Quiz info
     const quizInfo = document.createElement("div");
     quizInfo.className = "mb-4 p-3 bg-light rounded";
     quizInfo.innerHTML = `
       <div class="row text-center">
-        <div class="col-md-3"><strong>Total Marks:</strong> ${quizData.quiz.total_marks}</div>
+        <div class="col-md-3"><strong>Total Marks:</strong> ${totalMarks}</div>
         <div class="col-md-3"><strong>Passing %:</strong> ${quizData.quiz.passing_percentage}%</div>
         <div class="col-md-3"><strong>Max Attempts:</strong> ${quizData.quiz.max_attempts || "Unlimited"}</div>
         <div class="col-md-3"><strong>Questions:</strong> ${quizData.questions.length}</div>
@@ -962,8 +964,9 @@ async function reloadStudentGroups() {
         if (data.message?.status === "success") {
           const result = data.message;
           showSuccess(
-            `Quiz submitted successfully! Score: ${result.score}/${result.total_marks} (${result.percentage.toFixed(1)}%) - ${result.passed ? "Passed" : "Failed"}`
+            `Quiz submitted successfully! Score: ${result.score}/100 (${result.percentage.toFixed(1)}%) - ${result.passed ? "Passed" : "Failed"}`
           );
+          showQuizResult(result);
           
           // Disable submit button
           const submitBtn = document.getElementById("submitQuizBtn");
@@ -994,6 +997,24 @@ async function reloadStudentGroups() {
     if (document.getElementById("quizList").style.display !== "none") {
       document.getElementById("quizList").style.display = "block";
     }
+  }
+
+  function showQuizResult(result) {
+    const quizContent = document.getElementById("quizContent");
+    if (!quizContent) return;
+
+    quizContent.innerHTML = `
+      <div class="text-center p-4 bg-light rounded">
+        <i class="fas fa-clipboard-check fa-3x mb-3 text-success"></i>
+        <h3>Quiz Submitted</h3>
+        <p class="mb-2"><strong>Score:</strong> ${result.score}/100</p>
+        <p class="mb-2"><strong>Percentage:</strong> ${result.percentage.toFixed(1)}%</p>
+        <p class="mb-4"><strong>Status:</strong> ${result.passed ? "Passed" : "Failed"}</p>
+        <button class="btn btn-secondary" onclick="goBackToQuizList()">
+          <i class="fas fa-arrow-left me-2"></i>Back to Quiz List
+        </button>
+      </div>
+    `;
   }
 </script>
 

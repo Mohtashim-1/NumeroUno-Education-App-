@@ -41,7 +41,11 @@ def _get_student_name_map(student_ids):
 
 
 @frappe.whitelist()
-def get_instructor_portal_data():
+def get_instructor_portal_data(attendance_limit=50, attendance_offset=0, card_limit=50, card_offset=0):
+    attendance_limit = int(attendance_limit or 50)
+    attendance_offset = int(attendance_offset or 0)
+    card_limit = int(card_limit or 50)
+    card_offset = int(card_offset or 0)
     user = frappe.session.user
     roles = frappe.get_roles(user)
 
@@ -61,6 +65,13 @@ def get_instructor_portal_data():
         attendance_filters["student_group"] = ["in", student_group_names]
         card_filters["student_group"] = ["in", student_group_names]
 
+    attendance_total = frappe.db.count("Student Attendance", filters=attendance_filters)
+    present_total = frappe.db.count(
+        "Student Attendance",
+        filters={**attendance_filters, "status": "Present"},
+    )
+    cards_total = frappe.db.count("Student Card", filters=card_filters)
+
     attendance = frappe.get_all(
         "Student Attendance",
         filters=attendance_filters,
@@ -76,6 +87,8 @@ def get_instructor_portal_data():
             "docstatus",
         ],
         order_by="date desc, modified desc",
+        limit=attendance_limit,
+        start=attendance_offset,
     )
 
     cards = frappe.get_all(
@@ -90,6 +103,8 @@ def get_instructor_portal_data():
             "modified",
         ],
         order_by="modified desc",
+        limit=card_limit,
+        start=card_offset,
     )
 
     student_ids = {row.student for row in cards if row.student}
@@ -103,4 +118,14 @@ def get_instructor_portal_data():
     for row in cards:
         row["student_name"] = student_name_map.get(row.student)
 
-    return {"attendance": attendance, "cards": cards}
+    return {
+        "attendance": attendance,
+        "cards": cards,
+        "attendance_total": attendance_total,
+        "present_total": present_total,
+        "cards_total": cards_total,
+        "attendance_limit": attendance_limit,
+        "attendance_offset": attendance_offset,
+        "card_limit": card_limit,
+        "card_offset": card_offset,
+    }
