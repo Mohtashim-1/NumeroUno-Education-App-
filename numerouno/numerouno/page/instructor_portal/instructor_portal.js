@@ -86,6 +86,34 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				gap: 20px;
 			}
 
+			.portal-tabs {
+				display: flex;
+				gap: 10px;
+				margin: 10px 0 18px;
+				flex-wrap: wrap;
+			}
+
+			.portal-tab {
+				border: 1px solid #e3e6ea;
+				background: #ffffff;
+				color: var(--ink);
+				border-radius: 999px;
+				padding: 8px 16px;
+				font-size: 13px;
+				font-weight: 600;
+				cursor: pointer;
+			}
+
+			.portal-tab.active {
+				background: var(--accent);
+				border-color: var(--accent);
+				color: #ffffff;
+			}
+
+			.portal-section[hidden] {
+				display: none;
+			}
+
 			.portal-panel {
 				background: var(--surface);
 				border-radius: 18px;
@@ -296,6 +324,13 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			</div>
 
 			<div class="portal-grid">
+				<div class="portal-tabs">
+					<button type="button" class="portal-tab active" data-target="attendance-section">Attendance</button>
+					<button type="button" class="portal-tab" data-target="cards-section">Student Cards</button>
+				</div>
+			</div>
+
+			<div class="portal-section" id="attendance-section">
 				<div class="portal-panel">
 					<div class="panel-header">
 						<div class="panel-title">
@@ -327,7 +362,9 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 						</table>
 					</div>
 				</div>
+			</div>
 
+			<div class="portal-section" id="cards-section" hidden>
 				<div class="portal-panel">
 					<div class="panel-header">
 						<div class="panel-title">
@@ -378,6 +415,16 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				render_metrics([], []);
 				frappe.msgprint("Unable to load instructor data.");
 			}
+		});
+	}
+
+	function init_tabs() {
+		$('.portal-tab').off('click').on('click', function () {
+			var target = $(this).data('target');
+			$('.portal-tab').removeClass('active');
+			$(this).addClass('active');
+			$('.portal-section').attr('hidden', true);
+			$(`#${target}`).removeAttr('hidden');
 		});
 	}
 
@@ -552,6 +599,8 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		$("#metric-present").text(presentCount);
 		$("#metric-cards").text(cards.length);
 	}
+
+	init_tabs();
 
 	function init_signature_canvases(prefix) {
 		$(`canvas[id^="${prefix}"]`).each(function () {
