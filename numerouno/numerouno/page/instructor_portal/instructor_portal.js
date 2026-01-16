@@ -152,12 +152,36 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			.table tbody tr {
 				background: var(--surface-muted);
 				box-shadow: 0 6px 20px rgba(15, 28, 45, 0.06);
+				transition: transform 0.15s ease, box-shadow 0.15s ease;
 			}
 
 			.table tbody td {
 				border: none;
 				padding: 12px;
 				vertical-align: middle;
+			}
+
+			.table tbody tr:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 10px 24px rgba(15, 28, 45, 0.12);
+			}
+
+			.data-meta {
+				font-size: 11px;
+				color: var(--muted);
+				margin-top: 4px;
+			}
+
+			.data-title {
+				font-weight: 600;
+			}
+
+			.signature-inline {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				color: var(--muted);
+				font-size: 12px;
 			}
 
 			.table tbody tr td:first-child {
@@ -278,7 +302,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 							<span>AT</span>
 							<div>
 								<h3>Student Attendance</h3>
-								<p class="panel-subtitle">Latest confirmed attendance records.</p>
+								<p class="panel-subtitle">Attendance records ordered by date (oldest to newest).</p>
 							</div>
 						</div>
 					</div>
@@ -359,6 +383,12 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 
 	function render_attendance(records) {
 		var $body = $("#instructor-attendance-body").empty();
+		records = records.slice().sort(function (a, b) {
+			var dateA = a.date ? new Date(a.date) : new Date(0);
+			var dateB = b.date ? new Date(b.date) : new Date(0);
+			return dateB - dateA;
+		});
+
 		if (!records.length) {
 			$body.append(`
 				<tr>
@@ -410,15 +440,22 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 
 			$body.append(`
 				<tr>
-					<td>${attendanceLink}</td>
-					<td>${groupLink}</td>
 					<td>
-						<div>${studentLink}</div>
-						<div class="text-muted" style="font-size: 12px;">${frappe.utils.escape_html(row.student_name || "")}</div>
+						<div class="data-title">${attendanceLink}</div>
+						<div class="data-meta">${row.docstatus === 1 ? "Submitted" : "Draft"}</div>
 					</td>
-					<td>${frappe.utils.escape_html(dateLabel || "")}</td>
+					<td>
+						<div class="data-title">${groupLink}</div>
+					</td>
+					<td>
+						<div class="data-title">${studentLink}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_name || "")}</div>
+					</td>
+					<td>
+						<div class="data-title">${frappe.utils.escape_html(dateLabel || "")}</div>
+					</td>
 					<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel || "-")}</span></td>
-					<td>${signatureCell}</td>
+					<td>${signatureCell || `<span class="signature-inline">No signature</span>`}</td>
 					<td>${actionCell}</td>
 				</tr>
 			`);
@@ -430,6 +467,12 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 
 	function render_cards(records) {
 		var $body = $("#instructor-cards-body").empty();
+		records = records.slice().sort(function (a, b) {
+			var nameA = (a.student_name || a.student || "").toLowerCase();
+			var nameB = (b.student_name || b.student || "").toLowerCase();
+			return nameA.localeCompare(nameB);
+		});
+
 		if (!records.length) {
 			$body.append(`
 				<tr>
@@ -479,11 +522,16 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 
 			$body.append(`
 				<tr>
-					<td>${cardLink}</td>
-					<td>${groupLink}</td>
 					<td>
-						<div>${studentLink}</div>
-						<div class="text-muted" style="font-size: 12px;">${frappe.utils.escape_html(row.student_name || "")}</div>
+						<div class="data-title">${cardLink}</div>
+						<div class="data-meta">${row.docstatus === 1 ? "Submitted" : "Draft"}</div>
+					</td>
+					<td>
+						<div class="data-title">${groupLink}</div>
+					</td>
+					<td>
+						<div class="data-title">${studentLink}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_name || "")}</div>
 					</td>
 					<td>${signatureHtml}</td>
 					<td>${actionCell}</td>
