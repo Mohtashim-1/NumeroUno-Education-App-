@@ -1,0 +1,48 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"botS6qT3Br\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Instructors</span>\",\"col\":12}},{\"id\":\"NFaEqSWE-I\",\"type\":\"card\",\"data\":{\"card_name\":\"Portal\",\"col\":4}}]",
+ "creation": "2026-01-17 01:54:23.472237",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Instructors",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Portal",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Instructor Portal",
+   "link_count": 0,
+   "link_to": "instructor-portal",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-01-17 01:54:58.200011",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Instructors",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 30.0,
+ "shortcuts": [],
+ "title": "Instructors"
+}
