@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"JVu8-FJZCu\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"0v94hVUW0R\",\"type\":\"card\",\"data\":{\"card_name\":\"Certificate\",\"col\":4}},{\"id\":\"_11CpcxewH\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"xjcB_ZeKiM\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Card\",\"col\":4}},{\"id\":\"CXIrjSD2za\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"JVu8-FJZCu\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"0v94hVUW0R\",\"type\":\"card\",\"data\":{\"card_name\":\"Certificate\",\"col\":4}},{\"id\":\"_11CpcxewH\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"xjcB_ZeKiM\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Card\",\"col\":4}},{\"id\":\"AkiVGf1eS-\",\"type\":\"card\",\"data\":{\"card_name\":\"Quiz\",\"col\":4}},{\"id\":\"CXIrjSD2za\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
  "creation": "2025-04-30 01:03:10.313208",
  "custom_blocks": [],
  "docstatus": 0,
@@ -274,9 +274,38 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Quiz",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Group",
+   "link_count": 0,
+   "link_to": "Student Group",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "MCQS Assignment",
+   "link_count": 0,
+   "link_to": "MCQS Assignment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2025-12-20 01:21:43.445625",
+ "modified": "2026-01-05 13:31:39.259605",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "NumeroUNO",
