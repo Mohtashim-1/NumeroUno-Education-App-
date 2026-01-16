@@ -26,113 +26,257 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css"/>
 
   <style>
+    @import url("https://fonts.googleapis.com/css2?family=Newsreader:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+    :root {
+      --ink: #14212f;
+      --muted: #5b6776;
+      --paper: #f5f1ea;
+      --panel: #ffffff;
+      --accent: #f36a3d;
+      --accent-dark: #c9532a;
+      --mint: #2b7a78;
+      --shadow: 0 18px 45px rgba(20, 33, 47, 0.14);
+    }
+
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background:
+        radial-gradient(1200px 600px at 5% -10%, #fde2c6 0%, rgba(253, 226, 198, 0) 65%),
+        radial-gradient(1000px 500px at 90% 0%, #cbe9e4 0%, rgba(203, 233, 228, 0) 60%),
+        linear-gradient(180deg, #f6f2ec 0%, #eef3f5 100%);
       min-height: 100vh;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      font-family: "Space Grotesk", "Newsreader", sans-serif;
+      color: var(--ink);
     }
+
     .quiz-container {
-      background: white;
-      border-radius: 15px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      background: var(--panel);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
       overflow: hidden;
+      border: 1px solid rgba(20, 33, 47, 0.08);
+      animation: liftIn 0.5s ease;
     }
+
     .header-section {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-      color: white;
-      padding: 2rem;
+      position: relative;
+      background: linear-gradient(135deg, #1b2838 0%, #2f4860 100%);
+      color: #ffffff;
+      padding: 2.5rem 2rem 2rem;
       text-align: center;
+      font-family: "Newsreader", serif;
     }
-    .quiz-form { padding: 2rem; }
+
+    .header-section::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(300px 200px at 20% 20%, rgba(243, 106, 61, 0.35), transparent 60%),
+        radial-gradient(260px 200px at 80% 10%, rgba(43, 122, 120, 0.35), transparent 60%);
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    .header-section h2 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #ffffff;
+      padding: 8px;
+      box-shadow: 0 12px 24px rgba(20, 33, 47, 0.25);
+      object-fit: contain;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 12px;
+    }
+
+    .header-section p {
+      color: rgba(255, 255, 255, 0.8);
+      position: relative;
+      z-index: 1;
+    }
+
+    .quiz-form {
+      padding: 2rem;
+      background: linear-gradient(180deg, #ffffff 0%, #fdfbf8 100%);
+    }
 
     /* input look */
     .form-control {
-      border-radius: 10px;
-      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      border: 2px solid #e6e1d7;
       padding: 12px 15px;
       font-size: 16px;
       transition: all 0.2s ease;
+      background: #fffdf9;
     }
     .form-control:focus {
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 0.2rem rgba(243, 106, 61, 0.2);
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: linear-gradient(135deg, #f36a3d 0%, #d8582a 100%);
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 12px 30px;
       font-size: 16px;
       font-weight: 600;
       color: white;
       transition: all 0.3s ease;
+      letter-spacing: 0.01em;
     }
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 12px 28px rgba(243, 106, 61, 0.35);
+    }
+
+    .btn-secondary {
+      background: #eef1f4;
+      border: 1px solid #d6dde3;
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 10px 22px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .btn-secondary:hover {
+      background: #e5eaef;
+      transform: translateY(-1px);
     }
 
     .quiz-list {
-      background: #f8fafc;
-      border-radius: 10px;
+      background: #f8f4ec;
+      border-radius: 14px;
       padding: 1.5rem;
       margin-top: 1rem;
+      border: 1px solid rgba(20, 33, 47, 0.08);
     }
     .quiz-item {
       background: white;
-      border-radius: 8px;
-      padding: 1rem;
+      border-radius: 14px;
+      padding: 1.25rem;
       margin-bottom: 1rem;
-      border: 1px solid #e5e7eb;
+      border: 1px solid #ece6dc;
       transition: all 0.3s ease;
     }
     .quiz-item:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 20px rgba(20, 33, 47, 0.12);
       transform: translateY(-2px);
     }
-    .quiz-title { font-weight: 600; color: #374151; margin-bottom: 0.5rem; }
-    .quiz-details { color: #6b7280; font-size: 14px; }
+    .quiz-title {
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+      font-family: "Newsreader", serif;
+      font-size: 20px;
+    }
+    .quiz-details { color: var(--muted); font-size: 14px; }
 
     .btn-attempt {
-      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      background: linear-gradient(135deg, #2b7a78 0%, #206460 100%);
       border: none;
-      border-radius: 6px;
-      padding: 8px 16px;
+      border-radius: 10px;
+      padding: 10px 18px;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       color: white;
       transition: all 0.3s ease;
     }
     .btn-attempt:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 8px 18px rgba(43, 122, 120, 0.35);
     }
 
     .loading { display: none; }
     .spinner-border-sm { width: 1rem; height: 1rem; }
 
     .error-message {
-      background: #fee2e2;
-      color: #991b1b;
+      background: #ffe4de;
+      color: #8a2b1d;
       padding: 1rem;
-      border-radius: 10px;
+      border-radius: 12px;
       margin-top: 1rem;
       display: none;
+      border: 1px solid rgba(243, 106, 61, 0.3);
     }
     .success-message {
-      background: #d1fae5;
-      color: #065f46;
+      background: #e0f2f1;
+      color: #1d5450;
       padding: 1rem;
-      border-radius: 10px;
+      border-radius: 12px;
       margin-top: 1rem;
       display: none;
+      border: 1px solid rgba(43, 122, 120, 0.3);
     }
 
     .no-quizzes {
       text-align: center;
-      color: #6b7280;
+      color: var(--muted);
       padding: 2rem;
+    }
+
+    .question-card {
+      background: #ffffff;
+      border: 1px solid #ece6dc;
+      border-radius: 16px;
+      box-shadow: 0 10px 24px rgba(20, 33, 47, 0.08);
+    }
+
+    .question-title {
+      font-size: 16px;
+      color: var(--ink);
+    }
+
+    .option-item {
+      border: 1px solid #ece6dc;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      background: #fffdf9;
+    }
+
+    .option-item.selected {
+      border-color: var(--accent);
+      background: #fff1ea;
+      box-shadow: 0 6px 16px rgba(243, 106, 61, 0.18);
+    }
+
+    .badge.bg-primary {
+      background-color: var(--accent) !important;
+      color: #fff;
+    }
+
+    .quiz-info-row {
+      background: #f7f1e7;
+      border-radius: 16px;
+      border: 1px solid #ece6dc;
+    }
+
+    .result-card {
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #ece6dc;
+      box-shadow: 0 12px 28px rgba(20, 33, 47, 0.12);
+    }
+
+    @keyframes liftIn {
+      from {
+        transform: translateY(18px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
 
     /* ✅ Awesomplete dropdown styling to look like Frappe */
@@ -174,9 +318,9 @@
   <div class="container py-5">
     <div class="row justify-content-center">
       <div class="col-md-10 col-lg-8">
-        <div class="quiz-container">
+        <div class="quiz-container" id="mainQuizContainer">
           <div class="header-section">
-            <i class="fas fa-question-circle fa-3x mb-3"></i>
+            <img class="brand-logo" src="https://erp.nutc.cloud/files/nutclogo.jpg" alt="NUTC Logo">
             <h2 class="mb-0">Public Quiz Attempt</h2>
             <p class="mb-0">Select your student group and student to attempt quizzes</p>
           </div>
@@ -787,6 +931,10 @@ async function reloadStudentGroups() {
     document.getElementById("quizForm").style.display = "none";
     document.getElementById("quizList").style.display = "none";
     document.getElementById("noQuizzes").style.display = "none";
+    const mainContainer = document.getElementById("mainQuizContainer");
+    if (mainContainer) {
+      mainContainer.style.display = "none";
+    }
     
     // Create quiz container
     const quizContainer = document.createElement("div");
@@ -794,7 +942,7 @@ async function reloadStudentGroups() {
     quizContainer.innerHTML = `
       <div class="quiz-container">
         <div class="header-section">
-          <i class="fas fa-question-circle fa-3x mb-3"></i>
+          <img class="brand-logo" src="https://erp.nutc.cloud/files/nutclogo.jpg" alt="NUTC Logo">
           <h2 class="mb-0">${quizData.quiz.title}</h2>
           <p class="mb-0">Student: ${student} | Group: ${studentGroup}</p>
         </div>
@@ -817,8 +965,8 @@ async function reloadStudentGroups() {
     `;
     
     // Insert quiz container after the main container
-    const mainContainer = document.querySelector(".quiz-container");
-    mainContainer.parentNode.insertBefore(quizContainer, mainContainer.nextSibling);
+    const mainContainerNode = document.querySelector(".quiz-container");
+    mainContainerNode.parentNode.insertBefore(quizContainer, mainContainerNode.nextSibling);
     
     // Load quiz questions
     setTimeout(() => {
@@ -833,7 +981,7 @@ async function reloadStudentGroups() {
 
     // Quiz info
     const quizInfo = document.createElement("div");
-    quizInfo.className = "mb-4 p-3 bg-light rounded";
+    quizInfo.className = "mb-4 p-3 quiz-info-row";
     quizInfo.innerHTML = `
       <div class="row text-center">
         <div class="col-md-3"><strong>Total Marks:</strong> ${totalMarks}</div>
@@ -847,7 +995,7 @@ async function reloadStudentGroups() {
     // Questions
     quizData.questions.forEach((question, index) => {
       const questionCard = document.createElement("div");
-      questionCard.className = "question-card mb-4 p-3 border rounded";
+      questionCard.className = "question-card mb-4 p-3";
       questionCard.innerHTML = `
         <div class="question-title mb-3">
           <strong>Question ${index + 1}:</strong> ${question.question}
@@ -855,7 +1003,7 @@ async function reloadStudentGroups() {
         </div>
         <div class="options" data-question="${question.name}">
           ${question.options.map(option => `
-            <div class="option-item mb-2 p-2 border rounded cursor-pointer" data-option="${option.id}" style="cursor: pointer;">
+            <div class="option-item mb-2 p-2 cursor-pointer" data-option="${option.id}" style="cursor: pointer;">
               <input type="radio" name="question_${question.name}" value="${option.id}" id="q${question.name}_${option.id}">
               <label for="q${question.name}_${option.id}" class="ms-2 cursor-pointer" style="cursor: pointer;">${option.text}</label>
             </div>
@@ -870,7 +1018,8 @@ async function reloadStudentGroups() {
     submitBtn.className = "text-center mt-4";
     submitBtn.innerHTML = `
       <button class="btn btn-primary btn-lg" id="submitQuizBtn">
-        <i class="fas fa-paper-plane me-2"></i>Submit Quiz
+        <span class="submit-text"><i class="fas fa-paper-plane me-2"></i>Submit Quiz</span>
+        <span class="loading" style="display:none;"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...</span>
       </button>
     `;
     quizContent.appendChild(submitBtn);
@@ -900,6 +1049,10 @@ async function reloadStudentGroups() {
   }
 
   function submitQuiz(quizData, quizName, student, studentGroup) {
+    const submitBtn = document.getElementById("submitQuizBtn");
+    if (submitBtn && submitBtn.disabled) {
+      return;
+    }
     // Collect answers
     const answers = {};
     document.querySelectorAll(".options").forEach((optionGroup) => {
@@ -927,6 +1080,7 @@ async function reloadStudentGroups() {
 
     showLoading(true);
     hideMessages();
+    setSubmitLoading(true);
 
     // Submit quiz - Use GET method to avoid CSRF token issues for public pages
     console.log("=".repeat(80));
@@ -969,19 +1123,17 @@ async function reloadStudentGroups() {
           showQuizResult(result);
           
           // Disable submit button
-          const submitBtn = document.getElementById("submitQuizBtn");
-          if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Quiz Submitted';
-          }
+          setSubmitLoading(false);
         } else {
           showError(data.message?.message || "Failed to submit quiz");
+          setSubmitLoading(false);
         }
       })
       .catch((err) => {
         showLoading(false);
         console.error("Error submitting quiz:", err);
         showError("Error submitting quiz. Please try again. Check browser console for details.");
+        setSubmitLoading(false);
       });
   }
 
@@ -991,6 +1143,11 @@ async function reloadStudentGroups() {
     if (quizContainer) {
       quizContainer.remove();
     }
+
+    const mainContainer = document.getElementById("mainQuizContainer");
+    if (mainContainer) {
+      mainContainer.style.display = "block";
+    }
     
     // Show form and quiz list again
     document.getElementById("quizForm").style.display = "block";
@@ -999,12 +1156,27 @@ async function reloadStudentGroups() {
     }
   }
 
+  function setSubmitLoading(isLoading) {
+    const submitBtn = document.getElementById("submitQuizBtn");
+    if (!submitBtn) return;
+    const submitText = submitBtn.querySelector(".submit-text");
+    const loading = submitBtn.querySelector(".loading");
+    if (isLoading) {
+      submitBtn.disabled = true;
+      if (submitText) submitText.style.display = "none";
+      if (loading) loading.style.display = "inline-block";
+    } else {
+      submitBtn.disabled = false;
+      if (submitText) submitText.style.display = "inline-block";
+      if (loading) loading.style.display = "none";
+    }
+  }
   function showQuizResult(result) {
     const quizContent = document.getElementById("quizContent");
     if (!quizContent) return;
 
     quizContent.innerHTML = `
-      <div class="text-center p-4 bg-light rounded">
+      <div class="text-center p-4 result-card">
         <i class="fas fa-clipboard-check fa-3x mb-3 text-success"></i>
         <h3>Quiz Submitted</h3>
         <p class="mb-2"><strong>Score:</strong> ${result.score}/100</p>
