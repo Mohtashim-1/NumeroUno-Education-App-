@@ -227,6 +227,10 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				border-radius: 10px;
 				background: #fffdfb;
 				display: block;
+				touch-action: none;
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				user-select: none;
 			}
 
 			.portal-btn {
@@ -669,14 +673,36 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			var ctx = canvas.getContext('2d');
 			var drawing = false;
 
+			// Helper function to get coordinates from event
+			function getCoordinates(e) {
+				var rect = canvas.getBoundingClientRect();
+				if (e.touches && e.touches.length > 0) {
+					// Touch event
+					return {
+						x: e.touches[0].clientX - rect.left,
+						y: e.touches[0].clientY - rect.top
+					};
+				} else {
+					// Mouse event
+					return {
+						x: e.offsetX || e.clientX - rect.left,
+						y: e.offsetY || e.clientY - rect.top
+					};
+				}
+			}
+
+			// Mouse events
 			canvas.addEventListener('mousedown', function (e) {
+				e.preventDefault();
 				drawing = true;
+				var coords = getCoordinates(e);
 				ctx.beginPath();
-				ctx.moveTo(e.offsetX, e.offsetY);
+				ctx.moveTo(coords.x, coords.y);
 			});
 			canvas.addEventListener('mousemove', function (e) {
 				if (drawing) {
-					ctx.lineTo(e.offsetX, e.offsetY);
+					var coords = getCoordinates(e);
+					ctx.lineTo(coords.x, coords.y);
 					ctx.stroke();
 				}
 			});
@@ -686,6 +712,31 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			canvas.addEventListener('mouseleave', function () {
 				drawing = false;
 			});
+
+			// Touch events for mobile/tablet support
+			canvas.addEventListener('touchstart', function (e) {
+				e.preventDefault();
+				drawing = true;
+				var coords = getCoordinates(e);
+				ctx.beginPath();
+				ctx.moveTo(coords.x, coords.y);
+			}, { passive: false });
+			canvas.addEventListener('touchmove', function (e) {
+				e.preventDefault();
+				if (drawing) {
+					var coords = getCoordinates(e);
+					ctx.lineTo(coords.x, coords.y);
+					ctx.stroke();
+				}
+			}, { passive: false });
+			canvas.addEventListener('touchend', function (e) {
+				e.preventDefault();
+				drawing = false;
+			}, { passive: false });
+			canvas.addEventListener('touchcancel', function (e) {
+				e.preventDefault();
+				drawing = false;
+			}, { passive: false });
 		});
 	}
 
