@@ -680,58 +680,77 @@ def get_quiz_questions_from_quiz(quiz_name):
         quiz_doc = frappe.get_doc("Quiz", quiz_name)
         print(f"Quiz found: {quiz_doc.name} - {quiz_doc.title}")
         
-        # Get questions
+        # Reload to ensure we have all child table entries
+        quiz_doc.reload()
+        print(f"Quiz reloaded. Checking question table...")
+        
+        # Get questions - use direct database query to ensure we get all questions
+        questions_in_db = frappe.get_all(
+            "Quiz Question",
+            filters={"parent": quiz_name},
+            fields=["name", "question_link", "idx"],
+            order_by="idx"
+        )
+        print(f"Direct DB query found {len(questions_in_db)} Quiz Question records")
+        for qq in questions_in_db:
+            print(f"  DB Record: name={qq.get('name')}, question_link={qq.get('question_link')}, idx={qq.get('idx')}")
+        
+        # Also check document's child table for comparison
+        doc_question_count = len(quiz_doc.question) if quiz_doc.question else 0
+        print(f"Quiz document has {doc_question_count} questions in question table")
+        
+        # Use database query results instead of document child table to ensure we get all questions
         questions = []
-        if quiz_doc.question:
-            print(f"Quiz has {len(quiz_doc.question)} questions in question table")
-            for idx, q in enumerate(quiz_doc.question):
-                print(f"\n  Processing question {idx+1}:")
-                print(f"    QuizQuestion fields: question_link={getattr(q, 'question_link', 'N/A')}, question={getattr(q, 'question', 'N/A')}")
+        question_links_to_process = [qq.get('question_link') for qq in questions_in_db if qq.get('question_link')]
+        
+        print(f"Processing {len(question_links_to_process)} questions from database query...")
+        for idx, question_link in enumerate(question_links_to_process):
+            print(f"\n  Processing question {idx+1} of {len(question_links_to_process)}:")
+            print(f"    Question Link: {question_link}")
+            
+            if not question_link:
+                print(f"    ✗ ERROR: QuizQuestion has no question_link")
+                continue
                 
-                # QuizQuestion has question_link field (Link to Question)
-                question_link = getattr(q, 'question_link', None)
-                if not question_link:
-                    print(f"    ✗ ERROR: QuizQuestion has no question_link")
-                    continue
+            try:
+                question_doc = frappe.get_doc("Question", question_link)
+                print(f"    Question document: {question_doc.name}")
+                print(f"    Question type: {getattr(question_doc, 'question_type', 'N/A')}")
                 
-                try:
-                    question_doc = frappe.get_doc("Question", question_link)
-                    print(f"    Question document: {question_doc.name}")
-                    print(f"    Question type: {getattr(question_doc, 'question_type', 'N/A')}")
-                    
-                    question_data = {
-                        "name": question_doc.name,
-                        "question": question_doc.question or "",
-                        "type": getattr(question_doc, 'question_type', 'Single Correct Answer'),
-                        "marks": 1,  # Default to 1 mark since QuizQuestion doesn't have marks
-                        "options": []
-                    }
-                    
-                    # Question doctype uses 'options' table (child table)
-                    # Options table has: 'option' (text) and 'is_correct' (checkbox)
-                    if hasattr(question_doc, 'options') and question_doc.options:
-                        print(f"    Question has {len(question_doc.options)} options")
-                        for opt_idx, opt in enumerate(question_doc.options):
-                            option_text = getattr(opt, 'option', '')
-                            is_correct = getattr(opt, 'is_correct', 0)
-                            if option_text:
-                                question_data["options"].append({
-                                    "id": opt_idx + 1,
-                                    "text": option_text,
-                                    "is_correct": is_correct
-                                })
-                                print(f"      Option {opt_idx+1}: {option_text} (correct: {is_correct})")
-                    else:
-                        print(f"    ✗ WARNING: Question has no options table")
-                    
-                    questions.append(question_data)
-                    print(f"    ✓ Question added successfully")
-                except Exception as e:
-                    print(f"    ✗ ERROR loading question {question_link}: {str(e)}")
-                    frappe.log_error(f"Error loading question {question_link}: {str(e)}\nTraceback: {frappe.get_traceback()}", "Quiz API")
-                    continue
-        else:
-            print(f"Quiz has no questions")
+                question_data = {
+                    "name": question_doc.name,
+                    "question": question_doc.question or "",
+                    "type": getattr(question_doc, 'question_type', 'Single Correct Answer'),
+                    "marks": 1,  # Default to 1 mark since QuizQuestion doesn't have marks
+                    "options": []
+                }
+                
+                # Question doctype uses 'options' table (child table)
+                # Options table has: 'option' (text) and 'is_correct' (checkbox)
+                if hasattr(question_doc, 'options') and question_doc.options:
+                    print(f"    Question has {len(question_doc.options)} options")
+                    for opt_idx, opt in enumerate(question_doc.options):
+                        option_text = getattr(opt, 'option', '')
+                        is_correct = getattr(opt, 'is_correct', 0)
+                        if option_text:
+                            question_data["options"].append({
+                                "id": opt_idx + 1,
+                                "text": option_text,
+                                "is_correct": is_correct
+                            })
+                            print(f"      Option {opt_idx+1}: {option_text} (correct: {is_correct})")
+                else:
+                    print(f"    ✗ WARNING: Question has no options table")
+                
+                questions.append(question_data)
+                print(f"    ✓ Question {idx+1} added successfully (Total: {len(questions)})")
+            except Exception as e:
+                print(f"    ✗ ERROR loading question {question_link}: {str(e)}")
+                frappe.log_error(f"Error loading question {question_link}: {str(e)}\nTraceback: {frappe.get_traceback()}", "Quiz API")
+                continue
+        
+        if not questions:
+            print(f"✗ WARNING: No questions were successfully loaded!")
         
         # Calculate total marks (1 per question since QuizQuestion doesn't store marks)
         total_marks = len(questions)

@@ -913,6 +913,11 @@ async function reloadStudentGroups() {
       .then((r) => r.json())
       .then((data) => {
         showLoading(false);
+        console.log("=".repeat(80));
+        console.log("QUIZ QUESTIONS API RESPONSE - Full Data:");
+        console.log(JSON.stringify(data, null, 2));
+        console.log("Questions count:", data.message?.questions?.length || 0);
+        console.log("=".repeat(80));
         if (data.message?.status === "success") {
           displayQuizForAttempt(data.message, quizName, student, studentGroup);
         } else {
