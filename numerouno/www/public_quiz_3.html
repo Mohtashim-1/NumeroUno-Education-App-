@@ -1403,7 +1403,7 @@ async function reloadStudentGroups() {
     hideMessages();
     setSubmitLoading(true);
 
-    // Submit quiz - Use GET method to avoid CSRF token issues for public pages
+    // Submit quiz - Use POST to avoid URL length limits
     console.log("=".repeat(80));
     console.log("SUBMITTING QUIZ");
     console.log("Quiz:", quizName);
@@ -1412,20 +1412,24 @@ async function reloadStudentGroups() {
     console.log("Answers:", submissionAnswers);
     console.log("=".repeat(80));
     
-    // Build URL with query parameters (GET method to avoid CSRF)
+    // Build payload (POST to avoid 414 URI too long)
     const params = new URLSearchParams();
     params.append("quiz_name", quizName);
     params.append("student", student);
     params.append("student_group", studentGroup);
     params.append("answers", JSON.stringify(submissionAnswers));
     
-    const url = `/api/method/numerouno.numerouno.api.quiz_api.submit_quiz_from_mcqs?${params.toString()}`;
+    const url = "/api/method/numerouno.numerouno.api.quiz_api.submit_quiz_from_mcqs";
     
-    console.log("Submitting quiz via GET:", url);
+    console.log("Submitting quiz via POST:", url);
     
     fetch(url, {
-      method: "GET",
-      headers: { 'Content-Type': 'application/json' }
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Accept": "application/json"
+      },
+      body: params.toString()
     })
       .then((r) => {
         if (!r.ok) {
