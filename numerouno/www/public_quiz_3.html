@@ -998,16 +998,18 @@ async function reloadStudentGroups() {
   function attemptQuiz(quizName, quizTitle) {
     const studentGroup = document.getElementById("studentGroupVal").value;
     const student = document.getElementById("studentVal").value;
+    const studentName = document.getElementById("studentTxt").value || student;
+    const studentGroupLabel = document.getElementById("studentGroupTxt").value || studentGroup;
     
     if (!studentGroup || !student) {
       showError("Please select student group and student first");
       return;
     }
 
-    loadQuizForAttempt(quizName, quizTitle, student, studentGroup);
+    loadQuizForAttempt(quizName, quizTitle, student, studentGroup, studentName, studentGroupLabel);
   }
 
-  function loadQuizForAttempt(quizName, quizTitle, student, studentGroup) {
+  function loadQuizForAttempt(quizName, quizTitle, student, studentGroup, studentName, studentGroupLabel) {
     showLoading(true);
     hideMessages();
 
@@ -1026,7 +1028,7 @@ async function reloadStudentGroups() {
         console.log("Questions count:", data.message?.questions?.length || 0);
         console.log("=".repeat(80));
         if (data.message?.status === "success") {
-          displayQuizForAttempt(data.message, quizName, student, studentGroup);
+          displayQuizForAttempt(data.message, quizName, student, studentGroup, studentName, studentGroupLabel);
         } else {
           showError(data.message?.message || "Failed to load quiz");
         }
@@ -1038,7 +1040,7 @@ async function reloadStudentGroups() {
       });
   }
 
-  function displayQuizForAttempt(quizData, quizName, student, studentGroup) {
+  function displayQuizForAttempt(quizData, quizName, student, studentGroup, studentName, studentGroupLabel) {
     // Hide the form and show quiz
     document.getElementById("quizForm").style.display = "none";
     document.getElementById("quizList").style.display = "none";
@@ -1056,7 +1058,7 @@ async function reloadStudentGroups() {
         <div class="header-section">
           <img class="brand-logo" src="https://erp.nutc.cloud/files/nutclogo.jpg" alt="NUTC Logo">
           <h2 class="mb-0">${quizData.quiz.title}</h2>
-          <p class="mb-0">Student: ${student} | Group: ${studentGroup}</p>
+          <p class="mb-0">Student: ${studentName} | Group: ${studentGroupLabel}</p>
         </div>
         <div class="quiz-form">
           <div class="quiz-content" id="quizContent">
