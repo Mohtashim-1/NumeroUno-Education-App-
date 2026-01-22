@@ -504,6 +504,21 @@
   let studentGroupsData = [];   // [{value,label}]
   let studentsData = [];        // [{value,label}]
   let quizAttemptState = null;
+  let preselectParams = null;
+
+  function getPreselectParams() {
+    const params = new URLSearchParams(window.location.search || "");
+    const studentGroup = params.get("student_group");
+    const student = params.get("student");
+    if (!studentGroup && !student) return null;
+    return {
+      studentGroup,
+      studentGroupLabel: params.get("student_group_label") || "",
+      student,
+      studentName: params.get("student_name") || "",
+      autoStart: params.get("autostart") === "1"
+    };
+  }
 
   function initQuizAttemptState(quizData, quizName, student, studentGroup, history) {
     quizAttemptState = {
@@ -719,6 +734,7 @@
   let academicYearLF, courseLF, studentGroupLF, studentLF;
 
   document.addEventListener("DOMContentLoaded", async () => {
+    preselectParams = getPreselectParams();
     // init fields
     academicYearLF = makeLinkField({
       txtId: "academicYearTxt",
@@ -773,6 +789,7 @@
 
     // load student groups initially (based on empty filters)
     await reloadStudentGroups();
+    await applyPreselectIfAny();
 
     // filter change events
     document.getElementById("fromDate").addEventListener("change", reloadStudentGroups);
@@ -843,6 +860,33 @@ async function reloadStudentGroups() {
     console.error(e);
   }
 }
+
+  async function applyPreselectIfAny() {
+    if (!preselectParams) return;
+
+    const { studentGroup, studentGroupLabel, student, studentName, autoStart } = preselectParams;
+    if (studentGroup) {
+      const groupMatch = studentGroupsData.find((x) => x.value === studentGroup);
+      document.getElementById("studentGroupTxt").value =
+        studentGroupLabel || groupMatch?.label || studentGroup;
+      document.getElementById("studentGroupVal").value = studentGroup;
+      await reloadStudents(studentGroup);
+    }
+
+    if (student) {
+      const studentMatch = studentsData.find((x) => x.value === student);
+      document.getElementById("studentTxt").value =
+        studentName || studentMatch?.label || student;
+      document.getElementById("studentVal").value = student;
+      document.getElementById("studentTxt").disabled = false;
+    }
+
+    if (autoStart && studentGroup && student) {
+      loadQuizzes();
+    }
+
+    preselectParams = null;
+  }
 
 
   async function reloadStudents(studentGroupName) {
@@ -1114,9 +1158,10 @@ async function reloadStudentGroups() {
     progressRow.id = "questionProgress";
     quizContent.appendChild(progressRow);
 
-    const historyContainer = document.createElement("div");
-    historyContainer.id = "historyContainer";
-    quizContent.appendChild(historyContainer);
+    // Submission history disabled
+    // const historyContainer = document.createElement("div");
+    // historyContainer.id = "historyContainer";
+    // quizContent.appendChild(historyContainer);
 
     const stageContainer = document.createElement("div");
     stageContainer.id = "questionStage";
@@ -1131,52 +1176,11 @@ async function reloadStudentGroups() {
     reviewContainer.style.display = "none";
     quizContent.appendChild(reviewContainer);
 
-    renderHistorySection();
+    // renderHistorySection();
     renderQuestionView();
   }
 
-  function renderHistorySection() {
-    const historyContainer = document.getElementById("historyContainer");
-    if (!historyContainer || !quizAttemptState) return;
-    const history = quizAttemptState.history || [];
-    if (!history.length) {
-      historyContainer.innerHTML = "";
-      return;
-    }
-
-    historyContainer.innerHTML = `
-      <div class="history-card">
-        <h5 class="mb-3"><i class="fas fa-history me-2"></i>Submission History</h5>
-        ${history.map((item) => {
-          const answers = item.answers || [];
-          const dateLabel = item.activity_date || item.creation || "";
-          return `
-            <div class="history-item">
-              <div class="d-flex justify-content-between align-items-center flex-wrap">
-                <div>
-                  <strong>${item.quiz || "Quiz"}</strong>
-                  <div class="quiz-details">Date: ${dateLabel || "N/A"}</div>
-                </div>
-                <div>
-                  <span class="answer-pill">${item.score || "0/0"}</span>
-                  <span class="ms-2 answer-pill">${item.status || "N/A"}</span>
-                </div>
-              </div>
-              ${answers.length ? `
-                <div class="mt-2">
-                  ${answers.map((ans) => `
-                    <div class="quiz-details">
-                      <strong>${ans.question}</strong>: ${ans.selected_option || "N/A"} (${ans.quiz_result || "N/A"})
-                    </div>
-                  `).join("")}
-                </div>
-              ` : ""}
-            </div>
-          `;
-        }).join("")}
-      </div>
-    `;
-  }
+  // Submission history disabled
 
   function renderQuestionView() {
     if (!quizAttemptState) return;

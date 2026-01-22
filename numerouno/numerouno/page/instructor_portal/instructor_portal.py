@@ -39,6 +39,32 @@ def _get_student_name_map(student_ids):
     )
     return {row.name: row.student_name for row in rows}
 
+def _get_mcqs_assignments(student_group_names):
+    assignment_filters = {}
+    if student_group_names:
+        assignment_filters["student_group"] = ["in", student_group_names]
+    return frappe.get_all(
+        "MCQS Assignment",
+        filters=assignment_filters,
+        fields=["name", "student_group", "mcqs", "modified"],
+        order_by="modified desc",
+    )
+
+
+def _get_group_students(group_names):
+    if not group_names:
+        return {}
+
+    rows = frappe.get_all(
+        "Student Group Student",
+        filters={"parent": ["in", list(group_names)], "active": 1},
+        fields=["parent", "student", "student_name"],
+    )
+    grouped = {}
+    for row in rows:
+        grouped.setdefault(row.parent, []).append(row)
+    return grouped
+
 
 @frappe.whitelist()
 def get_instructor_portal_data(attendance_limit=50, attendance_offset=0, card_limit=50, card_offset=0):
@@ -128,4 +154,91 @@ def get_instructor_portal_data(attendance_limit=50, attendance_offset=0, card_li
         "attendance_offset": attendance_offset,
         "card_limit": card_limit,
         "card_offset": card_offset,
+    }
+
+
+@frappe.whitelist()
+def get_instructor_quiz_status(limit=200, offset=0):
+    limit = int(limit or 200)
+    offset = int(offset or 0)
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    if user == "Administrator" or "System Manager" in roles:
+        student_group_names = None
+    else:
+        instructor_names = _get_instructor_names_for_user(user)
+        student_group_names = _get_student_group_names_for_instructors(instructor_names)
+
+    if student_group_names == []:
+        return {"records": [], "total": 0, "pending": 0, "passed": 0, "failed": 0}
+
+    assignments = _get_mcqs_assignments(student_group_names)
+    if not assignments:
+        return {"records": [], "total": 0, "pending": 0, "passed": 0, "failed": 0}
+
+    group_names = {row.student_group for row in assignments if row.student_group}
+    group_students = _get_group_students(group_names)
+
+    rows = []
+    for assignment in assignments:
+        students = group_students.get(assignment.student_group, [])
+        for student_row in students:
+            rows.append({
+                "student": student_row.student,
+                "student_name": student_row.student_name,
+                "student_group": assignment.student_group,
+                "quiz": assignment.mcqs,
+            })
+
+    rows.sort(key=lambda r: ((r.get("student_name") or "").lower(), r.get("quiz") or ""))
+    total = len(rows)
+    page_rows = rows[offset:offset + limit]
+
+    student_ids = {row["student"] for row in page_rows if row.get("student")}
+    quiz_names = {row["quiz"] for row in page_rows if row.get("quiz")}
+
+    activity_map = {}
+    if student_ids and quiz_names:
+        activities = frappe.get_all(
+            "Quiz Activity",
+            filters={
+                "student": ["in", list(student_ids)],
+                "quiz": ["in", list(quiz_names)],
+            },
+            fields=["name", "student", "quiz", "score", "status", "activity_date", "creation"],
+            order_by="creation desc",
+            ignore_permissions=True,
+        )
+        for activity in activities:
+            key = (activity.student, activity.quiz)
+            if key not in activity_map:
+                activity_map[key] = activity
+
+    pending = passed = failed = 0
+    for row in page_rows:
+        activity = activity_map.get((row.get("student"), row.get("quiz")))
+        if activity:
+            row["activity"] = activity.name
+            row["score"] = activity.score
+            row["status"] = activity.status
+            row["activity_date"] = activity.activity_date or activity.creation
+        else:
+            row["status"] = "Pending"
+
+        if row["status"] == "Pass":
+            passed += 1
+        elif row["status"] == "Fail":
+            failed += 1
+        else:
+            pending += 1
+
+    return {
+        "records": page_rows,
+        "total": total,
+        "pending": pending,
+        "passed": passed,
+        "failed": failed,
+        "limit": limit,
+        "offset": offset,
     }

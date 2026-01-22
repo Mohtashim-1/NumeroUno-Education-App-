@@ -269,6 +269,21 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				color: #b43c1b;
 			}
 
+			.status-pill.pending {
+				background: #fff3d6;
+				color: #8a5a00;
+			}
+
+			.status-pill.fail {
+				background: #ffe4de;
+				color: #b43c1b;
+			}
+
+			.status-pill.pass {
+				background: #e0f2f1;
+				color: #1d5450;
+			}
+
 			.signature {
 				display: inline-flex;
 				align-items: center;
@@ -331,6 +346,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				<div class="portal-tabs">
 					<button type="button" class="portal-tab active" data-target="attendance-section">Attendance</button>
 					<button type="button" class="portal-tab" data-target="cards-section">Student Cards</button>
+					<button type="button" class="portal-tab" data-target="quiz-section">Quiz Status</button>
 				</div>
 			</div>
 
@@ -399,14 +415,53 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					</div>
 				</div>
 			</div>
+
+			<div class="portal-section" id="quiz-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>QZ</span>
+							<div>
+								<h3>Quiz Status</h3>
+								<p class="panel-subtitle">Pending, passed, and failed quiz attempts per student.</p>
+							</div>
+						</div>
+						<div>
+							<a class="portal-btn portal-btn-ghost" href="/public_quiz_3.html" target="_blank" rel="noopener">Open Public Quiz</a>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Student</th>
+									<th>Group</th>
+									<th>Quiz</th>
+									<th>Status</th>
+									<th>Score</th>
+									<th>Activity Date</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-quiz-body">
+								<tr>
+									<td colspan="7" class="empty-state">Loading...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
 		</div>
 	`).appendTo(page.body);
 
 	var attendanceOffset = 0;
 	var cardsOffset = 0;
+	var quizOffset = 0;
 	var pageSize = 50;
 
 	load_portal_data();
+	load_quiz_status();
 	init_tabs();
 
 	function load_portal_data() {
@@ -623,6 +678,109 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		init_signature_canvases('card-sign-');
 		bind_card_actions();
 		bind_cards_load_more(records.length);
+	}
+
+	function load_quiz_status() {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_quiz_status",
+			args: {
+				limit: pageSize,
+				offset: quizOffset
+			},
+			callback: function (r) {
+				var message = r.message || {};
+				render_quiz_status(message.records || [], quizOffset > 0);
+			},
+			error: function () {
+				render_quiz_status([]);
+				frappe.msgprint("Unable to load quiz status.");
+			}
+		});
+	}
+
+	function render_quiz_status(records, append) {
+		var $body = $("#instructor-quiz-body");
+		if (!append) {
+			$body.empty();
+		}
+
+		if (!records.length) {
+			if (!append) {
+				$body.append(`
+					<tr>
+						<td colspan="7" class="empty-state">No quiz assignments found.</td>
+					</tr>
+				`);
+			}
+			return;
+		}
+
+		records.forEach(function (row) {
+			var studentLink = row.student
+				? `<a href="/app/student/${frappe.utils.escape_html(row.student)}">${frappe.utils.escape_html(row.student)}</a>`
+				: "";
+			var groupLink = row.student_group
+				? `<a href="/app/student-group/${frappe.utils.escape_html(row.student_group)}">${frappe.utils.escape_html(row.student_group)}</a>`
+				: "";
+			var quizLink = row.quiz
+				? `<a href="/app/quiz/${frappe.utils.escape_html(row.quiz)}">${frappe.utils.escape_html(row.quiz)}</a>`
+				: "";
+			var actionCell = "-";
+			if (row.activity) {
+				actionCell = `<a href="/app/quiz-activity/${frappe.utils.escape_html(row.activity)}">View</a>`;
+			} else {
+				var params = new URLSearchParams();
+				params.append("student_group", row.student_group || "");
+				params.append("student_group_label", row.student_group || "");
+				params.append("student", row.student || "");
+				if (row.student_name) {
+					params.append("student_name", row.student_name);
+				}
+				params.append("autostart", "1");
+				actionCell = `
+					<a class="portal-btn portal-btn-primary" href="/public_quiz_3.html?${params.toString()}" target="_blank" rel="noopener">
+						Create
+					</a>
+				`;
+			}
+
+			var statusLabel = row.status || "Pending";
+			var statusClass = statusLabel === "Pass" ? "pass" : statusLabel === "Fail" ? "fail" : "pending";
+			var dateLabel = row.activity_date ? frappe.datetime.str_to_user(row.activity_date) : "-";
+
+			$body.append(`
+				<tr>
+					<td>
+						<div class="data-title">${studentLink}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_name || "")}</div>
+					</td>
+					<td><div class="data-title">${groupLink}</div></td>
+					<td><div class="data-title">${quizLink}</div></td>
+					<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
+					<td><div class="data-title">${frappe.utils.escape_html(row.score || "-")}</div></td>
+					<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
+					<td>${actionCell}</td>
+				</tr>
+			`);
+		});
+
+		bind_quiz_load_more(records.length);
+	}
+
+	function bind_quiz_load_more(count) {
+		$("#quiz-load-more").remove();
+		if (count < pageSize) return;
+
+		$("#quiz-section .portal-panel").append(`
+			<div class="mt-2 text-center">
+				<button type="button" class="portal-btn portal-btn-ghost" id="quiz-load-more">Load more</button>
+			</div>
+		`);
+
+		$("#quiz-load-more").off('click').on('click', function () {
+			quizOffset += pageSize;
+			load_quiz_status();
+		});
 	}
 
 	function render_metrics(attendance, cards, attendanceTotal, presentTotal, cardsTotal) {
