@@ -6,15 +6,15 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Public Quiz Attempt v3.0.0</title>
+  <title>Public Quiz Attempt v3.0.1</title>
 
   <script>
     // Force page reload if version mismatch
-    if (localStorage.getItem("quizVersion") !== "3.0.0") {
-      localStorage.setItem("quizVersion", "3.0.0");
+    if (localStorage.getItem("quizVersion") !== "3.0.1") {
+      localStorage.setItem("quizVersion", "3.0.1");
       if (window.location.search.indexOf("v=") === -1) {
         window.location.href =
-          window.location.href + (window.location.search ? "&" : "?") + "v=3.0.0";
+          window.location.href + (window.location.search ? "&" : "?") + "v=3.0.1";
       }
     }
   </script>
@@ -261,6 +261,72 @@
       border: 1px solid #ece6dc;
     }
 
+    .question-progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #f6efe4;
+      border-radius: 12px;
+      padding: 10px 14px;
+      border: 1px solid #ece6dc;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .question-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .review-card,
+    .history-card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #ece6dc;
+      box-shadow: 0 10px 24px rgba(20, 33, 47, 0.08);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .review-item {
+      border-bottom: 1px solid #f0e8dd;
+      padding: 0.75rem 0;
+    }
+
+    .review-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .answer-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #e8f3f2;
+      color: #1d5450;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .answer-pill.unanswered {
+      background: #ffe4de;
+      color: #8a2b1d;
+    }
+
+    .history-item {
+      border-bottom: 1px dashed #e2d8c8;
+      padding: 0.75rem 0;
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
     .result-card {
       background: #ffffff;
       border-radius: 18px;
@@ -430,13 +496,42 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
 
  <script>
-  const VERSION = "3.0.0";
+  const VERSION = "3.0.1";
 
   // ====== Data caches ======
   let academicYearsData = [];   // [{value,label}]
   let coursesData = [];         // [{value,label}]
   let studentGroupsData = [];   // [{value,label}]
   let studentsData = [];        // [{value,label}]
+  let quizAttemptState = null;
+
+  function initQuizAttemptState(quizData, quizName, student, studentGroup, history) {
+    quizAttemptState = {
+      quizData,
+      quizName,
+      student,
+      studentGroup,
+      history: history || [],
+      currentIndex: 0,
+      answers: {}
+    };
+  }
+
+  function setAnswer(questionName, optionId) {
+    if (!quizAttemptState) return;
+    quizAttemptState.answers[questionName] = optionId;
+  }
+
+  function getAnswer(questionName) {
+    if (!quizAttemptState) return null;
+    return quizAttemptState.answers[questionName] || null;
+  }
+
+  function getSelectedOptionText(question, optionId) {
+    if (!optionId) return "";
+    const match = question.options.find((opt) => opt.id === optionId);
+    return match ? match.text : "";
+  }
 
   function debounce(fn, delay = 250) {
     let t = null;
@@ -573,6 +668,18 @@
       value: s.student,
       label: s.student_name
     }));
+  }
+
+  async function fetchQuizSubmissionHistory(student, quizName) {
+    const params = new URLSearchParams();
+    params.append("student", student);
+    if (quizName) params.append("quiz_name", quizName);
+    params.append("limit", "5");
+    const url = `/api/method/numerouno.numerouno.api.quiz_api.get_quiz_submission_history?${params.toString()}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.message?.status !== "success") return [];
+    return data.message.history || [];
   }
 
   // ====== UI helpers ======
@@ -973,16 +1080,19 @@ async function reloadStudentGroups() {
     const mainContainerNode = document.querySelector(".quiz-container");
     mainContainerNode.parentNode.insertBefore(quizContainer, mainContainerNode.nextSibling);
     
-    // Load quiz questions
-    setTimeout(() => {
-      displayQuizQuestions(quizData, quizName, student, studentGroup);
+    // Load quiz questions with history
+    setTimeout(async () => {
+      const history = await fetchQuizSubmissionHistory(student, quizName);
+      displayQuizQuestions(quizData, quizName, student, studentGroup, history);
     }, 500);
   }
 
-  function displayQuizQuestions(quizData, quizName, student, studentGroup) {
+  function displayQuizQuestions(quizData, quizName, student, studentGroup, history) {
     const quizContent = document.getElementById("quizContent");
     quizContent.innerHTML = "";
     const totalMarks = 100;
+
+    initQuizAttemptState(quizData, quizName, student, studentGroup, history);
 
     // Quiz info
     const quizInfo = document.createElement("div");
@@ -997,62 +1107,263 @@ async function reloadStudentGroups() {
     `;
     quizContent.appendChild(quizInfo);
 
-    // Questions
-    quizData.questions.forEach((question, index) => {
-      const questionCard = document.createElement("div");
-      questionCard.className = "question-card mb-4 p-3";
-      questionCard.innerHTML = `
+    const progressRow = document.createElement("div");
+    progressRow.className = "question-progress mb-3";
+    progressRow.id = "questionProgress";
+    quizContent.appendChild(progressRow);
+
+    const historyContainer = document.createElement("div");
+    historyContainer.id = "historyContainer";
+    quizContent.appendChild(historyContainer);
+
+    const stageContainer = document.createElement("div");
+    stageContainer.id = "questionStage";
+    quizContent.appendChild(stageContainer);
+
+    const navContainer = document.createElement("div");
+    navContainer.id = "navStage";
+    quizContent.appendChild(navContainer);
+
+    const reviewContainer = document.createElement("div");
+    reviewContainer.id = "reviewStage";
+    reviewContainer.style.display = "none";
+    quizContent.appendChild(reviewContainer);
+
+    renderHistorySection();
+    renderQuestionView();
+  }
+
+  function renderHistorySection() {
+    const historyContainer = document.getElementById("historyContainer");
+    if (!historyContainer || !quizAttemptState) return;
+    const history = quizAttemptState.history || [];
+    if (!history.length) {
+      historyContainer.innerHTML = "";
+      return;
+    }
+
+    historyContainer.innerHTML = `
+      <div class="history-card">
+        <h5 class="mb-3"><i class="fas fa-history me-2"></i>Submission History</h5>
+        ${history.map((item) => {
+          const answers = item.answers || [];
+          const dateLabel = item.activity_date || item.creation || "";
+          return `
+            <div class="history-item">
+              <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                  <strong>${item.quiz || "Quiz"}</strong>
+                  <div class="quiz-details">Date: ${dateLabel || "N/A"}</div>
+                </div>
+                <div>
+                  <span class="answer-pill">${item.score || "0/0"}</span>
+                  <span class="ms-2 answer-pill">${item.status || "N/A"}</span>
+                </div>
+              </div>
+              ${answers.length ? `
+                <div class="mt-2">
+                  ${answers.map((ans) => `
+                    <div class="quiz-details">
+                      <strong>${ans.question}</strong>: ${ans.selected_option || "N/A"} (${ans.quiz_result || "N/A"})
+                    </div>
+                  `).join("")}
+                </div>
+              ` : ""}
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  function renderQuestionView() {
+    if (!quizAttemptState) return;
+    const { quizData, currentIndex } = quizAttemptState;
+    const questions = quizData.questions || [];
+    const question = questions[currentIndex];
+    const progress = document.getElementById("questionProgress");
+    const stage = document.getElementById("questionStage");
+    const nav = document.getElementById("navStage");
+    const reviewStage = document.getElementById("reviewStage");
+
+    if (!question || !stage || !nav || !progress) return;
+
+    reviewStage.style.display = "none";
+    stage.style.display = "block";
+    nav.style.display = "block";
+
+    const answeredCount = questions.filter((q) => !!getAnswer(q.name)).length;
+    progress.innerHTML = `
+      <span>Question ${currentIndex + 1} of ${questions.length}</span>
+      <span>Answered ${answeredCount} / ${questions.length}</span>
+    `;
+
+    const selectedId = getAnswer(question.name);
+    stage.innerHTML = `
+      <div class="question-card mb-4 p-3">
         <div class="question-title mb-3">
-          <strong>Question ${index + 1}:</strong> ${question.question}
+          <strong>Question ${currentIndex + 1}:</strong> ${question.question}
           <span class="badge bg-primary ms-2">${question.marks} mark${question.marks > 1 ? "s" : ""}</span>
         </div>
         <div class="options" data-question="${question.name}">
           ${question.options.map(option => `
-            <div class="option-item mb-2 p-2 cursor-pointer" data-option="${option.id}" style="cursor: pointer;">
-              <input type="radio" name="question_${question.name}" value="${option.id}" id="q${question.name}_${option.id}">
+            <div class="option-item mb-2 p-2 cursor-pointer ${selectedId === option.id ? "selected" : ""}" data-option="${option.id}" style="cursor: pointer;">
+              <input type="radio" name="question_${question.name}" value="${option.id}" id="q${question.name}_${option.id}" ${selectedId === option.id ? "checked" : ""}>
               <label for="q${question.name}_${option.id}" class="ms-2 cursor-pointer" style="cursor: pointer;">${option.text}</label>
             </div>
           `).join("")}
         </div>
-      `;
-      quizContent.appendChild(questionCard);
-    });
-
-    // Submit button
-    const submitBtn = document.createElement("div");
-    submitBtn.className = "text-center mt-4";
-    submitBtn.innerHTML = `
-      <button class="btn btn-primary btn-lg" id="submitQuizBtn">
-        <span class="submit-text"><i class="fas fa-paper-plane me-2"></i>Submit Quiz</span>
-        <span class="loading" style="display:none;"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...</span>
-      </button>
+      </div>
     `;
-    quizContent.appendChild(submitBtn);
 
-    // Add event listeners for options
-    document.querySelectorAll(".option-item").forEach((item) => {
+    stage.querySelectorAll(".option-item").forEach((item) => {
       item.addEventListener("click", function() {
         const questionName = this.closest(".options").dataset.question;
-        const optionId = this.dataset.option;
-        
-        // Remove selection from other options in same question
+        const optionId = parseInt(this.dataset.option, 10);
+        setAnswer(questionName, optionId);
+
         this.closest(".options").querySelectorAll(".option-item").forEach((opt) => {
           opt.classList.remove("selected");
           opt.querySelector('input[type="radio"]').checked = false;
         });
-        
-        // Select this option
+
         this.classList.add("selected");
         this.querySelector('input[type="radio"]').checked = true;
       });
     });
 
-    // Add submit button event listener
-    document.getElementById("submitQuizBtn").addEventListener("click", function() {
-      submitQuiz(quizData, quizName, student, studentGroup);
-    });
+    const isFirst = currentIndex === 0;
+    const isLast = currentIndex === questions.length - 1;
+
+    nav.innerHTML = `
+      <div class="question-nav">
+        <button class="btn btn-secondary" id="prevQuestionBtn" ${isFirst ? "disabled" : ""}>
+          <i class="fas fa-arrow-left me-2"></i>Previous
+        </button>
+        <button class="btn btn-primary" id="nextQuestionBtn">
+          ${isLast ? '<i class="fas fa-clipboard-list me-2"></i>Review Answers' : '<i class="fas fa-arrow-right me-2"></i>Next'}
+        </button>
+        <button class="btn btn-secondary" id="reviewAnswersBtn">
+          <i class="fas fa-eye me-2"></i>Review
+        </button>
+      </div>
+    `;
+
+    const prevBtn = document.getElementById("prevQuestionBtn");
+    const nextBtn = document.getElementById("nextQuestionBtn");
+    const reviewBtn = document.getElementById("reviewAnswersBtn");
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        if (quizAttemptState.currentIndex > 0) {
+          quizAttemptState.currentIndex -= 1;
+          renderQuestionView();
+        }
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        const selected = getAnswer(question.name);
+        if (!selected) {
+          showError("Please select an answer before continuing.");
+          return;
+        }
+        hideMessages();
+        if (isLast) {
+          renderReviewView();
+        } else {
+          quizAttemptState.currentIndex += 1;
+          renderQuestionView();
+        }
+      });
+    }
+
+    if (reviewBtn) {
+      reviewBtn.addEventListener("click", () => {
+        renderReviewView();
+      });
+    }
   }
 
+  function renderReviewView() {
+    if (!quizAttemptState) return;
+    const { quizData } = quizAttemptState;
+    const questions = quizData.questions || [];
+    const stage = document.getElementById("questionStage");
+    const nav = document.getElementById("navStage");
+    const reviewStage = document.getElementById("reviewStage");
+    const progress = document.getElementById("questionProgress");
+
+    if (!reviewStage || !progress) return;
+
+    stage.style.display = "none";
+    nav.style.display = "none";
+    reviewStage.style.display = "block";
+
+    progress.innerHTML = `
+      <span>Review Answers</span>
+      <span>Total Questions: ${questions.length}</span>
+    `;
+
+    reviewStage.innerHTML = `
+      <div class="review-card">
+        <h5 class="mb-3"><i class="fas fa-clipboard-check me-2"></i>Preview Answers</h5>
+        ${questions.map((question, index) => {
+          const selectedId = getAnswer(question.name);
+          const selectedText = getSelectedOptionText(question, selectedId);
+          return `
+            <div class="review-item">
+              <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                  <strong>Q${index + 1}.</strong> ${question.question}
+                  <div class="mt-1">
+                    <span class="answer-pill ${selectedId ? "" : "unanswered"}">
+                      ${selectedId ? selectedText : "Unanswered"}
+                    </span>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm mt-2" data-edit-index="${index}">
+                  <i class="fas fa-edit me-1"></i>Edit
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+        <div class="question-nav mt-3">
+          <button class="btn btn-secondary" id="backToQuestionsBtn">
+            <i class="fas fa-arrow-left me-2"></i>Back to Questions
+          </button>
+          <button class="btn btn-primary btn-lg" id="submitQuizBtn">
+            <span class="submit-text"><i class="fas fa-paper-plane me-2"></i>Submit Quiz</span>
+            <span class="loading" style="display:none;"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    reviewStage.querySelectorAll("[data-edit-index]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.editIndex, 10);
+        quizAttemptState.currentIndex = idx;
+        renderQuestionView();
+      });
+    });
+
+    const backBtn = document.getElementById("backToQuestionsBtn");
+    if (backBtn) {
+      backBtn.addEventListener("click", () => {
+        renderQuestionView();
+      });
+    }
+
+    const submitBtn = document.getElementById("submitQuizBtn");
+    if (submitBtn) {
+      submitBtn.addEventListener("click", () => {
+        submitQuiz(quizAttemptState.quizData, quizAttemptState.quizName, quizAttemptState.student, quizAttemptState.studentGroup);
+      });
+    }
+  }
   function submitQuiz(quizData, quizName, student, studentGroup) {
     const submitBtn = document.getElementById("submitQuizBtn");
     if (submitBtn && submitBtn.disabled) {
@@ -1060,10 +1371,9 @@ async function reloadStudentGroups() {
     }
     // Collect answers
     const answers = {};
-    document.querySelectorAll(".options").forEach((optionGroup) => {
-      const questionName = optionGroup.dataset.question;
-      const selectedOption = optionGroup.querySelector('input[type="radio"]:checked');
-      answers[questionName] = selectedOption ? [parseInt(selectedOption.value)] : [];
+    (quizData.questions || []).forEach((question) => {
+      const selected = getAnswer(question.name);
+      answers[question.name] = selected ? [selected] : [];
     });
 
     // Check if all questions are answered
@@ -1148,6 +1458,8 @@ async function reloadStudentGroups() {
     if (quizContainer) {
       quizContainer.remove();
     }
+
+    quizAttemptState = null;
 
     const mainContainer = document.getElementById("mainQuizContainer");
     if (mainContainer) {

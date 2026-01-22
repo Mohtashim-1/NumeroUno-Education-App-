@@ -1063,8 +1063,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
         else:
             print(f"[ASSESSMENT RESULT] Skipped - No assessment plan found")
         
-        # Try to create Quiz Activity if enrollment exists
-        # Quiz Activity requires enrollment, so we'll try to find it
+        # Try to create Quiz Activity even if enrollment is missing
         enrollment = None
         if student_group_doc.course:
             enrollments = frappe.get_all(
@@ -1081,66 +1080,69 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                 print(f"[ENROLLMENT] Found: {enrollment}")
             else:
                 print(f"[ENROLLMENT] No enrollment found for student={student}, course={student_group_doc.course}")
-        
-        # Try to create Quiz Activity if enrollment exists
+
         activity_id = None
-        if enrollment:
-            try:
-                print(f"\n[QUIZ ACTIVITY] Creating Quiz Activity...")
-                quiz_activity = frappe.new_doc("Quiz Activity")
+        try:
+            print(f"\n[QUIZ ACTIVITY] Creating Quiz Activity...")
+            quiz_activity = frappe.new_doc("Quiz Activity")
+            if enrollment:
                 quiz_activity.enrollment = enrollment
-                quiz_activity.student = student
-                quiz_activity.quiz = quiz_name
-                quiz_activity.score = f"{total_score}/{total_marks}"
-                quiz_activity.status = "Pass" if passed else "Fail"
-                quiz_activity.activity_date = today()
+            else:
+                quiz_activity.flags.ignore_mandatory = True
+            quiz_activity.student = student
+            quiz_activity.quiz = quiz_name
+            quiz_activity.score = f"{total_score}/{total_marks}"
+            quiz_activity.status = "Pass" if passed else "Fail"
+            quiz_activity.activity_date = today()
+            
+            # Add result details
+            for answer_data in answers:
+                question_name = answer_data.get("question")
+                selected_answers = answer_data.get("answers", [])
                 
-                # Add result details
-                for answer_data in answers:
-                    question_name = answer_data.get("question")
-                    selected_answers = answer_data.get("answers", [])
-                    
-                    question_doc = frappe.get_doc("Question", question_name)
-                    is_correct = check_quiz_answer(question_doc, selected_answers)
-                    
-                    # Format selected option text
-                    # Question doctype uses 'question_type' and 'options' table
-                    selected_option_text = ""
-                    question_type = getattr(question_doc, 'question_type', 'Single Correct Answer')
-                    
-                    if question_type in ["Single Correct Answer", "Multiple Correct Answer"]:
-                        # Get option text from options table
-                        if hasattr(question_doc, 'options') and question_doc.options:
-                            option_texts = []
-                            for opt_id in selected_answers:
-                                # Options are 1-indexed, so subtract 1 for array index
-                                opt_idx = opt_id - 1
-                                if 0 <= opt_idx < len(question_doc.options):
-                                    opt = question_doc.options[opt_idx]
-                                    opt_text = getattr(opt, 'option', '')
-                                    if opt_text:
-                                        option_texts.append(opt_text)
-                            selected_option_text = ", ".join(option_texts)
-                    else:
-                        selected_option_text = ", ".join(map(str, selected_answers))
-                    
-                    quiz_activity.append("result", {
-                        "question": question_name,
-                        "selected_option": selected_option_text,
-                        "quiz_result": "Correct" if is_correct else "Wrong"
-                    })
+                question_doc = frappe.get_doc("Question", question_name)
+                is_correct = check_quiz_answer(question_doc, selected_answers)
                 
+                # Format selected option text
+                # Question doctype uses 'question_type' and 'options' table
+                selected_option_text = ""
+                question_type = getattr(question_doc, 'question_type', 'Single Correct Answer')
+                
+                if question_type in ["Single Correct Answer", "Multiple Correct Answer"]:
+                    # Get option text from options table
+                    if hasattr(question_doc, 'options') and question_doc.options:
+                        option_texts = []
+                        for opt_id in selected_answers:
+                            # Options are 1-indexed, so subtract 1 for array index
+                            opt_idx = opt_id - 1
+                            if 0 <= opt_idx < len(question_doc.options):
+                                opt = question_doc.options[opt_idx]
+                                opt_text = getattr(opt, 'option', '')
+                                if opt_text:
+                                    option_texts.append(opt_text)
+                        selected_option_text = ", ".join(option_texts)
+                else:
+                    selected_option_text = ", ".join(map(str, selected_answers))
+                
+                quiz_activity.append("result", {
+                    "question": question_name,
+                    "selected_option": selected_option_text,
+                    "quiz_result": "Correct" if is_correct else "Wrong"
+                })
+
+            if enrollment:
                 quiz_activity.insert(ignore_permissions=True)
                 quiz_activity.submit()
-                frappe.db.commit()
-                activity_id = quiz_activity.name
-                print(f"  ✓ Quiz Activity created: {activity_id}")
-            except Exception as e:
-                error_msg = f"Error creating Quiz Activity: {str(e)}"
-                print(f"  ✗ {error_msg}")
-                frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Quiz Submission")
-        else:
-            print(f"[QUIZ ACTIVITY] Skipped - No enrollment found")
+            else:
+                quiz_activity.insert(ignore_permissions=True, ignore_mandatory=True)
+
+            frappe.db.commit()
+            activity_id = quiz_activity.name
+            print(f"  ✓ Quiz Activity created: {activity_id}")
+        except Exception as e:
+            error_msg = f"Error creating Quiz Activity: {str(e)}"
+            print(f"  ✗ {error_msg}")
+            frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Quiz Submission")
         
         print(f"\n{'='*80}")
         print(f"SUBMISSION COMPLETE")
@@ -1165,6 +1167,71 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
         return {
             "status": "error",
             "message": f"Failed to submit quiz: {str(e)}"
+        }
+
+@frappe.whitelist(allow_guest=True, methods=['GET'])
+def get_quiz_submission_history(student, quiz_name=None, limit=5):
+    """Fetch recent quiz submissions with answer history for a student."""
+    try:
+        if not student:
+            return {
+                "status": "error",
+                "message": "Student is required"
+            }
+
+        try:
+            limit = int(limit) if limit is not None else 5
+        except (TypeError, ValueError):
+            limit = 5
+        limit = min(max(limit, 1), 50)
+
+        filters = {"student": student}
+        if quiz_name:
+            filters["quiz"] = quiz_name
+
+        activities = frappe.get_all(
+            "Quiz Activity",
+            filters=filters,
+            fields=["name", "quiz", "score", "status", "activity_date", "creation"],
+            order_by="activity_date desc, creation desc",
+            limit=limit,
+            ignore_permissions=True
+        )
+
+        history = []
+        for activity in activities:
+            answers = []
+            try:
+                activity_doc = frappe.get_doc("Quiz Activity", activity.name)
+                if hasattr(activity_doc, "result") and activity_doc.result:
+                    for row in activity_doc.result:
+                        answers.append({
+                            "question": row.question,
+                            "selected_option": row.selected_option,
+                            "quiz_result": row.quiz_result
+                        })
+            except Exception:
+                answers = []
+
+            history.append({
+                "name": activity.name,
+                "quiz": activity.quiz,
+                "score": activity.score,
+                "status": activity.status,
+                "activity_date": activity.activity_date,
+                "creation": activity.creation,
+                "answers": answers
+            })
+
+        return {
+            "status": "success",
+            "history": history
+        }
+    except Exception as e:
+        frappe.log_error(f"Error fetching quiz submission history: {str(e)}", "Quiz API")
+        return {
+            "status": "error",
+            "message": f"Failed to fetch submission history: {str(e)}"
         }
 
 def check_quiz_answer(question_doc, selected_answers):
