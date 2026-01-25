@@ -19,8 +19,14 @@ def fetch_students_group(customer):
         return []
 
 @frappe.whitelist()
-def fetch_students_from_sg(customer, student_group):
-    """Fetch students from selected Student Groups"""
+def fetch_students_from_sg(customer, student_group, exclude_invoiced=True):
+    """Fetch students from selected Student Groups
+    
+    Args:
+        customer: Customer name
+        student_group: Student group name(s) - can be string, list, or JSON string
+        exclude_invoiced: If True, exclude students that are already in submitted invoices (default: True)
+    """
     try:
         students_data = []
         
@@ -28,6 +34,40 @@ def fetch_students_from_sg(customer, student_group):
         frappe.logger().info(f"fetch_students_from_sg called with customer: {customer}")
         frappe.logger().info(f"fetch_students_from_sg called with student_group: {student_group}")
         frappe.logger().info(f"student_group type: {type(student_group)}")
+        
+        # Get already invoiced students if exclude_invoiced is True
+        # We'll build a set of (student, student_group) tuples to check for duplicates
+        invoiced_students_by_group = set()
+        if exclude_invoiced:
+            # Get all submitted Sales Invoices for this customer
+            submitted_invoices = frappe.get_all(
+                "Sales Invoice",
+                filters={
+                    "customer": customer,
+                    "docstatus": 1  # Only submitted invoices
+                },
+                fields=["name"]
+            )
+            
+            if submitted_invoices:
+                invoice_names = [inv.name for inv in submitted_invoices]
+                
+                # Get all students from submitted invoices with their student groups
+                invoiced_student_records = frappe.get_all(
+                    "Sales Invoice Student",
+                    filters={
+                        "parent": ["in", invoice_names]
+                    },
+                    fields=["student", "student_group"]
+                )
+                
+                # Create set of (student, student_group) tuples
+                invoiced_students_by_group = {
+                    (record.student, record.student_group) 
+                    for record in invoiced_student_records 
+                    if record.student and record.student_group
+                }
+                frappe.logger().info(f"Found {len(invoiced_students_by_group)} already invoiced student-group combinations")
         
         # Handle different input formats
         if isinstance(student_group, str):
@@ -66,6 +106,11 @@ def fetch_students_from_sg(customer, student_group):
             
             # Get students from the Student Group
             for student_row in sg_doc.students:
+                # Skip if student is already invoiced for this student group and exclude_invoiced is True
+                if exclude_invoiced and (student_row.student, sg_name) in invoiced_students_by_group:
+                    frappe.logger().info(f"Skipping already invoiced student: {student_row.student} for group: {sg_name}")
+                    continue
+                
                 student_data = {
                     "student": student_row.student,
                     "student_name": student_row.student_name,
@@ -76,7 +121,7 @@ def fetch_students_from_sg(customer, student_group):
                 }
                 students_data.append(student_data)
         
-        frappe.logger().info(f"Returning {len(students_data)} students")
+        frappe.logger().info(f"Returning {len(students_data)} students (after excluding invoiced)")
         return students_data
         
     except Exception as e:
