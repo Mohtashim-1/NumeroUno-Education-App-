@@ -66,8 +66,36 @@ def _get_group_students(group_names):
     return grouped
 
 
+def _resolve_student_group_names(user, roles, instructor_name=None):
+    instructor_name = (instructor_name or "").strip()
+    if user == "Administrator" or "System Manager" in roles:
+        allowed_instructors = None
+    else:
+        allowed_instructors = _get_instructor_names_for_user(user)
+
+    if instructor_name:
+        if allowed_instructors is not None and instructor_name not in allowed_instructors:
+            return []
+        instructor_names = [instructor_name]
+    else:
+        instructor_names = allowed_instructors
+
+    if instructor_names is None:
+        return None
+
+    return _get_student_group_names_for_instructors(instructor_names)
+
+
 @frappe.whitelist()
-def get_instructor_portal_data(attendance_limit=50, attendance_offset=0, card_limit=50, card_offset=0):
+def get_instructor_portal_data(
+    attendance_limit=50,
+    attendance_offset=0,
+    card_limit=50,
+    card_offset=0,
+    student_group=None,
+    student=None,
+    instructor=None,
+):
     attendance_limit = int(attendance_limit or 50)
     attendance_offset = int(attendance_offset or 0)
     card_limit = int(card_limit or 50)
@@ -75,11 +103,11 @@ def get_instructor_portal_data(attendance_limit=50, attendance_offset=0, card_li
     user = frappe.session.user
     roles = frappe.get_roles(user)
 
-    if user == "Administrator" or "System Manager" in roles:
-        student_group_names = None
-    else:
-        instructor_names = _get_instructor_names_for_user(user)
-        student_group_names = _get_student_group_names_for_instructors(instructor_names)
+    student_group = (student_group or "").strip()
+    student = (student or "").strip()
+    instructor = (instructor or "").strip()
+
+    student_group_names = _resolve_student_group_names(user, roles, instructor)
 
     if student_group_names == []:
         return {"attendance": [], "cards": []}
@@ -87,9 +115,22 @@ def get_instructor_portal_data(attendance_limit=50, attendance_offset=0, card_li
     attendance_filters = {"docstatus": ["in", [0, 1]]}
     card_filters = {"docstatus": ["in", [0, 1]]}
 
-    if student_group_names:
+    if student_group:
+        if student_group_names is None:
+            attendance_filters["student_group"] = student_group
+            card_filters["student_group"] = student_group
+        elif student_group in student_group_names:
+            attendance_filters["student_group"] = student_group
+            card_filters["student_group"] = student_group
+        else:
+            return {"attendance": [], "cards": []}
+    elif student_group_names:
         attendance_filters["student_group"] = ["in", student_group_names]
         card_filters["student_group"] = ["in", student_group_names]
+
+    if student:
+        attendance_filters["student"] = student
+        card_filters["student"] = student
 
     attendance_total = frappe.db.count("Student Attendance", filters=attendance_filters)
     present_total = frappe.db.count(
@@ -158,20 +199,28 @@ def get_instructor_portal_data(attendance_limit=50, attendance_offset=0, card_li
 
 
 @frappe.whitelist()
-def get_instructor_quiz_status(limit=200, offset=0):
+def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=None, instructor=None):
     limit = int(limit or 200)
     offset = int(offset or 0)
     user = frappe.session.user
     roles = frappe.get_roles(user)
 
-    if user == "Administrator" or "System Manager" in roles:
-        student_group_names = None
-    else:
-        instructor_names = _get_instructor_names_for_user(user)
-        student_group_names = _get_student_group_names_for_instructors(instructor_names)
+    student_group = (student_group or "").strip()
+    student = (student or "").strip()
+    instructor = (instructor or "").strip()
+
+    student_group_names = _resolve_student_group_names(user, roles, instructor)
 
     if student_group_names == []:
         return {"records": [], "total": 0, "pending": 0, "passed": 0, "failed": 0}
+
+    if student_group:
+        if student_group_names is None:
+            student_group_names = [student_group]
+        elif student_group in student_group_names:
+            student_group_names = [student_group]
+        else:
+            return {"records": [], "total": 0, "pending": 0, "passed": 0, "failed": 0}
 
     assignments = _get_mcqs_assignments(student_group_names)
     if not assignments:
@@ -184,6 +233,8 @@ def get_instructor_quiz_status(limit=200, offset=0):
     for assignment in assignments:
         students = group_students.get(assignment.student_group, [])
         for student_row in students:
+            if student and student_row.student != student:
+                continue
             rows.append({
                 "student": student_row.student,
                 "student_name": student_row.student_name,

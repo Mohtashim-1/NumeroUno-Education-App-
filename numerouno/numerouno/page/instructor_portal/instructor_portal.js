@@ -86,6 +86,87 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				gap: 20px;
 			}
 
+			.portal-filters {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+				gap: 12px;
+				margin: 18px 0 6px;
+				align-items: end;
+			}
+
+			.portal-filters .frappe-control {
+				margin-bottom: 0;
+			}
+
+			.portal-filters .control-label {
+				font-size: 12px;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: var(--muted);
+				margin-bottom: 6px;
+			}
+
+			.portal-filters .control-input,
+			.portal-filters .form-control,
+			.portal-filters .input-with-feedback {
+				border-radius: 12px;
+				border: 1px solid #e1e4e8;
+				background: #ffffff;
+				box-shadow: none;
+			}
+
+			.filter-actions {
+				display: flex;
+				flex-direction: column;
+				align-self: end;
+				gap: 6px;
+			}
+
+			.portal-filters .portal-btn {
+				margin-top: 0;
+			}
+
+			.filter-actions .control-label {
+				visibility: hidden;
+				height: auto;
+				margin-bottom: 6px;
+				line-height: 1.2;
+				overflow: hidden;
+			}
+
+			.filter-actions .control-input-wrapper {
+				display: flex;
+				align-items: center;
+				min-height: 34px;
+				justify-content: flex-start;
+			}
+
+			.filter-actions .portal-reset-btn {
+				width: auto;
+				min-width: 88px;
+				height: 34px;
+				padding: 0 16px;
+			}
+
+			.portal-reset-btn {
+				background: linear-gradient(135deg, #f7f0e8 0%, #ffe6d5 100%);
+				border: 1px solid #f2c3a8;
+				color: #5a3a2b;
+				box-shadow: 0 10px 20px rgba(216, 92, 36, 0.12);
+				transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+			}
+
+			.portal-reset-btn:hover {
+				transform: translateY(-1px);
+				box-shadow: 0 14px 26px rgba(216, 92, 36, 0.18);
+				background: linear-gradient(135deg, #fff1e4 0%, #ffd8c2 100%);
+			}
+
+			.portal-reset-btn:active {
+				transform: translateY(0);
+				box-shadow: 0 8px 16px rgba(216, 92, 36, 0.12);
+			}
+
 			.portal-tabs {
 				display: flex;
 				gap: 10px;
@@ -237,6 +318,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				border: none;
 				border-radius: 8px;
 				padding: 6px 12px;
+				margin-top: 16px;
 				font-size: 12px;
 				font-weight: 600;
 				cursor: pointer;
@@ -338,6 +420,18 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					<div class="metric-card">
 						<h5>Student Cards</h5>
 						<div class="value" id="metric-cards">0</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="portal-filters">
+				<div id="filter-instructor"></div>
+				<div id="filter-student-group"></div>
+				<div id="filter-student"></div>
+				<div class="filter-actions">
+					<label class="control-label">&nbsp;</label>
+					<div class="control-input-wrapper">
+						<button type="button" class="portal-btn portal-btn-ghost portal-reset-btn" id="portal-reset-filters">Reset</button>
 					</div>
 				</div>
 			</div>
@@ -459,7 +553,14 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	var cardsOffset = 0;
 	var quizOffset = 0;
 	var pageSize = 50;
+	var filterState = {
+		student_group: "",
+		student: "",
+		instructor: ""
+	};
+	var filterControls = {};
 
+	init_filters();
 	load_portal_data();
 	load_quiz_status();
 	init_tabs();
@@ -471,7 +572,10 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				attendance_limit: pageSize,
 				attendance_offset: attendanceOffset,
 				card_limit: pageSize,
-				card_offset: cardsOffset
+				card_offset: cardsOffset,
+				student_group: filterState.student_group,
+				student: filterState.student,
+				instructor: filterState.instructor
 			},
 			callback: function (r) {
 				var message = r.message || {};
@@ -504,6 +608,68 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			$('.portal-section').attr('hidden', true);
 			$(`#${target}`).removeAttr('hidden');
 		});
+	}
+
+	function init_filters() {
+		filterControls.instructor = make_filter_control({
+			label: "Instructor Name",
+			fieldname: "instructor",
+			options: "Instructor",
+			parent: $("#filter-instructor")
+		});
+		filterControls.student_group = make_filter_control({
+			label: "Student Group",
+			fieldname: "student_group",
+			options: "Student Group",
+			parent: $("#filter-student-group")
+		});
+		filterControls.student = make_filter_control({
+			label: "Student Name",
+			fieldname: "student",
+			options: "Student",
+			parent: $("#filter-student")
+		});
+
+		$("#portal-reset-filters").off('click').on('click', function () {
+			Object.values(filterControls).forEach(function (control) {
+				if (control && control.set_value) {
+					control.set_value("");
+				}
+			});
+			apply_filters();
+		});
+	}
+
+	function make_filter_control(config) {
+		var control = frappe.ui.form.make_control({
+			df: {
+				label: config.label,
+				fieldname: config.fieldname,
+				fieldtype: "Link",
+				options: config.options
+			},
+			parent: config.parent,
+			render_input: true
+		});
+		control.refresh();
+		if (control.$input) {
+			control.$input.on('change', apply_filters);
+			control.$input.on('awesomplete-selectcomplete', apply_filters);
+		}
+		return control;
+	}
+
+	function apply_filters() {
+		filterState = {
+			instructor: (filterControls.instructor && filterControls.instructor.get_value()) || "",
+			student_group: (filterControls.student_group && filterControls.student_group.get_value()) || "",
+			student: (filterControls.student && filterControls.student.get_value()) || ""
+		};
+		attendanceOffset = 0;
+		cardsOffset = 0;
+		quizOffset = 0;
+		load_portal_data();
+		load_quiz_status();
 	}
 
 	function render_attendance(records, append) {
@@ -685,7 +851,10 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_quiz_status",
 			args: {
 				limit: pageSize,
-				offset: quizOffset
+				offset: quizOffset,
+				student_group: filterState.student_group,
+				student: filterState.student,
+				instructor: filterState.instructor
 			},
 			callback: function (r) {
 				var message = r.message || {};
