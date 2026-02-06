@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.utils import today
+from datetime import timedelta
 
 @frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
 def get_student_groups(academic_year=None, course=None, from_date=None, to_date=None):
@@ -981,6 +982,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
         
         # Create Assessment Result if assessment plan exists
         assessment_result_id = None
+        assessment_result_error = None
         if assessment_plan:
             try:
                 print(f"\n[ASSESSMENT RESULT] Creating Assessment Result...")
@@ -1060,8 +1062,11 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                 error_msg = f"Error creating Assessment Result: {str(e)}"
                 print(f"  ✗ {error_msg}")
                 frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Quiz Submission")
+                # Store error for later - will be added to Quiz Activity comments
+                assessment_result_error = error_msg
         else:
             print(f"[ASSESSMENT RESULT] Skipped - No assessment plan found")
+            assessment_result_error = "No Assessment Plan found for this Student Group and Course. Please create an Assessment Plan first."
         
         # Try to create Quiz Activity even if enrollment is missing
         enrollment = None
@@ -1139,6 +1144,23 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
             frappe.db.commit()
             activity_id = quiz_activity.name
             print(f"  ✓ Quiz Activity created: {activity_id}")
+            
+            # Add error message to Quiz Activity comments if Assessment Result creation failed
+            if assessment_result_error:
+                try:
+                    from frappe.desk.doctype.comment.comment import add_comment
+                    comment_text = f"⚠️ Assessment Result Creation Failed:\n{assessment_result_error}\n\nPlease use the 'Create Assessment Result' button to create it manually."
+                    add_comment(
+                        reference_doctype="Quiz Activity",
+                        reference_name=activity_id,
+                        content=comment_text,
+                        comment_email=frappe.session.user,
+                        comment_by=frappe.session.user
+                    )
+                    print(f"  ✓ Error message added to Quiz Activity comments")
+                except Exception as comment_error:
+                    print(f"  ✗ Could not add comment: {str(comment_error)}")
+            
         except Exception as e:
             error_msg = f"Error creating Quiz Activity: {str(e)}"
             print(f"  ✗ {error_msg}")
@@ -1167,6 +1189,882 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
         return {
             "status": "error",
             "message": f"Failed to submit quiz: {str(e)}"
+        }
+
+@frappe.whitelist()
+def create_assessment_result_from_quiz_activity(quiz_activity_name):
+    """Create Assessment Result from Quiz Activity manually"""
+    frappe.logger().info(f"="*80)
+    frappe.logger().info(f"[CREATE ASSESSMENT RESULT] Starting for Quiz Activity: {quiz_activity_name}")
+    frappe.logger().info(f"="*80)
+    
+    try:
+        # Get Quiz Activity
+        frappe.logger().info(f"[CREATE ASSESSMENT RESULT] Step 1: Loading Quiz Activity: {quiz_activity_name}")
+        quiz_activity = frappe.get_doc("Quiz Activity", quiz_activity_name)
+        frappe.logger().info(f"[CREATE ASSESSMENT RESULT] Quiz Activity loaded: {quiz_activity.name}")
+        frappe.logger().info(f"  - Student: {quiz_activity.student}")
+        frappe.logger().info(f"  - Quiz: {quiz_activity.quiz}")
+        frappe.logger().info(f"  - Enrollment: {quiz_activity.enrollment}")
+        frappe.logger().info(f"  - Score: {quiz_activity.score}")
+        
+        if not quiz_activity.student:
+            error_msg = "Student is required in Quiz Activity"
+            
+            # Add error to Quiz Activity comments
+            try:
+                from frappe.desk.doctype.comment.comment import add_comment
+                comment_text = f"❌ {error_msg}"
+                add_comment(
+                    reference_doctype="Quiz Activity",
+                    reference_name=quiz_activity_name,
+                    content=comment_text,
+                    comment_email=frappe.session.user or "system",
+                    comment_by=frappe.session.user or "system"
+                )
+            except:
+                pass
+            
+            return {
+                "status": "error",
+                "message": error_msg
+            }
+        
+        if not quiz_activity.quiz:
+            error_msg = "Quiz is required in Quiz Activity"
+            
+            # Add error to Quiz Activity comments
+            try:
+                from frappe.desk.doctype.comment.comment import add_comment
+                comment_text = f"❌ {error_msg}"
+                add_comment(
+                    reference_doctype="Quiz Activity",
+                    reference_name=quiz_activity_name,
+                    content=comment_text,
+                    comment_email=frappe.session.user or "system",
+                    comment_by=frappe.session.user or "system"
+                )
+            except:
+                pass
+            
+            return {
+                "status": "error",
+                "message": error_msg
+            }
+        
+        student = quiz_activity.student
+        quiz_name = quiz_activity.quiz
+        
+        # Get student group from enrollment or course
+        student_group = None
+        if quiz_activity.enrollment:
+            enrollment_doc = frappe.get_doc("Course Enrollment", quiz_activity.enrollment)
+            if enrollment_doc.student_group:
+                student_group = enrollment_doc.student_group
+        
+        # If no student group from enrollment, try to find from student
+        if not student_group:
+            student_groups = frappe.get_all(
+                "Student Group Student",
+                filters={"student": student},
+                fields=["parent"],
+                limit=1
+            )
+            if student_groups:
+                student_group = student_groups[0].parent
+        
+        if not student_group:
+            error_msg = "Student Group not found. Please ensure student is assigned to a Student Group."
+            
+            # Add error to Quiz Activity comments
+            try:
+                from frappe.desk.doctype.comment.comment import add_comment
+                comment_text = f"❌ {error_msg}"
+                add_comment(
+                    reference_doctype="Quiz Activity",
+                    reference_name=quiz_activity_name,
+                    content=comment_text,
+                    comment_email=frappe.session.user or "system",
+                    comment_by=frappe.session.user or "system"
+                )
+            except:
+                pass
+            
+            return {
+                "status": "error",
+                "message": error_msg
+            }
+        
+        student_group_doc = frappe.get_doc("Student Group", student_group)
+        
+        # Update Quiz Activity with Student Group
+        try:
+            quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+            if hasattr(quiz_activity_doc, 'custom_student_group'):
+                quiz_activity_doc.custom_student_group = student_group
+                quiz_activity_doc.save(ignore_permissions=True)
+                frappe.db.commit()
+                frappe.logger().info(f"[QUIZ ACTIVITY] Updated custom_student_group: {student_group}")
+        except Exception as update_err:
+            frappe.logger().error(f"[QUIZ ACTIVITY] Failed to update custom_student_group: {str(update_err)}")
+        
+        # Parse score from Quiz Activity
+        score_str = quiz_activity.score or "0/0"
+        if "/" in score_str:
+            total_score, total_marks = map(int, score_str.split("/"))
+        else:
+            total_score = 0
+            total_marks = 0
+        
+        # Find or create Assessment Plan
+        frappe.logger().info(f"[ASSESSMENT PLAN] Starting Assessment Plan lookup/creation")
+        frappe.logger().info(f"[ASSESSMENT PLAN] Student: {student}, Student Group: {student_group}, Course: {student_group_doc.course if student_group_doc.course else 'None'}")
+        
+        assessment_plan = None
+        if student_group_doc.course:
+            # Look for existing Assessment Plans (including draft)
+            frappe.logger().info(f"[ASSESSMENT PLAN] Searching for existing Assessment Plans...")
+            assessment_plans = frappe.get_all(
+                "Assessment Plan",
+                filters={
+                    "student_group": student_group,
+                    "course": student_group_doc.course,
+                    "docstatus": ["<", 2]  # Include draft and submitted
+                },
+                fields=["name", "docstatus"],
+                limit=1
+            )
+            frappe.logger().info(f"[ASSESSMENT PLAN] Found {len(assessment_plans)} existing Assessment Plan(s)")
+            if assessment_plans:
+                assessment_plan = assessment_plans[0].name
+                frappe.logger().info(f"[ASSESSMENT PLAN] Using existing Assessment Plan: {assessment_plan} (docstatus: {assessment_plans[0].docstatus})")
+                
+                # Update Quiz Activity with Assessment Plan
+                try:
+                    quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+                    if hasattr(quiz_activity_doc, 'custom_assesment_plan'):
+                        quiz_activity_doc.custom_assesment_plan = assessment_plan
+                        quiz_activity_doc.save(ignore_permissions=True)
+                        frappe.db.commit()
+                        frappe.logger().info(f"[QUIZ ACTIVITY] Updated custom_assesment_plan: {assessment_plan}")
+                except Exception as update_err:
+                    frappe.logger().error(f"[QUIZ ACTIVITY] Failed to update custom_assesment_plan: {str(update_err)}")
+            else:
+                frappe.logger().info(f"[ASSESSMENT PLAN] No existing Assessment Plan found. Will create new one.")
+        else:
+            frappe.logger().warning(f"[ASSESSMENT PLAN] Student Group has no course. Cannot create Assessment Plan.")
+        
+        # Auto-create Assessment Plan if it doesn't exist
+        if not assessment_plan and student_group_doc.course:
+            frappe.logger().info(f"[ASSESSMENT PLAN] Starting auto-creation of Assessment Plan...")
+            try:
+                # Get course details for defaults
+                frappe.logger().info(f"[ASSESSMENT PLAN] Step 1: Getting course details for: {student_group_doc.course}")
+                course_doc = frappe.get_doc("Course", student_group_doc.course)
+                frappe.logger().info(f"[ASSESSMENT PLAN] Course loaded: {course_doc.name}")
+                
+                # Get or create Assessment Group (required field)
+                frappe.logger().info(f"[ASSESSMENT PLAN] Step 2: Getting/creating Assessment Group...")
+                assessment_group = None
+                assessment_groups = frappe.get_all(
+                    "Assessment Group",
+                    fields=["name"],
+                    limit=1
+                )
+                if assessment_groups:
+                    assessment_group = assessment_groups[0].name
+                    frappe.logger().info(f"[ASSESSMENT PLAN] Using existing Assessment Group: {assessment_group}")
+                else:
+                    # Create a default Assessment Group if none exists
+                    frappe.logger().info(f"[ASSESSMENT PLAN] No Assessment Group found. Creating new one...")
+                    try:
+                        ag_doc = frappe.new_doc("Assessment Group")
+                        ag_doc.assessment_group_name = "Default Assessment Group"
+                        ag_doc.insert(ignore_permissions=True)
+                        frappe.db.commit()
+                        assessment_group = ag_doc.name
+                        frappe.logger().info(f"[ASSESSMENT PLAN] Created Assessment Group: {assessment_group}")
+                    except Exception as e:
+                        # Try to use a default name
+                        assessment_group = "Default"
+                        frappe.logger().warning(f"[ASSESSMENT PLAN] Failed to create Assessment Group: {str(e)}. Using default name.")
+                
+                # Get grading scale from course or find any
+                frappe.logger().info(f"[ASSESSMENT PLAN] Step 3: Getting grading scale...")
+                grading_scale = getattr(course_doc, 'default_grading_scale', None)
+                if not grading_scale:
+                    grading_scales = frappe.get_all("Grading Scale", fields=["name"], limit=1)
+                    if grading_scales:
+                        grading_scale = grading_scales[0].name
+                        frappe.logger().info(f"[ASSESSMENT PLAN] Using Grading Scale: {grading_scale}")
+                    else:
+                        frappe.logger().warning(f"[ASSESSMENT PLAN] No Grading Scale found. Will create without it.")
+                else:
+                    frappe.logger().info(f"[ASSESSMENT PLAN] Using course default Grading Scale: {grading_scale}")
+                
+                # Create or get Assessment Criteria - use "Written Assessment"
+                frappe.logger().info(f"[ASSESSMENT PLAN] Step 4: Getting/creating Assessment Criteria...")
+                assessment_criteria_name = None
+                criteria_name = "Written Assessment"
+                criteria_list = frappe.get_all(
+                    "Assessment Criteria",
+                    filters={"assessment_criteria": criteria_name},
+                    fields=["name"],
+                    limit=1
+                )
+                if criteria_list:
+                    assessment_criteria_name = criteria_list[0].name
+                    frappe.logger().info(f"[ASSESSMENT PLAN] Using existing Assessment Criteria: {assessment_criteria_name}")
+                else:
+                    # Create Assessment Criteria
+                    frappe.logger().info(f"[ASSESSMENT PLAN] No Assessment Criteria found. Creating new one: {criteria_name}")
+                    try:
+                        criteria_doc = frappe.new_doc("Assessment Criteria")
+                        criteria_doc.assessment_criteria = criteria_name
+                        criteria_doc.insert(ignore_permissions=True)
+                        frappe.db.commit()
+                        assessment_criteria_name = criteria_doc.name
+                        frappe.logger().info(f"[ASSESSMENT PLAN] Created Assessment Criteria: {assessment_criteria_name}")
+                    except Exception as e:
+                        # Use criteria name directly
+                        assessment_criteria_name = criteria_name
+                        frappe.logger().warning(f"[ASSESSMENT PLAN] Failed to create Assessment Criteria: {str(e)}. Using name directly.")
+                
+                # Create Assessment Plan
+                frappe.logger().info(f"[ASSESSMENT PLAN] Step 5: Creating Assessment Plan document...")
+                
+                # Check for Course Schedules to avoid conflicts
+                schedule_date = today()
+                from_time = "09:00:00"
+                to_time = "17:00:00"
+                
+                frappe.logger().info(f"[ASSESSMENT PLAN] Checking for Course Schedule conflicts on {schedule_date}...")
+                conflicting_schedules = frappe.get_all(
+                    "Course Schedule",
+                    filters={
+                        "student_group": student_group,
+                        "schedule_date": schedule_date,
+                        "docstatus": ["<", 2]
+                    },
+                    fields=["name", "from_time", "to_time"]
+                )
+                
+                if conflicting_schedules:
+                    frappe.logger().info(f"[ASSESSMENT PLAN] Found {len(conflicting_schedules)} Course Schedule(s) on {schedule_date}")
+                    for cs in conflicting_schedules:
+                        frappe.logger().info(f"  - Course Schedule: {cs.name}, Time: {cs.from_time} to {cs.to_time}")
+                    
+                    # Try to find a non-conflicting time slot
+                    # Strategy: Use early morning (06:00-08:00) or late evening (18:00-20:00)
+                    # Helper function to check time overlap
+                    def times_overlap(start1, end1, start2, end2):
+                        """Check if two time ranges overlap - handles time strings, time objects, and timedelta"""
+                        # Convert time to seconds for comparison
+                        def time_to_seconds(time_val):
+                            if not time_val:
+                                return 0
+                            
+                            # Handle timedelta objects
+                            if isinstance(time_val, timedelta):
+                                return int(time_val.total_seconds())
+                            
+                            # Handle time objects
+                            if hasattr(time_val, 'hour'):
+                                return time_val.hour * 3600 + time_val.minute * 60 + (time_val.second or 0)
+                            
+                            # Handle string format
+                            time_str = str(time_val)
+                            parts = time_str.split(':')
+                            if len(parts) >= 2:
+                                try:
+                                    hours = int(parts[0])
+                                    minutes = int(parts[1])
+                                    seconds = int(parts[2]) if len(parts) > 2 else 0
+                                    return hours * 3600 + minutes * 60 + seconds
+                                except (ValueError, IndexError):
+                                    return 0
+                            return 0
+                        
+                        s1 = time_to_seconds(start1)
+                        e1 = time_to_seconds(end1)
+                        s2 = time_to_seconds(start2)
+                        e2 = time_to_seconds(end2)
+                        
+                        return s1 < e2 and e1 > s2
+                    
+                    # Try early morning slot (06:00-08:00)
+                    early_from = "06:00:00"
+                    early_to = "08:00:00"
+                    early_conflict = False
+                    for cs in conflicting_schedules:
+                        if times_overlap(early_from, early_to, cs.from_time or "00:00:00", cs.to_time or "23:59:59"):
+                            early_conflict = True
+                            break
+                    
+                    if not early_conflict:
+                        from_time = early_from
+                        to_time = early_to
+                        frappe.logger().info(f"[ASSESSMENT PLAN] Using early morning slot: {from_time} to {to_time}")
+                    else:
+                        # Try late evening slot (18:00-20:00)
+                        late_from = "18:00:00"
+                        late_to = "20:00:00"
+                        late_conflict = False
+                        for cs in conflicting_schedules:
+                            if times_overlap(late_from, late_to, cs.from_time or "00:00:00", cs.to_time or "23:59:59"):
+                                late_conflict = True
+                                break
+                        
+                        if not late_conflict:
+                            from_time = late_from
+                            to_time = late_to
+                            frappe.logger().info(f"[ASSESSMENT PLAN] Using late evening slot: {from_time} to {to_time}")
+                        else:
+                            # Try next day - check if it has conflicts too
+                            next_date = (frappe.utils.getdate(today()) + timedelta(days=1)).strftime("%Y-%m-%d")
+                            next_day_conflicts = frappe.get_all(
+                                "Course Schedule",
+                                filters={
+                                    "student_group": student_group,
+                                    "schedule_date": next_date,
+                                    "docstatus": ["<", 2]
+                                },
+                                fields=["name"]
+                            )
+                            
+                            if not next_day_conflicts:
+                                schedule_date = next_date
+                                frappe.logger().info(f"[ASSESSMENT PLAN] All time slots conflict today. Using next day: {schedule_date}")
+                            else:
+                                # Use next day anyway with early morning slot
+                                schedule_date = next_date
+                                from_time = early_from
+                                to_time = early_to
+                                frappe.logger().info(f"[ASSESSMENT PLAN] Using next day with early morning slot: {schedule_date} {from_time}-{to_time}")
+                else:
+                    frappe.logger().info(f"[ASSESSMENT PLAN] No Course Schedule conflicts found. Using default times.")
+                
+                plan_doc = frappe.new_doc("Assessment Plan")
+                plan_doc.student_group = student_group
+                plan_doc.course = student_group_doc.course
+                plan_doc.assessment_name = f"Quiz Assessment - {quiz_name}"
+                plan_doc.assessment_group = assessment_group
+                plan_doc.schedule_date = schedule_date
+                plan_doc.from_time = from_time
+                plan_doc.to_time = to_time
+                plan_doc.maximum_assessment_score = total_marks
+                
+                frappe.logger().info(f"[ASSESSMENT PLAN] Assessment Plan fields set:")
+                frappe.logger().info(f"  - student_group: {plan_doc.student_group}")
+                frappe.logger().info(f"  - course: {plan_doc.course}")
+                frappe.logger().info(f"  - assessment_name: {plan_doc.assessment_name}")
+                frappe.logger().info(f"  - assessment_group: {plan_doc.assessment_group}")
+                frappe.logger().info(f"  - schedule_date: {plan_doc.schedule_date}")
+                frappe.logger().info(f"  - from_time: {plan_doc.from_time}, to_time: {plan_doc.to_time}")
+                frappe.logger().info(f"  - maximum_assessment_score: {plan_doc.maximum_assessment_score}")
+                
+                if grading_scale:
+                    plan_doc.grading_scale = grading_scale
+                    frappe.logger().info(f"  - grading_scale: {grading_scale}")
+                
+                # Add assessment criteria to the plan
+                if assessment_criteria_name:
+                    plan_doc.append("assessment_criteria", {
+                        "assessment_criteria": assessment_criteria_name,
+                        "maximum_score": total_marks
+                    })
+                    frappe.logger().info(f"  - Added criteria: {assessment_criteria_name} (max_score: {total_marks})")
+                else:
+                    frappe.logger().warning(f"[ASSESSMENT PLAN] No assessment criteria to add!")
+                
+                # Set program and academic year from student group if available
+                if hasattr(student_group_doc, 'program') and student_group_doc.program:
+                    plan_doc.program = student_group_doc.program
+                    frappe.logger().info(f"  - program: {plan_doc.program}")
+                if hasattr(student_group_doc, 'academic_year') and student_group_doc.academic_year:
+                    plan_doc.academic_year = student_group_doc.academic_year
+                    frappe.logger().info(f"  - academic_year: {plan_doc.academic_year}")
+                if hasattr(student_group_doc, 'academic_term') and student_group_doc.academic_term:
+                    plan_doc.academic_term = student_group_doc.academic_term
+                    frappe.logger().info(f"  - academic_term: {plan_doc.academic_term}")
+                
+                # Insert Assessment Plan - validation happens here
+                frappe.logger().info(f"[ASSESSMENT PLAN] Step 6: Inserting Assessment Plan (validation will occur)...")
+                try:
+                    plan_doc.insert(ignore_permissions=True)
+                    frappe.db.commit()
+                    assessment_plan = plan_doc.name
+                    frappe.logger().info(f"[ASSESSMENT PLAN] ✓ Assessment Plan inserted successfully: {assessment_plan}")
+                    
+                    # Update Quiz Activity with Assessment Plan
+                    try:
+                        quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+                        if hasattr(quiz_activity_doc, 'custom_assesment_plan'):
+                            quiz_activity_doc.custom_assesment_plan = assessment_plan
+                            quiz_activity_doc.save(ignore_permissions=True)
+                            frappe.db.commit()
+                            frappe.logger().info(f"[QUIZ ACTIVITY] Updated custom_assesment_plan: {assessment_plan}")
+                    except Exception as update_err:
+                        frappe.logger().error(f"[QUIZ ACTIVITY] Failed to update custom_assesment_plan: {str(update_err)}")
+                    
+                    # Try to submit, but if it fails due to conflict, use draft status
+                    frappe.logger().info(f"[ASSESSMENT PLAN] Step 7: Submitting Assessment Plan: {assessment_plan}...")
+                    try:
+                        plan_doc.submit()
+                        frappe.db.commit()
+                        frappe.logger().info(f"[ASSESSMENT PLAN] ✓ Assessment Plan submitted successfully: {assessment_plan}")
+                        
+                        # Add success comment to Quiz Activity about auto-created Assessment Plan
+                        try:
+                            from frappe.desk.doctype.comment.comment import add_comment
+                            comment_text = f"✅ Assessment Plan auto-created and submitted: {assessment_plan}\n\n" \
+                                         f"Student Group: {student_group}\n" \
+                                         f"Course: {student_group_doc.course}\n" \
+                                         f"Note: Assessment Plan is created for the Student Group. Assessment Result will be created for Student: {student}"
+                            add_comment(
+                                reference_doctype="Quiz Activity",
+                                reference_name=quiz_activity_name,
+                                content=comment_text,
+                                comment_email=frappe.session.user or "system",
+                                comment_by=frappe.session.user or "system"
+                            )
+                            frappe.db.commit()  # Ensure comment is saved
+                        except Exception as comment_err:
+                            frappe.log_error(f"Failed to add success comment: {str(comment_err)}", "Quiz Activity Comment Error")
+                    
+                    except frappe.ValidationError as submit_ve:
+                        # If submission fails due to validation (like conflict), use draft status
+                        error_msg = str(submit_ve)
+                        frappe.logger().error(f"[ASSESSMENT PLAN] ✗ ValidationError during submit: {error_msg}")
+                        frappe.logger().error(f"[ASSESSMENT PLAN] Exception type: {type(submit_ve)}")
+                        frappe.logger().error(f"[ASSESSMENT PLAN] Exception args: {submit_ve.args if hasattr(submit_ve, 'args') else 'N/A'}")
+                        if hasattr(submit_ve, 'message'):
+                            frappe.logger().error(f"[ASSESSMENT PLAN] Exception message: {submit_ve.message}")
+                        
+                        # Log the validation error
+                        full_traceback = frappe.get_traceback()
+                        frappe.logger().error(f"[ASSESSMENT PLAN] Full traceback:\n{full_traceback}")
+                        frappe.log_error(f"Assessment Plan created in draft due to validation error on submit: {error_msg}\nTraceback: {full_traceback}", "Create Assessment Result from Quiz Activity")
+                        
+                        # Add warning comment to Quiz Activity
+                        try:
+                            from frappe.desk.doctype.comment.comment import add_comment
+                            comment_text = f"⚠️ Assessment Plan created in DRAFT status due to conflict:\n\n{error_msg}\n\nAssessment Plan: {assessment_plan}\n\nPlease review and resolve the conflict, then submit the Assessment Plan manually."
+                            add_comment(
+                                reference_doctype="Quiz Activity",
+                                reference_name=quiz_activity_name,
+                                content=comment_text,
+                                comment_email=frappe.session.user or "system",
+                                comment_by=frappe.session.user or "system"
+                            )
+                        except Exception as comment_err:
+                            frappe.log_error(f"Failed to add warning comment: {str(comment_err)}", "Quiz Activity Comment Error")
+                        
+                        # Continue with draft Assessment Plan - it can still be used
+                
+                except frappe.ValidationError as insert_ve:
+                    # If insert fails due to validation (like conflict during validate()), extract error and add comment
+                    frappe.logger().error(f"[ASSESSMENT PLAN] ✗ ValidationError during insert!")
+                    frappe.logger().error(f"[ASSESSMENT PLAN] Exception type: {type(insert_ve)}")
+                    frappe.logger().error(f"[ASSESSMENT PLAN] Exception str: {str(insert_ve)}")
+                    
+                    error_msg = str(insert_ve)
+                    
+                    # Try to get more details from the exception
+                    if hasattr(insert_ve, 'message'):
+                        error_msg = str(insert_ve.message)
+                        frappe.logger().error(f"[ASSESSMENT PLAN] Exception message attribute: {error_msg}")
+                    elif hasattr(insert_ve, 'args') and len(insert_ve.args) > 0:
+                        error_msg = str(insert_ve.args[0])
+                        frappe.logger().error(f"[ASSESSMENT PLAN] Exception args[0]: {error_msg}")
+                        if len(insert_ve.args) > 1:
+                            frappe.logger().error(f"[ASSESSMENT PLAN] All exception args: {insert_ve.args}")
+                    
+                    # Get full traceback
+                    full_traceback = frappe.get_traceback()
+                    frappe.logger().error(f"[ASSESSMENT PLAN] Full traceback:\n{full_traceback}")
+                    
+                    # Check for conflicting Course Schedule
+                    frappe.logger().info(f"[ASSESSMENT PLAN] Checking for conflicting Course Schedules...")
+                    conflicting_schedules = frappe.get_all(
+                        "Course Schedule",
+                        filters={
+                            "student_group": student_group,
+                            "schedule_date": plan_doc.schedule_date,
+                            "docstatus": ["<", 2]
+                        },
+                        fields=["name", "from_time", "to_time", "schedule_date"]
+                    )
+                    frappe.logger().info(f"[ASSESSMENT PLAN] Found {len(conflicting_schedules)} Course Schedule(s) for same Student Group and date")
+                    for cs in conflicting_schedules:
+                        frappe.logger().info(f"  - Course Schedule: {cs.name}, Time: {cs.from_time} to {cs.to_time}, Date: {cs.schedule_date}")
+                    
+                    # Log the validation error
+                    full_error = f"Assessment Plan creation failed due to validation error: {error_msg}\nTraceback: {full_traceback}\nConflicting Schedules: {len(conflicting_schedules)}"
+                    frappe.log_error(full_error, "Create Assessment Result from Quiz Activity")
+                    
+                    # Add error comment to Quiz Activity - CRITICAL: Must add this comment
+                    comment_added = False
+                    try:
+                        from frappe.desk.doctype.comment.comment import add_comment
+                        comment_text = f"❌ Failed to create Assessment Plan due to conflict:\n\n{error_msg}\n\nStudent Group: {student_group}\nCourse: {student_group_doc.course}\n\nPlease create an Assessment Plan manually or resolve the conflict."
+                        add_comment(
+                            reference_doctype="Quiz Activity",
+                            reference_name=quiz_activity_name,
+                            content=comment_text,
+                            comment_email=frappe.session.user or "system",
+                            comment_by=frappe.session.user or "system"
+                        )
+                        comment_added = True
+                        frappe.db.commit()  # Commit the comment
+                    except Exception as comment_err:
+                        frappe.log_error(f"CRITICAL: Failed to add error comment to Quiz Activity {quiz_activity_name}: {str(comment_err)}\nOriginal error: {error_msg}", "Quiz Activity Comment Critical Error")
+                    
+                    # Try alternative method if first one failed
+                    if not comment_added:
+                        try:
+                            quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+                            quiz_activity_doc.add_comment(
+                                "Comment",
+                                f"❌ Failed to create Assessment Plan: {error_msg}"
+                            )
+                            frappe.db.commit()
+                        except Exception as alt_err:
+                            frappe.log_error(f"CRITICAL: Alternative comment method also failed: {str(alt_err)}", "Quiz Activity Comment Critical Error")
+                    
+                    return {
+                        "status": "error",
+                        "message": error_msg
+                    }
+                
+            except Exception as e:
+                # Extract error message properly
+                if hasattr(e, 'message'):
+                    error_msg = str(e.message)
+                elif hasattr(e, 'args') and len(e.args) > 0:
+                    error_msg = str(e.args[0])
+                else:
+                    error_msg = str(e)
+                
+                full_error = f"Failed to auto-create Assessment Plan: {error_msg}\n\nTraceback:\n{frappe.get_traceback()}"
+                frappe.log_error(full_error, "Create Assessment Result from Quiz Activity")
+                
+                # Add error to Quiz Activity comments - ALWAYS add comment
+                comment_added = False
+                try:
+                    from frappe.desk.doctype.comment.comment import add_comment
+                    comment_text = f"❌ Error creating Assessment Plan:\n\n{error_msg}\n\nPlease create an Assessment Plan manually for Student Group '{student_group}' and Course '{student_group_doc.course}'."
+                    add_comment(
+                        reference_doctype="Quiz Activity",
+                        reference_name=quiz_activity_name,
+                        content=comment_text,
+                        comment_email=frappe.session.user or "system",
+                        comment_by=frappe.session.user or "system"
+                    )
+                    comment_added = True
+                except Exception as comment_err:
+                    # If comment fails, log it but don't fail the whole operation
+                    frappe.log_error(f"CRITICAL: Failed to add error comment to Quiz Activity {quiz_activity_name}: {str(comment_err)}\nOriginal error: {error_msg}", "Quiz Activity Comment Critical Error")
+                
+                # If comment failed, try alternative method
+                if not comment_added:
+                    try:
+                        # Try using frappe.get_doc to add comment
+                        quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+                        quiz_activity_doc.add_comment(
+                            "Comment",
+                            f"❌ Error creating Assessment Plan: {error_msg}"
+                        )
+                        frappe.db.commit()
+                    except:
+                        pass
+                
+                return {
+                    "status": "error",
+                    "message": error_msg
+                }
+        
+        if not assessment_plan:
+            error_msg = f"Assessment Plan not found for Student Group '{student_group}' and Course '{student_group_doc.course if student_group_doc.course else 'N/A'}'. Please create an Assessment Plan first."
+            
+            # Add error to Quiz Activity comments
+            try:
+                from frappe.desk.doctype.comment.comment import add_comment
+                comment_text = f"❌ {error_msg}"
+                add_comment(
+                    reference_doctype="Quiz Activity",
+                    reference_name=quiz_activity_name,
+                    content=comment_text,
+                    comment_email=frappe.session.user or "system",
+                    comment_by=frappe.session.user or "system"
+                )
+            except:
+                pass
+            
+            return {
+                "status": "error",
+                "message": error_msg
+            }
+        
+        # Check if Assessment Result already exists
+        frappe.logger().info(f"[ASSESSMENT RESULT] Checking for existing Assessment Result...")
+        frappe.logger().info(f"  - Student: {student}")
+        frappe.logger().info(f"  - Assessment Plan: {assessment_plan}")
+        existing_result = frappe.db.exists("Assessment Result", {
+            "student": student,
+            "assessment_plan": assessment_plan,
+            "docstatus": ["<", 2]
+        })
+        
+        if existing_result:
+            frappe.logger().info(f"[ASSESSMENT RESULT] Existing Assessment Result found: {existing_result}")
+            
+            # Update Quiz Activity with existing Assessment Result link and other custom fields
+            try:
+                quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+                updated = False
+                
+                # Set custom_assesment_result (note: typo in field name)
+                if hasattr(quiz_activity_doc, 'custom_assesment_result'):
+                    quiz_activity_doc.custom_assesment_result = existing_result
+                    updated = True
+                    frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assesment_result: {existing_result}")
+                # Also try custom_assessment_result (correct spelling)
+                elif hasattr(quiz_activity_doc, 'custom_assessment_result'):
+                    quiz_activity_doc.custom_assessment_result = existing_result
+                    updated = True
+                    frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assessment_result: {existing_result}")
+                # Try assessment_result field (if exists)
+                elif hasattr(quiz_activity_doc, 'assessment_result'):
+                    quiz_activity_doc.assessment_result = existing_result
+                    updated = True
+                    frappe.logger().info(f"[ASSESSMENT RESULT] Set assessment_result: {existing_result}")
+                # If neither exists, try to add via db_set
+                else:
+                    meta = frappe.get_meta("Quiz Activity")
+                    if meta.has_field("custom_assesment_result"):
+                        quiz_activity_doc.db_set("custom_assesment_result", existing_result, update_modified=False)
+                        updated = True
+                        frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assesment_result via db_set: {existing_result}")
+                    elif meta.has_field("custom_assessment_result"):
+                        quiz_activity_doc.db_set("custom_assessment_result", existing_result, update_modified=False)
+                        updated = True
+                        frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assessment_result via db_set: {existing_result}")
+                    elif meta.has_field("assessment_result"):
+                        quiz_activity_doc.db_set("assessment_result", existing_result, update_modified=False)
+                        updated = True
+                        frappe.logger().info(f"[ASSESSMENT RESULT] Set assessment_result via db_set: {existing_result}")
+                
+                # Also ensure custom_assesment_plan is set
+                if hasattr(quiz_activity_doc, 'custom_assesment_plan') and assessment_plan:
+                    quiz_activity_doc.custom_assesment_plan = assessment_plan
+                    updated = True
+                    frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assesment_plan: {assessment_plan}")
+                
+                # Also ensure custom_student_group is set
+                if hasattr(quiz_activity_doc, 'custom_student_group') and student_group:
+                    quiz_activity_doc.custom_student_group = student_group
+                    updated = True
+                    frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_student_group: {student_group}")
+                
+                if updated:
+                    quiz_activity_doc.save(ignore_permissions=True)
+                    frappe.db.commit()
+                    frappe.logger().info(f"[ASSESSMENT RESULT] ✓ Quiz Activity updated with all custom fields")
+            except Exception as update_err:
+                frappe.logger().error(f"[ASSESSMENT RESULT] Failed to update Quiz Activity: {str(update_err)}")
+            
+            return {
+                "status": "info",
+                "message": f"Assessment Result already exists: {existing_result}",
+                "assessment_result_id": existing_result
+            }
+        
+        # Create Assessment Result
+        frappe.logger().info(f"[ASSESSMENT RESULT] Creating new Assessment Result...")
+        frappe.logger().info(f"[ASSESSMENT RESULT] Loading Assessment Plan: {assessment_plan}")
+        plan_doc = frappe.get_doc("Assessment Plan", assessment_plan)
+        frappe.logger().info(f"[ASSESSMENT RESULT] Assessment Plan loaded. Criteria count: {len(plan_doc.assessment_criteria) if plan_doc.assessment_criteria else 0}")
+        
+        assessment_result = frappe.new_doc("Assessment Result")
+        assessment_result.assessment_plan = assessment_plan
+        assessment_result.student = student
+        assessment_result.student_group = student_group
+        assessment_result.total_score = total_score
+        frappe.logger().info(f"[ASSESSMENT RESULT] Assessment Result document created with:")
+        frappe.logger().info(f"  - assessment_plan: {assessment_result.assessment_plan}")
+        frappe.logger().info(f"  - student: {assessment_result.student}")
+        frappe.logger().info(f"  - student_group: {assessment_result.student_group}")
+        frappe.logger().info(f"  - total_score: {assessment_result.total_score}")
+        
+        # Add details from Assessment Plan
+        written_assessment_found = False
+        if plan_doc.assessment_criteria:
+            for plan_criteria in plan_doc.assessment_criteria:
+                criteria_name = plan_criteria.assessment_criteria
+                criteria_max_score = plan_criteria.maximum_score
+                
+                if "Written Assessment" in criteria_name:
+                    assessment_result.append("details", {
+                        "assessment_criteria": criteria_name,
+                        "maximum_score": criteria_max_score,
+                        "score": total_score if criteria_max_score >= total_score else total_score
+                    })
+                    written_assessment_found = True
+                    break
+        
+        if not written_assessment_found and plan_doc.assessment_criteria:
+            first_criteria = plan_doc.assessment_criteria[0]
+            assessment_result.append("details", {
+                "assessment_criteria": first_criteria.assessment_criteria,
+                "maximum_score": first_criteria.maximum_score,
+                "score": total_score
+            })
+        
+        if not plan_doc.assessment_criteria:
+            error_msg = "Assessment Plan has no criteria. Cannot create Assessment Result."
+            
+            # Add error to Quiz Activity comments
+            try:
+                from frappe.desk.doctype.comment.comment import add_comment
+                comment_text = f"❌ {error_msg}\n\nPlease add Assessment Criteria to the Assessment Plan '{assessment_plan}'."
+                add_comment(
+                    reference_doctype="Quiz Activity",
+                    reference_name=quiz_activity_name,
+                    content=comment_text,
+                    comment_email=frappe.session.user or "system",
+                    comment_by=frappe.session.user or "system"
+                )
+            except:
+                pass
+            
+            return {
+                "status": "error",
+                "message": error_msg
+            }
+        
+        # Set company
+        company = frappe.defaults.get_user_default("Company") or frappe.defaults.get_global_default("company")
+        if company and hasattr(assessment_result, 'custom_company'):
+            assessment_result.custom_company = company
+        
+        # Insert Assessment Result
+        frappe.logger().info(f"[ASSESSMENT RESULT] Inserting Assessment Result...")
+        assessment_result.insert(ignore_permissions=True)
+        frappe.db.commit()
+        frappe.logger().info(f"[ASSESSMENT RESULT] ✓ Assessment Result created: {assessment_result.name}")
+        
+        # Update Quiz Activity with Assessment Result link and other custom fields
+        frappe.logger().info(f"[ASSESSMENT RESULT] Updating Quiz Activity with custom fields...")
+        try:
+            quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+            updated = False
+            
+            # Set custom_assesment_result (note: typo in field name - assesment not assessment)
+            if hasattr(quiz_activity_doc, 'custom_assesment_result'):
+                quiz_activity_doc.custom_assesment_result = assessment_result.name
+                updated = True
+                frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assesment_result field: {assessment_result.name}")
+            # Also try custom_assessment_result (correct spelling) for backward compatibility
+            elif hasattr(quiz_activity_doc, 'custom_assessment_result'):
+                quiz_activity_doc.custom_assessment_result = assessment_result.name
+                updated = True
+                frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assessment_result field: {assessment_result.name}")
+            # Try assessment_result field (if exists)
+            elif hasattr(quiz_activity_doc, 'assessment_result'):
+                quiz_activity_doc.assessment_result = assessment_result.name
+                updated = True
+                frappe.logger().info(f"[ASSESSMENT RESULT] Set assessment_result field: {assessment_result.name}")
+            # If neither exists, try to add via db_set
+            else:
+                # Check if field exists in meta
+                meta = frappe.get_meta("Quiz Activity")
+                if meta.has_field("custom_assesment_result"):
+                    quiz_activity_doc.db_set("custom_assesment_result", assessment_result.name, update_modified=False)
+                    updated = True
+                    frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assesment_result via db_set: {assessment_result.name}")
+                elif meta.has_field("custom_assessment_result"):
+                    quiz_activity_doc.db_set("custom_assessment_result", assessment_result.name, update_modified=False)
+                    updated = True
+                    frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assessment_result via db_set: {assessment_result.name}")
+                elif meta.has_field("assessment_result"):
+                    quiz_activity_doc.db_set("assessment_result", assessment_result.name, update_modified=False)
+                    updated = True
+                    frappe.logger().info(f"[ASSESSMENT RESULT] Set assessment_result via db_set: {assessment_result.name}")
+                else:
+                    frappe.logger().warning(f"[ASSESSMENT RESULT] No Assessment Result field found in Quiz Activity.")
+            
+            # Also ensure custom_assesment_plan is set
+            if hasattr(quiz_activity_doc, 'custom_assesment_plan') and assessment_plan:
+                quiz_activity_doc.custom_assesment_plan = assessment_plan
+                updated = True
+                frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_assesment_plan: {assessment_plan}")
+            
+            # Also ensure custom_student_group is set
+            if hasattr(quiz_activity_doc, 'custom_student_group') and student_group:
+                quiz_activity_doc.custom_student_group = student_group
+                updated = True
+                frappe.logger().info(f"[ASSESSMENT RESULT] Set custom_student_group: {student_group}")
+            
+            # Save the Quiz Activity if we modified it
+            if updated:
+                quiz_activity_doc.save(ignore_permissions=True)
+                frappe.db.commit()
+                frappe.logger().info(f"[ASSESSMENT RESULT] ✓ Quiz Activity updated with all custom fields")
+            
+        except Exception as update_err:
+            frappe.logger().error(f"[ASSESSMENT RESULT] Failed to update Quiz Activity with custom fields: {str(update_err)}")
+            frappe.log_error(f"Failed to update Quiz Activity with custom fields: {str(update_err)}", "Update Quiz Activity Custom Fields")
+        
+        # Add success comment to Quiz Activity with clear details
+        try:
+            from frappe.desk.doctype.comment.comment import add_comment
+            comment_text = f"✅ Assessment Result created successfully!\n\n" \
+                          f"Assessment Result: {assessment_result.name}\n" \
+                          f"Student: {student}\n" \
+                          f"Assessment Plan: {assessment_plan} (created for Student Group: {student_group})\n" \
+                          f"Score: {total_score}/{total_marks}\n\n" \
+                          f"Note: Assessment Plan is shared by all students in the Student Group. Assessment Result is specific to this Student."
+            add_comment(
+                reference_doctype="Quiz Activity",
+                reference_name=quiz_activity_name,
+                content=comment_text,
+                comment_email=frappe.session.user or "system",
+                comment_by=frappe.session.user or "system"
+            )
+            frappe.db.commit()  # Ensure comment is saved
+        except Exception as comment_err:
+            frappe.log_error(f"Failed to add success comment: {str(comment_err)}", "Quiz Activity Comment Error")
+        
+        return {
+            "status": "success",
+            "message": f"Assessment Result created successfully: {assessment_result.name}",
+            "assessment_result_id": assessment_result.name
+        }
+        
+    except Exception as e:
+        error_msg = f"Error creating Assessment Result: {str(e)}"
+        full_error = f"{error_msg}\n\nTraceback:\n{frappe.get_traceback()}"
+        frappe.log_error(full_error, "Create Assessment Result from Quiz Activity")
+        
+        # Add error comment to Quiz Activity - ALWAYS add error to comments
+        try:
+            from frappe.desk.doctype.comment.comment import add_comment
+            comment_text = f"❌ Failed to create Assessment Result:\n\n{error_msg}\n\nPlease check the error logs for more details or contact support."
+            add_comment(
+                reference_doctype="Quiz Activity",
+                reference_name=quiz_activity_name,
+                content=comment_text,
+                comment_email=frappe.session.user or "system",
+                comment_by=frappe.session.user or "system"
+            )
+        except Exception as comment_error:
+            # If adding comment fails, log it but don't fail the whole operation
+            frappe.log_error(f"Failed to add comment to Quiz Activity: {str(comment_error)}", "Create Assessment Result Comment Error")
+        
+        return {
+            "status": "error",
+            "message": error_msg
         }
 
 @frappe.whitelist(allow_guest=True, methods=['GET'])
