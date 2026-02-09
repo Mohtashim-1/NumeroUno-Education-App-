@@ -36,7 +36,7 @@ def execute(filters=None):
 			"width": 160,
 		},
 		{"label": "Created On", "fieldname": "creation", "fieldtype": "Datetime", "width": 160},
-		{"label": "Expiry Date", "fieldname": "expiry_date", "fieldtype": "Date", "width": 120},
+		{"label": "Certificate Validity Date", "fieldname": "expiry_date", "fieldtype": "Date", "width": 160},
 		{"label": "Days Until Expiry", "fieldname": "days_until_expiry", "fieldtype": "Int", "width": 130},
 		{"label": "Expiry Status", "fieldname": "expiry_status", "fieldtype": "Data", "width": 130},
 	]
@@ -44,13 +44,6 @@ def execute(filters=None):
 	conditions = []
 	values = {}
 
-	if filters.get("from_date"):
-		conditions.append("ar.creation >= %(from_date)s")
-		values["from_date"] = filters["from_date"]
-	if filters.get("to_date"):
-		# Make "to date" inclusive by using < next day
-		conditions.append("ar.creation < %(to_date_exclusive)s")
-		values["to_date_exclusive"] = add_days(filters["to_date"], 1)
 	if filters.get("student"):
 		conditions.append("ar.student = %(student)s")
 		values["student"] = filters["student"]
@@ -71,7 +64,10 @@ def execute(filters=None):
 			ar.student_name,
 			ar.course,
 			{f"ar.{customer_field} as customer" if customer_field else "NULL as customer"},
-			ar.creation
+			ar.creation,
+			ar.certificate_validity_date,
+			ar.validity_period,
+			ar.course_start_date
 		FROM `tabAssessment Result` ar
 		{where_clause}
 		ORDER BY ar.creation DESC
@@ -81,18 +77,39 @@ def execute(filters=None):
 	)
 
 	data = []
-	status_counts = {"Expired": 0, "Expiring Soon": 0, "Valid": 0}
+	status_counts = {"Expired": 0, "Expiring Soon": 0, "Valid": 0, "Missing Validity Date": 0}
+
+	from_date = getdate(filters.get("from_date")) if filters.get("from_date") else None
+	to_date = getdate(filters.get("to_date")) if filters.get("to_date") else None
 
 	for row in rows:
-		creation_date = getdate(row.creation) if row.creation else today
-		expiry_date = add_days(creation_date, 365)
-		days_until_expiry = (expiry_date - today).days
-		if days_until_expiry < 0:
-			expiry_status = "Expired"
-		elif days_until_expiry <= 30:
-			expiry_status = "Expiring Soon"
+		expiry_date = None
+		if row.certificate_validity_date:
+			expiry_date = getdate(row.certificate_validity_date)
+		elif row.validity_period and row.validity_period != "NA" and row.course_start_date:
+			try:
+				expiry_date = add_days(getdate(row.course_start_date), int(row.validity_period))
+			except Exception:
+				expiry_date = None
+
+		if expiry_date and from_date and expiry_date < from_date:
+			continue
+		if expiry_date and to_date and expiry_date > to_date:
+			continue
+		if not expiry_date and (from_date or to_date):
+			continue
+
+		if expiry_date:
+			days_until_expiry = (expiry_date - today).days
+			if days_until_expiry < 0:
+				expiry_status = "Expired"
+			elif days_until_expiry <= 30:
+				expiry_status = "Expiring Soon"
+			else:
+				expiry_status = "Valid"
 		else:
-			expiry_status = "Valid"
+			days_until_expiry = None
+			expiry_status = "Missing Validity Date"
 
 		if expiry_status in status_counts:
 			status_counts[expiry_status] += 1
