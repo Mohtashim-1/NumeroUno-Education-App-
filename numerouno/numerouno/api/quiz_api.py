@@ -801,8 +801,8 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
         if isinstance(answers, str):
             answers = json.loads(answers)
         
-        # Calculate scores
-        total_score = 0
+        # Calculate raw score first (raw marks), then scale to 100 for UI response
+        raw_score = 0
         total_marks = 0
         
         # Get MCQS Assignment for this quiz and student group
@@ -838,10 +838,12 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
             # Check if answer is correct
             is_correct = check_quiz_answer(question_doc, selected_answers)
             score = marks if is_correct else 0
-            total_score += score
+            raw_score += score
         
-        # Calculate percentage
-        percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
+        # Calculate percentage and scaled score out of 100
+        percentage = (raw_score / total_marks * 100) if total_marks > 0 else 0
+        scaled_score = round(percentage, 2)
+        display_score = round(percentage)
         passed = percentage >= (quiz_doc.passing_score or 75)
         
         # Create Assessment Result
@@ -852,7 +854,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
         print(f"\n{'='*80}")
         print(f"QUIZ SUBMISSION - Creating Records")
         print(f"Quiz: {quiz_name}, Student: {student}, Student Group: {student_group}")
-        print(f"Score: {total_score}/{total_marks} ({percentage:.1f}%) - {'Passed' if passed else 'Failed'}")
+        print(f"Score: {display_score}/100 (raw: {raw_score}/{total_marks}, {percentage:.1f}%) - {'Passed' if passed else 'Failed'}")
         print(f"{'='*80}\n")
         
         # Try to find existing assessment plan for this student group and course
@@ -989,7 +991,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                 assessment_result = frappe.new_doc("Assessment Result")
                 assessment_result.assessment_plan = assessment_plan
                 assessment_result.student = student
-                assessment_result.total_score = total_score
+                assessment_result.total_score = raw_score
                 
                 # Assessment Result requires details table with Assessment Result Detail
                 # Get criteria from the Assessment Plan's assessment_criteria table
@@ -1007,9 +1009,9 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                             assessment_result.append("details", {
                                 "assessment_criteria": criteria_name,
                                 "maximum_score": criteria_max_score,
-                                "score": total_score if criteria_max_score >= total_score else total_score
+                                "score": raw_score if criteria_max_score >= raw_score else raw_score
                             })
-                            print(f"    Added detail: {criteria_name} (max: {criteria_max_score}, score: {total_score})")
+                            print(f"    Added detail: {criteria_name} (max: {criteria_max_score}, score: {raw_score})")
                             written_assessment_found = True
                             break
                     
@@ -1019,7 +1021,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                         assessment_result.append("details", {
                             "assessment_criteria": first_criteria.assessment_criteria,
                             "maximum_score": first_criteria.maximum_score,
-                            "score": total_score
+                            "score": raw_score
                         })
                         print(f"    Added first criteria: {first_criteria.assessment_criteria}")
                 else:
@@ -1096,7 +1098,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                 quiz_activity.flags.ignore_mandatory = True
             quiz_activity.student = student
             quiz_activity.quiz = quiz_name
-            quiz_activity.score = f"{total_score}/{total_marks}"
+            quiz_activity.score = f"{raw_score}/{total_marks}"
             quiz_activity.status = "Pass" if passed else "Fail"
             quiz_activity.activity_date = today()
             
@@ -1166,6 +1168,26 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
             print(f"  ✗ {error_msg}")
             frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Quiz Submission")
         
+        # Fallback: if Assessment Result wasn't created directly, try creating it from Quiz Activity
+        if not assessment_result_id and activity_id:
+            try:
+                print(f"\n[ASSESSMENT RESULT FALLBACK] Trying creation from Quiz Activity: {activity_id}")
+                fallback_result = create_assessment_result_from_quiz_activity(activity_id)
+                fallback_status = (fallback_result or {}).get("status")
+                fallback_assessment_id = (fallback_result or {}).get("assessment_result_id") or (fallback_result or {}).get("assessment_result")
+                if fallback_status in ("success", "info") and fallback_assessment_id:
+                    assessment_result_id = fallback_assessment_id
+                    assessment_result_error = None
+                    print(f"  ✓ Fallback Assessment Result created: {assessment_result_id}")
+                else:
+                    print(f"  ✗ Fallback failed: {fallback_result}")
+            except Exception as fallback_err:
+                print(f"  ✗ Fallback exception: {str(fallback_err)}")
+                frappe.log_error(
+                    f"Fallback Assessment Result creation failed: {str(fallback_err)}\nTraceback: {frappe.get_traceback()}",
+                    "Quiz Submission"
+                )
+        
         print(f"\n{'='*80}")
         print(f"SUBMISSION COMPLETE")
         print(f"Assessment Result: {assessment_result_id or 'Not created'}")
@@ -1178,7 +1200,9 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
             "message": "Quiz submitted successfully",
             "assessment_result_id": assessment_result_id,
             "activity_id": activity_id,
-            "score": total_score,
+            "score": display_score,
+            "score_exact": scaled_score,
+            "raw_score": raw_score,
             "total_marks": total_marks,
             "percentage": percentage,
             "passed": passed

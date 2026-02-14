@@ -7,15 +7,15 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
-  <title>Public Quiz Attempt v3.0.2</title>
+  <title>Public Quiz Attempt v3.0.6</title>
 
   <script>
     // Force page reload if version mismatch
-    if (localStorage.getItem("quizVersion") !== "3.0.2") {
-      localStorage.setItem("quizVersion", "3.0.2");
+    if (localStorage.getItem("quizVersion") !== "3.0.6") {
+      localStorage.setItem("quizVersion", "3.0.6");
       if (window.location.search.indexOf("v=") === -1) {
         window.location.href =
-          window.location.href + (window.location.search ? "&" : "?") + "v=3.0.2";
+          window.location.href + (window.location.search ? "&" : "?") + "v=3.0.6";
       }
     }
   </script>
@@ -497,7 +497,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
 
  <script>
-  const VERSION = "3.0.2";
+  const VERSION = "3.0.6";
+  const QUIZ_DEBUG = true;
+
+  function debugLog(...args) {
+    if (!QUIZ_DEBUG) return;
+    console.log("[QUIZ-DEBUG]", ...args);
+  }
 
   // ====== Data caches ======
   let academicYearsData = [];   // [{value,label}]
@@ -544,10 +550,52 @@
   }
 
   function getSelectedOptionText(question, optionId) {
-    if (!optionId) return "";
-    const match = question.options.find((opt) => opt.id === optionId);
+    if (optionId === null || optionId === undefined || optionId === "") return "";
+    const match = question.options.find((opt) => isSameOptionId(opt.id, optionId));
     return match ? match.text : "";
   }
+
+  function normalizeOptionId(optionId) {
+    if (optionId === null || optionId === undefined) return null;
+    const asNumber = Number(optionId);
+    return Number.isNaN(asNumber) ? String(optionId) : asNumber;
+  }
+
+  function isSameOptionId(a, b) {
+    if (a === null || a === undefined || b === null || b === undefined) return false;
+    return String(a) === String(b);
+  }
+
+  function toggleReviewEditByElements(editBox, btn, event) {
+    debugLog("toggleReviewEditByElements:start", { hasEvent: !!event, editBox: !!editBox, btn: !!btn });
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (!editBox || !btn) {
+      debugLog("toggleReviewEditByElements:missing target");
+      return;
+    }
+    const isOpen = editBox.style.display !== "none";
+    editBox.style.display = isOpen ? "none" : "block";
+    btn.innerHTML = isOpen
+      ? '<i class="fas fa-edit me-1"></i>Edit'
+      : '<i class="fas fa-times me-1"></i>Close';
+    debugLog("toggleReviewEditByElements:done", { opened: !isOpen });
+  }
+
+  window.addEventListener("error", (event) => {
+    debugLog("window.error", {
+      message: event.message,
+      source: event.filename,
+      line: event.lineno,
+      column: event.colno
+    });
+  });
+
+  window.addEventListener("unhandledrejection", (event) => {
+    debugLog("unhandledrejection", event.reason);
+  });
 
   function debounce(fn, delay = 250) {
     let t = null;
@@ -1214,8 +1262,8 @@ async function reloadStudentGroups() {
         </div>
         <div class="options" data-question="${question.name}">
           ${question.options.map(option => `
-            <div class="option-item mb-2 p-2 cursor-pointer ${selectedId === option.id ? "selected" : ""}" data-option="${option.id}" style="cursor: pointer;">
-              <input type="radio" name="question_${question.name}" value="${option.id}" id="q${question.name}_${option.id}" ${selectedId === option.id ? "checked" : ""}>
+            <div class="option-item mb-2 p-2 cursor-pointer ${isSameOptionId(selectedId, option.id) ? "selected" : ""}" data-option="${option.id}" style="cursor: pointer;">
+              <input type="radio" name="question_${question.name}" value="${option.id}" id="q${question.name}_${option.id}" ${isSameOptionId(selectedId, option.id) ? "checked" : ""}>
               <label for="q${question.name}_${option.id}" class="ms-2 cursor-pointer" style="cursor: pointer;">${option.text}</label>
             </div>
           `).join("")}
@@ -1226,7 +1274,7 @@ async function reloadStudentGroups() {
     stage.querySelectorAll(".option-item").forEach((item) => {
       item.addEventListener("click", function() {
         const questionName = this.closest(".options").dataset.question;
-        const optionId = parseInt(this.dataset.option, 10);
+        const optionId = normalizeOptionId(this.dataset.option);
         setAnswer(questionName, optionId);
 
         this.closest(".options").querySelectorAll(".option-item").forEach((opt) => {
@@ -1244,13 +1292,13 @@ async function reloadStudentGroups() {
 
     nav.innerHTML = `
       <div class="question-nav">
-        <button class="btn btn-secondary" id="prevQuestionBtn" ${isFirst ? "disabled" : ""}>
+        <button type="button" class="btn btn-secondary" id="prevQuestionBtn" ${isFirst ? "disabled" : ""}>
           <i class="fas fa-arrow-left me-2"></i>Previous
         </button>
-        <button class="btn btn-primary" id="nextQuestionBtn">
+        <button type="button" class="btn btn-primary" id="nextQuestionBtn">
           ${isLast ? '<i class="fas fa-clipboard-list me-2"></i>Review Answers' : '<i class="fas fa-arrow-right me-2"></i>Next'}
         </button>
-        <button class="btn btn-secondary" id="reviewAnswersBtn">
+        <button type="button" class="btn btn-secondary" id="reviewAnswersBtn">
           <i class="fas fa-eye me-2"></i>Review
         </button>
       </div>
@@ -1302,7 +1350,13 @@ async function reloadStudentGroups() {
     const reviewStage = document.getElementById("reviewStage");
     const progress = document.getElementById("questionProgress");
 
-    if (!reviewStage || !progress) return;
+    if (!reviewStage || !progress) {
+      debugLog("renderReviewView:missing container", {
+        reviewStageFound: !!reviewStage,
+        progressFound: !!progress
+      });
+      return;
+    }
 
     stage.style.display = "none";
     nav.style.display = "none";
@@ -1330,18 +1384,29 @@ async function reloadStudentGroups() {
                     </span>
                   </div>
                 </div>
-                <button class="btn btn-secondary btn-sm mt-2" data-edit-index="${index}">
+                <button type="button" class="btn btn-secondary btn-sm mt-2" data-edit-index="${index}">
                   <i class="fas fa-edit me-1"></i>Edit
                 </button>
+              </div>
+              <div class="review-edit-options mt-3" data-review-edit="${index}" style="display: none;">
+                <div class="small text-muted mb-2"><strong>Change Answer:</strong></div>
+                <div class="options" data-question="${question.name}">
+                  ${question.options.length ? question.options.map((option) => `
+                    <div class="option-item mb-2 p-2 cursor-pointer ${isSameOptionId(selectedId, option.id) ? "selected" : ""}" data-review-option="${index}" data-question-name="${question.name}" data-option="${option.id}" style="cursor: pointer;">
+                      <input type="radio" name="review_question_${question.name}" value="${option.id}" ${isSameOptionId(selectedId, option.id) ? "checked" : ""}>
+                      <label class="ms-2 cursor-pointer" style="cursor: pointer;">${option.text}</label>
+                    </div>
+                  `).join("") : '<div class="text-muted small">No options available for this question.</div>'}
+                </div>
               </div>
             </div>
           `;
         }).join("")}
         <div class="question-nav mt-3">
-          <button class="btn btn-secondary" id="backToQuestionsBtn">
+          <button type="button" class="btn btn-secondary" id="backToQuestionsBtn">
             <i class="fas fa-arrow-left me-2"></i>Back to Questions
           </button>
-          <button class="btn btn-primary btn-lg" id="submitQuizBtn">
+          <button type="button" class="btn btn-primary btn-lg" id="submitQuizBtn">
             <span class="submit-text"><i class="fas fa-paper-plane me-2"></i>Submit Quiz</span>
             <span class="loading" style="display:none;"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...</span>
           </button>
@@ -1349,13 +1414,70 @@ async function reloadStudentGroups() {
       </div>
     `;
 
-    reviewStage.querySelectorAll("[data-edit-index]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const idx = parseInt(btn.dataset.editIndex, 10);
-        quizAttemptState.currentIndex = idx;
-        renderQuestionView();
-      });
+    debugLog("renderReviewView:rendered", {
+      questionCount: questions.length,
+      editButtons: reviewStage.querySelectorAll("[data-edit-index]").length,
+      reviewOptionItems: reviewStage.querySelectorAll("[data-review-option]").length
     });
+
+    reviewStage.onclick = (event) => {
+      debugLog("reviewStage:click", {
+        targetTag: event.target?.tagName,
+        targetClass: event.target?.className
+      });
+      const editBtn = event.target.closest("[data-edit-index]");
+      if (editBtn) {
+        const reviewItem = editBtn.closest(".review-item");
+        const editBox = reviewItem?.querySelector(".review-edit-options");
+        debugLog("reviewStage:edit-click", {
+          rawIndex: editBtn.dataset.editIndex,
+          reviewItemFound: !!reviewItem,
+          editBoxFound: !!editBox
+        });
+        if (reviewItem && editBox) {
+          toggleReviewEditByElements(editBox, editBtn, event);
+        }
+        return;
+      }
+
+      const item = event.target.closest("[data-review-option]");
+      if (!item) return;
+      const optionId = normalizeOptionId(item.dataset.option);
+      const optionsWrapper = item.closest(".options");
+      const questionName = item.dataset.questionName || optionsWrapper?.dataset.question;
+      if (!questionName || optionId === null) {
+        debugLog("reviewStage:invalid option click", {
+          questionName,
+          optionRaw: item.dataset.option
+        });
+        return;
+      }
+
+      setAnswer(questionName, optionId);
+      debugLog("reviewStage:answer-updated", {
+        questionName,
+        optionId
+      });
+
+      if (optionsWrapper) {
+        optionsWrapper.querySelectorAll(".option-item").forEach((opt) => {
+          opt.classList.remove("selected");
+          const radio = opt.querySelector('input[type="radio"]');
+          if (radio) radio.checked = false;
+        });
+      }
+
+      item.classList.add("selected");
+      const radio = item.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+
+      const question = questions.find((q) => q.name === questionName);
+      const answerPill = item.closest(".review-item")?.querySelector(".answer-pill");
+      if (question && answerPill) {
+        answerPill.classList.remove("unanswered");
+        answerPill.textContent = getSelectedOptionText(question, optionId);
+      }
+    };
 
     const backBtn = document.getElementById("backToQuestionsBtn");
     if (backBtn) {
