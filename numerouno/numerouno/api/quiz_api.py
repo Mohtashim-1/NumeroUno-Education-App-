@@ -1954,6 +1954,39 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         frappe.db.commit()
         frappe.logger().info(f"[ASSESSMENT RESULT] ✓ Assessment Result created: {assessment_result.name}")
         
+        # Submit Assessment Result
+        try:
+            frappe.logger().info(f"[ASSESSMENT RESULT] Submitting Assessment Result: {assessment_result.name}...")
+            # Reload the document to ensure we have the latest version
+            assessment_result = frappe.get_doc("Assessment Result", assessment_result.name)
+            assessment_result.flags.ignore_permissions = True
+            assessment_result.submit()
+            frappe.db.commit()
+            frappe.logger().info(f"[ASSESSMENT RESULT] ✓ Assessment Result submitted successfully: {assessment_result.name}")
+        except Exception as submit_error:
+            # Log error but don't fail - Assessment Result is still created in draft
+            error_msg = f"Failed to submit Assessment Result {assessment_result.name}: {str(submit_error)}"
+            frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Assessment Result Submit Error")
+            frappe.logger().warning(f"[ASSESSMENT RESULT] ⚠ {error_msg}. Assessment Result is in draft status.")
+            
+            # Add warning comment to Quiz Activity
+            try:
+                from frappe.desk.doctype.comment.comment import add_comment
+                comment_text = f"⚠️ Assessment Result created but could not be submitted automatically:\n\n" \
+                              f"Assessment Result: {assessment_result.name} (Draft)\n" \
+                              f"Error: {str(submit_error)}\n\n" \
+                              f"Please review and submit the Assessment Result manually."
+                add_comment(
+                    reference_doctype="Quiz Activity",
+                    reference_name=quiz_activity_name,
+                    content=comment_text,
+                    comment_email=frappe.session.user or "system",
+                    comment_by=frappe.session.user or "system"
+                )
+                frappe.db.commit()
+            except Exception as comment_err:
+                frappe.log_error(f"Failed to add warning comment: {str(comment_err)}", "Quiz Activity Comment Error")
+        
         # Update Quiz Activity with Assessment Result link and other custom fields
         frappe.logger().info(f"[ASSESSMENT RESULT] Updating Quiz Activity with custom fields...")
         try:
@@ -2019,8 +2052,11 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         # Add success comment to Quiz Activity with clear details
         try:
             from frappe.desk.doctype.comment.comment import add_comment
-            comment_text = f"✅ Assessment Result created successfully!\n\n" \
-                          f"Assessment Result: {assessment_result.name}\n" \
+            # Check if Assessment Result is submitted
+            assessment_result_doc = frappe.get_doc("Assessment Result", assessment_result.name)
+            status_text = "Submitted" if assessment_result_doc.docstatus == 1 else "Draft"
+            comment_text = f"✅ Assessment Result created and {status_text.lower()} successfully!\n\n" \
+                          f"Assessment Result: {assessment_result.name} ({status_text})\n" \
                           f"Student: {student}\n" \
                           f"Assessment Plan: {assessment_plan} (created for Student Group: {student_group})\n" \
                           f"Score: {total_score}/{total_marks}\n\n" \

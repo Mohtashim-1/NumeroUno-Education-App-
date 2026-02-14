@@ -17,7 +17,7 @@
  "is_hidden": 0,
  "label": "Assesment",
  "links": [],
- "modified": "2026-02-06 19:47:18.378402",
+ "modified": "2026-02-12 10:24:43.086519",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Assesment",
@@ -26,7 +26,11 @@
  "parent_page": "",
  "public": 1,
  "quick_lists": [],
- "roles": [],
+ "roles": [
+  {
+   "role": "Instructor"
+  }
+ ],
  "sequence_id": 31.0,
  "shortcuts": [],
  "title": "Assesment"

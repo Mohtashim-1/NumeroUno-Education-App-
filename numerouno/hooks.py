@@ -209,6 +209,9 @@ doc_events = {
     },
     "Assessment Result": {
         "on_submit": "numerouno.numerouno.unified_assessment_system.trigger_assessment_result_events"
+    },
+    "Quiz Activity": {
+        "after_insert": "numerouno.numerouno.doctype.quiz_activity.quiz_activity.auto_create_assessment_documents"
     }
 }
 
