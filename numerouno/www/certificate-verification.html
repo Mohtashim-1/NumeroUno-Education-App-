@@ -196,14 +196,6 @@
                                 <span class="detail-value" id="verifiedCourse"></span>
                             </div>
                             <div class="detail-row">
-                                <span class="detail-label">Program:</span>
-                                <span class="detail-value" id="verifiedProgram"></span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Score:</span>
-                                <span class="detail-value" id="verifiedScore"></span>
-                            </div>
-                            <div class="detail-row">
                                 <span class="detail-label">Grade:</span>
                                 <span class="detail-value" id="verifiedGrade"></span>
                             </div>
@@ -354,8 +346,6 @@
             document.getElementById('verifiedName').textContent = certificate.student_name || 'N/A';
             document.getElementById('verifiedCertNumber').textContent = certificate.name || 'N/A';
             document.getElementById('verifiedCourse').textContent = certificate.course || 'N/A';
-            document.getElementById('verifiedProgram').textContent = certificate.program || 'N/A';
-            document.getElementById('verifiedScore').textContent = `${certificate.total_score || 0}/${certificate.maximum_score || 0}`;
             document.getElementById('verifiedGrade').textContent = certificate.grade || 'N/A';
             document.getElementById('verifiedIssueDate').textContent = certificate.creation ? new Date(certificate.creation).toLocaleDateString() : 'N/A';
             

@@ -662,12 +662,73 @@ def get_available_quizzes_from_mcqs(student_group, student):
             "message": error_msg
         }
 
-@frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
-def get_quiz_questions_from_quiz(quiz_name):
-    """Get quiz questions from Quiz doctype (Education module)"""
+def _normalize_quiz_language(lang):
+    """Normalize incoming language code for quiz content localization."""
+    if not lang:
+        return "en"
+    code = str(lang).strip().lower()
+    if code.startswith("zh"):
+        return "zh"
+    if code.startswith("hi"):
+        return "hi"
+    if code.startswith("ar"):
+        return "ar"
+    if code.startswith("ur"):
+        return "ur"
+    return "en"
+
+
+def _lookup_translation(text, lang_code):
+    """Try direct Translation doctype lookup for runtime content strings."""
+    if not text or lang_code == "en":
+        return ""
+
     try:
+        translated = frappe.db.get_value(
+            "Translation",
+            {"language": lang_code, "source_text": text},
+            "translated_text",
+        )
+        if translated:
+            return translated
+
+        stripped = text.strip()
+        if stripped and stripped != text:
+            translated = frappe.db.get_value(
+                "Translation",
+                {"language": lang_code, "source_text": stripped},
+                "translated_text",
+            )
+            if translated:
+                return translated
+    except Exception:
+        # Ignore lookup failures and fall back to standard translation resolver.
+        pass
+
+    return ""
+
+
+def _tr_text(value, lang_code="en"):
+    text = value or ""
+    if not text:
+        return ""
+
+    translated = _lookup_translation(text, lang_code)
+    if translated:
+        return translated
+
+    return _(text)
+
+
+@frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
+def get_quiz_questions_from_quiz(quiz_name, lang=None):
+    """Get quiz questions from Quiz doctype (Education module)"""
+    previous_lang = getattr(frappe.local, "lang", None)
+    try:
+        lang_code = _normalize_quiz_language(lang)
+        frappe.local.lang = lang_code
         print(f"\n{'='*80}")
-        print(f"GET QUIZ QUESTIONS - Quiz: {quiz_name}")
+        print(f"GET QUIZ QUESTIONS - Quiz: {quiz_name}, Lang: {lang_code}")
         print(f"{'='*80}")
         
         if not quiz_name:
@@ -679,7 +740,8 @@ def get_quiz_questions_from_quiz(quiz_name):
         # Get quiz details
         print(f"Getting Quiz document: {quiz_name}")
         quiz_doc = frappe.get_doc("Quiz", quiz_name)
-        print(f"Quiz found: {quiz_doc.name} - {quiz_doc.title}")
+        quiz_title = _tr_text(quiz_doc.title, lang_code)
+        print(f"Quiz found: {quiz_doc.name} - {quiz_title}")
         
         # Reload to ensure we have all child table entries
         quiz_doc.reload()
@@ -720,7 +782,7 @@ def get_quiz_questions_from_quiz(quiz_name):
                 
                 question_data = {
                     "name": question_doc.name,
-                    "question": question_doc.question or "",
+                    "question": _tr_text(question_doc.question, lang_code),
                     "type": getattr(question_doc, 'question_type', 'Single Correct Answer'),
                     "marks": 1,  # Default to 1 mark since QuizQuestion doesn't have marks
                     "options": []
@@ -731,7 +793,7 @@ def get_quiz_questions_from_quiz(quiz_name):
                 if hasattr(question_doc, 'options') and question_doc.options:
                     print(f"    Question has {len(question_doc.options)} options")
                     for opt_idx, opt in enumerate(question_doc.options):
-                        option_text = getattr(opt, 'option', '')
+                        option_text = _tr_text(getattr(opt, 'option', ''), lang_code)
                         is_correct = getattr(opt, 'is_correct', 0)
                         if option_text:
                             question_data["options"].append({
@@ -762,7 +824,7 @@ def get_quiz_questions_from_quiz(quiz_name):
             "status": "success",
             "quiz": {
                 "name": quiz_doc.name,
-                "title": quiz_doc.title,
+                "title": quiz_title,
                 "total_marks": total_marks,
                 "passing_percentage": quiz_doc.passing_score or 75,
                 "max_attempts": quiz_doc.max_attempts or 0
@@ -778,6 +840,8 @@ def get_quiz_questions_from_quiz(quiz_name):
             "status": "error",
             "message": f"Failed to load quiz questions: {str(e)}"
         }
+    finally:
+        frappe.local.lang = previous_lang
 
 @frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
 def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
@@ -864,9 +928,11 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                 "Assessment Plan",
                 filters={
                     "student_group": student_group,
-                    "course": student_group_doc.course
+                    "course": student_group_doc.course,
+                    "docstatus": ["<", 2]
                 },
                 fields=["name"],
+                order_by="docstatus desc, modified desc",
                 limit=1
             )
             if assessment_plans:
@@ -991,6 +1057,9 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                 assessment_result = frappe.new_doc("Assessment Result")
                 assessment_result.assessment_plan = assessment_plan
                 assessment_result.student = student
+                # Keep explicit student group context to satisfy validations/custom logic.
+                if hasattr(assessment_result, "student_group"):
+                    assessment_result.student_group = student_group
                 assessment_result.total_score = raw_score
                 
                 # Assessment Result requires details table with Assessment Result Detail
@@ -1056,10 +1125,21 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                         print(f"    ✗ WARNING: Error getting company: {str(e)}")
                     
                     assessment_result.insert(ignore_permissions=True)
-                    # Don't submit - keep in draft status
                     frappe.db.commit()
                     assessment_result_id = assessment_result.name
-                    print(f"  ✓ Assessment Result created (Draft): {assessment_result_id}")
+                    print(f"  ✓ Assessment Result created: {assessment_result_id}")
+
+                    # Submit by default for public quiz flow
+                    try:
+                        assessment_result.reload()
+                        assessment_result.submit()
+                        frappe.db.commit()
+                        print(f"  ✓ Assessment Result submitted: {assessment_result_id}")
+                    except Exception as submit_error:
+                        error_msg = f"Failed to submit Assessment Result {assessment_result_id}: {str(submit_error)}"
+                        print(f"  ✗ {error_msg}")
+                        frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Quiz Submission")
+                        assessment_result_error = error_msg
             except Exception as e:
                 error_msg = f"Error creating Assessment Result: {str(e)}"
                 print(f"  ✗ {error_msg}")
@@ -1101,6 +1181,11 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
             quiz_activity.score = f"{raw_score}/{total_marks}"
             quiz_activity.status = "Pass" if passed else "Fail"
             quiz_activity.activity_date = today()
+            # Preserve exact context from public quiz submission to avoid fallback guessing.
+            if hasattr(quiz_activity, "custom_student_group"):
+                quiz_activity.custom_student_group = student_group
+            if assessment_plan and hasattr(quiz_activity, "custom_assesment_plan"):
+                quiz_activity.custom_assesment_plan = assessment_plan
             
             # Add result details
             for answer_data in answers:
@@ -1156,8 +1241,8 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                         reference_doctype="Quiz Activity",
                         reference_name=activity_id,
                         content=comment_text,
-                        comment_email=frappe.session.user,
-                        comment_by=frappe.session.user
+                        comment_email=frappe.session.user or "system",
+                        comment_by=frappe.session.user or "system"
                     )
                     print(f"  ✓ Error message added to Quiz Activity comments")
                 except Exception as comment_error:
@@ -1181,12 +1266,17 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
                     print(f"  ✓ Fallback Assessment Result created: {assessment_result_id}")
                 else:
                     print(f"  ✗ Fallback failed: {fallback_result}")
+                    assessment_result_error = (
+                        (fallback_result or {}).get("message")
+                        or "Fallback Assessment Result creation failed"
+                    )
             except Exception as fallback_err:
                 print(f"  ✗ Fallback exception: {str(fallback_err)}")
                 frappe.log_error(
                     f"Fallback Assessment Result creation failed: {str(fallback_err)}\nTraceback: {frappe.get_traceback()}",
                     "Quiz Submission"
                 )
+                assessment_result_error = str(fallback_err)
         
         print(f"\n{'='*80}")
         print(f"SUBMISSION COMPLETE")
@@ -1195,10 +1285,17 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers):
         print(f"{'='*80}\n")
         
         # Return result
+        response_message = "Quiz submitted successfully"
+        if not assessment_result_id:
+            response_message = (
+                "Quiz submitted and Quiz Activity created, but Assessment Result was not created automatically."
+            )
+
         return {
             "status": "success",
-            "message": "Quiz submitted successfully",
+            "message": response_message,
             "assessment_result_id": assessment_result_id,
+            "assessment_result_error": assessment_result_error,
             "activity_id": activity_id,
             "score": display_score,
             "score_exact": scaled_score,
@@ -1279,9 +1376,14 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         student = quiz_activity.student
         quiz_name = quiz_activity.quiz
         
-        # Get student group from enrollment or course
+        # Prefer explicit student group from Quiz Activity when available.
         student_group = None
-        if quiz_activity.enrollment:
+        if hasattr(quiz_activity, "custom_student_group") and quiz_activity.custom_student_group:
+            if frappe.db.exists("Student Group", quiz_activity.custom_student_group):
+                student_group = quiz_activity.custom_student_group
+
+        # Get student group from enrollment if not already resolved.
+        if not student_group and quiz_activity.enrollment:
             enrollment_doc = frappe.get_doc("Course Enrollment", quiz_activity.enrollment)
             if enrollment_doc.student_group:
                 student_group = enrollment_doc.student_group
@@ -1292,6 +1394,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
                 "Student Group Student",
                 filters={"student": student},
                 fields=["parent"],
+                order_by="creation desc",
                 limit=1
             )
             if student_groups:
@@ -1345,36 +1448,43 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         frappe.logger().info(f"[ASSESSMENT PLAN] Student: {student}, Student Group: {student_group}, Course: {student_group_doc.course if student_group_doc.course else 'None'}")
         
         assessment_plan = None
+        if hasattr(quiz_activity, "custom_assesment_plan") and quiz_activity.custom_assesment_plan:
+            if frappe.db.exists("Assessment Plan", quiz_activity.custom_assesment_plan):
+                assessment_plan = quiz_activity.custom_assesment_plan
+                frappe.logger().info(f"[ASSESSMENT PLAN] Using Assessment Plan from Quiz Activity: {assessment_plan}")
+
         if student_group_doc.course:
             # Look for existing Assessment Plans (including draft)
-            frappe.logger().info(f"[ASSESSMENT PLAN] Searching for existing Assessment Plans...")
-            assessment_plans = frappe.get_all(
-                "Assessment Plan",
-                filters={
-                    "student_group": student_group,
-                    "course": student_group_doc.course,
-                    "docstatus": ["<", 2]  # Include draft and submitted
-                },
-                fields=["name", "docstatus"],
-                limit=1
-            )
-            frappe.logger().info(f"[ASSESSMENT PLAN] Found {len(assessment_plans)} existing Assessment Plan(s)")
-            if assessment_plans:
-                assessment_plan = assessment_plans[0].name
-                frappe.logger().info(f"[ASSESSMENT PLAN] Using existing Assessment Plan: {assessment_plan} (docstatus: {assessment_plans[0].docstatus})")
-                
-                # Update Quiz Activity with Assessment Plan
-                try:
-                    quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
-                    if hasattr(quiz_activity_doc, 'custom_assesment_plan'):
-                        quiz_activity_doc.custom_assesment_plan = assessment_plan
-                        quiz_activity_doc.save(ignore_permissions=True)
-                        frappe.db.commit()
-                        frappe.logger().info(f"[QUIZ ACTIVITY] Updated custom_assesment_plan: {assessment_plan}")
-                except Exception as update_err:
-                    frappe.logger().error(f"[QUIZ ACTIVITY] Failed to update custom_assesment_plan: {str(update_err)}")
-            else:
-                frappe.logger().info(f"[ASSESSMENT PLAN] No existing Assessment Plan found. Will create new one.")
+            if not assessment_plan:
+                frappe.logger().info(f"[ASSESSMENT PLAN] Searching for existing Assessment Plans...")
+                assessment_plans = frappe.get_all(
+                    "Assessment Plan",
+                    filters={
+                        "student_group": student_group,
+                        "course": student_group_doc.course,
+                        "docstatus": ["<", 2]  # Include draft and submitted
+                    },
+                    fields=["name", "docstatus"],
+                    order_by="docstatus desc, modified desc",
+                    limit=1
+                )
+                frappe.logger().info(f"[ASSESSMENT PLAN] Found {len(assessment_plans)} existing Assessment Plan(s)")
+                if assessment_plans:
+                    assessment_plan = assessment_plans[0].name
+                    frappe.logger().info(f"[ASSESSMENT PLAN] Using existing Assessment Plan: {assessment_plan} (docstatus: {assessment_plans[0].docstatus})")
+                    
+                    # Update Quiz Activity with Assessment Plan
+                    try:
+                        quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+                        if hasattr(quiz_activity_doc, 'custom_assesment_plan'):
+                            quiz_activity_doc.custom_assesment_plan = assessment_plan
+                            quiz_activity_doc.save(ignore_permissions=True)
+                            frappe.db.commit()
+                            frappe.logger().info(f"[QUIZ ACTIVITY] Updated custom_assesment_plan: {assessment_plan}")
+                    except Exception as update_err:
+                        frappe.logger().error(f"[QUIZ ACTIVITY] Failed to update custom_assesment_plan: {str(update_err)}")
+                else:
+                    frappe.logger().info(f"[ASSESSMENT PLAN] No existing Assessment Plan found. Will create new one.")
         else:
             frappe.logger().warning(f"[ASSESSMENT PLAN] Student Group has no course. Cannot create Assessment Plan.")
         
@@ -1842,6 +1952,24 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         
         if existing_result:
             frappe.logger().info(f"[ASSESSMENT RESULT] Existing Assessment Result found: {existing_result}")
+
+            # Ensure existing result is submitted (not left in draft)
+            try:
+                existing_result_doc = frappe.get_doc("Assessment Result", existing_result)
+                if existing_result_doc.docstatus == 0:
+                    frappe.logger().info(f"[ASSESSMENT RESULT] Existing result is draft. Submitting: {existing_result}")
+                    existing_result_doc.flags.ignore_permissions = True
+                    existing_result_doc.submit()
+                    frappe.db.commit()
+                    frappe.logger().info(f"[ASSESSMENT RESULT] ✓ Existing draft submitted: {existing_result}")
+            except Exception as submit_existing_err:
+                error_msg = f"Failed to submit existing Assessment Result {existing_result}: {str(submit_existing_err)}"
+                frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Assessment Result Submit Error")
+                return {
+                    "status": "error",
+                    "message": error_msg,
+                    "assessment_result_id": existing_result
+                }
             
             # Update Quiz Activity with existing Assessment Result link and other custom fields
             try:

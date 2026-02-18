@@ -106,6 +106,21 @@
       z-index: 1;
     }
 
+    .language-switch {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      min-width: 170px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.92);
+      color: #1b2838;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 6px 10px;
+    }
+
     .quiz-form {
       padding: 2rem;
       background: linear-gradient(180deg, #ffffff 0%, #fdfbf8 100%);
@@ -387,9 +402,16 @@
       <div class="col-md-10 col-lg-8">
         <div class="quiz-container" id="mainQuizContainer">
           <div class="header-section">
+            <select id="languageSelect" class="language-switch" aria-label="Language Selector">
+              <option value="en">English</option>
+              <option value="hi">हिन्दी (Hindi)</option>
+              <option value="zh">中文 (Chinese)</option>
+              <option value="ar">العربية (Arabic)</option>
+              <option value="ur">اردو (Urdu)</option>
+            </select>
             <img class="brand-logo" src="https://erp.nutc.cloud/files/nutclogo.jpg" alt="NUTC Logo">
-            <h2 class="mb-0">Public Quiz Attempt</h2>
-            <p class="mb-0">Select your student group and student to attempt quizzes</p>
+            <h2 class="mb-0" id="headerTitle">Public Quiz Attempt</h2>
+            <p class="mb-0" id="headerSubtitle">Select your student group and student to attempt quizzes</p>
           </div>
 
           <div class="quiz-form" id="quizForm">
@@ -397,39 +419,39 @@
               <!-- Filter Section -->
               <div class="row mb-4">
                 <div class="col-12">
-                  <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Options</h5>
+                  <h5 class="mb-3"><i class="fas fa-filter me-2"></i><span id="filterOptionsTitle">Filter Options</span></h5>
                 </div>
 
                 <!-- Academic Year (Frappe-like Link Field UI) -->
                 <div class="col-md-3 mb-3">
                   <label class="form-label">
-                    <i class="fas fa-calendar-alt me-2"></i>Academic Year
+                    <i class="fas fa-calendar-alt me-2"></i><span id="academicYearLabel">Academic Year</span>
                   </label>
                   <input type="text" class="form-control" id="academicYearTxt" placeholder="All Academic Years" autocomplete="off">
                   <input type="hidden" id="academicYearVal" value="">
-                  <div class="hint">Type to search</div>
+                  <div class="hint" id="hintAcademicYear">Type to search</div>
                 </div>
 
                 <!-- Course -->
                 <div class="col-md-3 mb-3">
                   <label class="form-label">
-                    <i class="fas fa-graduation-cap me-2"></i>Course
+                    <i class="fas fa-graduation-cap me-2"></i><span id="courseLabel">Course</span>
                   </label>
                   <input type="text" class="form-control" id="courseTxt" placeholder="All Courses" autocomplete="off">
                   <input type="hidden" id="courseVal" value="">
-                  <div class="hint">Type to search</div>
+                  <div class="hint" id="hintCourse">Type to search</div>
                 </div>
 
                 <div class="col-md-3 mb-3">
                   <label for="fromDate" class="form-label">
-                    <i class="fas fa-calendar me-2"></i>From Date
+                    <i class="fas fa-calendar me-2"></i><span id="fromDateLabel">From Date</span>
                   </label>
                   <input type="date" class="form-control" id="fromDate">
                 </div>
 
                 <div class="col-md-3 mb-3">
                   <label for="toDate" class="form-label">
-                    <i class="fas fa-calendar me-2"></i>To Date
+                    <i class="fas fa-calendar me-2"></i><span id="toDateLabel">To Date</span>
                   </label>
                   <input type="date" class="form-control" id="toDate">
                 </div>
@@ -438,32 +460,32 @@
               <!-- Student Selection -->
               <div class="row mb-4">
                 <div class="col-12">
-                  <h5 class="mb-3"><i class="fas fa-users me-2"></i>Student Selection</h5>
+                  <h5 class="mb-3"><i class="fas fa-users me-2"></i><span id="studentSelectionTitle">Student Selection</span></h5>
                 </div>
 
                 <div class="col-md-6 mb-3">
                   <label class="form-label">
-                    <i class="fas fa-users me-2"></i>Student Group
+                    <i class="fas fa-users me-2"></i><span id="studentGroupLabel">Student Group</span>
                   </label>
                   <input type="text" class="form-control" id="studentGroupTxt" placeholder="Select Student Group" autocomplete="off" disabled>
                   <input type="hidden" id="studentGroupVal" value="">
-                  <div class="hint">Type to search</div>
+                  <div class="hint" id="hintStudentGroup">Type to search</div>
                 </div>
 
                 <div class="col-md-6 mb-3">
                   <label class="form-label">
-                    <i class="fas fa-user me-2"></i>Student
+                    <i class="fas fa-user me-2"></i><span id="studentLabel">Student</span>
                   </label>
                   <input type="text" class="form-control" id="studentTxt" placeholder="Select Student" autocomplete="off" disabled>
                   <input type="hidden" id="studentVal" value="">
-                  <div class="hint">Type to search</div>
+                  <div class="hint" id="hintStudent">Type to search</div>
                 </div>
               </div>
 
               <div class="d-grid">
                 <button type="submit" class="btn btn-primary" id="loadQuizzesBtn">
-                  <span class="btn-text"><i class="fas fa-search me-2"></i>Load Available Quizzes</span>
-                  <span class="loading"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</span>
+                  <span class="btn-text"><i class="fas fa-search me-2"></i><span id="loadAvailableQuizzesText">Load Available Quizzes</span></span>
+                  <span class="loading"><span class="spinner-border spinner-border-sm me-2"></span><span id="loadBtnLoadingText">Loading...</span></span>
                 </button>
               </div>
             </form>
@@ -479,13 +501,13 @@
             </div>
 
             <div class="quiz-list" id="quizList" style="display:none;">
-              <h5 class="mb-3"><i class="fas fa-list me-2"></i>Available Quizzes</h5>
+              <h5 class="mb-3"><i class="fas fa-list me-2"></i><span id="availableQuizzesTitle">Available Quizzes</span></h5>
               <div id="quizItems"></div>
             </div>
 
             <div class="no-quizzes" id="noQuizzes" style="display:none;">
               <i class="fas fa-info-circle fa-2x mb-3"></i>
-              <p>No quizzes available for the selected student group and student.</p>
+              <p id="noQuizzesText">No quizzes available for the selected student group and student.</p>
             </div>
           </div>
         </div>
@@ -499,10 +521,237 @@
  <script>
   const VERSION = "3.0.6";
   const QUIZ_DEBUG = true;
+  const RTL_LANGS = new Set(["ar", "ur"]);
+  const I18N = {
+    en: {
+      header_title: "Public Quiz Attempt",
+      header_subtitle: "Select your student group and student to attempt quizzes",
+      filter_options: "Filter Options",
+      academic_year: "Academic Year",
+      all_academic_years: "All Academic Years",
+      hint_type_to_search: "Type to search",
+      course: "Course",
+      all_courses: "All Courses",
+      from_date: "From Date",
+      to_date: "To Date",
+      student_selection: "Student Selection",
+      student_group: "Student Group",
+      select_student_group: "Select Student Group",
+      student: "Student",
+      select_student: "Select Student",
+      load_available_quizzes: "Load Available Quizzes",
+      loading: "Loading...",
+      available_quizzes: "Available Quizzes",
+      no_quizzes: "No quizzes available for the selected student group and student.",
+      student_groups_loaded: "Student groups loaded. Type to search.",
+      no_student_groups: "No student groups found (try different filters).",
+      error_loading_student_groups: "Error loading student groups. Please try again.",
+      students_loaded: "Students loaded. Type to search.",
+      no_students: "No students found in this group.",
+      error_loading_students: "Error loading students. Please try again.",
+      select_group_student_suggestions: "Please select Student Group and Student from suggestions.",
+      quizzes_loaded_success: "Quizzes loaded successfully!",
+      failed_load_quizzes: "Failed to load quizzes",
+      error_loading_quizzes: "Error loading quizzes. Please try again. Check browser console for details.",
+      total_marks: "Total Marks",
+      passing: "Passing",
+      max_attempts: "Max Attempts",
+      unlimited: "Unlimited",
+      attempt_quiz: "Attempt Quiz",
+      please_select_group_student_first: "Please select student group and student first",
+      failed_to_load_quiz: "Failed to load quiz",
+      error_loading_quiz: "Error loading quiz. Please try again.",
+      student_label: "Student",
+      group_label: "Group",
+      loading_quiz: "Loading Quiz...",
+      back_to_quiz_list: "Back to Quiz List",
+      passing_pct: "Passing %",
+      questions: "Questions",
+      question_of: "Question {current} of {total}",
+      answered_count: "Answered {answered} / {total}",
+      question_label: "Question {number}:",
+      mark: "mark",
+      marks: "marks",
+      previous: "Previous",
+      next: "Next",
+      review: "Review",
+      review_answers: "Review Answers",
+      total_questions: "Total Questions: {count}",
+      preview_answers: "Preview Answers",
+      unanswered: "Unanswered",
+      edit: "Edit",
+      close: "Close",
+      change_answer: "Change Answer",
+      no_options_available: "No options available for this question.",
+      back_to_questions: "Back to Questions",
+      submit_quiz: "Submit Quiz",
+      submitting: "Submitting...",
+      select_answer_before_continue: "Please select an answer before continuing.",
+      please_answer_all: "Please answer all questions. {count} question(s) remaining.",
+      quiz_submit_success: "Quiz submitted successfully! Score: {score}/100 ({percentage}%) - {result}",
+      passed: "Passed",
+      failed: "Failed",
+      assessment_not_created: "Quiz was submitted, but Assessment Result was not created automatically.{activity}{reason}",
+      failed_submit_quiz: "Failed to submit quiz",
+      error_submit_quiz: "Error submitting quiz. Please try again. Check browser console for details.",
+      quiz_submitted: "Quiz Submitted",
+      score: "Score",
+      percentage: "Percentage",
+      status: "Status"
+    },
+    hi: {
+      header_title: "सार्वजनिक क्विज़ प्रयास",
+      header_subtitle: "क्विज़ देने के लिए अपना स्टूडेंट ग्रुप और स्टूडेंट चुनें",
+      filter_options: "फ़िल्टर विकल्प",
+      academic_year: "शैक्षणिक वर्ष",
+      all_academic_years: "सभी शैक्षणिक वर्ष",
+      hint_type_to_search: "खोजने के लिए टाइप करें",
+      course: "कोर्स",
+      all_courses: "सभी कोर्स",
+      from_date: "दिनांक से",
+      to_date: "दिनांक तक",
+      student_selection: "स्टूडेंट चयन",
+      student_group: "स्टूडेंट ग्रुप",
+      select_student_group: "स्टूडेंट ग्रुप चुनें",
+      student: "स्टूडेंट",
+      select_student: "स्टूडेंट चुनें",
+      load_available_quizzes: "उपलब्ध क्विज़ लोड करें",
+      loading: "लोड हो रहा है...",
+      available_quizzes: "उपलब्ध क्विज़",
+      no_quizzes: "चयनित स्टूडेंट ग्रुप और स्टूडेंट के लिए कोई क्विज़ उपलब्ध नहीं है।",
+      passed: "उत्तीर्ण",
+      failed: "अनुत्तीर्ण"
+    },
+    zh: {
+      header_title: "公开测验",
+      header_subtitle: "请选择学生组和学生以参加测验",
+      filter_options: "筛选选项",
+      academic_year: "学年",
+      all_academic_years: "全部学年",
+      hint_type_to_search: "输入以搜索",
+      course: "课程",
+      all_courses: "全部课程",
+      from_date: "开始日期",
+      to_date: "结束日期",
+      student_selection: "学生选择",
+      student_group: "学生组",
+      select_student_group: "选择学生组",
+      student: "学生",
+      select_student: "选择学生",
+      load_available_quizzes: "加载可用测验",
+      loading: "加载中...",
+      available_quizzes: "可用测验",
+      no_quizzes: "所选学生组和学生暂无可用测验。",
+      passed: "通过",
+      failed: "未通过"
+    },
+    ar: {
+      header_title: "محاولة اختبار عامة",
+      header_subtitle: "اختر مجموعة الطالب والطالب للبدء في الاختبارات",
+      filter_options: "خيارات التصفية",
+      academic_year: "السنة الأكاديمية",
+      all_academic_years: "كل السنوات الأكاديمية",
+      hint_type_to_search: "اكتب للبحث",
+      course: "الدورة",
+      all_courses: "كل الدورات",
+      from_date: "من تاريخ",
+      to_date: "إلى تاريخ",
+      student_selection: "اختيار الطالب",
+      student_group: "مجموعة الطالب",
+      select_student_group: "اختر مجموعة الطالب",
+      student: "الطالب",
+      select_student: "اختر الطالب",
+      load_available_quizzes: "تحميل الاختبارات المتاحة",
+      loading: "جارٍ التحميل...",
+      available_quizzes: "الاختبارات المتاحة",
+      no_quizzes: "لا توجد اختبارات متاحة لمجموعة الطالب والطالب المحددين.",
+      passed: "ناجح",
+      failed: "راسب"
+    },
+    ur: {
+      header_title: "پبلک کوئز اٹیمپٹ",
+      header_subtitle: "کوئز شروع کرنے کے لیے اپنا اسٹوڈنٹ گروپ اور اسٹوڈنٹ منتخب کریں",
+      filter_options: "فلٹر آپشنز",
+      academic_year: "تعلیمی سال",
+      all_academic_years: "تمام تعلیمی سال",
+      hint_type_to_search: "تلاش کے لیے ٹائپ کریں",
+      course: "کورس",
+      all_courses: "تمام کورسز",
+      from_date: "تاریخ سے",
+      to_date: "تاریخ تک",
+      student_selection: "اسٹوڈنٹ سلیکشن",
+      student_group: "اسٹوڈنٹ گروپ",
+      select_student_group: "اسٹوڈنٹ گروپ منتخب کریں",
+      student: "اسٹوڈنٹ",
+      select_student: "اسٹوڈنٹ منتخب کریں",
+      load_available_quizzes: "دستیاب کوئز لوڈ کریں",
+      loading: "لوڈ ہو رہا ہے...",
+      available_quizzes: "دستیاب کوئز",
+      no_quizzes: "منتخب اسٹوڈنٹ گروپ اور اسٹوڈنٹ کے لیے کوئی کوئز دستیاب نہیں۔",
+      passed: "پاس",
+      failed: "فیل"
+    }
+  };
+  let currentLang = "en";
 
   function debugLog(...args) {
     if (!QUIZ_DEBUG) return;
     console.log("[QUIZ-DEBUG]", ...args);
+  }
+
+  function t(key, vars = {}) {
+    const base = I18N.en[key] || key;
+    const langPack = I18N[currentLang] || {};
+    const template = langPack[key] || base;
+    return template.replace(/\{(\w+)\}/g, (_, token) => (vars[token] ?? `{${token}}`));
+  }
+
+  function applyLanguage(lang) {
+    const normalized = I18N[lang] ? lang : "en";
+    currentLang = normalized;
+    localStorage.setItem("publicQuizLang", normalized);
+    document.documentElement.lang = normalized;
+    document.documentElement.dir = RTL_LANGS.has(normalized) ? "rtl" : "ltr";
+
+    const byIdText = [
+      ["headerTitle", "header_title"],
+      ["headerSubtitle", "header_subtitle"],
+      ["filterOptionsTitle", "filter_options"],
+      ["academicYearLabel", "academic_year"],
+      ["hintAcademicYear", "hint_type_to_search"],
+      ["courseLabel", "course"],
+      ["hintCourse", "hint_type_to_search"],
+      ["fromDateLabel", "from_date"],
+      ["toDateLabel", "to_date"],
+      ["studentSelectionTitle", "student_selection"],
+      ["studentGroupLabel", "student_group"],
+      ["hintStudentGroup", "hint_type_to_search"],
+      ["studentLabel", "student"],
+      ["hintStudent", "hint_type_to_search"],
+      ["loadAvailableQuizzesText", "load_available_quizzes"],
+      ["loadBtnLoadingText", "loading"],
+      ["availableQuizzesTitle", "available_quizzes"],
+      ["noQuizzesText", "no_quizzes"]
+    ];
+    byIdText.forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = t(key);
+    });
+
+    const ay = document.getElementById("academicYearTxt");
+    if (ay) ay.placeholder = t("all_academic_years");
+    const course = document.getElementById("courseTxt");
+    if (course) course.placeholder = t("all_courses");
+    const sg = document.getElementById("studentGroupTxt");
+    if (sg) sg.placeholder = t("select_student_group");
+    const st = document.getElementById("studentTxt");
+    if (st) st.placeholder = t("select_student");
+
+    if (quizAttemptState) {
+      const reviewVisible = document.getElementById("reviewStage")?.style.display === "block";
+      if (reviewVisible) renderReviewView();
+      else renderQuestionView();
+    }
   }
 
   // ====== Data caches ======
@@ -579,8 +828,8 @@
     const isOpen = editBox.style.display !== "none";
     editBox.style.display = isOpen ? "none" : "block";
     btn.innerHTML = isOpen
-      ? '<i class="fas fa-edit me-1"></i>Edit'
-      : '<i class="fas fa-times me-1"></i>Close';
+      ? `<i class="fas fa-edit me-1"></i>${t("edit")}`
+      : `<i class="fas fa-times me-1"></i>${t("close")}`;
     debugLog("toggleReviewEditByElements:done", { opened: !isOpen });
   }
 
@@ -783,12 +1032,22 @@
   let academicYearLF, courseLF, studentGroupLF, studentLF;
 
   document.addEventListener("DOMContentLoaded", async () => {
+    const browserLang = (navigator.language || "en").slice(0, 2).toLowerCase();
+    const savedLang = localStorage.getItem("publicQuizLang");
+    const initialLang = I18N[savedLang] ? savedLang : (I18N[browserLang] ? browserLang : "en");
+    const langSelect = document.getElementById("languageSelect");
+    if (langSelect) {
+      langSelect.value = initialLang;
+      langSelect.addEventListener("change", (e) => applyLanguage(e.target.value));
+    }
+    applyLanguage(initialLang);
+
     preselectParams = getPreselectParams();
     // init fields
     academicYearLF = makeLinkField({
       txtId: "academicYearTxt",
       valId: "academicYearVal",
-      placeholder: "All Academic Years",
+      placeholder: t("all_academic_years"),
       getItems: async (q) => {
         const qq = (q || "").toLowerCase();
         return academicYearsData.filter(x => x.label.toLowerCase().includes(qq));
@@ -799,7 +1058,7 @@
     courseLF = makeLinkField({
       txtId: "courseTxt",
       valId: "courseVal",
-      placeholder: "All Courses",
+      placeholder: t("all_courses"),
       getItems: async (q) => {
         const qq = (q || "").toLowerCase();
         return coursesData.filter(x => x.label.toLowerCase().includes(qq));
@@ -810,7 +1069,7 @@
     studentGroupLF = makeLinkField({
       txtId: "studentGroupTxt",
       valId: "studentGroupVal",
-      placeholder: "Select Student Group",
+      placeholder: t("select_student_group"),
       getItems: async (q) => {
         const qq = (q || "").toLowerCase();
         return studentGroupsData.filter(x => x.label.toLowerCase().includes(qq));
@@ -821,7 +1080,7 @@
     studentLF = makeLinkField({
       txtId: "studentTxt",
       valId: "studentVal",
-      placeholder: "Select Student",
+      placeholder: t("select_student"),
       getItems: async (q) => {
         const qq = (q || "").toLowerCase();
         return studentsData.filter(x => x.label.toLowerCase().includes(qq));
@@ -898,14 +1157,14 @@ async function reloadStudentGroups() {
     document.getElementById("studentGroupTxt").disabled = false;
 
     if (studentGroupsData.length) {
-      showSuccess("Student groups loaded. Type to search.");
+      showSuccess(t("student_groups_loaded"));
     } else {
-      showError("No student groups found (try different filters).");
+      showError(t("no_student_groups"));
     }
   } catch (e) {
     showLoading(false);
     document.getElementById("studentGroupTxt").disabled = false;
-    showError("Error loading student groups. Please try again.");
+    showError(t("error_loading_student_groups"));
     console.error(e);
   }
 }
@@ -954,13 +1213,13 @@ async function reloadStudentGroups() {
 
       if (studentsData.length) {
         document.getElementById("studentTxt").disabled = false;
-        showSuccess("Students loaded. Type to search.");
+        showSuccess(t("students_loaded"));
       } else {
-        showError("No students found in this group.");
+        showError(t("no_students"));
       }
     } catch (e) {
       showLoading(false);
-      showError("Error loading students. Please try again.");
+      showError(t("error_loading_students"));
       console.error(e);
     }
   }
@@ -971,7 +1230,7 @@ async function reloadStudentGroups() {
     const student = document.getElementById("studentVal").value;
 
     if (!studentGroup || !student) {
-      showError("Please select Student Group and Student from suggestions.");
+      showError(t("select_group_student_suggestions"));
       return;
     }
 
@@ -1006,7 +1265,7 @@ async function reloadStudentGroups() {
           console.log("Debug Info:", debugInfo);
           
           if (quizzes.length === 0) {
-            const debugMsg = data.message.debug || "No quizzes available";
+            const debugMsg = data.message.debug || t("no_quizzes");
             const debugDetails = data.message.debug_details || {};
             
             console.error("NO QUIZZES FOUND!");
@@ -1026,10 +1285,10 @@ async function reloadStudentGroups() {
           } else {
             console.log("Quizzes to display:", quizzes);
             displayQuizzes(quizzes);
-            showSuccess("Quizzes loaded successfully!");
+            showSuccess(t("quizzes_loaded_success"));
           }
         } else {
-          const errorMsg = data.message?.message || data.message?.debug || "Failed to load quizzes";
+          const errorMsg = data.message?.message || data.message?.debug || t("failed_load_quizzes");
           console.error("API Error:", errorMsg);
           console.error("Full error response:", data.message);
           showError(errorMsg);
@@ -1041,7 +1300,7 @@ async function reloadStudentGroups() {
         console.error("FETCH ERROR:");
         console.error(err);
         console.error("=".repeat(80));
-        showError("Error loading quizzes. Please try again. Check browser console for details.");
+        showError(t("error_loading_quizzes"));
       });
   }
 
@@ -1066,17 +1325,17 @@ async function reloadStudentGroups() {
           <div>
             <div class="quiz-title">${quiz.title}</div>
             <div class="quiz-details">
-              <i class="fas fa-star me-1"></i>Total Marks: ${totalMarks}
+              <i class="fas fa-star me-1"></i>${t("total_marks")}: ${totalMarks}
               <span class="ms-3">
-                <i class="fas fa-percentage me-1"></i>Passing: ${quiz.passing_percentage || "N/A"}%
+                <i class="fas fa-percentage me-1"></i>${t("passing")}: ${quiz.passing_percentage || "N/A"}%
               </span>
               <span class="ms-3">
-                <i class="fas fa-clock me-1"></i>Max Attempts: ${quiz.max_attempts || "Unlimited"}
+                <i class="fas fa-clock me-1"></i>${t("max_attempts")}: ${quiz.max_attempts || t("unlimited")}
               </span>
             </div>
           </div>
           <button class="btn btn-attempt" onclick="attemptQuiz('${quiz.name}', '${(quiz.title || "").replaceAll("'", "\\'")}')">
-            <i class="fas fa-play me-1"></i>Attempt Quiz
+            <i class="fas fa-play me-1"></i>${t("attempt_quiz")}
           </button>
         </div>
       `;
@@ -1095,7 +1354,7 @@ async function reloadStudentGroups() {
     const studentGroupLabel = document.getElementById("studentGroupTxt").value || studentGroup;
     
     if (!studentGroup || !student) {
-      showError("Please select student group and student first");
+      showError(t("please_select_group_student_first"));
       return;
     }
 
@@ -1106,7 +1365,7 @@ async function reloadStudentGroups() {
     showLoading(true);
     hideMessages();
 
-    const url = `/api/method/numerouno.numerouno.api.quiz_api.get_quiz_questions_from_quiz?quiz_name=${encodeURIComponent(quizName)}`;
+    const url = `/api/method/numerouno.numerouno.api.quiz_api.get_quiz_questions_from_quiz?quiz_name=${encodeURIComponent(quizName)}&lang=${encodeURIComponent(currentLang)}`;
     
     fetch(url, {
       method: "GET",
@@ -1123,12 +1382,12 @@ async function reloadStudentGroups() {
         if (data.message?.status === "success") {
           displayQuizForAttempt(data.message, quizName, student, studentGroup, studentName, studentGroupLabel);
         } else {
-          showError(data.message?.message || "Failed to load quiz");
+          showError(data.message?.message || t("failed_to_load_quiz"));
         }
       })
       .catch((err) => {
         showLoading(false);
-        showError("Error loading quiz. Please try again.");
+        showError(t("error_loading_quiz"));
         console.error(err);
       });
   }
@@ -1151,20 +1410,20 @@ async function reloadStudentGroups() {
         <div class="header-section">
           <img class="brand-logo" src="https://erp.nutc.cloud/files/nutclogo.jpg" alt="NUTC Logo">
           <h2 class="mb-0">${quizData.quiz.title}</h2>
-          <p class="mb-0">Student: ${studentName} | Group: ${studentGroupLabel}</p>
+          <p class="mb-0">${t("student_label")}: ${studentName} | ${t("group_label")}: ${studentGroupLabel}</p>
         </div>
         <div class="quiz-form">
           <div class="quiz-content" id="quizContent">
             <div class="text-center">
               <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+                <span class="visually-hidden">${t("loading")}</span>
               </div>
-              <p class="mt-3">Loading Quiz...</p>
+              <p class="mt-3">${t("loading_quiz")}</p>
             </div>
           </div>
           <div class="text-center mt-3">
             <button class="btn btn-secondary" onclick="goBackToQuizList()">
-              <i class="fas fa-arrow-left me-2"></i>Back to Quiz List
+              <i class="fas fa-arrow-left me-2"></i>${t("back_to_quiz_list")}
             </button>
           </div>
         </div>
@@ -1194,10 +1453,10 @@ async function reloadStudentGroups() {
     quizInfo.className = "mb-4 p-3 quiz-info-row";
     quizInfo.innerHTML = `
       <div class="row text-center">
-        <div class="col-md-3"><strong>Total Marks:</strong> ${totalMarks}</div>
-        <div class="col-md-3"><strong>Passing %:</strong> ${quizData.quiz.passing_percentage}%</div>
-        <div class="col-md-3"><strong>Max Attempts:</strong> ${quizData.quiz.max_attempts || "Unlimited"}</div>
-        <div class="col-md-3"><strong>Questions:</strong> ${quizData.questions.length}</div>
+        <div class="col-md-3"><strong>${t("total_marks")}:</strong> ${totalMarks}</div>
+        <div class="col-md-3"><strong>${t("passing_pct")}:</strong> ${quizData.quiz.passing_percentage}%</div>
+        <div class="col-md-3"><strong>${t("max_attempts")}:</strong> ${quizData.quiz.max_attempts || t("unlimited")}</div>
+        <div class="col-md-3"><strong>${t("questions")}:</strong> ${quizData.questions.length}</div>
       </div>
     `;
     quizContent.appendChild(quizInfo);
@@ -1249,16 +1508,16 @@ async function reloadStudentGroups() {
 
     const answeredCount = questions.filter((q) => !!getAnswer(q.name)).length;
     progress.innerHTML = `
-      <span>Question ${currentIndex + 1} of ${questions.length}</span>
-      <span>Answered ${answeredCount} / ${questions.length}</span>
+      <span>${t("question_of", { current: currentIndex + 1, total: questions.length })}</span>
+      <span>${t("answered_count", { answered: answeredCount, total: questions.length })}</span>
     `;
 
     const selectedId = getAnswer(question.name);
     stage.innerHTML = `
       <div class="question-card mb-4 p-3">
         <div class="question-title mb-3">
-          <strong>Question ${currentIndex + 1}:</strong> ${question.question}
-          <span class="badge bg-primary ms-2">${question.marks} mark${question.marks > 1 ? "s" : ""}</span>
+          <strong>${t("question_label", { number: currentIndex + 1 })}</strong> ${question.question}
+          <span class="badge bg-primary ms-2">${question.marks} ${question.marks > 1 ? t("marks") : t("mark")}</span>
         </div>
         <div class="options" data-question="${question.name}">
           ${question.options.map(option => `
@@ -1293,13 +1552,13 @@ async function reloadStudentGroups() {
     nav.innerHTML = `
       <div class="question-nav">
         <button type="button" class="btn btn-secondary" id="prevQuestionBtn" ${isFirst ? "disabled" : ""}>
-          <i class="fas fa-arrow-left me-2"></i>Previous
+          <i class="fas fa-arrow-left me-2"></i>${t("previous")}
         </button>
         <button type="button" class="btn btn-primary" id="nextQuestionBtn">
-          ${isLast ? '<i class="fas fa-clipboard-list me-2"></i>Review Answers' : '<i class="fas fa-arrow-right me-2"></i>Next'}
+          ${isLast ? `<i class="fas fa-clipboard-list me-2"></i>${t("review_answers")}` : `<i class="fas fa-arrow-right me-2"></i>${t("next")}`}
         </button>
         <button type="button" class="btn btn-secondary" id="reviewAnswersBtn">
-          <i class="fas fa-eye me-2"></i>Review
+          <i class="fas fa-eye me-2"></i>${t("review")}
         </button>
       </div>
     `;
@@ -1321,7 +1580,7 @@ async function reloadStudentGroups() {
       nextBtn.addEventListener("click", () => {
         const selected = getAnswer(question.name);
         if (!selected) {
-          showError("Please select an answer before continuing.");
+          showError(t("select_answer_before_continue"));
           return;
         }
         hideMessages();
@@ -1363,13 +1622,13 @@ async function reloadStudentGroups() {
     reviewStage.style.display = "block";
 
     progress.innerHTML = `
-      <span>Review Answers</span>
-      <span>Total Questions: ${questions.length}</span>
+      <span>${t("review_answers")}</span>
+      <span>${t("total_questions", { count: questions.length })}</span>
     `;
 
     reviewStage.innerHTML = `
       <div class="review-card">
-        <h5 class="mb-3"><i class="fas fa-clipboard-check me-2"></i>Preview Answers</h5>
+        <h5 class="mb-3"><i class="fas fa-clipboard-check me-2"></i>${t("preview_answers")}</h5>
         ${questions.map((question, index) => {
           const selectedId = getAnswer(question.name);
           const selectedText = getSelectedOptionText(question, selectedId);
@@ -1380,23 +1639,23 @@ async function reloadStudentGroups() {
                   <strong>Q${index + 1}.</strong> ${question.question}
                   <div class="mt-1">
                     <span class="answer-pill ${selectedId ? "" : "unanswered"}">
-                      ${selectedId ? selectedText : "Unanswered"}
+                      ${selectedId ? selectedText : t("unanswered")}
                     </span>
                   </div>
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm mt-2" data-edit-index="${index}">
-                  <i class="fas fa-edit me-1"></i>Edit
+                  <i class="fas fa-edit me-1"></i>${t("edit")}
                 </button>
               </div>
               <div class="review-edit-options mt-3" data-review-edit="${index}" style="display: none;">
-                <div class="small text-muted mb-2"><strong>Change Answer:</strong></div>
+                <div class="small text-muted mb-2"><strong>${t("change_answer")}:</strong></div>
                 <div class="options" data-question="${question.name}">
                   ${question.options.length ? question.options.map((option) => `
                     <div class="option-item mb-2 p-2 cursor-pointer ${isSameOptionId(selectedId, option.id) ? "selected" : ""}" data-review-option="${index}" data-question-name="${question.name}" data-option="${option.id}" style="cursor: pointer;">
                       <input type="radio" name="review_question_${question.name}" value="${option.id}" ${isSameOptionId(selectedId, option.id) ? "checked" : ""}>
                       <label class="ms-2 cursor-pointer" style="cursor: pointer;">${option.text}</label>
                     </div>
-                  `).join("") : '<div class="text-muted small">No options available for this question.</div>'}
+                  `).join("") : `<div class="text-muted small">${t("no_options_available")}</div>`}
                 </div>
               </div>
             </div>
@@ -1404,11 +1663,11 @@ async function reloadStudentGroups() {
         }).join("")}
         <div class="question-nav mt-3">
           <button type="button" class="btn btn-secondary" id="backToQuestionsBtn">
-            <i class="fas fa-arrow-left me-2"></i>Back to Questions
+            <i class="fas fa-arrow-left me-2"></i>${t("back_to_questions")}
           </button>
           <button type="button" class="btn btn-primary btn-lg" id="submitQuizBtn">
-            <span class="submit-text"><i class="fas fa-paper-plane me-2"></i>Submit Quiz</span>
-            <span class="loading" style="display:none;"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...</span>
+            <span class="submit-text"><i class="fas fa-paper-plane me-2"></i>${t("submit_quiz")}</span>
+            <span class="loading" style="display:none;"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${t("submitting")}</span>
           </button>
         </div>
       </div>
@@ -1508,7 +1767,7 @@ async function reloadStudentGroups() {
     // Check if all questions are answered
     const unansweredQuestions = Object.keys(answers).filter((q) => answers[q].length === 0);
     if (unansweredQuestions.length > 0) {
-      showError(`Please answer all questions. ${unansweredQuestions.length} question(s) remaining.`);
+      showError(t("please_answer_all", { count: unansweredQuestions.length }));
       return;
     }
 
@@ -1572,21 +1831,30 @@ async function reloadStudentGroups() {
         if (data.message?.status === "success") {
           const result = data.message;
           showSuccess(
-            `Quiz submitted successfully! Score: ${result.score}/100 (${result.percentage.toFixed(1)}%) - ${result.passed ? "Passed" : "Failed"}`
+            t("quiz_submit_success", {
+              score: result.score,
+              percentage: result.percentage.toFixed(1),
+              result: result.passed ? t("passed") : t("failed")
+            })
           );
+          if (!result.assessment_result_id) {
+            const activityRef = result.activity_id ? ` Quiz Activity: ${result.activity_id}.` : "";
+            const backendError = result.assessment_result_error ? ` Reason: ${result.assessment_result_error}` : "";
+            showError(t("assessment_not_created", { activity: activityRef, reason: backendError }));
+          }
           showQuizResult(result);
           
           // Disable submit button
           setSubmitLoading(false);
         } else {
-          showError(data.message?.message || "Failed to submit quiz");
+          showError(data.message?.message || t("failed_submit_quiz"));
           setSubmitLoading(false);
         }
       })
       .catch((err) => {
         showLoading(false);
         console.error("Error submitting quiz:", err);
-        showError("Error submitting quiz. Please try again. Check browser console for details.");
+        showError(t("error_submit_quiz"));
         setSubmitLoading(false);
       });
   }
@@ -1634,12 +1902,12 @@ async function reloadStudentGroups() {
     quizContent.innerHTML = `
       <div class="text-center p-4 result-card">
         <i class="fas fa-clipboard-check fa-3x mb-3 text-success"></i>
-        <h3>Quiz Submitted</h3>
-        <p class="mb-2"><strong>Score:</strong> ${result.score}/100</p>
-        <p class="mb-2"><strong>Percentage:</strong> ${result.percentage.toFixed(1)}%</p>
-        <p class="mb-4"><strong>Status:</strong> ${result.passed ? "Passed" : "Failed"}</p>
+        <h3>${t("quiz_submitted")}</h3>
+        <p class="mb-2"><strong>${t("score")}:</strong> ${result.score}/100</p>
+        <p class="mb-2"><strong>${t("percentage")}:</strong> ${result.percentage.toFixed(1)}%</p>
+        <p class="mb-4"><strong>${t("status")}:</strong> ${result.passed ? t("passed") : t("failed")}</p>
         <button class="btn btn-secondary" onclick="goBackToQuizList()">
-          <i class="fas fa-arrow-left me-2"></i>Back to Quiz List
+          <i class="fas fa-arrow-left me-2"></i>${t("back_to_quiz_list")}
         </button>
       </div>
     `;

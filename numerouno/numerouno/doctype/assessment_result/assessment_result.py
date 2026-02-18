@@ -3,12 +3,22 @@
 
 import frappe
 from frappe.model.document import Document
+from frappe.utils import add_to_date
 
 class AssessmentResult(Document):
 	def validate(self):
 		# Call parent validate if exists
 		if hasattr(super(), 'validate'):
 			super().validate()
+		
+		# Fallback validity date: course start date + 1 year - 1 day
+		if not self.certificate_validity_date and self.course_start_date:
+			self.certificate_validity_date = add_to_date(
+				self.course_start_date,
+				years=1,
+				days=-1,
+				as_string=True
+			)
 	
 	def on_update(self):
 		# Process OCR when certificate is uploaded
