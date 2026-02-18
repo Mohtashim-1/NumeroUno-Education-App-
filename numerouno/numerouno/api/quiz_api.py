@@ -2,6 +2,9 @@ import frappe
 from frappe import _
 from frappe.utils import today
 from datetime import timedelta
+import json
+import urllib.parse
+import urllib.request
 
 @frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
 def get_student_groups(academic_year=None, course=None, from_date=None, to_date=None):
@@ -708,6 +711,121 @@ def _lookup_translation(text, lang_code):
     return ""
 
 
+def _google_target_lang(lang_code):
+    if lang_code == "zh":
+        return "zh-CN"
+    return lang_code
+
+
+def _google_translate_text(text, lang_code, timeout_sec=4):
+    """Translate text with Google public translate endpoint."""
+    if not text or lang_code == "en":
+        return ""
+
+    try:
+        q = urllib.parse.quote(text)
+        target = urllib.parse.quote(_google_target_lang(lang_code))
+        url = (
+            "https://translate.googleapis.com/translate_a/single"
+            f"?client=gtx&sl=auto&tl={target}&dt=t&q={q}"
+        )
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+            payload = resp.read().decode("utf-8", errors="ignore")
+        data = json.loads(payload)
+        if not isinstance(data, list) or not data or not isinstance(data[0], list):
+            return ""
+        parts = []
+        for chunk in data[0]:
+            if isinstance(chunk, list) and chunk and chunk[0]:
+                parts.append(str(chunk[0]))
+        return "".join(parts).strip()
+    except Exception:
+        return ""
+
+
+def _save_translation(source_text, translated_text, lang_code):
+    if not source_text or not translated_text or lang_code == "en":
+        return
+
+    try:
+        existing_name = frappe.db.exists(
+            "Translation",
+            {"language": lang_code, "source_text": source_text},
+        )
+        if existing_name:
+            if frappe.db.get_value("Translation", existing_name, "translated_text") != translated_text:
+                frappe.db.set_value("Translation", existing_name, "translated_text", translated_text, update_modified=False)
+            return
+
+        doc = frappe.get_doc(
+            {
+                "doctype": "Translation",
+                "language": lang_code,
+                "source_text": source_text,
+                "translated_text": translated_text,
+            }
+        )
+        doc.insert(ignore_permissions=True)
+    except Exception:
+        pass
+
+
+def _enqueue_translation_if_missing(text, lang_code):
+    """Queue translation without blocking request latency."""
+    if not text or lang_code == "en":
+        return
+
+    # Per-request dedupe
+    req_cache = getattr(frappe.local, "quiz_translation_cache", None)
+    if req_cache is None:
+        req_cache = {}
+        frappe.local.quiz_translation_cache = req_cache
+
+    cache_key = f"{lang_code}::{text}"
+    if cache_key in req_cache:
+        return
+    req_cache[cache_key] = True
+
+    # Cross-request throttle to avoid enqueue storms for same source text.
+    try:
+        cache = frappe.cache()
+        throttle_key = f"quiz_translate_enqueue::{cache_key}"
+        if cache.get_value(throttle_key):
+            return
+        cache.set_value(throttle_key, 1, expires_in_sec=600)
+    except Exception:
+        pass
+
+    try:
+        frappe.enqueue(
+            "numerouno.numerouno.api.quiz_api.translate_and_store_text",
+            queue="short",
+            timeout=120,
+            source_text=text,
+            lang_code=lang_code,
+            enqueue_after_commit=True,
+        )
+    except Exception:
+        pass
+
+
+def translate_and_store_text(source_text, lang_code):
+    """Background job: translate and persist into Translation doctype."""
+    if not source_text or not lang_code or lang_code == "en":
+        return
+
+    if _lookup_translation(source_text, lang_code):
+        return
+
+    translated = _google_translate_text(source_text, lang_code)
+    if translated:
+        _save_translation(source_text, translated, lang_code)
+
+
 def _tr_text(value, lang_code="en"):
     text = value or ""
     if not text:
@@ -716,6 +834,17 @@ def _tr_text(value, lang_code="en"):
     translated = _lookup_translation(text, lang_code)
     if translated:
         return translated
+
+    # Hybrid mode:
+    # 1) Try quick inline translation so first load can show translated text.
+    # 2) If it fails, queue background translation and return source text.
+    translated = _google_translate_text(text, lang_code, timeout_sec=1.5)
+    if translated:
+        _save_translation(text, translated, lang_code)
+        return translated
+
+    # Non-blocking fallback
+    _enqueue_translation_if_missing(text, lang_code)
 
     return _(text)
 
@@ -2253,6 +2382,206 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         return {
             "status": "error",
             "message": error_msg
+        }
+
+def _get_linked_assessment_result_name(quiz_activity_doc):
+    """Resolve linked Assessment Result from known link fields or by student+plan."""
+    for fieldname in ("custom_assesment_result", "custom_assessment_result", "assessment_result"):
+        value = getattr(quiz_activity_doc, fieldname, None)
+        if value and frappe.db.exists("Assessment Result", value):
+            return value
+
+    assessment_plan = getattr(quiz_activity_doc, "custom_assesment_plan", None)
+    student = getattr(quiz_activity_doc, "student", None)
+    if assessment_plan and student:
+        return frappe.db.exists("Assessment Result", {
+            "student": student,
+            "assessment_plan": assessment_plan,
+            "docstatus": ["<", 2]
+        })
+    return None
+
+def _is_admin_or_system_manager():
+    roles = set(frappe.get_roles(frappe.session.user))
+    return ("Administrator" in roles) or ("System Manager" in roles)
+
+@frappe.whitelist()
+def get_quiz_activity_answer_reference(quiz_activity_name):
+    """Return question text and correct option(s) for each Quiz Activity row."""
+    try:
+        if not _is_admin_or_system_manager():
+            frappe.throw(_("Only Administrator or System Manager can view answer reference."))
+
+        if not quiz_activity_name:
+            return {"status": "error", "message": "Quiz Activity is required"}
+
+        quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+        reference = {}
+
+        if not hasattr(quiz_activity_doc, "result") or not quiz_activity_doc.result:
+            return {"status": "success", "reference": reference}
+
+        question_names = list({row.question for row in quiz_activity_doc.result if row.question})
+        for question_name in question_names:
+            question_text = question_name
+            correct_option = ""
+            try:
+                question_doc = frappe.get_doc("Question", question_name)
+                question_text = getattr(question_doc, "question", None) or question_name
+
+                if hasattr(question_doc, "options") and question_doc.options:
+                    correct_options = [
+                        (opt.option or "").strip()
+                        for opt in question_doc.options
+                        if getattr(opt, "is_correct", 0) and (opt.option or "").strip()
+                    ]
+                    correct_option = ", ".join(correct_options)
+            except Exception:
+                # Keep fallback values if a question is missing.
+                pass
+
+            reference[question_name] = {
+                "question_text": question_text,
+                "correct_option": correct_option
+            }
+
+        return {"status": "success", "reference": reference}
+    except Exception as e:
+        frappe.log_error(
+            f"Failed get_quiz_activity_answer_reference: {str(e)}\nTraceback: {frappe.get_traceback()}",
+            "Quiz Activity Answer Reference"
+        )
+        return {"status": "error", "message": str(e), "reference": {}}
+
+@frappe.whitelist()
+def admin_update_quiz_activity_answers(quiz_activity_name, updates, reason=None):
+    """Allow Administrator/System Manager to correct Quiz Activity answers and resync score/result."""
+    try:
+        if not _is_admin_or_system_manager():
+            frappe.throw(_("Only Administrator or System Manager can update quiz answers."))
+
+        if not quiz_activity_name:
+            return {"status": "error", "message": "Quiz Activity is required"}
+
+        if isinstance(updates, str):
+            updates = json.loads(updates or "[]")
+
+        if not isinstance(updates, list) or not updates:
+            return {"status": "error", "message": "No answer updates provided"}
+
+        quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
+        if not hasattr(quiz_activity_doc, "result") or not quiz_activity_doc.result:
+            return {"status": "error", "message": "Quiz Activity has no answer rows to update"}
+
+        updates_map = {
+            str((row or {}).get("row_name")): (row or {})
+            for row in updates
+            if (row or {}).get("row_name")
+        }
+
+        if not updates_map:
+            return {"status": "error", "message": "No valid rows selected for update"}
+
+        original_score = quiz_activity_doc.score or "0/0"
+        original_status = quiz_activity_doc.status or "Fail"
+        total_questions = len(quiz_activity_doc.result)
+
+        for row in quiz_activity_doc.result:
+            row_update = updates_map.get(str(row.name))
+            if not row_update:
+                continue
+
+            selected_option = (row_update.get("selected_option") or "").strip()
+            if selected_option != (row.selected_option or ""):
+                row.selected_option = selected_option
+
+            normalized_result = "Correct" if (row_update.get("quiz_result") or "").lower() == "correct" else "Wrong"
+            row.quiz_result = normalized_result
+
+        correct_count = sum(
+            1 for row in quiz_activity_doc.result
+            if (row.quiz_result or "").strip().lower() == "correct"
+        )
+
+        quiz_doc = frappe.get_doc("Quiz", quiz_activity_doc.quiz) if quiz_activity_doc.quiz else None
+        passing_percentage = (getattr(quiz_doc, "passing_score", None) or 75) if quiz_doc else 75
+        percentage = (correct_count / total_questions * 100.0) if total_questions else 0
+        status_value = "Pass" if percentage >= float(passing_percentage) else "Fail"
+        score_value = f"{correct_count}/{total_questions}"
+
+        quiz_activity_doc.score = score_value
+        quiz_activity_doc.status = status_value
+        quiz_activity_doc.flags.ignore_permissions = True
+        quiz_activity_doc.flags.ignore_validate_update_after_submit = True
+        quiz_activity_doc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        assessment_result_name = _get_linked_assessment_result_name(quiz_activity_doc)
+        if assessment_result_name:
+            assessment_result_doc = frappe.get_doc("Assessment Result", assessment_result_name)
+
+            frappe.db.set_value(
+                "Assessment Result",
+                assessment_result_name,
+                "total_score",
+                correct_count,
+                update_modified=False
+            )
+
+            details_rows = list(getattr(assessment_result_doc, "details", []) or [])
+            target_row = None
+            for detail in details_rows:
+                if "Written Assessment" in (detail.assessment_criteria or ""):
+                    target_row = detail
+                    break
+            if not target_row and details_rows:
+                target_row = details_rows[0]
+            if target_row:
+                frappe.db.set_value(
+                    target_row.doctype,
+                    target_row.name,
+                    "score",
+                    correct_count,
+                    update_modified=False
+                )
+
+            frappe.db.commit()
+
+        reason_text = (reason or "").strip() or "No reason provided."
+        comment_text = (
+            f"🛠️ Admin answer correction applied.\n"
+            f"Reason: {reason_text}\n"
+            f"Score: {original_score} → {score_value}\n"
+            f"Status: {original_status} → {status_value}"
+        )
+        quiz_activity_doc.add_comment("Comment", comment_text)
+
+        if assessment_result_name:
+            assessment_result_doc = frappe.get_doc("Assessment Result", assessment_result_name)
+            assessment_result_doc.add_comment(
+                "Comment",
+                f"🛠️ Synced from Quiz Activity {quiz_activity_doc.name} after admin correction.\n"
+                f"Reason: {reason_text}\n"
+                f"Updated total score: {correct_count}"
+            )
+
+        frappe.db.commit()
+        return {
+            "status": "success",
+            "message": "Quiz Activity and Assessment Result updated successfully",
+            "quiz_activity": quiz_activity_doc.name,
+            "assessment_result": assessment_result_name,
+            "score": score_value,
+            "status_value": status_value
+        }
+    except Exception as e:
+        frappe.log_error(
+            f"Failed admin_update_quiz_activity_answers: {str(e)}\nTraceback: {frappe.get_traceback()}",
+            "Quiz Activity Admin Update"
+        )
+        return {
+            "status": "error",
+            "message": str(e)
         }
 
 @frappe.whitelist(allow_guest=True, methods=['GET'])

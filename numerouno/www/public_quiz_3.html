@@ -520,7 +520,7 @@
 
  <script>
   const VERSION = "3.0.6";
-  const QUIZ_DEBUG = true;
+  const QUIZ_DEBUG = false;
   const RTL_LANGS = new Set(["ar", "ur"]);
   const I18N = {
     en: {
@@ -761,6 +761,7 @@
   let studentsData = [];        // [{value,label}]
   let quizAttemptState = null;
   let preselectParams = null;
+  let quizAttemptLoading = false;
 
   function getPreselectParams() {
     const params = new URLSearchParams(window.location.search || "");
@@ -1241,36 +1242,25 @@ async function reloadStudentGroups() {
       `/api/method/numerouno.numerouno.api.quiz_api.get_available_quizzes_from_mcqs` +
       `?student_group=${encodeURIComponent(studentGroup)}&student=${encodeURIComponent(student)}`;
 
-    console.log("=".repeat(80));
-    console.log("LOADING QUIZZES - Frontend Debug");
-    console.log("Student Group:", studentGroup);
-    console.log("Student:", student);
-    console.log("API URL:", url);
-    console.log("=".repeat(80));
+    debugLog("LOADING QUIZZES", { studentGroup, student, url });
     
     fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } })
       .then((r) => r.json())
       .then((data) => {
         showLoading(false);
-        console.log("=".repeat(80));
-        console.log("QUIZ API RESPONSE - Full Data:");
-        console.log(JSON.stringify(data, null, 2));
-        console.log("=".repeat(80));
+        debugLog("QUIZ API RESPONSE", data);
         
         if (data.message?.status === "success") {
           const quizzes = data.message.quizzes || [];
           const debugInfo = data.message.debug_info || {};
           
-          console.log("Quizzes found:", quizzes.length);
-          console.log("Debug Info:", debugInfo);
+          debugLog("Quizzes found", quizzes.length, debugInfo);
           
           if (quizzes.length === 0) {
             const debugMsg = data.message.debug || t("no_quizzes");
             const debugDetails = data.message.debug_details || {};
             
-            console.error("NO QUIZZES FOUND!");
-            console.error("Debug Message:", debugMsg);
-            console.error("Debug Details:", debugDetails);
+            debugLog("NO QUIZZES FOUND", debugMsg, debugDetails);
             
             let errorMsg = `${debugMsg}. `;
             if (debugDetails.quiz_names_from_mcqs && debugDetails.quiz_names_from_mcqs.length > 0) {
@@ -1283,23 +1273,19 @@ async function reloadStudentGroups() {
             
             showError(errorMsg);
           } else {
-            console.log("Quizzes to display:", quizzes);
+            debugLog("Quizzes to display", quizzes);
             displayQuizzes(quizzes);
             showSuccess(t("quizzes_loaded_success"));
           }
         } else {
           const errorMsg = data.message?.message || data.message?.debug || t("failed_load_quizzes");
-          console.error("API Error:", errorMsg);
-          console.error("Full error response:", data.message);
+          debugLog("API Error", errorMsg, data.message);
           showError(errorMsg);
         }
       })
       .catch((err) => {
         showLoading(false);
-        console.error("=".repeat(80));
-        console.error("FETCH ERROR:");
-        console.error(err);
-        console.error("=".repeat(80));
+        console.error("Fetch error while loading quizzes:", err);
         showError(t("error_loading_quizzes"));
       });
   }
@@ -1362,6 +1348,10 @@ async function reloadStudentGroups() {
   }
 
   function loadQuizForAttempt(quizName, quizTitle, student, studentGroup, studentName, studentGroupLabel) {
+    if (quizAttemptLoading) {
+      return;
+    }
+    quizAttemptLoading = true;
     showLoading(true);
     hideMessages();
 
@@ -1374,25 +1364,29 @@ async function reloadStudentGroups() {
       .then((r) => r.json())
       .then((data) => {
         showLoading(false);
-        console.log("=".repeat(80));
-        console.log("QUIZ QUESTIONS API RESPONSE - Full Data:");
-        console.log(JSON.stringify(data, null, 2));
-        console.log("Questions count:", data.message?.questions?.length || 0);
-        console.log("=".repeat(80));
+        debugLog("QUIZ QUESTIONS API RESPONSE", {
+          status: data.message?.status,
+          questions: data.message?.questions?.length || 0
+        });
         if (data.message?.status === "success") {
           displayQuizForAttempt(data.message, quizName, student, studentGroup, studentName, studentGroupLabel);
         } else {
           showError(data.message?.message || t("failed_to_load_quiz"));
         }
+        quizAttemptLoading = false;
       })
       .catch((err) => {
         showLoading(false);
         showError(t("error_loading_quiz"));
         console.error(err);
+        quizAttemptLoading = false;
       });
   }
 
   function displayQuizForAttempt(quizData, quizName, student, studentGroup, studentName, studentGroupLabel) {
+    // Prevent duplicate stacked quiz containers.
+    document.querySelectorAll("#quizAttemptContainer").forEach((node) => node.remove());
+
     // Hide the form and show quiz
     document.getElementById("quizForm").style.display = "none";
     document.getElementById("quizList").style.display = "none";
@@ -1786,13 +1780,12 @@ async function reloadStudentGroups() {
     setSubmitLoading(true);
 
     // Submit quiz - Use POST to avoid URL length limits
-    console.log("=".repeat(80));
-    console.log("SUBMITTING QUIZ");
-    console.log("Quiz:", quizName);
-    console.log("Student:", student);
-    console.log("Student Group:", studentGroup);
-    console.log("Answers:", submissionAnswers);
-    console.log("=".repeat(80));
+    debugLog("SUBMITTING QUIZ", {
+      quizName,
+      student,
+      studentGroup,
+      answerCount: submissionAnswers.length
+    });
     
     // Build payload (POST to avoid 414 URI too long)
     const params = new URLSearchParams();
@@ -1803,7 +1796,7 @@ async function reloadStudentGroups() {
     
     const url = "/api/method/numerouno.numerouno.api.quiz_api.submit_quiz_from_mcqs";
     
-    console.log("Submitting quiz via POST:", url);
+    debugLog("Submitting quiz via POST", url);
     
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     const headers = {
@@ -1827,7 +1820,7 @@ async function reloadStudentGroups() {
       })
       .then((data) => {
         showLoading(false);
-        console.log("Submission response:", data);
+        debugLog("Submission response", data);
         if (data.message?.status === "success") {
           const result = data.message;
           showSuccess(
@@ -1860,13 +1853,11 @@ async function reloadStudentGroups() {
   }
 
   function goBackToQuizList() {
-    // Remove quiz container
-    const quizContainer = document.getElementById("quizAttemptContainer");
-    if (quizContainer) {
-      quizContainer.remove();
-    }
+    // Remove any duplicate quiz containers
+    document.querySelectorAll("#quizAttemptContainer").forEach((node) => node.remove());
 
     quizAttemptState = null;
+    quizAttemptLoading = false;
 
     const mainContainer = document.getElementById("mainQuizContainer");
     if (mainContainer) {
