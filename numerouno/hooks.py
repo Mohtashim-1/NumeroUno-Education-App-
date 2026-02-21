@@ -138,13 +138,13 @@ jinja = {
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
+permission_query_conditions = {
+    "Overtime Request": "numerouno.numerouno.doctype.overtime_request.overtime_request.get_permission_query_conditions"
+}
+
+has_permission = {
+    "Overtime Request": "numerouno.numerouno.doctype.overtime_request.overtime_request.has_permission"
+}
 
 # DocType Class
 # ---------------

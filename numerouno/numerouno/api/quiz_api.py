@@ -2486,17 +2486,29 @@ def admin_update_quiz_activity_answers(quiz_activity_name, updates, reason=None)
         original_status = quiz_activity_doc.status or "Fail"
         total_questions = len(quiz_activity_doc.result)
 
+        pending_row_updates = []
         for row in quiz_activity_doc.result:
             row_update = updates_map.get(str(row.name))
             if not row_update:
+                # Keep existing value for score calculation.
+                row.quiz_result = "Correct" if (row.quiz_result or "").strip().lower() == "correct" else "Wrong"
                 continue
 
             selected_option = (row_update.get("selected_option") or "").strip()
-            if selected_option != (row.selected_option or ""):
-                row.selected_option = selected_option
-
             normalized_result = "Correct" if (row_update.get("quiz_result") or "").lower() == "correct" else "Wrong"
+            current_selected = (row.selected_option or "").strip()
+            current_result = "Correct" if (row.quiz_result or "").strip().lower() == "correct" else "Wrong"
+
+            row.selected_option = selected_option
             row.quiz_result = normalized_result
+
+            if selected_option != current_selected or normalized_result != current_result:
+                pending_row_updates.append({
+                    "doctype": getattr(row, "doctype", "Quiz Result"),
+                    "name": row.name,
+                    "selected_option": selected_option,
+                    "quiz_result": normalized_result
+                })
 
         correct_count = sum(
             1 for row in quiz_activity_doc.result
@@ -2509,11 +2521,26 @@ def admin_update_quiz_activity_answers(quiz_activity_name, updates, reason=None)
         status_value = "Pass" if percentage >= float(passing_percentage) else "Fail"
         score_value = f"{correct_count}/{total_questions}"
 
-        quiz_activity_doc.score = score_value
-        quiz_activity_doc.status = status_value
-        quiz_activity_doc.flags.ignore_permissions = True
-        quiz_activity_doc.flags.ignore_validate_update_after_submit = True
-        quiz_activity_doc.save(ignore_permissions=True)
+        for row_payload in pending_row_updates:
+            frappe.db.set_value(
+                row_payload["doctype"],
+                row_payload["name"],
+                {
+                    "selected_option": row_payload["selected_option"],
+                    "quiz_result": row_payload["quiz_result"]
+                },
+                update_modified=False
+            )
+
+        frappe.db.set_value(
+            "Quiz Activity",
+            quiz_activity_doc.name,
+            {
+                "score": score_value,
+                "status": status_value
+            },
+            update_modified=False
+        )
         frappe.db.commit()
 
         assessment_result_name = _get_linked_assessment_result_name(quiz_activity_doc)
