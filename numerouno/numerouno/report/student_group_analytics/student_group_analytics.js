@@ -10,22 +10,10 @@ frappe.query_reports["Student Group Analytics"] = {
 			options: "Student Group",
 		},
 		{
-			fieldname: "course",
-			label: __("Course"),
-			fieldtype: "Link",
-			options: "Course",
-		},
-		{
 			fieldname: "customer",
 			label: __("Customer"),
 			fieldtype: "Link",
 			options: "Customer",
-		},
-		{
-			fieldname: "instructor",
-			label: __("Instructor"),
-			fieldtype: "Link",
-			options: "Instructor",
 		},
 		{
 			fieldname: "from_date",

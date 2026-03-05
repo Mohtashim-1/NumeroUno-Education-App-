@@ -15,91 +15,95 @@ def execute(filters=None):
 def get_columns():
 	return [
 		{
-			"label": _("Student Group"),
-			"fieldname": "student_group",
+			"fieldname": "attendance",
+			"label": _("Attendence Ref No"),
 			"fieldtype": "Link",
 			"options": "Student Group",
-			"width": 170,
+			"width": 150,
 		},
 		{
-			"label": _("Course"),
-			"fieldname": "course",
-			"fieldtype": "Link",
-			"options": "Course",
-			"width": 220,
-		},
-		{
-			"label": _("Course Creation Date"),
-			"fieldname": "course_creation_date",
-			"fieldtype": "Date",
-			"width": 140,
-		},
-		{
-			"label": _("Name of Instructor"),
-			"fieldname": "instructor_name",
-			"fieldtype": "Data",
-			"width": 220,
-		},
-		{
-			"label": _("From Date"),
-			"fieldname": "from_date",
-			"fieldtype": "Date",
-			"width": 120,
-		},
-		{
-			"label": _("To Date"),
-			"fieldname": "to_date",
-			"fieldtype": "Date",
-			"width": 120,
-		},
-		{
-			"label": _("Customer"),
 			"fieldname": "customer",
+			"label": _("Customer Name"),
 			"fieldtype": "Link",
 			"options": "Customer",
+			"width": 200,
+		},
+		{
+			"fieldname": "sales_person",
+			"label": _("Sales Person"),
+			"fieldtype": "Link",
+			"options": "Sales Person",
+			"width": 150,
+		},
+		{
+			"fieldname": "course_name",
+			"label": _("Course Name"),
+			"fieldtype": "Link",
+			"options": "Course",
+			"width": 150,
+		},
+		{
+			"fieldname": "course_creation_date",
+			"label": _("Course Creation Date"),
+			"fieldtype": "Date",
+			"width": 150,
+		},
+		{
+			"fieldname": "instructor_name",
+			"label": _("Name of Instructor"),
+			"fieldtype": "Data",
 			"width": 180,
 		},
 		{
-			"label": _("Students"),
-			"fieldname": "student_count",
-			"fieldtype": "Int",
-			"width": 90,
+			"fieldname": "student_name",
+			"label": _("Student Name"),
+			"fieldtype": "Link",
+			"options": "Student",
+			"width": 150,
 		},
 		{
-			"label": _("Status"),
-			"fieldname": "status",
+			"fieldname": "from_date",
+			"label": _("Course Date"),
+			"fieldtype": "Date",
+			"width": 150,
+		},
+		{
+			"fieldname": "invoice_status",
+			"label": _("Invoice Status"),
 			"fieldtype": "Data",
-			"width": 120,
+			"width": 150,
+		},
+		{
+			"fieldname": "invoice_no",
+			"label": _("Invoice No"),
+			"fieldtype": "Link",
+			"options": "Sales Invoice",
+			"width": 150,
+		},
+		{
+			"fieldname": "customer_lpo",
+			"label": _("Customer LPO"),
+			"fieldtype": "Data",
+			"width": 150,
 		},
 	]
 
 
 def get_data(filters):
-	conditions = ["sg.disabled = 0"]
+	conditions = ["sgs.student_group != ''"]
 	values = {}
 
 	if filters.get("student_group"):
-		conditions.append("sg.name = %(student_group)s")
+		conditions.append("sgs.student_group = %(student_group)s")
 		values["student_group"] = filters.get("student_group")
 
-	if filters.get("course"):
-		conditions.append("sg.course = %(course)s")
-		values["course"] = filters.get("course")
-
 	if filters.get("customer"):
-		conditions.append("sg.custom_customer = %(customer)s")
+		conditions.append("sgs.customer_name = %(customer)s")
 		values["customer"] = filters.get("customer")
 
-	if filters.get("instructor"):
-		conditions.append("sgi.instructor = %(instructor)s")
-		values["instructor"] = filters.get("instructor")
-
-	if filters.get("from_date"):
-		conditions.append("DATE(sg.creation) >= %(from_date)s")
+	if filters.get("from_date") and filters.get("to_date"):
+		conditions.append("sgs.start_date BETWEEN %(from_date)s AND %(to_date)s")
 		values["from_date"] = filters.get("from_date")
-
-	if filters.get("to_date"):
-		conditions.append("DATE(sg.creation) <= %(to_date)s")
 		values["to_date"] = filters.get("to_date")
 
 	where_clause = " AND ".join(conditions)
@@ -107,32 +111,27 @@ def get_data(filters):
 	return frappe.db.sql(
 		f"""
 		SELECT
-			sg.name AS student_group,
-			sg.course AS course,
+			sgs.student_group AS attendance,
+			sgs.customer_name AS customer,
+			sgs.sales_person AS sales_person,
+			sgs.course_name AS course_name,
 			DATE(sg.creation) AS course_creation_date,
 			GROUP_CONCAT(DISTINCT sgi.instructor_name ORDER BY sgi.idx SEPARATOR ', ') AS instructor_name,
-			sg.from_date AS from_date,
-			sg.to_date AS to_date,
-			sg.custom_customer AS customer,
-			COUNT(DISTINCT sgs.name) AS student_count,
-			CASE
-				WHEN sg.disabled = 1 THEN 'Disabled'
-				WHEN sg.to_date IS NOT NULL AND sg.to_date < CURDATE() THEN 'Completed'
-				WHEN sg.from_date IS NOT NULL AND sg.from_date > CURDATE() THEN 'Upcoming'
-				ELSE 'Ongoing'
-			END AS status
-		FROM `tabStudent Group` AS sg
-		LEFT JOIN `tabStudent Group Student` AS sgs
-			ON sgs.parent = sg.name
-			AND sgs.parenttype = 'Student Group'
-			AND sgs.parentfield = 'students'
+			sgs.student_name AS student_name,
+			sgs.start_date AS from_date,
+			sgs.sales_invoice AS invoice_no,
+			sgs.customer_purchase_order AS customer_lpo,
+			CASE WHEN sgs.paid = 1 THEN 'Invoiced' ELSE 'Pending' END AS invoice_status
+		FROM `tabStudent Group Student` AS sgs
+		LEFT JOIN `tabStudent Group` AS sg
+			ON sg.name = sgs.student_group
 		LEFT JOIN `tabStudent Group Instructor` AS sgi
-			ON sgi.parent = sg.name
+			ON sgi.parent = sgs.student_group
 			AND sgi.parenttype = 'Student Group'
 			AND sgi.parentfield = 'instructors'
 		WHERE {where_clause}
-		GROUP BY sg.name
-		ORDER BY sg.creation DESC
+		GROUP BY sgs.name
+		ORDER BY sgs.start_date DESC, sgs.student_group DESC
 		""",
 		values,
 		as_dict=True,
