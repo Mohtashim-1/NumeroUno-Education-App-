@@ -521,6 +521,7 @@
  <script>
   const VERSION = "3.0.6";
   const QUIZ_DEBUG = false;
+  const COURSE_EVALUATION_URL = "https://erpnext.nutc.cloud/course-evaluation/new";
   const RTL_LANGS = new Set(["ar", "ur"]);
   const I18N = {
     en: {
@@ -967,7 +968,11 @@
 
     return (data.message.student_groups || []).map(g => ({
       value: g.name,
-      label: `${g.student_group_name} (${g.course})`
+      label: `${g.student_group_name} (${g.course})`,
+      student_group_name: g.student_group_name || g.name,
+      course_name: g.course || "",
+      from_date: g.from_date || "",
+      to_date: g.to_date || ""
     }));
   }
 
@@ -994,6 +999,56 @@
     const data = await res.json();
     if (data.message?.status !== "success") return [];
     return data.message.history || [];
+  }
+
+  async function fetchCourseEvaluationPrefill(studentGroup, student) {
+    const params = new URLSearchParams();
+    params.append("student_group", studentGroup);
+    params.append("student", student);
+    const url =
+      `/api/method/numerouno.numerouno.api.quiz_api.get_course_evaluation_prefill?${params.toString()}`;
+    const res = await fetch(url, { method: "GET" });
+    const data = await res.json();
+    if (data.message?.status !== "success") return {};
+    return data.message.data || {};
+  }
+
+  function buildCourseEvaluationUrl(prefill) {
+    const params = new URLSearchParams();
+    [
+      "course_name",
+      "company",
+      "instructor_name",
+      "dates",
+      "trainee_name",
+      "email_id",
+      "trainee_mobile",
+      "student_group"
+    ].forEach((field) => {
+      const value = prefill[field];
+      if (value) params.append(field, value);
+    });
+    const qs = params.toString();
+    return qs ? `${COURSE_EVALUATION_URL}?${qs}` : COURSE_EVALUATION_URL;
+  }
+
+  async function redirectToCourseEvaluation(studentGroup, student) {
+    const selectedGroup = studentGroupsData.find((x) => x.value === studentGroup) || {};
+    const prefill = {
+      course_name: selectedGroup.course_name || "",
+      dates: selectedGroup.from_date || "",
+      trainee_name: student || "",
+      student_group: studentGroup || ""
+    };
+
+    try {
+      const apiPrefill = await fetchCourseEvaluationPrefill(studentGroup, student);
+      Object.assign(prefill, apiPrefill || {});
+    } catch (e) {
+      debugLog("Course Evaluation prefill fetch failed", e);
+    }
+
+    window.location.href = buildCourseEvaluationUrl(prefill);
   }
 
   // ====== UI helpers ======
@@ -1836,9 +1891,10 @@ async function reloadStudentGroups() {
             showError(t("assessment_not_created", { activity: activityRef, reason: backendError }));
           }
           showQuizResult(result);
-          
-          // Disable submit button
-          setSubmitLoading(false);
+
+          setTimeout(() => {
+            redirectToCourseEvaluation(studentGroup, student);
+          }, 900);
         } else {
           showError(data.message?.message || t("failed_submit_quiz"));
           setSubmitLoading(false);

@@ -140,6 +140,67 @@ def get_students_by_group(student_group):
             "message": "Failed to load students"
         }
 
+
+@frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
+def get_course_evaluation_prefill(student_group=None, student=None):
+    """Return prefill payload for Course Evaluation web form."""
+    try:
+        if not student_group:
+            return {
+                "status": "error",
+                "message": "Student group is required"
+            }
+
+        sg = frappe.get_doc("Student Group", student_group)
+
+        instructor_name = ""
+        if getattr(sg, "instructors", None):
+            first_instructor = sg.instructors[0]
+            instructor_name = (
+                getattr(first_instructor, "instructor", None)
+                or getattr(first_instructor, "instructor_name", None)
+                or ""
+            )
+
+        dates = sg.from_date or today()
+
+        company = ""
+        possible_company = getattr(sg, "custom_customer", None) or getattr(sg, "company", None)
+        if possible_company and frappe.db.exists("Company", possible_company):
+            company = possible_company
+
+        email_id = ""
+        trainee_mobile = ""
+        if student and frappe.db.exists("Student", student):
+            student_row = frappe.db.get_value(
+                "Student",
+                student,
+                ["student_email_id", "custom_phone"],
+                as_dict=True,
+            ) or {}
+            email_id = student_row.get("student_email_id") or ""
+            trainee_mobile = student_row.get("custom_phone") or ""
+
+        return {
+            "status": "success",
+            "data": {
+                "course_name": sg.course or "",
+                "company": company,
+                "instructor_name": instructor_name,
+                "dates": str(dates),
+                "trainee_name": student or "",
+                "email_id": email_id,
+                "trainee_mobile": trainee_mobile,
+                "student_group": sg.name,
+            },
+        }
+    except Exception as e:
+        frappe.log_error(f"Error building course evaluation prefill: {str(e)}", "Quiz API")
+        return {
+            "status": "error",
+            "message": "Failed to build prefill values",
+        }
+
 @frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
 def get_available_quizzes(student_group, student):
     """Get available quizzes for a student in a specific group"""
