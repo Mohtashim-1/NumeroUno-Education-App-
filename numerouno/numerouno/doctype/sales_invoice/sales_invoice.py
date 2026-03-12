@@ -9,13 +9,16 @@ def fetch_students_group(customer):
         student_groups = frappe.get_all(
             "Student Group",
             filters={"custom_customer": customer},
-            fields=["name", "title", "course", "from_date", "to_date"]
+            fields=["name"]
         )
         
         return [sg.name for sg in student_groups]
         
-    except Exception as e:
-        frappe.log_error(f"Error fetching student groups for customer {customer}: {str(e)}")
+    except Exception:
+        frappe.log_error(
+            title="fetch_students_group failed",
+            message=f"customer: {customer}\n{frappe.get_traceback()}",
+        )
         return []
 
 @frappe.whitelist()
@@ -124,7 +127,7 @@ def fetch_students_from_sg(customer, student_group, exclude_invoiced=True):
         frappe.logger().info(f"Returning {len(students_data)} students (after excluding invoiced)")
         return students_data
         
-    except Exception as e:
+    except Exception:
         frappe.logger().error(f"Error fetching students from student groups: {str(e)}")
         frappe.throw(f"Error fetching students: {str(e)}")
         return [] 
