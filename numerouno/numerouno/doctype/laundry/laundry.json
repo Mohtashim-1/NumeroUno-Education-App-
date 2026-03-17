@@ -1,0 +1,116 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:LAU-{#####}",
+ "creation": "2026-03-17 17:28:25.611435",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "transaction_section",
+  "employee_name",
+  "type",
+  "column_break_nrtf",
+  "transaction_date",
+  "transaction_time",
+  "items_section",
+  "coverall",
+  "towel",
+  "gloves",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "transaction_section",
+   "fieldtype": "Section Break",
+   "label": "Laundry Transaction"
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "OUT\nIN",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_nrtf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "transaction_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Transaction Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "transaction_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Transaction Time"
+  },
+  {
+   "fieldname": "items_section",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "default": "0",
+   "fieldname": "coverall",
+   "fieldtype": "Int",
+   "label": "Coverall"
+  },
+  {
+   "default": "0",
+   "fieldname": "towel",
+   "fieldtype": "Int",
+   "label": "Towel"
+  },
+  {
+   "default": "0",
+   "fieldname": "gloves",
+   "fieldtype": "Int",
+   "label": "Gloves"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-17 17:28:25.611435",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Laundry",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
