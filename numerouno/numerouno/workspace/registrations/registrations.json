@@ -1,0 +1,33 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"q4hWCczjqD\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"Registrations Quick Links\",\"col\":12}}]",
+ "creation": "2026-03-17 16:28:03.662453",
+ "custom_blocks": [
+  {
+   "custom_block_name": "Registrations Quick Links",
+   "label": "Registrations Quick Links"
+  }
+ ],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Registrations",
+ "links": [],
+ "modified": "2026-03-17 16:38:24.986704",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Registrations",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 33.0,
+ "shortcuts": [],
+ "title": "Registrations"
+}

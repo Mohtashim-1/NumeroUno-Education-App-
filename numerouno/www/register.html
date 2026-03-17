@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
+  <title>OPITO Learner Registration</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:wght@600;700&display=swap");
+
+    :root {
+      --paper: #f7f2e8;
+      --panel: rgba(255, 255, 255, 0.92);
+      --ink: #1a2634;
+      --muted: #617182;
+      --line: #d9e2ec;
+      --accent: #0f766e;
+      --accent-strong: #0b5d57;
+      --warm: #d97706;
+      --soft: #eef6f8;
+      --danger: #b42318;
+      --shadow: 0 22px 50px rgba(16, 24, 40, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at 0% 0%, rgba(217, 119, 6, 0.14), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(15, 118, 110, 0.14), transparent 55%),
+        linear-gradient(180deg, #f8f3eb 0%, #edf5f7 100%);
+      padding: 36px 16px;
+    }
+
+    .shell {
+      max-width: 1160px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #152434 0%, #23425b 100%);
+      color: #fff;
+      padding: 32px;
+      border-radius: 26px 26px 0 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(280px 200px at 15% 20%, rgba(217, 119, 6, 0.28), transparent 60%),
+        radial-gradient(320px 220px at 88% 12%, rgba(91, 192, 190, 0.25), transparent 60%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-family: "Fraunces", serif;
+      font-size: clamp(34px, 5vw, 50px);
+      line-height: 1.04;
+      margin: 0 0 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      color: rgba(255, 255, 255, 0.82);
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(217, 226, 236, 0.9);
+      box-shadow: var(--shadow);
+      border-radius: 0 0 26px 26px;
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+
+    .panel-inner {
+      padding: 30px;
+    }
+
+    .intro-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .intro-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px 20px;
+    }
+
+    .intro-card h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    .intro-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .form-section {
+      margin-bottom: 18px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .section-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 21px;
+    }
+
+    .section-body {
+      padding: 20px 22px 22px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .req {
+      color: var(--danger);
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="email"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 13px 14px;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(15, 118, 110, 0.6);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+      transform: translateY(-1px);
+    }
+
+    input[readonly],
+    textarea[readonly] {
+      background: #f8fafc;
+      color: #526172;
+    }
+
+    textarea {
+      min-height: 132px;
+      resize: vertical;
+    }
+
+    .help-block {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .html-block {
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .signature-box {
+      border: 1.5px dashed #9ab2c5;
+      border-radius: 18px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .signature-canvas {
+      width: 100%;
+      height: 220px;
+      display: block;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .signature-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+      background: #f8fbfd;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .signature-actions button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: #fff;
+    }
+
+    .check-row input {
+      margin-top: 4px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .declaration-matrix {
+      display: grid;
+      gap: 12px;
+    }
+
+    .declaration-row {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) 90px 90px minmax(220px, 1fr);
+      gap: 12px;
+      align-items: start;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    .declaration-row.highlighted {
+      border-color: #d97706;
+      background: linear-gradient(180deg, #fffaf0 0%, #ffffff 100%);
+    }
+
+    .declaration-prompt {
+      font-size: 14px;
+      line-height: 1.7;
+      font-weight: 600;
+    }
+
+    .declaration-choice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 52px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8fbfd;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .declaration-choice input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .declaration-note {
+      margin-top: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid #f1c27d;
+      background: #fff6e5;
+      color: #8a4b08;
+      font-size: 13px;
+      line-height: 1.7;
+      font-weight: 700;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-top: 26px;
+    }
+
+    .message {
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .message.error {
+      display: block;
+      background: #feeceb;
+      color: var(--danger);
+      border: 1px solid #f3c5c1;
+    }
+
+    .message.success {
+      display: block;
+      background: #e9f8ef;
+      color: #17663a;
+      border: 1px solid #b7e4c7;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 16px;
+      padding: 14px 24px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #eef3f7;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+      color: #fff;
+      box-shadow: 0 16px 30px rgba(15, 118, 110, 0.24);
+    }
+
+    .btn-primary[disabled] {
+      opacity: 0.72;
+      cursor: wait;
+      transform: none;
+    }
+
+    .footnote {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .success-shell {
+      display: none;
+      margin-top: 12px;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fcf9 100%);
+      border: 1px solid #c6e7d2;
+      border-radius: 22px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .success-shell.active {
+      display: block;
+    }
+
+    .success-shell h2 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .success-shell p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .success-ref {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      background: #eff9f2;
+      border: 1px solid #c8e8d0;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    .is-hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 900px) {
+      .intro-grid,
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .declaration-row {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-inner,
+      .hero {
+        padding: 22px;
+      }
+
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hero">
+      <div class="eyebrow">Public Registration</div>
+      <h1>OPITO Learner Registration</h1>
+      <p>Candidates can complete this form directly online. Submitted data is saved into the Registration DocType for admin review in ERPNext.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-inner">
+        <div class="intro-grid">
+          <div class="intro-card">
+            <h3>Before you start</h3>
+            <p>Complete all required fields, use accurate course and learner details, and sign both signature sections before submitting. Admin review fields stay managed in ERPNext after submission.</p>
+          </div>
+          <div class="intro-card">
+            <h3>Submission flow</h3>
+            <p>Your registration is saved immediately after successful submission and assigned a registration number for follow-up.</p>
+          </div>
+        </div>
+
+        <div id="success-shell" class="success-shell">
+          <h2>Registration Submitted</h2>
+          <p>Your registration has been saved successfully. Please keep the reference number below for follow-up with the training center.</p>
+          <div class="success-ref">Reference No: <span id="success-reference"></span></div>
+          <div>
+            <button class="btn btn-primary" type="button" id="submit-another">Submit Another Registration</button>
+          </div>
+        </div>
+
+        <div id="form-message" class="message"></div>
+        <form id="registration-form"></form>
+        <script id="form-schema-data" type="application/json">{{ form_schema | safe }}</script>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let formSchema = [];
+    try {
+      const rawSchema = document.getElementById("form-schema-data")?.textContent || "[]";
+      formSchema = JSON.parse(rawSchema);
+    } catch (error) {}
+
+    const form = document.getElementById("registration-form");
+    const messageBox = document.getElementById("form-message");
+    const successShell = document.getElementById("success-shell");
+    const successReference = document.getElementById("success-reference");
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+    const signaturePads = {};
+    const courseMap = {};
+    let currentDeclarationTemplate = null;
+    const nameAutofillState = {
+      lastSourceValue: "",
+      lastSurnameValue: "",
+      lastOtherNamesValue: "",
+      surnameTouched: false,
+      otherNamesTouched: false,
+    };
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function buildField(field) {
+      const requiredMark = field.reqd ? '<span class="req">*</span>' : "";
+      const fullWidth = ["HTML", "Small Text", "Signature", "Check"].includes(field.fieldtype) ? " full" : "";
+
+      if (field.fieldtype === "HTML") {
+        return `
+          <div class="field full" data-fieldname="${escapeHtml(field.fieldname)}">
+            ${field.label ? `<label>${escapeHtml(field.label)}</label>` : ""}
+            <div class="html-block">${field.options || ""}</div>
+          </div>
+        `;
+      }
+
+      if (field.fieldtype === "Signature") {
+        return `
+          <div class="field full" data-fieldname="${escapeHtml(field.fieldname)}">
+            <label>${escapeHtml(field.label)} ${requiredMark}</label>
+            <div class="signature-box">
+              <canvas class="signature-canvas" id="canvas-${escapeHtml(field.fieldname)}"></canvas>
+              <div class="signature-actions">
+                <span>Use mouse, stylus, or touch to sign.</span>
+                <button type="button" data-clear-signature="${escapeHtml(field.fieldname)}">Clear</button>
+              </div>
+            </div>
+            <input type="hidden" name="${escapeHtml(field.fieldname)}" ${field.reqd ? "required" : ""}>
+          </div>
+        `;
+      }
+
+      if (field.fieldtype === "Check") {
+        return `
+          <div class="field full" data-fieldname="${escapeHtml(field.fieldname)}">
+            <div class="check-row">
+              <input type="checkbox" id="${escapeHtml(field.fieldname)}" name="${escapeHtml(field.fieldname)}" ${field.default ? "checked" : ""} ${field.reqd ? "required" : ""}>
+              <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
+            </div>
+          </div>
+        `;
+      }
+
+      if (field.fieldtype === "Select") {
+        const options = String(field.options || "")
+          .split("\n")
+          .map((option) => option.trim())
+          .filter((option) => option.length)
+          .map((option) => `<option value="${escapeHtml(option)}" ${option === field.default ? "selected" : ""}>${escapeHtml(option)}</option>`)
+          .join("");
+        return `
+          <div class="field${fullWidth}" data-fieldname="${escapeHtml(field.fieldname)}">
+            <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
+            <select id="${escapeHtml(field.fieldname)}" name="${escapeHtml(field.fieldname)}" ${field.reqd ? "required" : ""} ${field.read_only ? "disabled" : ""}>
+              <option value="">Select...</option>
+              ${options}
+            </select>
+          </div>
+        `;
+      }
+
+      if (field.fieldtype === "Link" && field.fieldname === "course_name") {
+        return `
+          <div class="field${fullWidth}" data-fieldname="${escapeHtml(field.fieldname)}" data-depends-on="${escapeHtml(field.depends_on || "")}">
+            <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
+            <select id="${escapeHtml(field.fieldname)}" name="${escapeHtml(field.fieldname)}" ${field.reqd ? "required" : ""}>
+              <option value="">Select OPITO Course...</option>
+            </select>
+          </div>
+        `;
+      }
+
+      if (field.fieldtype === "Small Text") {
+        return `
+          <div class="field full" data-fieldname="${escapeHtml(field.fieldname)}">
+            <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
+            <textarea id="${escapeHtml(field.fieldname)}" name="${escapeHtml(field.fieldname)}" ${field.reqd ? "required" : ""} ${field.read_only ? "readonly" : ""}>${escapeHtml(field.default || "")}</textarea>
+          </div>
+        `;
+      }
+
+      const inputTypeMap = {
+        "Date": "date",
+        "Int": "number",
+        "Data": field.options === "Email" ? "email" : "text"
+      };
+      const inputType = inputTypeMap[field.fieldtype] || "text";
+      const step = field.fieldtype === "Int" ? 'step="1"' : "";
+
+      return `
+        <div class="field${fullWidth}" data-fieldname="${escapeHtml(field.fieldname)}" data-depends-on="${escapeHtml(field.depends_on || "")}">
+          <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
+          <input
+            type="${inputType}"
+            id="${escapeHtml(field.fieldname)}"
+            name="${escapeHtml(field.fieldname)}"
+            value="${escapeHtml(field.default || "")}"
+            ${field.reqd ? "required" : ""}
+            ${field.read_only ? "readonly" : ""}
+            ${step}
+          >
+        </div>
+      `;
+    }
+
+    function renderForm() {
+      form.innerHTML = `
+        ${formSchema.map((section) => `
+          <section class="form-section">
+            <div class="section-head">
+              <h2>${escapeHtml(section.label || "Section")}</h2>
+            </div>
+            <div class="section-body">
+              <div class="field-grid">
+                ${section.items.map((field) => buildField(field)).join("")}
+              </div>
+            </div>
+          </section>
+        `).join("")}
+        <section class="form-section is-hidden" id="course-declaration-section">
+          <div class="section-head">
+            <h2>Course Declaration</h2>
+          </div>
+          <div class="section-body">
+            <div class="help-block" id="course-declaration-notes"></div>
+            <div id="course-declaration-list"></div>
+            <div class="declaration-note is-hidden" id="course-declaration-highlight-note"></div>
+          </div>
+        </section>
+        <div class="actions">
+          <div class="footnote">Fields marked with * are required.</div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button class="btn btn-secondary" type="reset" id="reset-form">Reset</button>
+            <button class="btn btn-primary" type="submit" id="submit-button">Submit Registration</button>
+          </div>
+        </div>
+      `;
+
+      initSignaturePads();
+      bindConditionalFields();
+      bindUppercaseFields();
+      bindNameAutofill();
+      loadOpitoCourses();
+      bindReset();
+    }
+
+    function evaluateDependsOn(expression) {
+      if (!expression) return true;
+      const match = expression.match(/^eval:doc\.([a-zA-Z0-9_]+)==['"](.+)['"]$/);
+      if (!match) return true;
+      const [, sourceField, expectedValue] = match;
+      const source = form.querySelector(`[name="${sourceField}"]`);
+      if (!source) return true;
+      const currentValue = source.type === "checkbox" ? (source.checked ? "1" : "0") : source.value;
+      return currentValue === expectedValue;
+    }
+
+    function updateConditionalVisibility() {
+      form.querySelectorAll("[data-depends-on]").forEach((wrapper) => {
+        const expression = wrapper.getAttribute("data-depends-on");
+        if (!expression) return;
+        const visible = evaluateDependsOn(expression);
+        wrapper.style.display = visible ? "" : "none";
+        wrapper.querySelectorAll("input, select, textarea").forEach((input) => {
+          if (!visible) {
+            if (input.type === "checkbox") {
+              input.checked = false;
+            } else {
+              input.value = "";
+            }
+          }
+        });
+      });
+    }
+
+    function bindConditionalFields() {
+      form.addEventListener("change", (event) => {
+        const fieldname = event.target?.name;
+        if (["aware_of_opito_learner_number", "has_vantage_number"].includes(fieldname)) {
+          updateConditionalVisibility();
+        }
+      });
+      updateConditionalVisibility();
+    }
+
+    async function loadOpitoCourses() {
+      const select = form.querySelector('[name="course_name"]');
+      if (!select) return;
+
+      try {
+        const response = await fetch("/api/method/numerouno.numerouno.api.registration.get_opito_courses");
+        const result = await response.json();
+        const payload = result.message || {};
+        const courses = payload.courses || [];
+        courses.forEach((course) => {
+          courseMap[course.value] = course;
+        });
+        select.innerHTML = '<option value="">Select OPITO Course...</option>' + courses
+          .map((course) => `<option value="${escapeHtml(course.value)}">${escapeHtml(course.label)}</option>`)
+          .join("");
+        select.addEventListener("change", handleCourseSelection);
+        if (!select.value) {
+          clearCourseDerivedFields();
+          renderCourseDeclarations(null);
+        } else {
+          await loadCourseContext(select.value);
+        }
+      } catch (error) {
+        select.innerHTML = '<option value="">Unable to load courses</option>';
+      }
+    }
+
+    function setFieldValue(fieldname, value) {
+      const input = form.querySelector(`[name="${fieldname}"]`);
+      if (!input) return;
+      input.value = value || "";
+    }
+
+    function toBlockLetters(value) {
+      return String(value || "").replace(/\s+/g, " ").trim().toUpperCase();
+    }
+
+    function slugifyToken(value) {
+      return String(value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "item";
+    }
+
+    function splitNameParts(value) {
+      const normalized = toBlockLetters(value);
+      if (!normalized) {
+        return { surname: "", otherNames: "" };
+      }
+
+      const parts = normalized.split(" ");
+      if (parts.length === 1) {
+        return { surname: parts[0], otherNames: parts[0] };
+      }
+
+      return {
+        surname: parts[parts.length - 1],
+        otherNames: parts.slice(0, -1).join(" "),
+      };
+    }
+
+    function bindUppercaseFields() {
+      ["joining_declaration_name", "learner_surname", "other_names"].forEach((fieldname) => {
+        const input = form.querySelector(`[name="${fieldname}"]`);
+        if (!input) return;
+        input.addEventListener("input", () => {
+          input.value = toBlockLetters(input.value);
+        });
+      });
+    }
+
+    function bindNameAutofill() {
+      const source = form.querySelector('[name="joining_declaration_name"]');
+      const surname = form.querySelector('[name="learner_surname"]');
+      const otherNames = form.querySelector('[name="other_names"]');
+      if (!source || !surname || !otherNames) return;
+
+      surname.addEventListener("input", () => {
+        nameAutofillState.surnameTouched = true;
+      });
+      otherNames.addEventListener("input", () => {
+        nameAutofillState.otherNamesTouched = true;
+      });
+
+      source.addEventListener("input", () => {
+        const parts = splitNameParts(source.value);
+        if (!nameAutofillState.surnameTouched || surname.value === nameAutofillState.lastSurnameValue) {
+          surname.value = parts.surname;
+          nameAutofillState.surnameTouched = false;
+        }
+        if (!nameAutofillState.otherNamesTouched || otherNames.value === nameAutofillState.lastOtherNamesValue) {
+          otherNames.value = parts.otherNames;
+          nameAutofillState.otherNamesTouched = false;
+        }
+        nameAutofillState.lastSourceValue = toBlockLetters(source.value);
+        nameAutofillState.lastSurnameValue = parts.surname;
+        nameAutofillState.lastOtherNamesValue = parts.otherNames;
+      });
+    }
+
+    function clearCourseDerivedFields() {
+      ["product_title", "joining_product_title", "joining_instructions_title", "joining_opito_code"].forEach((fieldname) => {
+        setFieldValue(fieldname, "");
+      });
+    }
+
+    async function loadCourseContext(courseName) {
+      const selectedCourse = courseMap[courseName];
+      if (!selectedCourse) {
+        clearCourseDerivedFields();
+        renderCourseDeclarations(null);
+        return;
+      }
+
+      setFieldValue("product_title", selectedCourse.product_title);
+      setFieldValue("joining_product_title", selectedCourse.joining_product_title);
+      setFieldValue("joining_instructions_title", selectedCourse.joining_instructions_title);
+      setFieldValue("joining_opito_code", selectedCourse.joining_opito_code);
+      await loadCourseDeclarations(courseName);
+    }
+
+    async function handleCourseSelection(event) {
+      await loadCourseContext(event.target.value);
+    }
+
+    async function loadCourseDeclarations(courseName) {
+      try {
+        const response = await fetch(`/api/method/numerouno.numerouno.api.registration.get_course_declaration_template?course_name=${encodeURIComponent(courseName)}`);
+        const result = await response.json();
+        const payload = result.message || {};
+        currentDeclarationTemplate = payload.template || null;
+        console.log("[register] course declarations loaded", currentDeclarationTemplate);
+        renderCourseDeclarations(currentDeclarationTemplate);
+      } catch (error) {
+        console.error("[register] course declarations load failed", error);
+        currentDeclarationTemplate = null;
+        renderCourseDeclarations(null);
+      }
+    }
+
+    function renderCourseDeclarations(template) {
+      const section = document.getElementById("course-declaration-section");
+      const notes = document.getElementById("course-declaration-notes");
+      const list = document.getElementById("course-declaration-list");
+      const highlightNote = document.getElementById("course-declaration-highlight-note");
+
+      if (!template || !Array.isArray(template.declarations) || !template.declarations.length) {
+        section.classList.add("is-hidden");
+        notes.innerHTML = "";
+        list.innerHTML = "";
+        highlightNote.textContent = "";
+        highlightNote.classList.add("is-hidden");
+        return;
+      }
+
+      const hasHighlightedRows = template.declarations.some((item) => Number(item.is_highlighted));
+      section.classList.remove("is-hidden");
+      notes.innerHTML = template.declaration_notes ? escapeHtml(template.declaration_notes) : "";
+      list.innerHTML = `
+        <div class="declaration-matrix">
+          ${template.declarations.map((item, index) => `
+            ${(() => {
+              const rowToken = slugifyToken(item.parameter_code || `decl-${index}`);
+              return `
+            <div class="declaration-row ${Number(item.is_highlighted) ? "highlighted" : ""}" data-row-token="${rowToken}">
+              <div class="declaration-prompt">
+                ${escapeHtml(item.declaration_text)}
+                ${item.is_mandatory ? '<span class="req">*</span>' : ""}
+              </div>
+              <label class="declaration-choice" for="course-declaration-yes-${rowToken}">
+                <input
+                  type="radio"
+                  id="course-declaration-yes-${rowToken}"
+                  name="course-declaration-response-${rowToken}"
+                  value="Yes"
+                  data-course-declaration="1"
+                  data-kind="response"
+                  data-response="Yes"
+                  data-parameter-code="${escapeHtml(item.parameter_code || "")}"
+                  ${item.is_mandatory ? "required" : ""}
+                >
+                <span>Yes</span>
+              </label>
+              <label class="declaration-choice" for="course-declaration-no-${rowToken}">
+                <input
+                  type="radio"
+                  id="course-declaration-no-${rowToken}"
+                  name="course-declaration-response-${rowToken}"
+                  value="No"
+                  data-course-declaration="1"
+                  data-kind="response"
+                  data-response="No"
+                  data-parameter-code="${escapeHtml(item.parameter_code || "")}"
+                  ${item.is_mandatory ? "required" : ""}
+                >
+                <span>No</span>
+              </label>
+              <div>
+                <label for="course-declaration-details-${rowToken}">If Yes, What and When</label>
+                <textarea
+                  id="course-declaration-details-${rowToken}"
+                  data-course-declaration="1"
+                  data-kind="details"
+                  data-parameter-code="${escapeHtml(item.parameter_code || "")}"
+                  placeholder="Provide details if you selected Yes"
+                ></textarea>
+              </div>
+            </div>
+              `;
+            })()}
+          `).join("")}
+        </div>
+      `;
+
+      if (hasHighlightedRows && template.highlight_observation_note) {
+        highlightNote.textContent = template.highlight_observation_note;
+        highlightNote.classList.remove("is-hidden");
+      } else {
+        highlightNote.textContent = "";
+        highlightNote.classList.add("is-hidden");
+      }
+
+      list.querySelectorAll('input[data-kind="response"]').forEach((input) => {
+        input.addEventListener("change", () => {
+          const parameterCode = input.getAttribute("data-parameter-code") || "";
+          const details = list.querySelector(`textarea[data-kind="details"][data-parameter-code="${CSS.escape(parameterCode)}"]`);
+          if (!details) return;
+
+          const yesSelected = list.querySelector(`input[data-kind="response"][data-parameter-code="${CSS.escape(parameterCode)}"][value="Yes"]`)?.checked;
+          console.log("[register] declaration changed", {
+            parameterCode,
+            selected: input.value,
+            yesSelected,
+            checkedInputs: Array.from(list.querySelectorAll(`input[data-kind="response"][data-parameter-code="${CSS.escape(parameterCode)}"]`)).map((node) => ({
+              value: node.value,
+              checked: node.checked,
+              name: node.name,
+            })),
+          });
+          details.required = Boolean(yesSelected);
+          if (!yesSelected) {
+            details.value = "";
+          }
+        });
+      });
+    }
+
+    function initSignaturePads() {
+      document.querySelectorAll(".signature-canvas").forEach((canvas) => {
+        const fieldname = canvas.id.replace("canvas-", "");
+        const hiddenInput = form.querySelector(`input[name="${fieldname}"]`);
+        const context = canvas.getContext("2d");
+        const state = { drawing: false, hasStroke: false };
+
+        function resizeCanvas() {
+          const ratio = window.devicePixelRatio || 1;
+          const rect = canvas.getBoundingClientRect();
+          canvas.width = rect.width * ratio;
+          canvas.height = rect.height * ratio;
+          context.setTransform(1, 0, 0, 1, 0, 0);
+          context.scale(ratio, ratio);
+          context.lineWidth = 2;
+          context.lineCap = "round";
+          context.lineJoin = "round";
+          context.strokeStyle = "#14212f";
+        }
+
+        function pointFromEvent(event) {
+          const rect = canvas.getBoundingClientRect();
+          const touch = event.touches ? event.touches[0] : event;
+          return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top,
+          };
+        }
+
+        function start(event) {
+          event.preventDefault();
+          const point = pointFromEvent(event);
+          context.beginPath();
+          context.moveTo(point.x, point.y);
+          state.drawing = true;
+          state.hasStroke = true;
+        }
+
+        function move(event) {
+          if (!state.drawing) return;
+          event.preventDefault();
+          const point = pointFromEvent(event);
+          context.lineTo(point.x, point.y);
+          context.stroke();
+        }
+
+        function stop() {
+          if (!state.drawing) return;
+          state.drawing = false;
+          hiddenInput.value = state.hasStroke ? canvas.toDataURL("image/png") : "";
+        }
+
+        function clearPad() {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          hiddenInput.value = "";
+          state.drawing = false;
+          state.hasStroke = false;
+        }
+
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+        canvas.addEventListener("mousedown", start);
+        canvas.addEventListener("mousemove", move);
+        canvas.addEventListener("mouseup", stop);
+        canvas.addEventListener("mouseleave", stop);
+        canvas.addEventListener("touchstart", start, { passive: false });
+        canvas.addEventListener("touchmove", move, { passive: false });
+        canvas.addEventListener("touchend", stop);
+
+        form.querySelector(`[data-clear-signature="${fieldname}"]`).addEventListener("click", clearPad);
+        signaturePads[fieldname] = { clearPad };
+      });
+    }
+
+    function bindReset() {
+      form.querySelector("#reset-form").addEventListener("click", () => {
+        setTimeout(() => {
+          Object.values(signaturePads).forEach((pad) => pad.clearPad());
+          clearCourseDerivedFields();
+          renderCourseDeclarations(null);
+          nameAutofillState.lastSourceValue = "";
+          nameAutofillState.lastSurnameValue = "";
+          nameAutofillState.lastOtherNamesValue = "";
+          nameAutofillState.surnameTouched = false;
+          nameAutofillState.otherNamesTouched = false;
+          clearMessage();
+        }, 0);
+      });
+    }
+
+    function setMessage(kind, text) {
+      messageBox.className = `message ${kind}`;
+      messageBox.textContent = text;
+    }
+
+    function clearMessage() {
+      messageBox.className = "message";
+      messageBox.textContent = "";
+    }
+
+    function showSuccess(reference) {
+      successReference.textContent = reference;
+      successShell.classList.add("active");
+      form.classList.add("is-hidden");
+      clearMessage();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetToNewSubmission() {
+      form.reset();
+      Object.values(signaturePads).forEach((pad) => pad.clearPad());
+      clearCourseDerivedFields();
+      currentDeclarationTemplate = null;
+      nameAutofillState.lastSourceValue = "";
+      nameAutofillState.lastSurnameValue = "";
+      nameAutofillState.lastOtherNamesValue = "";
+      nameAutofillState.surnameTouched = false;
+      nameAutofillState.otherNamesTouched = false;
+      renderCourseDeclarations(null);
+      successShell.classList.remove("active");
+      form.classList.remove("is-hidden");
+      clearMessage();
+      updateConditionalVisibility();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function collectPayload() {
+      const payload = {};
+      const data = new FormData(form);
+
+      formSchema.forEach((section) => {
+        section.items.forEach((field) => {
+          if (field.fieldtype === "HTML") return;
+          if (field.fieldtype === "Check") {
+            payload[field.fieldname] = form.querySelector(`[name="${field.fieldname}"]`)?.checked ? 1 : 0;
+            return;
+          }
+          payload[field.fieldname] = data.get(field.fieldname) || "";
+        });
+      });
+
+      payload.course_declaration_responses = Array.from(
+        new Set(
+          Array.from(form.querySelectorAll('[data-course-declaration="1"][data-parameter-code]'))
+            .map((input) => input.getAttribute("data-parameter-code") || "")
+            .filter((value) => value)
+        )
+      ).map((parameterCode) => {
+        const selectedResponse = form.querySelector(`input[data-kind="response"][data-parameter-code="${CSS.escape(parameterCode)}"]:checked`);
+        const details = form.querySelector(`textarea[data-kind="details"][data-parameter-code="${CSS.escape(parameterCode)}"]`);
+        return {
+          parameter_code: parameterCode,
+          response: selectedResponse?.value || "",
+          details_if_yes: (details?.value || "").trim(),
+        };
+      });
+
+      console.log("[register] submit payload", payload);
+
+      return payload;
+    }
+
+    async function submitRegistration(event) {
+      event.preventDefault();
+      clearMessage();
+
+      const submitButton = document.getElementById("submit-button");
+      if (!form.reportValidity()) {
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = "Submitting...";
+
+      try {
+        const payload = collectPayload();
+        const response = await fetch("/api/method/numerouno.numerouno.api.registration.submit_registration", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-Frappe-CSRF-Token": csrfToken,
+          },
+          body: new URLSearchParams({
+            payload: JSON.stringify(payload),
+          }),
+        });
+
+        let result = {};
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          console.error("[register] response parse failed", parseError);
+          throw new Error("Unable to read the submission response from the server.");
+        }
+        const message = result.message || {};
+        console.log("[register] submit response", { ok: response.ok, status: response.status, result });
+
+        if (!response.ok || message.status !== "success") {
+          throw new Error(
+            message.message ||
+            result._error_message ||
+            "Unable to submit registration."
+          );
+        }
+
+        showSuccess(message.name);
+      } catch (error) {
+        console.error("[register] submit failed", error);
+        setMessage("error", error.message || "Unable to submit registration right now.");
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit Registration";
+      }
+    }
+
+    renderForm();
+    document.getElementById("submit-another").addEventListener("click", resetToNewSubmission);
+    form.addEventListener("submit", submitRegistration);
+  </script>
+</body>
+</html>

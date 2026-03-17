@@ -1,0 +1,410 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:REG-{#####}",
+ "creation": "2026-03-17 14:15:05.788544",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "product_information_section",
+  "product_title",
+  "course_name",
+  "course_information_section",
+  "course_start_date",
+  "column_break_xvja",
+  "finish_date",
+  "existing_previous_expiry_date",
+  "joining_instructions_section",
+  "joining_product_title",
+  "joining_instructions_title",
+  "joining_opito_code",
+  "joining_registration_details",
+  "joining_course_schedule_details",
+  "joining_entry_requirements",
+  "joining_learning_outcomes",
+  "joining_special_needs",
+  "joining_general_notes",
+  "course_declaration_section",
+  "course_declaration_responses",
+  "joining_declaration_section",
+  "joining_declaration_acknowledged",
+  "joining_declaration_name",
+  "joining_company",
+  "joining_signature",
+  "joining_declaration_date",
+  "learner_information_section",
+  "learner_information_notice",
+  "learner_surname",
+  "other_names",
+  "full_name",
+  "date_of_birth_day",
+  "date_of_birth_month",
+  "date_of_birth_year",
+  "date_of_birth",
+  "previous_opito_training",
+  "aware_of_opito_learner_number",
+  "opito_learner_number",
+  "has_vantage_number",
+  "vantage_number",
+  "previous_opito_training_at_centre",
+  "signature_section",
+  "learner_signature",
+  "signature_date",
+  "certificate_mailing_section",
+  "certificate_mailing_details",
+  "email_address",
+  "privacy_notice_section",
+  "privacy_notice",
+  "admin_review_section",
+  "registration_status",
+  "is_flagged",
+  "review_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "product_information_section",
+   "fieldtype": "Section Break",
+   "label": "Product Information"
+  },
+  {
+   "default": "Authorized Gas Testing (9240)",
+   "fieldname": "product_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Product Title",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Name",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_information_section",
+   "fieldtype": "Section Break",
+   "label": "Course Information"
+  },
+  {
+   "fieldname": "course_start_date",
+   "fieldtype": "Date",
+   "label": "Course Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_xvja",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "finish_date",
+   "fieldtype": "Date",
+   "label": "Finish Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "existing_previous_expiry_date",
+   "fieldtype": "Date",
+   "label": "Existing / Previous Expiry Date"
+  },
+  {
+   "fieldname": "joining_instructions_section",
+   "fieldtype": "Section Break",
+   "label": "Course Joining Instructions"
+  },
+  {
+   "default": "Authorized Gas Testing (9240)",
+   "fieldname": "joining_product_title",
+   "fieldtype": "Data",
+   "label": "Product Title",
+   "read_only": 1
+  },
+  {
+   "default": "Course Joining Instructions - Authorized Gas Testing",
+   "fieldname": "joining_instructions_title",
+   "fieldtype": "Data",
+   "label": "Course Joining Instructions Title",
+   "read_only": 1
+  },
+  {
+   "default": "Authorized Gas Testing OPITO Code (9240)",
+   "fieldname": "joining_opito_code",
+   "fieldtype": "Data",
+   "label": "OPITO Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "joining_registration_details",
+   "fieldtype": "HTML",
+   "label": "Registration Details",
+   "options": "<div style=\"padding: 14px 16px; background: #fcfcfd; border: 1px solid #eaecf0; border-radius: 8px; font-size: 12px; line-height: 1.7; color: #475467;\"><strong>Registration</strong><br>Learners must report at the training center at 08:00 AM local time. Late arrivals must make up for lost time, which, after client notification, will incur extra charges. Learners may need to bring Personal Safety Logbooks for updating, to be returned upon course completion.<br><br><strong>Verification of identity</strong><br>Every learner must prove their identity, mandatory in the United Arab Emirates. This can be done with government-issued photographic identification (for example passport or identity document).</div>"
+  },
+  {
+   "fieldname": "joining_course_schedule_details",
+   "fieldtype": "HTML",
+   "label": "Course Schedule Details",
+   "options": "<div style=\"padding: 14px 16px; background: #fcfcfd; border: 1px solid #eaecf0; border-radius: 8px; font-size: 12px; line-height: 1.7; color: #475467;\"><strong>Total Program Day:</strong> 10 Hours<br><strong>Total contact time per day:</strong> 8 Hours<br><strong>Lunch Break:</strong> 40 minutes<br><strong>Mid-class breaks:</strong> 20 minutes<br><strong>Total Guided Learning Hours:</strong> 14-16 hours<br><strong>Entry Requirements:</strong> No entry requirements<br><strong>Physical &amp; Stressful demands of this course:</strong> Prolonged sitting in the class (more than 1 hour at a stretch)<br><strong>Clothing:</strong> Comfortable clothing, course is completely class room theory training.</div>"
+  },
+  {
+   "fieldname": "joining_learning_outcomes",
+   "fieldtype": "HTML",
+   "label": "Learning Outcomes",
+   "options": "<div style=\"padding: 14px 16px; background: #fcfcfd; border: 1px solid #eaecf0; border-radius: 8px; font-size: 12px; line-height: 1.7; color: #475467;\"><strong>Learning Outcomes</strong><br>The learning outcomes are specified for each of the following units; they are:<br><br><strong>OIS-102 Authorized Gas Tester:</strong><br>Relevant Legislative Controls (1.1-1.11)<br>The principles and use of Atmosphere Measuring and Monitoring Equipment (2.1-2.10)<br>Interpreting and Documenting Results (3.1-3.2)<br><br><strong>OIS-103 Testing for flammable gas in preparation for hot work:</strong><br>Gas Testing for Hot work (1.1-1.14)<br><br><strong>OIS-104 Confined Space Testing:</strong><br>Gas Testing in Confined Spaces (1.1-1.13)<br><br><strong>OIS-105 Gas Monitoring:</strong><br>Providing Safety Watch duties (1.1-1.16)</div>"
+  },
+  {
+   "fieldname": "joining_special_needs",
+   "fieldtype": "HTML",
+   "label": "Special Needs",
+   "options": "<div style=\"padding: 14px 16px; background: #fcfcfd; border: 1px solid #eaecf0; border-radius: 8px; font-size: 12px; line-height: 1.7; color: #475467;\"><strong>Special needs:</strong><br>Course participants with special needs such as language problems, physical or medical disabilities and special attention regarding religion or culture must be stated on the training confirmation email to Training Coordinator.</div>"
+  },
+  {
+   "fieldname": "joining_general_notes",
+   "fieldtype": "HTML",
+   "label": "General Notes",
+   "options": "<div style=\"padding: 14px 16px; background: #fcfcfd; border: 1px solid #eaecf0; border-radius: 8px; font-size: 12px; line-height: 1.7; color: #475467;\"><strong>General:</strong><br>NUTC reserves all rights to stop a learner from participating in a course if his or her prerequisites do not comply with the rules and regulations of the authorities involved. In this case we always consult the employer before taking any further action.<br><br>During their stay at NUTC, course learners have to comply with the house rules.<br><br>NUTC is not responsible for problems of any kind that are due to lack of knowledge of the information provided in this sheet.</div>"
+  },
+  {
+   "fieldname": "course_declaration_section",
+   "fieldtype": "Section Break",
+   "label": "Course Declaration Responses"
+  },
+  {
+   "fieldname": "course_declaration_responses",
+   "fieldtype": "Table",
+   "label": "Course Declaration Responses",
+   "options": "Registration Declaration Response"
+  },
+  {
+   "fieldname": "joining_declaration_section",
+   "fieldtype": "Section Break",
+   "label": "Declaration"
+  },
+  {
+   "fieldname": "joining_declaration_acknowledged",
+   "fieldtype": "Check",
+   "label": "I read and understood the physical and stressful demands of this course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "joining_declaration_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "joining_company",
+   "fieldtype": "Data",
+   "label": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "joining_signature",
+   "fieldtype": "Signature",
+   "label": "Signature",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "joining_declaration_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "learner_information_section",
+   "fieldtype": "Section Break",
+   "label": "Learner Information"
+  },
+  {
+   "fieldname": "learner_information_notice",
+   "fieldtype": "HTML",
+   "label": "Learner Information Notice",
+   "options": "<div style=\"padding: 10px 12px; background: #f8fafc; border: 1px solid #d9e2f2; border-radius: 8px; font-size: 12px; color: #475467;\">THIS SECTION TO BE COMPLETED BY LEARNER (Please use BLOCK letters)</div>"
+  },
+  {
+   "fieldname": "learner_surname",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Learner Surname",
+   "reqd": 1
+  },
+  {
+   "fieldname": "other_names",
+   "fieldtype": "Data",
+   "label": "Other Names",
+   "reqd": 1
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date_of_birth_day",
+   "fieldtype": "Int",
+   "label": "Date of Birth - Day",
+   "reqd": 1
+  },
+  {
+   "fieldname": "date_of_birth_month",
+   "fieldtype": "Select",
+   "label": "Date of Birth - Month",
+   "options": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12",
+   "reqd": 1
+  },
+  {
+   "fieldname": "date_of_birth_year",
+   "fieldtype": "Int",
+   "label": "Date of Birth - Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "read_only": 1
+  },
+  {
+   "fieldname": "previous_opito_training",
+   "fieldtype": "Select",
+   "label": "Previously Completed Any OPITO Training",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "aware_of_opito_learner_number",
+   "fieldtype": "Select",
+   "label": "Aware of OPITO Learner Number",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.aware_of_opito_learner_number=='Yes'",
+   "fieldname": "opito_learner_number",
+   "fieldtype": "Data",
+   "label": "OPITO Learner Number"
+  },
+  {
+   "fieldname": "has_vantage_number",
+   "fieldtype": "Select",
+   "label": "Has a Vantage Number",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.has_vantage_number=='Yes'",
+   "fieldname": "vantage_number",
+   "fieldtype": "Data",
+   "label": "Vantage Number"
+  },
+  {
+   "fieldname": "previous_opito_training_at_centre",
+   "fieldtype": "Select",
+   "label": "Previously Attended OPITO Training at this Centre",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "fieldname": "signature_section",
+   "fieldtype": "Section Break",
+   "label": "Learner Signature"
+  },
+  {
+   "fieldname": "learner_signature",
+   "fieldtype": "Signature",
+   "label": "Learner Signature",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "signature_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "certificate_mailing_section",
+   "fieldtype": "Section Break",
+   "label": "Certificate Mailing Details"
+  },
+  {
+   "fieldname": "certificate_mailing_details",
+   "fieldtype": "Small Text",
+   "label": "Certificate Mailing Details"
+  },
+  {
+   "fieldname": "email_address",
+   "fieldtype": "Data",
+   "label": "E-mail Address",
+   "options": "Email"
+  },
+  {
+   "fieldname": "privacy_notice_section",
+   "fieldtype": "Section Break",
+   "label": "Data Privacy Notice"
+  },
+  {
+   "fieldname": "privacy_notice",
+   "fieldtype": "HTML",
+   "label": "Privacy Notice",
+   "options": "<div style=\"padding: 14px 16px; background: #fcfcfd; border: 1px solid #eaecf0; border-radius: 8px; font-size: 12px; line-height: 1.6; color: #475467;\">The information you give on this form will be entered into a computerised register operated by OPITO. The register is available to employers, prospective employers and training providers in the offshore petroleum industry worldwide so that they may verify your training records. OPITO will collect and process information relating to you in accordance with the terms of UK GDPR and other relevant data protection legislation. Our privacy notice is available from https://opito.com/privacy-policy. If you have any enquiries about the use of your data please contact the Data Protection Officer at OPITO, Minerva House, Bruntland Road, Portlethen, Aberdeen, Scotland AB12 4QL, e-mail: data.protection@opito.com.<br><br>PO Box, 500726, Block 2B, Room F07, Knowledge Park, Dubai, United Arab Emirates Telephone: +971(0)4 4458 482 E-mail: reception@opito.com</div>"
+  },
+  {
+   "fieldname": "admin_review_section",
+   "fieldtype": "Section Break",
+   "label": "Admin Review"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "registration_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Registration Status",
+   "options": "Pending\nApproved\nRejected\nFlagged",
+   "reqd": 1
+  },
+  {
+   "fieldname": "is_flagged",
+   "fieldtype": "Check",
+   "label": "Flagged"
+  },
+  {
+   "fieldname": "review_notes",
+   "fieldtype": "Small Text",
+   "label": "Review Notes"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-17 14:15:05.788544",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Registration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "full_name",
+ "track_changes": 1
+}

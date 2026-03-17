@@ -1,0 +1,65 @@
+{
+ "actions": [],
+ "creation": "2026-03-17 16:10:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "parameter_code",
+  "column_break_jdet",
+  "declaration_text",
+  "response",
+  "details_if_yes",
+  "is_highlighted"
+ ],
+ "fields": [
+  {
+   "fieldname": "parameter_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Parameter Code"
+  },
+  {
+   "fieldname": "column_break_jdet",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "declaration_text",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Declaration Text",
+   "read_only": 1
+  },
+  {
+   "fieldname": "response",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Response",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "details_if_yes",
+   "fieldtype": "Small Text",
+   "label": "If Yes, What and When"
+  },
+  {
+   "fieldname": "is_highlighted",
+   "fieldtype": "Check",
+   "label": "Highlighted",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 20,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-03-17 16:10:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Registration Declaration Response",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "idx",
+ "sort_order": "ASC",
+ "states": []
+}

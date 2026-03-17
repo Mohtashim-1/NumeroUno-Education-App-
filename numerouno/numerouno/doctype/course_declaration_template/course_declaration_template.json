@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:course",
+ "creation": "2026-03-17 16:10:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "course",
+  "course_name",
+  "is_active",
+  "declaration_notes",
+  "highlight_observation_note",
+  "declarations"
+ ],
+ "fields": [
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course.course_name",
+   "fieldname": "course_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Name",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "declaration_notes",
+   "fieldtype": "Small Text",
+   "label": "Declaration Notes"
+  },
+  {
+   "default": "Apart from highlighted medical conditions, if the column mentioned as 'YES' Instructor must keep the learner under observation during practical's.",
+   "fieldname": "highlight_observation_note",
+   "fieldtype": "Small Text",
+   "label": "Highlight Observation Note"
+  },
+  {
+   "fieldname": "declarations",
+   "fieldtype": "Table",
+   "label": "Declarations",
+   "options": "Course Declaration Item",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 20,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-17 16:10:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Course Declaration Template",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
