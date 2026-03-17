@@ -1,0 +1,181 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-03-17 20:10:54.967133",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "movement_section",
+  "naming_series",
+  "vehicle",
+  "driver_name",
+  "column_break_movement",
+  "status",
+  "entry_date",
+  "entry_time",
+  "entry_section",
+  "entry_odometer",
+  "entry_dashboard_image",
+  "column_break_entry",
+  "entry_vehicle_condition_image",
+  "remarks",
+  "exit_section",
+  "exit_odometer",
+  "exit_dashboard_image",
+  "column_break_exit",
+  "exit_vehicle_condition_image",
+  "exit_date",
+  "exit_time"
+ ],
+ "fields": [
+  {
+   "fieldname": "movement_section",
+   "fieldtype": "Section Break",
+   "label": "Vehicle Movement"
+  },
+  {
+   "default": "CAR-.YYYY.-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "CAR-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Car",
+   "options": "Vehicle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "driver_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Driver Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_movement",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nExited",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "entry_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Entry Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "entry_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Entry Time"
+  },
+  {
+   "fieldname": "entry_section",
+   "fieldtype": "Section Break",
+   "label": "Entry Details"
+  },
+  {
+   "fieldname": "entry_odometer",
+   "fieldtype": "Int",
+   "label": "Odometer In",
+   "reqd": 1
+  },
+  {
+   "fieldname": "entry_dashboard_image",
+   "fieldtype": "Attach Image",
+   "label": "Dashboard Image"
+  },
+  {
+   "fieldname": "column_break_entry",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "entry_vehicle_condition_image",
+   "fieldtype": "Attach Image",
+   "label": "Vehicle Condition"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "exit_section",
+   "fieldtype": "Section Break",
+   "label": "Exit Details"
+  },
+  {
+   "fieldname": "exit_odometer",
+   "fieldtype": "Int",
+   "label": "Odometer Out"
+  },
+  {
+   "fieldname": "exit_dashboard_image",
+   "fieldtype": "Attach Image",
+   "label": "Exit Dashboard Image"
+  },
+  {
+   "fieldname": "column_break_exit",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "exit_vehicle_condition_image",
+   "fieldtype": "Attach Image",
+   "label": "Vehicle Condition Exit"
+  },
+  {
+   "fieldname": "exit_date",
+   "fieldtype": "Date",
+   "label": "Exit Date"
+  },
+  {
+   "fieldname": "exit_time",
+   "fieldtype": "Time",
+   "label": "Exit Time"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-17 20:10:54.967133",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Car Entry",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_seen": 1
+}
