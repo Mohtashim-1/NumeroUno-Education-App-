@@ -516,6 +516,14 @@
       const rawSchema = document.getElementById("form-schema-data")?.textContent || "[]";
       formSchema = JSON.parse(rawSchema);
     } catch (error) {}
+    const defaultHtmlByFieldname = {};
+    formSchema.forEach((section) => {
+      (section.items || []).forEach((field) => {
+        if (field.fieldtype === "HTML") {
+          defaultHtmlByFieldname[field.fieldname] = field.options || "";
+        }
+      });
+    });
 
     const form = document.getElementById("registration-form");
     const messageBox = document.getElementById("form-message");
@@ -828,6 +836,13 @@
       ["product_title", "joining_product_title", "joining_instructions_title", "joining_opito_code"].forEach((fieldname) => {
         setFieldValue(fieldname, "");
       });
+      setHtmlFieldContent("joining_learning_outcomes", defaultHtmlByFieldname.joining_learning_outcomes || "");
+    }
+
+    function setHtmlFieldContent(fieldname, html) {
+      const block = form.querySelector(`[data-fieldname="${fieldname}"] .html-block`);
+      if (!block) return;
+      block.innerHTML = html || "";
     }
 
     async function loadCourseContext(courseName) {
@@ -842,6 +857,10 @@
       setFieldValue("joining_product_title", selectedCourse.joining_product_title);
       setFieldValue("joining_instructions_title", selectedCourse.joining_instructions_title);
       setFieldValue("joining_opito_code", selectedCourse.joining_opito_code);
+      setHtmlFieldContent(
+        "joining_learning_outcomes",
+        selectedCourse.learning_outcomes_html || defaultHtmlByFieldname.joining_learning_outcomes || ""
+      );
       await loadCourseDeclarations(courseName);
     }
 

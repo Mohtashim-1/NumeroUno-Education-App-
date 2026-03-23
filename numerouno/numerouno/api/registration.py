@@ -1,3 +1,5 @@
+from html import escape
+
 import frappe
 
 
@@ -17,7 +19,7 @@ def get_opito_courses():
 	courses = frappe.get_all(
 		"Course",
 		filters={"is_opito": 1},
-		fields=["name", "course_name", "course_code"],
+		fields=["name", "course_name", "course_code", "custom_learning_outcome"],
 		order_by="course_name asc",
 	)
 	return {
@@ -46,6 +48,8 @@ def get_opito_courses():
 					if row.course_name and row.course_code
 					else (row.course_name or row.name)
 				),
+				"custom_learning_outcome": row.custom_learning_outcome or "",
+				"learning_outcomes_html": build_learning_outcomes_html(row.custom_learning_outcome),
 			}
 			for row in courses
 		],
@@ -192,3 +196,18 @@ def apply_course_declaration_responses(doc, responses):
 				"is_highlighted": cint_like(item.is_highlighted),
 			},
 		)
+
+
+def build_learning_outcomes_html(value):
+	content = (value or "").strip()
+	if not content:
+		return ""
+
+	formatted_content = "<br>".join(escape(line) for line in content.splitlines())
+	return (
+		'<div style="padding: 14px 16px; background: #fcfcfd; border: 1px solid #eaecf0; '
+		'border-radius: 8px; font-size: 12px; line-height: 1.7; color: #475467;">'
+		"<strong>Learning Outcomes</strong><br>"
+		f"{formatted_content}"
+		"</div>"
+	)
