@@ -117,6 +117,17 @@
 	padding: 18px;
 }
 
+.management-dashboard-page [data-drill-key] {
+	cursor: pointer;
+	transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.management-dashboard-page [data-drill-key]:hover {
+	transform: translateY(-2px);
+	border-color: rgba(15, 123, 108, 0.35);
+	box-shadow: 0 20px 44px rgba(17, 32, 51, 0.12);
+}
+
 .management-dashboard-page .kpi-card {
 	position: relative;
 	overflow: hidden;
@@ -242,6 +253,159 @@
 	color: var(--md-ink);
 	background: #fff4eb;
 	border: 1px solid #f3cfb8;
+}
+
+.management-drilldown-list {
+	display: grid;
+	gap: 12px;
+}
+
+.management-drilldown-option {
+	width: 100%;
+	text-align: left;
+	border: 1px solid #d7e1ea;
+	background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+	border-radius: 14px;
+	padding: 14px 16px;
+	display: grid;
+	gap: 4px;
+	cursor: pointer;
+}
+
+.management-drilldown-option.is-selected,
+.management-drilldown-option:hover {
+	border-color: rgba(15, 123, 108, 0.4);
+	background: linear-gradient(180deg, #fafffe 0%, #f1faf8 100%);
+}
+
+.management-drilldown-option__label {
+	font-weight: 700;
+	color: #112033;
+}
+
+.management-drilldown-option__stats {
+	font-size: 12px;
+	font-weight: 700;
+	color: #0f7b6c;
+}
+
+.management-drilldown-option__meta {
+	font-size: 12px;
+	color: #617182;
+}
+
+.management-drilldown-detail {
+	margin-top: 14px;
+	padding: 16px;
+	border: 1px solid #d7e1ea;
+	border-radius: 16px;
+	background: linear-gradient(180deg, #fbfdff 0%, #f6fafc 100%);
+}
+
+.management-drilldown-detail__title {
+	font-size: 16px;
+	font-weight: 700;
+	color: #112033;
+}
+
+.management-drilldown-detail__subtitle {
+	margin-top: 4px;
+	font-size: 12px;
+	color: #617182;
+}
+
+.management-drilldown-detail__stats {
+	margin-top: 10px;
+	font-size: 13px;
+	font-weight: 700;
+	color: #0f7b6c;
+}
+
+.management-drilldown-detail__table {
+	margin-top: 14px;
+	display: grid;
+	gap: 10px;
+}
+
+.management-drilldown-detail__row {
+	display: flex;
+	justify-content: space-between;
+	gap: 14px;
+	padding: 12px 0;
+	border-top: 1px solid #e6edf3;
+}
+
+.management-drilldown-detail__row:first-child {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.management-drilldown-detail__primary {
+	font-size: 13px;
+	font-weight: 700;
+	color: #112033;
+}
+
+.management-drilldown-detail__secondary {
+	margin-top: 4px;
+	font-size: 12px;
+	color: #617182;
+}
+
+.management-drilldown-detail__metric {
+	font-size: 13px;
+	font-weight: 700;
+	color: #112033;
+	white-space: nowrap;
+}
+
+.management-drilldown-detail__empty {
+	margin-top: 14px;
+	font-size: 12px;
+	color: #617182;
+}
+
+.management-drilldown-table-wrap {
+	margin-top: 14px;
+	max-height: 60vh;
+	overflow: auto;
+	border: 1px solid #d7e1ea;
+	border-radius: 14px;
+	background: #fff;
+}
+
+.management-drilldown-table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+
+.management-drilldown-table th,
+.management-drilldown-table td {
+	padding: 10px 12px;
+	border-bottom: 1px solid #e6edf3;
+	font-size: 13px;
+	text-align: left;
+	white-space: normal;
+	word-break: break-word;
+	vertical-align: top;
+}
+
+.management-drilldown-table th {
+	position: sticky;
+	top: 0;
+	background: #f8fbfd;
+	z-index: 1;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #617182;
+}
+
+.management-drilldown-table th:last-child,
+.management-drilldown-table td:last-child {
+	text-align: right;
+	width: 140px;
 }
 
 .management-dashboard-page .empty-state {

@@ -206,9 +206,10 @@ def _training_summary(filters):
 	return rows[0] if rows else {}
 
 
-def _training_breakdown(filters):
+def _training_breakdown(filters, limit=8):
 	conditions, values = _training_conditions(filters)
 	base_where = " AND ".join(conditions)
+	limit_clause = f"LIMIT {cint(limit)}" if limit else ""
 
 	instructors = frappe.db.sql(
 		f"""
@@ -224,7 +225,7 @@ def _training_breakdown(filters):
 		WHERE {base_where}
 		GROUP BY label
 		ORDER BY candidates_count DESC, groups_count DESC
-		LIMIT 8
+		{limit_clause}
 		""",
 		values,
 		as_dict=True,
@@ -242,7 +243,7 @@ def _training_breakdown(filters):
 		WHERE {base_where}
 		GROUP BY label
 		ORDER BY candidates_count DESC, groups_count DESC
-		LIMIT 8
+		{limit_clause}
 		""",
 		values,
 		as_dict=True,
@@ -260,7 +261,7 @@ def _training_breakdown(filters):
 		WHERE {base_where}
 		GROUP BY label
 		ORDER BY candidates_count DESC, groups_count DESC
-		LIMIT 8
+		{limit_clause}
 		""",
 		values,
 		as_dict=True,
@@ -325,7 +326,7 @@ def _top_counterparty(rows, fieldname, fallback_label):
 	}
 
 
-def _group_rankings(rows, fieldname, fallback_label):
+def _group_rankings(rows, fieldname, fallback_label, limit=10):
 	grouped = {}
 	for row in rows:
 		label = row.get(fieldname) or fallback_label
@@ -333,7 +334,8 @@ def _group_rankings(rows, fieldname, fallback_label):
 		entry["count"] += 1
 		entry["amount"] += flt(row.get("amount"))
 
-	return sorted(grouped.values(), key=lambda row: row["amount"], reverse=True)[:10]
+	ordered = sorted(grouped.values(), key=lambda row: row["amount"], reverse=True)
+	return ordered[: cint(limit)] if limit else ordered
 
 
 def _recent_transactions(sales_rows, collection_rows, expense_rows):
@@ -375,8 +377,9 @@ def _recent_transactions(sales_rows, collection_rows, expense_rows):
 	return sorted(transactions, key=lambda row: row["date"], reverse=True)[:12]
 
 
-def _recent_training_groups(filters):
+def _recent_training_groups(filters, limit=10):
 	conditions, values = _training_conditions(filters)
+	limit_clause = f"LIMIT {cint(limit)}" if limit else ""
 	return frappe.db.sql(
 		f"""
 		SELECT
@@ -395,11 +398,18 @@ def _recent_training_groups(filters):
 		WHERE {' AND '.join(conditions)}
 		GROUP BY sg.name, sg.from_date, sg.course, sg.program, sg.custom_customer
 		ORDER BY sg.from_date DESC, sg.modified DESC
-		LIMIT 10
+		{limit_clause}
 		""",
 		values,
 		as_dict=True,
 	)
+
+
+def cint(value):
+	try:
+		return int(value)
+	except (TypeError, ValueError):
+		return 0
 
 
 def _best_label(labels, values):
@@ -608,4 +618,134 @@ def get_management_dashboard_data(filters=None):
 			{"label": "Unpaid Students Dashboard", "route": "/app/query-report/Unpaid%20Students%20Dashboard"},
 			{"label": "Pending Invoices", "route": "/app/query-report/Pending%20Invoices"},
 		],
+	}
+
+
+@frappe.whitelist()
+def get_management_dashboard_drilldown(drilldown_type=None, filters=None):
+	filters = _normalize_filters(filters)
+	drilldown_type = (drilldown_type or "").strip()
+
+	sales_rows = _sales_rows(filters)
+	collection_rows = _collection_rows(filters)
+	expense_rows = _expense_rows(filters)
+	training_breakdown = _training_breakdown(filters, limit=None)
+	recent_training_groups = _recent_training_groups(filters, limit=None)
+	customer_rankings = _group_rankings(sales_rows, "customer", "Direct", limit=None)
+	supplier_rankings = _group_rankings(expense_rows, "supplier", "Unknown", limit=None)
+
+	payload_map = {
+		"sales_invoices": {
+			"count": len(sales_rows),
+			"amount": _sum_rows(sales_rows, "amount"),
+			"amount_label": "Amount",
+			"rows": [
+				{
+					"reference": row.get("name"),
+					"date": row.get("posting_date"),
+					"party": row.get("customer") or "Direct",
+					"amount": flt(row.get("amount"), 2),
+				}
+				for row in sales_rows
+			],
+		},
+		"received_payments": {
+			"count": len(collection_rows),
+			"amount": _sum_rows(collection_rows, "amount"),
+			"amount_label": "Amount",
+			"rows": [
+				{
+					"reference": row.get("name"),
+					"date": row.get("posting_date"),
+					"party": row.get("customer") or "Unknown",
+					"amount": flt(row.get("amount"), 2),
+				}
+				for row in collection_rows
+			],
+		},
+		"purchase_invoices": {
+			"count": len(expense_rows),
+			"amount": _sum_rows(expense_rows, "amount"),
+			"amount_label": "Amount",
+			"rows": [
+				{
+					"reference": row.get("name"),
+					"date": row.get("posting_date"),
+					"party": row.get("supplier") or "Unknown",
+					"amount": flt(row.get("amount"), 2),
+				}
+				for row in expense_rows
+			],
+		},
+		"pending_invoices": {
+			"count": len(customer_rankings),
+			"amount": _sum_rows(customer_rankings, "amount"),
+			"amount_label": "Amount",
+			"rows": customer_rankings,
+		},
+		"sales_register": {
+			"count": len(customer_rankings),
+			"amount": _sum_rows(customer_rankings, "amount"),
+			"amount_label": "Amount",
+			"rows": customer_rankings,
+		},
+		"purchase_register": {
+			"count": len(supplier_rankings),
+			"amount": _sum_rows(supplier_rankings, "amount"),
+			"amount_label": "Amount",
+			"rows": supplier_rankings,
+		},
+		"student_groups": {
+			"count": len(recent_training_groups),
+			"amount": _sum_rows(recent_training_groups, "candidates"),
+			"amount_label": "Candidates",
+			"rows": recent_training_groups,
+		},
+		"student_group_analytics": {
+			"count": len(training_breakdown["courses"]),
+			"amount": _sum_rows(training_breakdown["courses"], "candidates_count"),
+			"amount_label": "Candidates",
+			"rows": training_breakdown["courses"],
+		},
+		"student_payment_summary": {
+			"count": len(training_breakdown["courses"]),
+			"amount": _sum_rows(training_breakdown["courses"], "candidates_count"),
+			"amount_label": "Candidates",
+			"rows": training_breakdown["courses"],
+		},
+		"unpaid_students_dashboard": {
+			"count": len(recent_training_groups),
+			"amount": _sum_rows(recent_training_groups, "candidates"),
+			"amount_label": "Candidates",
+			"rows": recent_training_groups,
+		},
+		"customers": {
+			"count": len(customer_rankings),
+			"amount": _sum_rows(customer_rankings, "amount"),
+			"amount_label": "Amount",
+			"rows": customer_rankings,
+		},
+		"suppliers": {
+			"count": len(supplier_rankings),
+			"amount": _sum_rows(supplier_rankings, "amount"),
+			"amount_label": "Amount",
+			"rows": supplier_rankings,
+		},
+		"courses": {
+			"count": len(training_breakdown["courses"]),
+			"amount": _sum_rows(training_breakdown["courses"], "candidates_count"),
+			"amount_label": "Candidates",
+			"rows": training_breakdown["courses"],
+		},
+	}
+
+	payload = payload_map.get(drilldown_type)
+	if not payload:
+		return {"count": 0, "amount": 0, "amount_label": "Amount", "rows": []}
+
+	return {
+		"count": cint(payload.get("count")),
+		"amount": flt(payload.get("amount"), 2),
+		"amount_label": payload.get("amount_label") or "Amount",
+		"rows": payload.get("rows") or [],
 	}

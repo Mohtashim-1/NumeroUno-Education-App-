@@ -64,18 +64,7 @@ class OvertimeRequest(Document):
             frappe.throw(_("Direct manager is not configured for employee {0}.").format(self.employee))
 
     def _calculate_overtime_hours(self):
-        if not self.time_from or not self.time_to:
-            self.overtime_hours = 0
-            return
-
-        time_from = datetime.strptime(str(self.time_from), "%H:%M:%S")
-        time_to = datetime.strptime(str(self.time_to), "%H:%M:%S")
-
-        if time_to <= time_from:
-            time_to += timedelta(days=1)
-
-        duration = time_to - time_from
-        self.overtime_hours = round(duration.total_seconds() / 3600, 2)
+        self.overtime_hours = compute_overtime_hours(self.date, self.time_from, self.time_to)
 
     def _set_default_status(self):
         if not self.status:
@@ -141,3 +130,29 @@ def has_permission(doc, user=None, permission_type=None):
         return True
 
     return False
+
+
+def compute_overtime_hours(request_date, time_from, time_to):
+    if not time_from or not time_to:
+        return 0
+
+    parsed_time_from = datetime.strptime(str(time_from), "%H:%M:%S")
+    parsed_time_to = datetime.strptime(str(time_to), "%H:%M:%S")
+
+    if parsed_time_to <= parsed_time_from:
+        parsed_time_to += timedelta(days=1)
+
+    duration = parsed_time_to - parsed_time_from
+    duration_hours = round(duration.total_seconds() / 3600, 2)
+
+    if duration_hours > 0 and is_sunday(request_date):
+        return 8
+
+    return duration_hours
+
+
+def is_sunday(request_date):
+    if not request_date:
+        return False
+
+    return datetime.strptime(str(request_date), "%Y-%m-%d").weekday() == 6
