@@ -38,10 +38,7 @@ class CarDashboard {
 						<div class="car-panel car-panel-entry">
 							<div class="car-panel-title">Car Entry</div>
 							<div class="car-field" id="entry-vehicle-control"></div>
-							<div class="car-field">
-								<label>Driver Name</label>
-								<input type="text" class="form-control" id="car-driver-name" placeholder="Driver Name">
-							</div>
+							<div class="car-field" id="entry-driver-control"></div>
 							<div class="car-field">
 								<label>Odometer In</label>
 								<input type="number" min="0" class="form-control" id="car-entry-odometer" placeholder="Odometer In">
@@ -93,6 +90,19 @@ class CarDashboard {
 			render_input: true,
 		});
 
+		this.entry_driver_control = frappe.ui.form.make_control({
+			parent: this.wrapper.find("#entry-driver-control"),
+			df: {
+				fieldname: "driver_name",
+				fieldtype: "Link",
+				label: "Driver Name",
+				options: "User",
+				reqd: 1,
+				placeholder: "Select Driver",
+			},
+			render_input: true,
+		});
+
 		this.entry_dashboard_image_control = this.make_attach_control("#entry-dashboard-image-control", "Dashboard Image");
 		this.entry_condition_image_control = this.make_attach_control("#entry-condition-image-control", "Vehicle Condition");
 		this.exit_dashboard_image_control = this.make_attach_control("#exit-dashboard-image-control", "Exit Dashboard Image");
@@ -134,7 +144,7 @@ class CarDashboard {
 		const select = this.wrapper.find("#car-exit-record");
 		const options = ['<option value="">Select Active Car</option>'];
 		(this.active_entries || []).forEach((row) => {
-			const label = `${row.vehicle} - ${row.driver_name} - Odo In ${row.entry_odometer} (${row.name})`;
+			const label = `${row.vehicle} - ${row.driver_label || row.driver_name} - Odo In ${row.entry_odometer} (${row.name})`;
 			options.push(`<option value="${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(label)}</option>`);
 		});
 		select.html(options.join(""));
@@ -161,7 +171,7 @@ class CarDashboard {
 		}
 
 		console.log("[car-dashboard] selected active entry", info);
-		meta.text(`Selected: ${info.vehicle} | Driver: ${info.driver_name} | Odometer In: ${info.entry_odometer}`);
+		meta.text(`Selected: ${info.vehicle} | Driver: ${info.driver_label || info.driver_name} | Odometer In: ${info.entry_odometer}`);
 	}
 
 	render_logs(rows) {
@@ -171,7 +181,7 @@ class CarDashboard {
 				<tr>
 					<td>${frappe.utils.escape_html(row.name || "")}</td>
 					<td>${frappe.utils.escape_html(row.vehicle || "")}</td>
-					<td>${frappe.utils.escape_html(row.driver_name || "")}</td>
+					<td>${frappe.utils.escape_html(row.driver_label || row.driver_name || "")}</td>
 					<td>${frappe.utils.escape_html(String(row.entry_odometer || 0))}</td>
 					<td>${frappe.utils.escape_html(row.exit_odometer ? String(row.exit_odometer) : "-")}</td>
 					<td>${frappe.utils.escape_html(row.entry_stamp || "-")}</td>
@@ -203,7 +213,7 @@ class CarDashboard {
 
 	submit_entry() {
 		const vehicle = this.entry_vehicle_control.get_value();
-		const driver_name = this.wrapper.find("#car-driver-name").val();
+		const driver_name = this.entry_driver_control.get_value();
 		const entry_odometer = this.wrapper.find("#car-entry-odometer").val();
 
 		frappe.call({
@@ -259,7 +269,7 @@ class CarDashboard {
 
 	reset_entry_form() {
 		this.entry_vehicle_control.set_value("");
-		this.wrapper.find("#car-driver-name").val("");
+		this.entry_driver_control.set_value("");
 		this.wrapper.find("#car-entry-odometer").val("");
 		this.entry_dashboard_image_control.set_value("");
 		this.entry_condition_image_control.set_value("");

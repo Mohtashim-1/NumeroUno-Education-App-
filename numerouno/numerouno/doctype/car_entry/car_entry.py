@@ -6,7 +6,7 @@ from frappe.utils import nowdate, nowtime
 class CarEntry(Document):
 	def validate(self):
 		logger = frappe.logger("car_entry", allow_site=True)
-		self.driver_name = " ".join((self.driver_name or "").split())
+		self.driver_name = (self.driver_name or "").strip()
 		self.status = "Active"
 
 		raw_entry_odometer = self.entry_odometer
@@ -20,6 +20,9 @@ class CarEntry(Document):
 
 		if not self.driver_name:
 			frappe.throw("Driver Name is required.")
+
+		if not frappe.db.exists("User", self.driver_name):
+			frappe.throw(f"Driver Name must be a valid User. '{self.driver_name}' was not found.")
 
 		if not self.entry_date:
 			self.entry_date = nowdate()

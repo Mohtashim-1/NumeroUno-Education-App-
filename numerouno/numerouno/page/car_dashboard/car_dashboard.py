@@ -36,6 +36,9 @@ def get_dashboard_data():
 		row["entry_stamp"] = format_stamp(row.get("entry_date"), row.get("entry_time"))
 		row["exit_stamp"] = format_stamp(row.get("exit_date"), row.get("exit_time"))
 
+	attach_driver_labels(active_entries)
+	attach_driver_labels(logs)
+
 	return {
 		"active_entries": active_entries,
 		"logs": logs,
@@ -105,3 +108,20 @@ def format_stamp(date_value, time_value):
 	if time_value:
 		return get_datetime(f"{date_value} {time_value}").strftime("%b %d, %Y %I:%M %p")
 	return get_datetime(f"{date_value} 00:00:00").strftime("%b %d, %Y")
+
+
+def attach_driver_labels(rows):
+	user_ids = sorted({row.get("driver_name") for row in rows if row.get("driver_name")})
+	if not user_ids:
+		return
+
+	users = frappe.get_all(
+		"User",
+		filters={"name": ["in", user_ids]},
+		fields=["name", "full_name"],
+	)
+	user_map = {user.name: user.full_name or user.name for user in users}
+
+	for row in rows:
+		driver_name = row.get("driver_name")
+		row["driver_label"] = user_map.get(driver_name, driver_name)

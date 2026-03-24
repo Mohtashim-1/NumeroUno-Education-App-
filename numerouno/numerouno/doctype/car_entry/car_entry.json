@@ -52,9 +52,10 @@
   },
   {
    "fieldname": "driver_name",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Driver Name",
+   "options": "User",
    "reqd": 1
   },
   {

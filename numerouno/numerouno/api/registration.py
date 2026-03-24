@@ -19,7 +19,13 @@ def get_opito_courses():
 	courses = frappe.get_all(
 		"Course",
 		filters={"is_opito": 1},
-		fields=["name", "course_name", "course_code", "custom_learning_outcome"],
+		fields=[
+			"name",
+			"course_name",
+			"course_code",
+			"custom_learning_outcome",
+			"custom_course_schedule_details",
+		],
 		order_by="course_name asc",
 	)
 	return {
@@ -50,6 +56,9 @@ def get_opito_courses():
 				),
 				"custom_learning_outcome": row.custom_learning_outcome or "",
 				"learning_outcomes_html": build_learning_outcomes_html(row.custom_learning_outcome),
+				"course_schedule_details_html": build_course_schedule_details_html(
+					row.custom_course_schedule_details
+				),
 			}
 			for row in courses
 		],
@@ -208,6 +217,20 @@ def build_learning_outcomes_html(value):
 		'<div style="padding: 14px 16px; background: #fcfcfd; border: 1px solid #eaecf0; '
 		'border-radius: 8px; font-size: 12px; line-height: 1.7; color: #475467;">'
 		"<strong>Learning Outcomes</strong><br>"
+		f"{formatted_content}"
+		"</div>"
+	)
+
+
+def build_course_schedule_details_html(value):
+	content = (value or "").strip()
+	if not content:
+		return ""
+
+	formatted_content = "<br>".join(escape(line) for line in content.splitlines())
+	return (
+		'<div style="padding: 14px 16px; background: #fcfcfd; border: 1px solid #eaecf0; '
+		'border-radius: 8px; font-size: 12px; line-height: 1.7; color: #475467;">'
 		f"{formatted_content}"
 		"</div>"
 	)

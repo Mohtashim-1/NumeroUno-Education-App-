@@ -836,6 +836,10 @@
       ["product_title", "joining_product_title", "joining_instructions_title", "joining_opito_code"].forEach((fieldname) => {
         setFieldValue(fieldname, "");
       });
+      setHtmlFieldContent(
+        "joining_course_schedule_details",
+        defaultHtmlByFieldname.joining_course_schedule_details || ""
+      );
       setHtmlFieldContent("joining_learning_outcomes", defaultHtmlByFieldname.joining_learning_outcomes || "");
     }
 
@@ -857,6 +861,10 @@
       setFieldValue("joining_product_title", selectedCourse.joining_product_title);
       setFieldValue("joining_instructions_title", selectedCourse.joining_instructions_title);
       setFieldValue("joining_opito_code", selectedCourse.joining_opito_code);
+      setHtmlFieldContent(
+        "joining_course_schedule_details",
+        selectedCourse.course_schedule_details_html || defaultHtmlByFieldname.joining_course_schedule_details || ""
+      );
       setHtmlFieldContent(
         "joining_learning_outcomes",
         selectedCourse.learning_outcomes_html || defaultHtmlByFieldname.joining_learning_outcomes || ""

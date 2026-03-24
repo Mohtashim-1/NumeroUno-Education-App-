@@ -4,4 +4,5 @@
 
 [post_model_sync]
 numerouno.patches.v1_0.create_overtime_request_workflow
+numerouno.patches.v1_0.assign_vehicle_user_role_to_existing_users
 # Patches added in this section will be executed after doctypes are migrated

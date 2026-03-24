@@ -205,7 +205,10 @@ doc_events = {
         "validate": "numerouno.numerouno.doctype.lms_quiz_submission.lms_quiz_submission.on_submit"
     },
     "User": {
-        "after_insert": "numerouno.numerouno.doctype.student.student.send_lms_welcome_email_to_user"
+        "after_insert": [
+            "numerouno.numerouno.doctype.student.student.send_lms_welcome_email_to_user",
+            "numerouno.numerouno.utils.user_roles.assign_vehicle_user_role",
+        ]
     },
     "Assessment Result": {
         "on_submit": "numerouno.numerouno.unified_assessment_system.trigger_assessment_result_events"
@@ -299,4 +302,3 @@ scheduler_events = {
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-
