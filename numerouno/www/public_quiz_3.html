@@ -523,6 +523,7 @@
   const QUIZ_DEBUG = false;
   const COURSE_EVALUATION_URL = "https://erpnext.nutc.cloud/course-evaluation/new";
   const RTL_LANGS = new Set(["ar", "ur"]);
+  const AUTOSAVE_PREFIX = "publicQuizAutosave";
   const I18N = {
     en: {
       header_title: "Public Quiz Attempt",
@@ -590,6 +591,7 @@
       select_answer_before_continue: "Please select an answer before continuing.",
       please_answer_all: "Please answer all questions. {count} question(s) remaining.",
       quiz_submit_success: "Quiz submitted successfully! Score: {score}/100 ({percentage}%) - {result}",
+      autosave_restored: "Your previous quiz progress was restored.",
       passed: "Passed",
       failed: "Failed",
       assessment_not_created: "Quiz was submitted, but Assessment Result was not created automatically.{activity}{reason}",
@@ -620,6 +622,7 @@
       loading: "लोड हो रहा है...",
       available_quizzes: "उपलब्ध क्विज़",
       no_quizzes: "चयनित स्टूडेंट ग्रुप और स्टूडेंट के लिए कोई क्विज़ उपलब्ध नहीं है।",
+      autosave_restored: "आपकी पिछली क्विज़ प्रगति बहाल कर दी गई है।",
       passed: "उत्तीर्ण",
       failed: "अनुत्तीर्ण"
     },
@@ -643,6 +646,7 @@
       loading: "加载中...",
       available_quizzes: "可用测验",
       no_quizzes: "所选学生组和学生暂无可用测验。",
+      autosave_restored: "已恢复您之前的测验进度。",
       passed: "通过",
       failed: "未通过"
     },
@@ -666,6 +670,7 @@
       loading: "جارٍ التحميل...",
       available_quizzes: "الاختبارات المتاحة",
       no_quizzes: "لا توجد اختبارات متاحة لمجموعة الطالب والطالب المحددين.",
+      autosave_restored: "تمت استعادة تقدمك السابق في الاختبار.",
       passed: "ناجح",
       failed: "راسب"
     },
@@ -689,6 +694,7 @@
       loading: "لوڈ ہو رہا ہے...",
       available_quizzes: "دستیاب کوئز",
       no_quizzes: "منتخب اسٹوڈنٹ گروپ اور اسٹوڈنٹ کے لیے کوئی کوئز دستیاب نہیں۔",
+      autosave_restored: "آپ کی پچھلی کوئز پیش رفت بحال کر دی گئی ہے۔",
       passed: "پاس",
       failed: "فیل"
     }
@@ -763,6 +769,7 @@
   let quizAttemptState = null;
   let preselectParams = null;
   let quizAttemptLoading = false;
+  let autosaveRestored = false;
 
   function getPreselectParams() {
     const params = new URLSearchParams(window.location.search || "");
@@ -790,9 +797,64 @@
     };
   }
 
+  function getAutosaveKey(quizName, student, studentGroup) {
+    return `${AUTOSAVE_PREFIX}:${VERSION}:${quizName}:${student}:${studentGroup}`;
+  }
+
+  function saveAutosaveState() {
+    if (!quizAttemptState) return;
+    const { quizName, student, studentGroup, currentIndex, answers } = quizAttemptState;
+    if (!quizName || !student || !studentGroup) return;
+    const payload = {
+      quizName,
+      student,
+      studentGroup,
+      currentIndex,
+      answers,
+      savedAt: new Date().toISOString(),
+      version: VERSION
+    };
+    try {
+      localStorage.setItem(getAutosaveKey(quizName, student, studentGroup), JSON.stringify(payload));
+    } catch (err) {
+      debugLog("autosave:failed", err);
+    }
+  }
+
+  function clearAutosaveState(quizName, student, studentGroup) {
+    if (!quizName || !student || !studentGroup) return;
+    localStorage.removeItem(getAutosaveKey(quizName, student, studentGroup));
+  }
+
+  function restoreAutosaveState(quizData, quizName, student, studentGroup) {
+    if (!quizName || !student || !studentGroup) return null;
+    const raw = localStorage.getItem(getAutosaveKey(quizName, student, studentGroup));
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.quizName !== quizName || parsed.student !== student || parsed.studentGroup !== studentGroup) {
+        return null;
+      }
+      const questionNames = new Set((quizData.questions || []).map((q) => q.name));
+      const restoredAnswers = {};
+      Object.entries(parsed.answers || {}).forEach(([qName, answer]) => {
+        if (questionNames.has(qName)) {
+          restoredAnswers[qName] = answer;
+        }
+      });
+      const maxIndex = Math.max(0, (quizData.questions || []).length - 1);
+      const restoredIndex = Math.min(Math.max(Number(parsed.currentIndex) || 0, 0), maxIndex);
+      return { answers: restoredAnswers, currentIndex: restoredIndex };
+    } catch (err) {
+      debugLog("autosave:restore failed", err);
+      return null;
+    }
+  }
+
   function setAnswer(questionName, optionId) {
     if (!quizAttemptState) return;
     quizAttemptState.answers[questionName] = optionId;
+    saveAutosaveState();
   }
 
   function getAnswer(questionName) {
@@ -846,6 +908,10 @@
 
   window.addEventListener("unhandledrejection", (event) => {
     debugLog("unhandledrejection", event.reason);
+  });
+
+  window.addEventListener("beforeunload", () => {
+    saveAutosaveState();
   });
 
   function debounce(fn, delay = 250) {
@@ -1496,6 +1562,14 @@ async function reloadStudentGroups() {
     const totalMarks = 100;
 
     initQuizAttemptState(quizData, quizName, student, studentGroup, history);
+    autosaveRestored = false;
+    const restored = restoreAutosaveState(quizData, quizName, student, studentGroup);
+    if (restored) {
+      quizAttemptState.answers = restored.answers || {};
+      quizAttemptState.currentIndex = restored.currentIndex || 0;
+      autosaveRestored = true;
+      showSuccess(t("autosave_restored"));
+    }
 
     // Quiz info
     const quizInfo = document.createElement("div");
@@ -1620,6 +1694,7 @@ async function reloadStudentGroups() {
       prevBtn.addEventListener("click", () => {
         if (quizAttemptState.currentIndex > 0) {
           quizAttemptState.currentIndex -= 1;
+          saveAutosaveState();
           renderQuestionView();
         }
       });
@@ -1637,6 +1712,7 @@ async function reloadStudentGroups() {
           renderReviewView();
         } else {
           quizAttemptState.currentIndex += 1;
+          saveAutosaveState();
           renderQuestionView();
         }
       });
@@ -1644,9 +1720,12 @@ async function reloadStudentGroups() {
 
     if (reviewBtn) {
       reviewBtn.addEventListener("click", () => {
+        saveAutosaveState();
         renderReviewView();
       });
     }
+
+    saveAutosaveState();
   }
 
   function renderReviewView() {
@@ -1878,6 +1957,7 @@ async function reloadStudentGroups() {
         debugLog("Submission response", data);
         if (data.message?.status === "success") {
           const result = data.message;
+          clearAutosaveState(quizName, student, studentGroup);
           showSuccess(
             t("quiz_submit_success", {
               score: result.score,

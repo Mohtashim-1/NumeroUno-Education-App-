@@ -1,0 +1,32 @@
+{
+ "add_total_row": 1,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2023-08-22 17:09:28.062388",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": "Letter Head New",
+ "letterhead": null,
+ "modified": "2026-03-05 10:33:29.972505",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Attendance Report",
+ "owner": "neenucraftindia@gmail.com",
+ "prepared_report": 0,
+ "ref_doctype": "Student Group",
+ "report_name": "Attendance Report",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "Instructor"
+  },
+  {
+   "role": "Academics User"
+  }
+ ],
+ "timeout": 0
+}
