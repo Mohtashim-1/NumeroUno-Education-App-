@@ -64,9 +64,11 @@ doctype_js = {
     "Student Card" : "public/js/student_card.js",
     "Sales Invoice" : "public/js/sales_invoice.js",
     "Quiz Activity" : "public/js/quiz_activity.js",
-    # "Assessment Result" : "public/js/assesment_result.js",
+    "Assessment Result" : "public/js/assesment_result.js",
     }
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_list_js = {
+    "Assessment Result": "public/js/assessment_result_list.js",
+}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
