@@ -30,6 +30,17 @@ def execute():
     workflow.states = []
     workflow.transitions = []
 
+    # Only Allow Edit For: single Role per state (Frappe workflow). Approvers use Employee like transitions;
+    # Pending HR uses HR Manager; terminal states stay HR Manager so HR can correct records if needed.
+    state_allow_edit = {
+        "Draft": "Employee",
+        "Pending Direct Manager": "Employee",
+        "Pending Next Manager": "Employee",
+        "Pending HR": "HR Manager",
+        "Approved": "HR Manager",
+        "Rejected": "HR Manager",
+    }
+
     for state_name in (
         "Draft",
         "Pending Direct Manager",
@@ -42,7 +53,7 @@ def execute():
             "states",
             {
                 "state": state_name,
-                    "allow_edit": "System Manager",
+                "allow_edit": state_allow_edit[state_name],
                 "update_value": state_name,
             },
         )

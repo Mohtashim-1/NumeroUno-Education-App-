@@ -153,7 +153,8 @@ has_permission = {
 # Override standard doctype classes
 
 override_doctype_class = {
-    "Student Attendance": "numerouno.numerouno.doctype.student_attendance.student_attendance.StudentAttendance"
+    "Student Attendance": "numerouno.numerouno.doctype.student_attendance.student_attendance.StudentAttendance",
+    "Email Template": "numerouno.numerouno.overrides.email_template.NumerounoEmailTemplate",
 }
 
 # Document Events

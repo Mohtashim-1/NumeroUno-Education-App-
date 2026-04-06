@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"JVu8-FJZCu\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"0v94hVUW0R\",\"type\":\"card\",\"data\":{\"card_name\":\"Certificate\",\"col\":4}},{\"id\":\"_11CpcxewH\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"xjcB_ZeKiM\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Card\",\"col\":4}},{\"id\":\"AkiVGf1eS-\",\"type\":\"card\",\"data\":{\"card_name\":\"Quiz\",\"col\":4}},{\"id\":\"oJijfYyTt3\",\"type\":\"card\",\"data\":{\"card_name\":\"Driving Card\",\"col\":4}},{\"id\":\"CXIrjSD2za\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"bmhPS3RFDV\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Third Party Certificate\",\"col\":3}},{\"id\":\"JVu8-FJZCu\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"0v94hVUW0R\",\"type\":\"card\",\"data\":{\"card_name\":\"Certificate\",\"col\":4}},{\"id\":\"_11CpcxewH\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"xjcB_ZeKiM\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Card\",\"col\":4}},{\"id\":\"AkiVGf1eS-\",\"type\":\"card\",\"data\":{\"card_name\":\"Quiz\",\"col\":4}},{\"id\":\"oJijfYyTt3\",\"type\":\"card\",\"data\":{\"card_name\":\"Driving Card\",\"col\":4}},{\"id\":\"CXIrjSD2za\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
  "creation": "2025-04-30 01:03:10.313208",
  "custom_blocks": [],
  "docstatus": 0,
@@ -288,8 +288,27 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Driving Card",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Driving Card",
+   "link_count": 0,
+   "link_to": "Driving Card",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Reports",
-   "link_count": 2,
+   "link_count": 4,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -316,25 +335,26 @@
   },
   {
    "hidden": 0,
-   "is_query_report": 0,
-   "label": "Driving Card",
-   "link_count": 1,
-   "link_type": "DocType",
+   "is_query_report": 1,
+   "label": "Attendance Report",
+   "link_count": 0,
+   "link_to": "Attendance Report",
+   "link_type": "Report",
    "onboard": 0,
-   "type": "Card Break"
+   "type": "Link"
   },
   {
    "hidden": 0,
-   "is_query_report": 0,
-   "label": "Driving Card",
+   "is_query_report": 1,
+   "label": "Student Group Analytics",
    "link_count": 0,
-   "link_to": "Driving Card",
-   "link_type": "DocType",
+   "link_to": "Student Group Analytics",
+   "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-03-22 21:49:54.244548",
+ "modified": "2026-03-31 13:49:46.661790",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "NumeroUNO",
@@ -350,6 +370,14 @@
   }
  ],
  "sequence_id": 1.1,
- "shortcuts": [],
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Third Party Certificate",
+   "link_to": "third-party-certific",
+   "type": "Page"
+  }
+ ],
  "title": "NumeroUNO"
 }

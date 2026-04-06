@@ -182,6 +182,7 @@
     input[type="date"],
     input[type="email"],
     input[type="number"],
+    input[type="tel"],
     select,
     textarea {
       width: 100%;
@@ -631,7 +632,7 @@
       const inputTypeMap = {
         "Date": "date",
         "Int": "number",
-        "Data": field.options === "Email" ? "email" : "text"
+        "Data": field.options === "Email" ? "email" : (field.options === "Phone" ? "tel" : "text")
       };
       const inputType = inputTypeMap[field.fieldtype] || "text";
       const step = field.fieldtype === "Int" ? 'step="1"' : "";
@@ -1005,17 +1006,39 @@
         const context = canvas.getContext("2d");
         const state = { drawing: false, hasStroke: false };
 
+        function configureContext() {
+          context.setTransform(1, 0, 0, 1, 0, 0);
+          context.lineWidth = 2;
+          context.lineCap = "round";
+          context.lineJoin = "round";
+          context.strokeStyle = "#14212f";
+        }
+
+        function restoreSignature() {
+          const savedValue = hiddenInput.value;
+          if (!savedValue) {
+            state.hasStroke = false;
+            return;
+          }
+
+          const image = new Image();
+          image.onload = () => {
+            configureContext();
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 0, 0, canvas.clientWidth, canvas.clientHeight);
+            state.hasStroke = true;
+          };
+          image.src = savedValue;
+        }
+
         function resizeCanvas() {
           const ratio = window.devicePixelRatio || 1;
           const rect = canvas.getBoundingClientRect();
           canvas.width = rect.width * ratio;
           canvas.height = rect.height * ratio;
-          context.setTransform(1, 0, 0, 1, 0, 0);
+          configureContext();
           context.scale(ratio, ratio);
-          context.lineWidth = 2;
-          context.lineCap = "round";
-          context.lineJoin = "round";
-          context.strokeStyle = "#14212f";
+          restoreSignature();
         }
 
         function pointFromEvent(event) {
@@ -1051,6 +1074,7 @@
         }
 
         function clearPad() {
+          configureContext();
           context.clearRect(0, 0, canvas.width, canvas.height);
           hiddenInput.value = "";
           state.drawing = false;

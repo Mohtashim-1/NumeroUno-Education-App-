@@ -53,6 +53,8 @@
   "certificate_mailing_section",
   "certificate_mailing_details",
   "email_address",
+  "mobile_number",
+  "emergency_number",
   "privacy_notice_section",
   "privacy_notice",
   "admin_review_section",
@@ -341,6 +343,18 @@
    "fieldtype": "Data",
    "label": "E-mail Address",
    "options": "Email"
+  },
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "label": "Mobile Number",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "emergency_number",
+   "fieldtype": "Data",
+   "label": "Emergency Number",
+   "options": "Phone"
   },
   {
    "fieldname": "privacy_notice_section",

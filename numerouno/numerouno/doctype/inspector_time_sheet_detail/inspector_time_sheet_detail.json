@@ -1,0 +1,61 @@
+{
+ "actions": [],
+ "creation": "2026-04-02 16:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "date",
+  "name_of_surveyor",
+  "location",
+  "activity",
+  "time_spent"
+ ],
+ "fields": [
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date"
+  },
+  {
+   "fieldname": "name_of_surveyor",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name of Surveyor"
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Location"
+  },
+  {
+   "fieldname": "activity",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Activity"
+  },
+  {
+   "fieldname": "time_spent",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Time Spent"
+  }
+ ],
+ "grid_page_length": 20,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-02 16:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Inspector Time Sheet Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

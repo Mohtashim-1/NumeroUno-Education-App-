@@ -102,7 +102,7 @@ def get_data(filters):
 		values["customer"] = filters.get("customer")
 
 	if filters.get("from_date") and filters.get("to_date"):
-		conditions.append("sgs.start_date BETWEEN %(from_date)s AND %(to_date)s")
+		conditions.append("sg.from_date BETWEEN %(from_date)s AND %(to_date)s")
 		values["from_date"] = filters.get("from_date")
 		values["to_date"] = filters.get("to_date")
 
@@ -118,7 +118,7 @@ def get_data(filters):
 			DATE(sg.creation) AS course_creation_date,
 			GROUP_CONCAT(DISTINCT sgi.instructor_name ORDER BY sgi.idx SEPARATOR ', ') AS instructor_name,
 			sgs.student_name AS student_name,
-			sgs.start_date AS from_date,
+			sg.from_date AS from_date,
 			sgs.sales_invoice AS invoice_no,
 			sgs.customer_purchase_order AS customer_lpo,
 			CASE WHEN sgs.paid = 1 THEN 'Invoiced' ELSE 'Pending' END AS invoice_status
@@ -131,7 +131,7 @@ def get_data(filters):
 			AND sgi.parentfield = 'instructors'
 		WHERE {where_clause}
 		GROUP BY sgs.name
-		ORDER BY sgs.start_date DESC, sgs.student_group DESC
+		ORDER BY sg.from_date DESC, sgs.student_group DESC
 		""",
 		values,
 		as_dict=True,
