@@ -16,6 +16,12 @@ frappe.query_reports["Incorrect Answer attempted in MCQs"] = {
 			"options": "Course"
 		},
 		{
+			"fieldname": "instructor",
+			"label": __("Instructor"),
+			"fieldtype": "Link",
+			"options": "Instructor"
+		},
+		{
 			"fieldname": "student",
 			"label": __("Student"),
 			"fieldtype": "Link",

@@ -21,9 +21,13 @@ class AssessmentResult(Document):
 			)
 	
 	def on_update(self):
-		# Process OCR when certificate is uploaded
-		if self.custom_certificate and not self.ocr_extracted_text:
+		# Only run OCR for image certificates; PDFs should upload without OCR.
+		if self.custom_certificate and not self.ocr_extracted_text and self._is_image_certificate():
 			self.process_certificate_ocr()
+
+	def _is_image_certificate(self):
+		certificate = (self.custom_certificate or '').lower()
+		return certificate.endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff'))
 	
 	def process_certificate_ocr(self):
 		"""Process OCR for the uploaded certificate"""

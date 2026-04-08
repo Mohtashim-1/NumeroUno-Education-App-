@@ -200,7 +200,7 @@ class ThirdPartyCertificatePage {
 					<td class="certificate-status-cell">${cert_cell}</td>
 					<td>
 						<button class="btn btn-sm btn-default upload-certificate mr-1" data-name="${name}">
-							<i class="fa fa-upload"></i> ${__("Upload")}
+							<i class="fa fa-upload"></i> ${__("Upload File")}
 						</button>
 						<button class="btn btn-sm btn-primary open-assessment-result" data-name="${name}">${__("Open")}</button>
 					</td>
@@ -227,14 +227,14 @@ class ThirdPartyCertificatePage {
 				fieldname: "custom_certificate",
 				folder: "Home/Attachments",
 				allow_multiple: false,
-				restrictions: { allowed_file_types: ["image/*"] },
+				restrictions: { allowed_file_types: ["image/*", ".pdf", "application/pdf"] },
 				on_success(file) {
 					frappe.call({
 						method: "numerouno.numerouno.api.third_party_certificate.update_certificate",
 						args: { assessment_result: name, file_url: file.file_url },
 						callback(r) {
 							if (r.message && r.message.success) {
-								frappe.show_alert({ message: __("Certificate uploaded successfully."), indicator: "green" });
+								frappe.show_alert({ message: __("Certificate file uploaded successfully."), indicator: "green" });
 								self.$body.find(`tr[data-name="${name}"]`).find(".certificate-status-cell").html(
 									`<span class="badge badge-success">${__("Uploaded")}</span>&nbsp;<a href="${frappe.utils.escape_html(file.file_url)}" target="_blank"><i class="fa fa-eye"></i></a>`
 								);

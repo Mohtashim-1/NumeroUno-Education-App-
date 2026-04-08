@@ -36,6 +36,12 @@ def get_columns():
 			"width": 160,
 		},
 		{
+			"label": _("Instructor"),
+			"fieldname": "instructor_name",
+			"fieldtype": "Data",
+			"width": 180,
+		},
+		{
 			"label": _("Question ID"),
 			"fieldname": "question",
 			"fieldtype": "Link",
@@ -93,6 +99,23 @@ def get_columns():
 	]
 
 
+def get_instructor_condition(filters, values):
+	if not filters.get("instructor"):
+		return None
+
+	values["instructor"] = filters.get("instructor")
+	return """
+		EXISTS (
+			SELECT 1
+			FROM `tabStudent Group Instructor` sgi
+			WHERE sgi.parent = qa.custom_student_group
+				AND sgi.parenttype = 'Student Group'
+				AND sgi.parentfield = 'instructors'
+				AND sgi.instructor = %(instructor)s
+		)
+	"""
+
+
 def get_raw_rows(filters):
 	conditions = ["qr.quiz_result = 'Wrong'", "IFNULL(qr.selected_option, '') NOT IN ('', 'Unattempted')"]
 	values = {}
@@ -101,6 +124,10 @@ def get_raw_rows(filters):
 		if filters.get(field):
 			conditions.append(f"qa.{field} = %({field})s")
 			values[field] = filters.get(field)
+
+	instructor_condition = get_instructor_condition(filters, values)
+	if instructor_condition:
+		conditions.append(instructor_condition)
 
 	if filters.get("question"):
 		conditions.append("qr.question = %(question)s")
@@ -123,6 +150,13 @@ def get_raw_rows(filters):
 			qa.course,
 			qa.student,
 			qa.activity_date,
+			(
+				SELECT GROUP_CONCAT(DISTINCT COALESCE(sgi.instructor_name, sgi.instructor) ORDER BY sgi.idx SEPARATOR ', ')
+				FROM `tabStudent Group Instructor` sgi
+				WHERE sgi.parent = qa.custom_student_group
+					AND sgi.parenttype = 'Student Group'
+					AND sgi.parentfield = 'instructors'
+			) AS instructor_name,
 			qr.question,
 			q.question AS question_title,
 			qr.selected_option AS wrong_answer_attempted,
@@ -155,6 +189,10 @@ def get_correct_answer_counts(filters):
 		if filters.get(field):
 			conditions.append(f"qa.{field} = %({field})s")
 			values[field] = filters.get(field)
+
+	instructor_condition = get_instructor_condition(filters, values)
+	if instructor_condition:
+		conditions.append(instructor_condition)
 
 	if filters.get("question"):
 		conditions.append("qr.question = %(question)s")
@@ -199,6 +237,7 @@ def get_aggregated_rows(raw_rows, correct_answer_counts):
 		key = (
 			row.quiz,
 			row.course,
+			row.instructor_name,
 			row.question,
 			question_title,
 			row.wrong_answer_attempted,
@@ -209,6 +248,7 @@ def get_aggregated_rows(raw_rows, correct_answer_counts):
 			grouped_rows[key] = {
 				"quiz": row.quiz,
 				"course": row.course,
+				"instructor_name": row.instructor_name,
 				"question": row.question,
 				"question_title": question_title,
 				"wrong_answer_attempted": row.wrong_answer_attempted,
