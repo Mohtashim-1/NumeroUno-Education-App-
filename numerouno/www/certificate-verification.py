@@ -5,7 +5,7 @@ def get_context(context):
     """
     Get context for the certificate verification page
     """
-    context.title = "Certificate Verification"
+    context.title = "Document Verification"
     context.no_cache = 1
     
     # Get certificate number and student name from URL parameters
@@ -31,10 +31,10 @@ def get_context(context):
                 context.certificate = result.get('certificate')
                 context.verification_success = True
             else:
-                context.verification_error = result.get('message', 'Certificate not found')
+                context.verification_error = result.get('message', 'Document not found')
                 context.verification_success = False
         except Exception as e:
-            context.verification_error = "Error loading certificate details"
+            context.verification_error = "Error loading document details"
             context.verification_success = False
     else:
         context.verification_success = False
