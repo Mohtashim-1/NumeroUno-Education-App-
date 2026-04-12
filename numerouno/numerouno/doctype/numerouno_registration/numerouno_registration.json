@@ -1,25 +1,224 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
  "creation": "2026-04-13 01:17:13.796845",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "section_break_leyv"
+  "candidate_details_section",
+  "full_name",
+  "passport_emirates_id",
+  "naming_series",
+  "column_break_gzvg",
+  "nationality",
+  "date_of_birth",
+  "column_break_zglx",
+  "contact_number",
+  "email",
+  "company_details_section",
+  "company_name",
+  "contact_person",
+  "company_contact_number",
+  "column_break_dosi",
+  "company_address",
+  "company_email",
+  "course_details_section",
+  "course",
+  "location",
+  "duration",
+  "column_break_yucs",
+  "preferred_date",
+  "terms_conditions_html",
+  "signature_section",
+  "signature",
+  "column_break_oltx",
+  "signed_date",
+  "amended_from"
  ],
  "fields": [
   {
-   "fieldname": "section_break_leyv",
-   "fieldtype": "Section Break"
+   "fieldname": "candidate_details_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate Details"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "passport_emirates_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Passport / Emirates ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "reqd": 1,
+   "options": "Country"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company_details_section",
+   "fieldtype": "Section Break",
+   "label": "Company Details"
+  },
+  {
+   "fieldname": "company_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Company Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company_address",
+   "fieldtype": "Small Text",
+   "label": "Company Address",
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact_person",
+   "fieldtype": "Data",
+   "label": "Contact Person",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company_contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company_email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course_details_section",
+   "fieldtype": "Section Break",
+   "label": "Course Details"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "label": "Location",
+   "reqd": 1
+  },
+  {
+   "fieldname": "duration",
+   "fieldtype": "Data",
+   "label": "Duration",
+   "reqd": 1
+  },
+  {
+   "fieldname": "preferred_date",
+   "fieldtype": "Date",
+   "label": "Preferred Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "terms_conditions_html",
+   "fieldtype": "HTML",
+   "label": "Terms & Conditions",
+   "options": "<div style=\"padding:16px 18px; background:#fffaf0; border:1px solid #f1d39a; border-radius:12px; font-size:13px; line-height:1.7; color:#7a4b07;\"><strong>Terms &amp; Conditions</strong><br><br>1. Registrations: Participants may register by e-mail with payment by cash, bank transfer or cheque.<br>2. Payment receipts: All registered delegates will receive an acknowledgement of registration, together with confirmation of payment.<br>3. Cancellations: Cancellations by delegates must be made in writing and received one week before the seminar. It is regretted that no refunds will be made or invoices cancelled after this date and the full registration fee will be payable. Substitutions may be made at any time.<br>4. Cancellation by organizers: We reserve the right to cancel the event if it is under subscribed or for any other reason. In the event of cancellation, we will endeavour to give delegates one-week notice and the fee will be refunded in full. We cannot be held liable for any pre-booked travel or accommodation costs.<br>5. Joining instructions: Two days before the training, we will email you information related to formalities at the venue, location, agenda, certification, etc.<br>6. If the delegate fails to appear for the training, the amount deposited will not be refunded.</div>",
+   "read_only": 1
+  },
+  {
+   "fieldname": "signature_section",
+   "fieldtype": "Section Break",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Signature",
+   "label": "Signature",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "signed_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "NumeroUno Registration",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_gzvg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_zglx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_dosi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_yucs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_oltx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "NR-"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-13 01:17:13.796845",
+ "modified": "2026-04-13 02:03:13.285507",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "NumeroUno Registration",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -39,5 +238,8 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "full_name",
+ "track_changes": 1,
+ "track_seen": 1
 }

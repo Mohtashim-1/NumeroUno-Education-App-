@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
+  <title>NumeroUno Registration</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+    :root {
+      --bg: #eef4f7;
+      --panel: #ffffff;
+      --ink: #20313d;
+      --muted: #5f7380;
+      --line: #cfdde6;
+      --accent: #b7ddeb;
+      --accent-strong: #7cb3c7;
+      --button: #155e75;
+      --button-hover: #0f4d60;
+      --danger: #b42318;
+      --success-bg: #e9f8ef;
+      --success-text: #17663a;
+      --success-line: #b7e4c7;
+      --shadow: 0 22px 50px rgba(18, 38, 52, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(183, 221, 235, 0.6), rgba(238, 244, 247, 0.95)),
+        radial-gradient(circle at top right, rgba(124, 179, 199, 0.28), transparent 34%);
+      padding: 32px 16px;
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #173647 0%, #27546c 100%);
+      color: #fff;
+      border-radius: 24px 24px 0 0;
+      padding: 28px 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(30px, 5vw, 42px);
+    }
+
+    .hero p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.82);
+      max-width: 720px;
+      line-height: 1.7;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: 0 0 24px 24px;
+      border: 1px solid var(--line);
+      border-top: none;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      margin-bottom: 18px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .section-title {
+      margin: 0;
+      padding: 12px 16px;
+      font-size: 20px;
+      background: var(--accent);
+      border-bottom: 1px solid var(--accent-strong);
+    }
+
+    .fields {
+      padding: 18px 16px 20px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 18px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .req { color: var(--danger); }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="date"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1.5px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: inherit;
+      background: #fff;
+      color: var(--ink);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent-strong);
+      box-shadow: 0 0 0 4px rgba(124, 179, 199, 0.18);
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .signature-box {
+      border: 1.5px dashed #8daab8;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .signature-canvas {
+      display: block;
+      width: 100%;
+      height: 220px;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbfd 100%);
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .signature-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--line);
+      background: #f8fbfd;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .signature-actions button,
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .signature-actions button {
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      background: var(--button);
+      color: #fff;
+      padding: 13px 22px;
+    }
+
+    .btn:hover { background: var(--button-hover); }
+    .btn[disabled] { opacity: 0.75; cursor: wait; }
+
+    .btn-secondary {
+      background: #ecf3f7;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .message {
+      display: none;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 14px;
+    }
+
+    .message.error {
+      display: block;
+      background: #feeceb;
+      color: var(--danger);
+      border: 1px solid #f3c5c1;
+    }
+
+    .message.success {
+      display: block;
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-line);
+    }
+
+    .html-block {
+      padding: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .success-shell {
+      display: none;
+      margin-bottom: 18px;
+      padding: 20px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fcf9 100%);
+      border: 1px solid var(--success-line);
+    }
+
+    .success-shell.active { display: block; }
+    .success-shell h2 { margin: 0 0 8px; }
+    .success-shell p { margin: 0 0 12px; color: var(--muted); }
+    .ref {
+      display: inline-flex;
+      gap: 8px;
+      font-weight: 800;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: #eff9f2;
+      border: 1px solid var(--success-line);
+    }
+
+    @media (max-width: 700px) {
+      .fields { grid-template-columns: 1fr; }
+      .actions { flex-direction: column; align-items: stretch; }
+      .panel, .hero { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>NumeroUno Registration</h1>
+      <p>Complete the registration form below. This page is public, so guest users can submit directly without logging in to ERPNext.</p>
+    </div>
+
+    <div class="panel">
+      <div id="success-shell" class="success-shell">
+        <h2>Registration Submitted</h2>
+        <p>Your registration was saved successfully. Please keep this reference number for follow-up.</p>
+        <div class="ref">Reference No: <span id="success-reference"></span></div>
+      </div>
+
+      <div id="form-message" class="message"></div>
+      <form id="registration-form"></form>
+      <script id="form-schema-data" type="application/json">{{ form_schema | safe }}</script>
+    </div>
+  </div>
+
+  <script>
+    let formSchema = [];
+    const excludedPublicFields = new Set(["naming_series"]);
+    try {
+      const rawSchema = document.getElementById("form-schema-data")?.textContent || "[]";
+      formSchema = JSON.parse(rawSchema);
+    } catch (error) {}
+
+    const form = document.getElementById("registration-form");
+    const messageBox = document.getElementById("form-message");
+    const successShell = document.getElementById("success-shell");
+    const successReference = document.getElementById("success-reference");
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+    const signaturePads = {};
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function buildField(field) {
+      const requiredMark = field.reqd ? '<span class="req">*</span>' : "";
+      const fullClass = ["Small Text", "Signature", "HTML"].includes(field.fieldtype) ? " full" : "";
+
+      if (field.fieldtype === "HTML") {
+        return `
+          <div class="field full" data-fieldname="${escapeHtml(field.fieldname)}">
+            ${field.label ? `<label>${escapeHtml(field.label)}</label>` : ""}
+            <div class="html-block">${field.options || ""}</div>
+          </div>
+        `;
+      }
+
+      if (field.fieldtype === "Signature") {
+        return `
+          <div class="field full" data-fieldname="${escapeHtml(field.fieldname)}">
+            <label>${escapeHtml(field.label)} ${requiredMark}</label>
+            <div class="signature-box">
+              <canvas class="signature-canvas" id="canvas-${escapeHtml(field.fieldname)}"></canvas>
+              <div class="signature-actions">
+                <span>Use mouse, stylus, or touch to sign.</span>
+                <button type="button" data-clear-signature="${escapeHtml(field.fieldname)}">Clear</button>
+              </div>
+            </div>
+            <input type="hidden" name="${escapeHtml(field.fieldname)}" ${field.reqd ? "required" : ""}>
+          </div>
+        `;
+      }
+
+      if (field.fieldtype === "Small Text") {
+        return `
+          <div class="field${fullClass}" data-fieldname="${escapeHtml(field.fieldname)}">
+            <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
+            <textarea id="${escapeHtml(field.fieldname)}" name="${escapeHtml(field.fieldname)}" ${field.reqd ? "required" : ""}>${escapeHtml(field.default || "")}</textarea>
+          </div>
+        `;
+      }
+
+      if (field.fieldtype === "Link" && field.options === "Course") {
+        return `
+          <div class="field${fullClass}" data-fieldname="${escapeHtml(field.fieldname)}">
+            <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
+            <select id="${escapeHtml(field.fieldname)}" name="${escapeHtml(field.fieldname)}" ${field.reqd ? "required" : ""}>
+              <option value="">Select Course...</option>
+            </select>
+          </div>
+        `;
+      }
+
+      const inputType = field.fieldtype === "Date" ? "date" : (field.options === "Email" ? "email" : "text");
+      return `
+        <div class="field${fullClass}" data-fieldname="${escapeHtml(field.fieldname)}">
+          <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
+          <input type="${inputType}" id="${escapeHtml(field.fieldname)}" name="${escapeHtml(field.fieldname)}" value="${escapeHtml(field.default || "")}" ${field.reqd ? "required" : ""} ${field.read_only ? "readonly" : ""}>
+        </div>
+      `;
+    }
+
+    function renderForm() {
+      formSchema = (formSchema || [])
+        .map((section) => ({
+          ...section,
+          items: (section.items || []).filter((field) => !excludedPublicFields.has(field.fieldname)),
+        }))
+        .filter((section) => (section.items || []).length);
+
+      form.innerHTML = `
+        ${formSchema.map((section) => `
+          <section class="section">
+            <h2 class="section-title">${escapeHtml(section.label)}</h2>
+            <div class="fields">
+              ${(section.items || []).map(buildField).join("")}
+            </div>
+          </section>
+        `).join("")}
+        <div class="actions">
+          <button class="btn btn-secondary" type="button" id="reset-form">Reset</button>
+          <button class="btn" type="submit" id="submit-btn">Submit Registration</button>
+        </div>
+      `;
+
+      populateCourseOptions();
+      initSignaturePads();
+      document.getElementById("reset-form").addEventListener("click", resetForm);
+      form.addEventListener("submit", submitForm);
+    }
+
+    async function populateCourseOptions() {
+      const courseField = form.querySelector('select[name="course"]');
+      if (!courseField) return;
+
+      try {
+        const response = await fetch("/api/method/numerouno.numerouno.api.numerouno_registration.get_course_options");
+        const result = await response.json();
+        const courses = Array.isArray(result.message) ? result.message : [];
+
+        courseField.innerHTML = `
+          <option value="">Select Course...</option>
+          ${courses.map((row) => `<option value="${escapeHtml(row.name)}">${escapeHtml(row.name)}</option>`).join("")}
+        `;
+      } catch (error) {}
+    }
+
+    function initSignaturePads() {
+      document.querySelectorAll(".signature-canvas").forEach((canvas) => {
+        const fieldname = canvas.id.replace("canvas-", "");
+        const hiddenInput = form.querySelector(`input[name="${fieldname}"]`);
+        const context = canvas.getContext("2d");
+        let drawing = false;
+        let hasStroke = false;
+
+        function resizeCanvas() {
+          const ratio = window.devicePixelRatio || 1;
+          const rect = canvas.getBoundingClientRect();
+          canvas.width = rect.width * ratio;
+          canvas.height = rect.height * ratio;
+          context.scale(ratio, ratio);
+          context.lineWidth = 2;
+          context.lineCap = "round";
+          context.lineJoin = "round";
+          context.strokeStyle = "#173647";
+        }
+
+        function pointFromEvent(event) {
+          const rect = canvas.getBoundingClientRect();
+          const source = event.touches ? event.touches[0] : event;
+          return {
+            x: source.clientX - rect.left,
+            y: source.clientY - rect.top,
+          };
+        }
+
+        function startDrawing(event) {
+          event.preventDefault();
+          drawing = true;
+          hasStroke = true;
+          const point = pointFromEvent(event);
+          context.beginPath();
+          context.moveTo(point.x, point.y);
+        }
+
+        function draw(event) {
+          if (!drawing) return;
+          event.preventDefault();
+          const point = pointFromEvent(event);
+          context.lineTo(point.x, point.y);
+          context.stroke();
+          hiddenInput.value = canvas.toDataURL("image/png");
+        }
+
+        function stopDrawing() {
+          if (!drawing) return;
+          drawing = false;
+          if (hasStroke) {
+            hiddenInput.value = canvas.toDataURL("image/png");
+          }
+        }
+
+        function clearPad() {
+          context.setTransform(1, 0, 0, 1, 0, 0);
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          hasStroke = false;
+          hiddenInput.value = "";
+          resizeCanvas();
+        }
+
+        resizeCanvas();
+        canvas.addEventListener("mousedown", startDrawing);
+        canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("mouseup", stopDrawing);
+        canvas.addEventListener("mouseleave", stopDrawing);
+        canvas.addEventListener("touchstart", startDrawing, { passive: false });
+        canvas.addEventListener("touchmove", draw, { passive: false });
+        canvas.addEventListener("touchend", stopDrawing);
+        form.querySelector(`[data-clear-signature="${fieldname}"]`).addEventListener("click", clearPad);
+        window.addEventListener("resize", clearPad);
+
+        signaturePads[fieldname] = { clearPad };
+      });
+    }
+
+    function showMessage(type, text) {
+      messageBox.className = `message ${type}`;
+      messageBox.textContent = text;
+    }
+
+    function clearMessage() {
+      messageBox.className = "message";
+      messageBox.textContent = "";
+    }
+
+    function resetForm() {
+      clearMessage();
+      successShell.classList.remove("active");
+      form.reset();
+      Object.values(signaturePads).forEach((pad) => pad.clearPad());
+      formSchema.forEach((section) => {
+        (section.items || []).forEach((field) => {
+          if (field.default) {
+            const input = form.elements[field.fieldname];
+            if (input) input.value = field.default;
+          }
+        });
+      });
+    }
+
+    async function submitForm(event) {
+      event.preventDefault();
+      clearMessage();
+      successShell.classList.remove("active");
+
+      const submitButton = document.getElementById("submit-btn");
+      submitButton.disabled = true;
+
+      const payload = {};
+      for (const section of formSchema) {
+        for (const field of section.items || []) {
+          const input = form.elements[field.fieldname];
+          if (!input) continue;
+          payload[field.fieldname] = input.value;
+        }
+      }
+
+      try {
+        const response = await fetch("/api/method/numerouno.numerouno.api.numerouno_registration.submit_numerouno_registration", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Frappe-CSRF-Token": csrfToken,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+        const message = result.message || {};
+
+        if (!response.ok || message.status !== "success") {
+          throw new Error(message.message || "Unable to submit registration.");
+        }
+
+        successReference.textContent = message.name || "";
+        successShell.classList.add("active");
+        showMessage("success", message.message || "Registration submitted successfully.");
+        form.reset();
+        Object.values(signaturePads).forEach((pad) => pad.clearPad());
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (error) {
+        showMessage("error", error.message || "Unable to submit registration right now.");
+      } finally {
+        submitButton.disabled = false;
+      }
+    }
+
+    async function ensureSchemaAndRender() {
+      if (Array.isArray(formSchema) && formSchema.length) {
+        renderForm();
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/method/numerouno.numerouno.api.numerouno_registration.get_numerouno_registration_schema");
+        const result = await response.json();
+        formSchema = Array.isArray(result.message) ? result.message : [];
+      } catch (error) {
+        formSchema = [];
+      }
+
+      renderForm();
+    }
+
+    ensureSchemaAndRender();
+  </script>
+</body>
+</html>

@@ -73,6 +73,14 @@ def ensure_custom_block():
 			<div style="font-size:13px; opacity:0.8; margin-bottom:6px;">Setup</div>
 			<div style="font-size:16px; font-weight:700;">OPITO Courses</div>
 		</a>
+		<a href="/app/numerouno-registration" style="display:block; padding:16px; border-radius:14px; border:1px solid #c8d7f7; background:#eef2ff; color:#4338ca; text-decoration:none;">
+			<div style="font-size:13px; opacity:0.8; margin-bottom:6px;">Records</div>
+			<div style="font-size:16px; font-weight:700;">NumeroUno Registration List</div>
+		</a>
+		<a href="/numerouno-registration" target="_blank" style="display:block; padding:16px; border-radius:14px; border:1px solid #bddfcf; background:#f0fdf4; color:#15803d; text-decoration:none;">
+			<div style="font-size:13px; opacity:0.8; margin-bottom:6px;">Public Form</div>
+			<div style="font-size:16px; font-weight:700;">Open NumeroUno Registration</div>
+		</a>
 	</div>
 </div>
 """
