@@ -51,7 +51,6 @@ def submit_numerouno_registration(payload=None):
 			"message": str(exc) or "Unable to submit registration right now.",
 		}
 
-
 def send_acknowledgement_email(doc):
 	recipient = (doc.get("email") or "").strip()
 	if not recipient:

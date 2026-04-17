@@ -63,6 +63,7 @@ doctype_js = {
     "Student Attendance" : "public/js/student_attendance.js",
     "Student Card" : "public/js/student_card.js",
     "Sales Invoice" : "public/js/sales_invoice.js",
+    "Quotation" : "public/js/quotation.js",
     "Quiz Activity" : "public/js/quiz_activity.js",
     "Assessment Result" : "public/js/assesment_result.js",
     }
@@ -186,6 +187,9 @@ doc_events = {
     "Sales Order": {
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_missing_po",
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_sales_order_creation"
+    },
+    "Quotation": {
+        "before_cancel": "numerouno.numerouno.utils.quotation_workflow.require_cancellation_reason"
     },
     "Assessment Result": {
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_assessment_pending",
