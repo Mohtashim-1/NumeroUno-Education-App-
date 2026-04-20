@@ -8,4 +8,5 @@ numerouno.patches.v1_0.update_overtime_workflow_allow_edit
 numerouno.patches.v1_0.assign_vehicle_user_role_to_existing_users
 numerouno.patches.v1_0.add_quotation_cancellation_reason
 numerouno.patches.v1_0.update_quotation_cancellation_reason_field
+numerouno.patches.v1_0.create_quotation_workflow_notifications
 # Patches added in this section will be executed after doctypes are migrated

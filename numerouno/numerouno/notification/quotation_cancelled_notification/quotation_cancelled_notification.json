@@ -1,0 +1,33 @@
+{
+ "attach_files": "",
+ "attach_print": 0,
+ "channel": "Email",
+ "condition": "doc.workflow_state == \"Cancelled\"",
+ "creation": "2026-04-17 14:15:00.000000",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Quotation",
+ "enabled": 1,
+ "event": "Value Change",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "<p>Dear Sales Manager,</p>\n\n<p>The following quotation has been cancelled.</p>\n\n<p>Details:<br>\nQuotation: {{ doc.name }}<br>\nCustomer: {{ doc.customer }}<br>\nTransaction Date: {{ doc.transaction_date }}<br>\nGrand Total: {{ doc.grand_total }}<br>\nCancellation Reason: {{ doc.custom_cancellation_reason or \"Not provided\" }}</p>\n\n<p>You can view the document here:<br>\n{{ frappe.utils.get_url() }}/app/quotation/{{ doc.name }}</p>\n\n<p>Regards,<br>\nERP System</p>\n",
+ "message_type": "HTML",
+ "modified": "2026-04-17 14:15:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Quotation Cancelled Notification",
+ "owner": "Administrator",
+ "recipients": [
+  {
+   "receiver_by_role": "sales Manager Approval"
+  }
+ ],
+ "send_system_notification": 1,
+ "send_to_all_assignees": 0,
+ "sender": "Notification",
+ "sender_email": "erp@numerouno-me.com",
+ "subject": "Quotation {{ doc.name }} Cancelled",
+ "value_changed": "workflow_state"
+}

@@ -9,7 +9,7 @@
  "doctype": "Notification",
  "document_type": "Quotation",
  "enabled": 1,
- "event": "New",
+ "event": "Value Change",
  "idx": 0,
  "is_standard": 1,
  "message": "<p>Dear Sales Manager,</p>\n\n<p>A new Quotation has been submitted for your approval.</p>\n\n<p>Details:\n- Quotation: {{ doc.name }}\n- Customer: {{ doc.customer }}\n- Transaction Date: {{ doc.transaction_date }}\n- Grand Total: {{ doc.grand_total }}</p>\n\n<p>Please review and take the necessary action.</p>\n\n<p>You can view the document here:\n{{ frappe.utils.get_url() }}/app/quotation/{{ doc.name }}</p>\n\n<p>Regards,<br/>\nERP System</p>\n",
@@ -21,12 +21,13 @@
  "owner": "Administrator",
  "recipients": [
   {
-   "receiver_by_role": "Sales Manager"
+   "receiver_by_role": "sales Manager Approval"
   }
  ],
  "send_system_notification": 1,
  "send_to_all_assignees": 0,
  "sender": "Notification",
  "sender_email": "erp@numerouno-me.com",
- "subject": "{{doc.name}} Quotation Created"
+ "subject": "Quotation {{ doc.name }} Pending Approval",
+ "value_changed": "workflow_state"
 }

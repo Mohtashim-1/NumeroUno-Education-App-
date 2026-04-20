@@ -1,10 +1,11 @@
 import frappe
-from frappe.utils import getdate, add_days, nowdate, get_url
+from frappe.utils import getdate, add_days, get_url
 from frappe import _
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from frappe.model.document import Document
 from frappe.utils.background_jobs import enqueue
 from numerouno.numerouno.doctype.sales_invoice.sales_invoice import fetch_students_from_sg
+from education.education.utils import OverlapError
 
 
 def get_default_receivable_account():
@@ -101,25 +102,65 @@ def create_coarse_schedule(student_group, from_time, to_time):
 
         from_date = getdate(doc.from_date)
         to_date = getdate(doc.to_date)
-        today = getdate(nowdate())
+        created_schedules = 0
+        reused_schedules = 0
+        created_attendance = 0
+        skipped_attendance = 0
+        skipped_conflicts = []
+
+        def get_existing_schedule(instructor, schedule_date):
+            existing = frappe.get_all(
+                "Course Schedule",
+                filters=[
+                    ["student_group", "=", doc.name],
+                    ["course", "=", doc.course],
+                    ["instructor", "=", instructor],
+                    ["schedule_date", "=", schedule_date],
+                    ["room", "=", doc.custom_coarse_location],
+                    ["from_time", "=", from_time],
+                    ["to_time", "=", to_time],
+                    ["docstatus", "!=", 2],
+                ],
+                pluck="name",
+                limit=1,
+            )
+            return frappe.get_doc("Course Schedule", existing[0]) if existing else None
+
+        def make_conflict_message(instructor, schedule_date, error):
+            return _(
+                "Skipped {0} on {1} for instructor {2}: {3}"
+            ).format(doc.name, schedule_date, instructor, error)
 
         for i in doc.instructors:
             instructor = i.instructor
             current_date = from_date
 
             while current_date <= to_date:
-                # Create Course Schedule
-                cs = frappe.new_doc("Course Schedule")
-                cs.student_group = doc.name
-                cs.course = doc.course
-                cs.program = doc.program
-                cs.instructor = instructor
-                cs.schedule_date = current_date
-                cs.room = doc.custom_coarse_location
-                cs.from_time = from_time
-                cs.to_time = to_time
-                cs.flags.ignore_permissions = True
-                cs.insert()
+                cs = get_existing_schedule(instructor, current_date)
+                if cs:
+                    reused_schedules += 1
+                else:
+                    # Create Course Schedule
+                    cs = frappe.new_doc("Course Schedule")
+                    cs.student_group = doc.name
+                    cs.course = doc.course
+                    cs.program = doc.program
+                    cs.instructor = instructor
+                    cs.schedule_date = current_date
+                    cs.room = doc.custom_coarse_location
+                    cs.from_time = from_time
+                    cs.to_time = to_time
+                    cs.flags.ignore_permissions = True
+
+                    try:
+                        cs.insert()
+                        created_schedules += 1
+                    except OverlapError as overlap_error:
+                        skipped_conflicts.append(
+                            make_conflict_message(instructor, current_date, overlap_error)
+                        )
+                        current_date = add_days(current_date, 1)
+                        continue
 
                 # Create attendance for ALL dates (including future dates)
                 for s in doc.students:
@@ -127,6 +168,18 @@ def create_coarse_schedule(student_group, from_time, to_time):
 
                     # Student Attendance - for all dates (past, present, and future)
                     try:
+                        if frappe.db.exists(
+                            "Student Attendance",
+                            {
+                                "student": student,
+                                "date": current_date,
+                                "course_schedule": cs.name,
+                                "student_group": doc.name,
+                            },
+                        ):
+                            skipped_attendance += 1
+                            continue
+
                         sa = frappe.new_doc("Student Attendance")
                         sa.student = student
                         sa.date = current_date
@@ -135,6 +188,7 @@ def create_coarse_schedule(student_group, from_time, to_time):
                         sa.status = "Present"
                         sa.flags.ignore_permissions = True
                         sa.insert()
+                        created_attendance += 1
                         print(f"✅ Created attendance for student {student} on {current_date}")
                     except Exception as attendance_error:
                         print(f"❌ Failed to create attendance for student {student} on {current_date}: {str(attendance_error)}")
@@ -155,7 +209,21 @@ def create_coarse_schedule(student_group, from_time, to_time):
                 frappe.db.commit()
                 current_date = add_days(current_date, 1)
 
-        frappe.msgprint(_("✅ Course Schedules and Student Attendance created from {0} to {1} (including future dates). Student Cards created.").format(from_date, to_date))
+        summary_lines = [
+            _("Course schedule sync completed for {0} to {1}.").format(from_date, to_date),
+            _("Created schedules: {0}").format(created_schedules),
+            _("Reused existing schedules: {0}").format(reused_schedules),
+            _("Created attendance rows: {0}").format(created_attendance),
+        ]
+        if skipped_attendance:
+            summary_lines.append(_("Skipped existing attendance rows: {0}").format(skipped_attendance))
+        if skipped_conflicts:
+            summary_lines.append(_("Skipped conflicting slots: {0}").format(len(skipped_conflicts)))
+            summary_lines.extend(skipped_conflicts[:10])
+            if len(skipped_conflicts) > 10:
+                summary_lines.append(_("Additional conflicts skipped: {0}").format(len(skipped_conflicts) - 10))
+
+        frappe.msgprint("<br>".join(summary_lines), title=_("Course Schedule Summary"))
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "❌ Error in create_coarse_schedule")
