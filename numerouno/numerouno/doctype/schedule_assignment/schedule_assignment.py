@@ -2,6 +2,8 @@
 # For license information, please see license.txt
 
 import frappe
+import json
+from pathlib import Path
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, formatdate, get_url_to_form
@@ -147,3 +149,22 @@ def get_system_manager_emails():
 		fields=["email"],
 	)
 	return list(dict.fromkeys(row.email for row in email_rows if row.email))
+
+
+@frappe.whitelist()
+def sync_schedule_assignment_print_format():
+	json_path = (
+		Path(frappe.get_app_path("numerouno"))
+		/ "numerouno"
+		/ "print_format"
+		/ "schedule_assignment_sheet"
+		/ "schedule_assignment_sheet.json"
+	)
+	data = json.loads(json_path.read_text())
+	doc = frappe.get_doc("Print Format", "Schedule Assignment Sheet")
+	doc.css = data.get("css") or ""
+	doc.html = data.get("html") or ""
+	doc.custom_format = data.get("custom_format") or 0
+	doc.print_format_type = data.get("print_format_type") or "Jinja"
+	doc.save(ignore_permissions=True)
+	return {"name": doc.name, "modified": doc.modified}
