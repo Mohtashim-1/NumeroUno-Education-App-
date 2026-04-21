@@ -8,6 +8,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import escape_html, format_date, format_time, get_fullname, get_url
 
+DEFAULT_HR_APPROVER = "t.samir@numerouno-me.com"
+
 
 class OvertimeRequest(Document):
     def validate(self):
@@ -120,6 +122,9 @@ class OvertimeRequest(Document):
 
 
 def _get_default_hr_approver():
+    if frappe.db.exists("User", DEFAULT_HR_APPROVER):
+        return DEFAULT_HR_APPROVER
+
     hr_users = frappe.get_all(
         "Has Role",
         filters={"role": "HR Manager", "parenttype": "User"},

@@ -1,12 +1,19 @@
 // Copyright (c) 2026, mohtashim and contributors
 // For license information, please see license.txt
 
+const DEFAULT_HR_APPROVER = 't.samir@numerouno-me.com';
+
 frappe.ui.form.on('Overtime Request', {
+    onload(frm) {
+        set_default_hr_approver(frm);
+    },
     refresh(frm) {
+        set_default_hr_approver(frm);
         format_time_fields(frm);
         add_change_listeners(frm);
     },
     onload_post_render(frm) {
+        set_default_hr_approver(frm);
         format_time_fields(frm);
         add_change_listeners(frm);
     },
@@ -14,6 +21,12 @@ frappe.ui.form.on('Overtime Request', {
         format_time_fields(frm);
     }
 });
+
+function set_default_hr_approver(frm) {
+    if (!frm.doc.hr_approver) {
+        frm.set_value('hr_approver', DEFAULT_HR_APPROVER);
+    }
+}
 
 function format_time_fields(frm) {
     const fields = ['time_from', 'time_to'];

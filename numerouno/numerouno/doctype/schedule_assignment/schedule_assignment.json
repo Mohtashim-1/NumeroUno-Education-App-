@@ -1,0 +1,132 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:SA-{#####}",
+ "creation": "2026-04-21 12:48:18.933699",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "schedule_date",
+  "location",
+  "column_break_kqyo",
+  "morning_session_label",
+  "afternoon_session_label",
+  "section_break_vrzn",
+  "entries",
+  "section_break_notes",
+  "note_primary",
+  "note_secondary",
+  "schedule_title",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "Today",
+   "fieldname": "schedule_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Schedule Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Location"
+  },
+  {
+   "fieldname": "column_break_kqyo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "8AM",
+   "fieldname": "morning_session_label",
+   "fieldtype": "Data",
+   "label": "Morning Session Label",
+   "reqd": 1
+  },
+  {
+   "default": "1PM",
+   "fieldname": "afternoon_session_label",
+   "fieldtype": "Data",
+   "label": "Afternoon Session Label",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_vrzn",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "entries",
+   "fieldtype": "Table",
+   "label": "Entries",
+   "options": "Schedule Assignment Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_notes",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "NOTE: COURSE & ROOM ALLOCATION MAY CHANGE BASED ON REQUIREMENTS",
+   "fieldname": "note_primary",
+   "fieldtype": "Small Text",
+   "label": "Primary Note"
+  },
+  {
+   "default": "TBA TRAINERS: PLEASE ATTEND ANY OF ABOVE REQUIRED TRAINING W/ ATTENDANCE SHEET & ASSESSMENT FOR YOUR RECORD",
+   "fieldname": "note_secondary",
+   "fieldtype": "Small Text",
+   "label": "Secondary Note"
+  },
+  {
+   "fieldname": "schedule_title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Schedule Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Schedule Assignment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-21 12:48:18.933699",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Schedule Assignment",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "schedule_title",
+ "track_changes": 1
+}

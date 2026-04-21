@@ -1,0 +1,16 @@
+<p>Dear Sales Manager,</p>
+
+<p>The following quotation has been cancelled.</p>
+
+<p>Details:<br>
+Quotation: {{ doc.name }}<br>
+Customer: {{ doc.customer_name or doc.party_name or "Not provided" }}<br>
+Transaction Date: {{ doc.transaction_date }}<br>
+Grand Total: {{ doc.grand_total }}<br>
+Cancellation Reason: {{ doc.custom_cancellation_reason or "Not provided" }}</p>
+
+<p>You can view the document here:<br>
+{{ frappe.utils.get_url() }}/app/quotation/{{ doc.name }}</p>
+
+<p>Regards,<br>
+ERP System</p>
