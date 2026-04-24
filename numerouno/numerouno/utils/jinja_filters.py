@@ -3,6 +3,7 @@ Jinja filters for Numerouno app
 """
 import frappe
 from numerouno.api import generate_qr_code
+from numerouno.numerouno.utils.pdf_to_img import pdf_to_base64_image
 
 
 def qr_code(data, size=120, box_size=10, border=4):
@@ -29,3 +30,11 @@ def qr_code(data, size=120, box_size=10, border=4):
         frappe.log_error(f"QR Code filter error: {str(e)}", "QR Code Filter")
         return ""
 
+
+def pdf_to_image(file_url):
+    """Convert a PDF file URL into a base64 PNG for print-friendly rendering."""
+    try:
+        return pdf_to_base64_image(file_url) or ""
+    except Exception as e:
+        frappe.log_error(f"PDF image filter error: {str(e)}", "PDF Image Filter")
+        return ""
