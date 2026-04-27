@@ -17,7 +17,7 @@
  "is_hidden": 0,
  "label": "Vehicles",
  "links": [],
- "modified": "2026-03-17 21:39:33.190689",
+ "modified": "2026-04-27 16:16:50.140378",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Vehicles",
@@ -26,7 +26,11 @@
  "parent_page": "",
  "public": 1,
  "quick_lists": [],
- "roles": [],
+ "roles": [
+  {
+   "role": "Vehicle User"
+  }
+ ],
  "sequence_id": 35.0,
  "shortcuts": [],
  "title": "Vehicles"

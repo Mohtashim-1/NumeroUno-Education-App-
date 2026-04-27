@@ -7,15 +7,15 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
-  <title>Public Quiz Attempt v3.0.6</title>
+  <title>Public Quiz Attempt v3.0.7</title>
 
   <script>
     // Force page reload if version mismatch
-    if (localStorage.getItem("quizVersion") !== "3.0.6") {
-      localStorage.setItem("quizVersion", "3.0.6");
+    if (localStorage.getItem("quizVersion") !== "3.0.7") {
+      localStorage.setItem("quizVersion", "3.0.7");
       if (window.location.search.indexOf("v=") === -1) {
         window.location.href =
-          window.location.href + (window.location.search ? "&" : "?") + "v=3.0.6";
+          window.location.href + (window.location.search ? "&" : "?") + "v=3.0.7";
       }
     }
   </script>
@@ -519,7 +519,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
 
  <script>
-  const VERSION = "3.0.6";
+  const VERSION = "3.0.7";
   const QUIZ_DEBUG = false;
   const COURSE_EVALUATION_URL = "https://erpnext.nutc.cloud/course-evaluation/new";
   const RTL_LANGS = new Set(["ar", "ur"]);
@@ -770,6 +770,7 @@
   let preselectParams = null;
   let quizAttemptLoading = false;
   let autosaveRestored = false;
+  const QUIZ_AUDIT_PREFIX = "publicQuizAudit";
 
   function getPreselectParams() {
     const params = new URLSearchParams(window.location.search || "");
@@ -791,6 +792,7 @@
       quizName,
       student,
       studentGroup,
+      attemptId: null,
       history: history || [],
       currentIndex: 0,
       answers: {}
@@ -801,6 +803,66 @@
     return `${AUTOSAVE_PREFIX}:${VERSION}:${quizName}:${student}:${studentGroup}`;
   }
 
+  function getAuditStartedKey(attemptId) {
+    return `${QUIZ_AUDIT_PREFIX}:started:${attemptId}`;
+  }
+
+  function createAttemptId() {
+    return `qa-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  function getAttemptId() {
+    if (!quizAttemptState) return null;
+    if (!quizAttemptState.attemptId) {
+      quizAttemptState.attemptId = createAttemptId();
+    }
+    return quizAttemptState.attemptId;
+  }
+
+  function sendQuizAuditEvent(eventType, quizName, student, studentGroup, details = {}) {
+    const attemptId = getAttemptId();
+    if (!eventType || !attemptId) return;
+
+    const payload = new URLSearchParams();
+    payload.append("event_type", eventType);
+    payload.append("quiz_name", quizName || "");
+    payload.append("student", student || "");
+    payload.append("student_group", studentGroup || "");
+    payload.append("attempt_id", attemptId);
+    payload.append("details", JSON.stringify(details || {}));
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+    const headers = {
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "Accept": "application/json"
+    };
+    if (csrfToken) {
+      headers["X-Frappe-CSRF-Token"] = csrfToken;
+    }
+
+    fetch("/api/method/numerouno.numerouno.api.quiz_api.log_public_quiz_audit", {
+      method: "POST",
+      headers,
+      body: payload.toString(),
+      keepalive: true
+    }).catch((err) => {
+      debugLog("quiz-audit:failed", { eventType, err: String(err) });
+    });
+  }
+
+  function logQuizAttemptStarted(quizData, quizName, student, studentGroup) {
+    const attemptId = getAttemptId();
+    if (!attemptId) return;
+
+    const startedKey = getAuditStartedKey(attemptId);
+    if (sessionStorage.getItem(startedKey)) return;
+
+    sessionStorage.setItem(startedKey, "1");
+    sendQuizAuditEvent("attempt_started", quizName, student, studentGroup, {
+      question_count: (quizData?.questions || []).length
+    });
+  }
+
   function saveAutosaveState() {
     if (!quizAttemptState) return;
     const { quizName, student, studentGroup, currentIndex, answers } = quizAttemptState;
@@ -809,6 +871,7 @@
       quizName,
       student,
       studentGroup,
+      attemptId: getAttemptId(),
       currentIndex,
       answers,
       savedAt: new Date().toISOString(),
@@ -844,7 +907,11 @@
       });
       const maxIndex = Math.max(0, (quizData.questions || []).length - 1);
       const restoredIndex = Math.min(Math.max(Number(parsed.currentIndex) || 0, 0), maxIndex);
-      return { answers: restoredAnswers, currentIndex: restoredIndex };
+      return {
+        answers: restoredAnswers,
+        currentIndex: restoredIndex,
+        attemptId: parsed.attemptId || null
+      };
     } catch (err) {
       debugLog("autosave:restore failed", err);
       return null;
@@ -1567,9 +1634,13 @@ async function reloadStudentGroups() {
     if (restored) {
       quizAttemptState.answers = restored.answers || {};
       quizAttemptState.currentIndex = restored.currentIndex || 0;
+      quizAttemptState.attemptId = restored.attemptId || createAttemptId();
       autosaveRestored = true;
       showSuccess(t("autosave_restored"));
+    } else {
+      quizAttemptState.attemptId = createAttemptId();
     }
+    logQuizAttemptStarted(quizData, quizName, student, studentGroup);
 
     // Quiz info
     const quizInfo = document.createElement("div");
@@ -1926,7 +1997,12 @@ async function reloadStudentGroups() {
     params.append("quiz_name", quizName);
     params.append("student", student);
     params.append("student_group", studentGroup);
+    params.append("attempt_id", getAttemptId());
     params.append("answers", JSON.stringify(submissionAnswers));
+
+    sendQuizAuditEvent("submit_clicked", quizName, student, studentGroup, {
+      answer_count: submissionAnswers.length
+    });
     
     const url = "/api/method/numerouno.numerouno.api.quiz_api.submit_quiz_from_mcqs";
     
@@ -1957,6 +2033,14 @@ async function reloadStudentGroups() {
         debugLog("Submission response", data);
         if (data.message?.status === "success") {
           const result = data.message;
+          if (!result.activity_id) {
+            const missingActivityReason = result.activity_error
+              ? ` ${result.activity_error}`
+              : "";
+            showError(`Quiz submission could not be finalized because Quiz Activity was not created.${missingActivityReason}`);
+            setSubmitLoading(false);
+            return;
+          }
           clearAutosaveState(quizName, student, studentGroup);
           showSuccess(
             t("quiz_submit_success", {

@@ -17,7 +17,7 @@
  "is_hidden": 0,
  "label": "Registrations",
  "links": [],
- "modified": "2026-03-17 16:38:24.986704",
+ "modified": "2026-04-27 16:17:42.818942",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Registrations",
@@ -26,7 +26,11 @@
  "parent_page": "",
  "public": 1,
  "quick_lists": [],
- "roles": [],
+ "roles": [
+  {
+   "role": "Registration User"
+  }
+ ],
  "sequence_id": 33.0,
  "shortcuts": [],
  "title": "Registrations"
