@@ -31,6 +31,150 @@ def _log_public_quiz_audit(event_type, quiz_name=None, student=None, student_gro
     return payload
 
 
+def _safe_selected_option_text(value, max_len=140):
+    """Keep selected option text within Quiz Result field size."""
+    if not value:
+        return ""
+    text = str(value).strip()
+    if len(text) <= max_len:
+        return text
+    return f"{text[: max_len - 3].rstrip()}..."
+
+
+def _progress_cache_key(attempt_id):
+    if not attempt_id:
+        return None
+    return f"public_quiz_activity:{attempt_id}"
+
+
+def _set_quiz_activity_for_attempt(attempt_id, quiz_activity_name):
+    key = _progress_cache_key(attempt_id)
+    if not key or not quiz_activity_name:
+        return
+    frappe.cache().set_value(key, quiz_activity_name, expires_in_sec=60 * 60 * 24)
+
+
+def _get_quiz_activity_for_attempt(attempt_id):
+    key = _progress_cache_key(attempt_id)
+    if not key:
+        return None
+    value = frappe.cache().get_value(key)
+    if not value:
+        return None
+    if isinstance(value, bytes):
+        value = value.decode()
+    return value
+
+
+def _to_answer_map(answers):
+    """Normalize mixed answer payloads into {question_name: option_id}."""
+    if not answers:
+        return {}
+    mapped = {}
+    if isinstance(answers, dict):
+        for question_name, option_value in answers.items():
+            if option_value in (None, "", [], ()):
+                continue
+            if isinstance(option_value, list):
+                mapped[question_name] = option_value[0] if option_value else None
+            else:
+                mapped[question_name] = option_value
+        return mapped
+
+    if isinstance(answers, list):
+        for row in answers:
+            question_name = row.get("question")
+            selected_answers = row.get("answers") or []
+            if not question_name or not selected_answers:
+                continue
+            mapped[question_name] = selected_answers[0]
+    return mapped
+
+
+def _selected_option_text_for_question(question_name, option_id):
+    if not question_name or option_id in (None, ""):
+        return ""
+    try:
+        question_doc = frappe.get_doc("Question", question_name)
+    except Exception:
+        return str(option_id)
+
+    options = getattr(question_doc, "options", None) or []
+    try:
+        opt_idx = int(option_id) - 1
+    except Exception:
+        opt_idx = -1
+
+    if 0 <= opt_idx < len(options):
+        return _safe_selected_option_text(getattr(options[opt_idx], "option", "") or str(option_id))
+    return _safe_selected_option_text(str(option_id))
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def upsert_public_quiz_progress(quiz_name, student, student_group, answers=None, attempt_id=None, total_questions=None):
+    """Persist draft Quiz Activity as user answers questions one-by-one."""
+    import json
+
+    if not quiz_name or not student or not student_group:
+        return {"status": "error", "message": "Quiz, student, and student group are required"}
+
+    if isinstance(answers, str):
+        try:
+            answers = json.loads(answers)
+        except Exception:
+            answers = {}
+
+    answer_map = _to_answer_map(answers)
+    total_questions_val = int(total_questions or 0)
+    answered_count = len([v for v in answer_map.values() if v not in (None, "")])
+
+    quiz_activity_name = _get_quiz_activity_for_attempt(attempt_id)
+    quiz_activity = None
+    if quiz_activity_name and frappe.db.exists("Quiz Activity", quiz_activity_name):
+        quiz_activity = frappe.get_doc("Quiz Activity", quiz_activity_name)
+        if quiz_activity.docstatus != 0:
+            quiz_activity = None
+
+    if not quiz_activity:
+        quiz_activity = frappe.new_doc("Quiz Activity")
+        quiz_activity.student = student
+        quiz_activity.quiz = quiz_name
+        quiz_activity.activity_date = today()
+        if hasattr(quiz_activity, "custom_student_group"):
+            quiz_activity.custom_student_group = student_group
+
+    quiz_activity.result = []
+    for question_name, option_id in answer_map.items():
+        if option_id in (None, ""):
+            continue
+        quiz_activity.append("result", {
+            "question": question_name,
+            "selected_option": _selected_option_text_for_question(question_name, option_id),
+            "quiz_result": "Pending"
+        })
+
+    if total_questions_val > 0:
+        quiz_activity.score = f"{answered_count}/{total_questions_val}"
+    else:
+        quiz_activity.score = f"{answered_count}/{max(answered_count, 1)}"
+
+    if quiz_activity.name and quiz_activity.get("__islocal") is None:
+        quiz_activity.save(ignore_permissions=True)
+    else:
+        quiz_activity.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    _set_quiz_activity_for_attempt(attempt_id, quiz_activity.name)
+
+    return {
+        "status": "success",
+        "activity_id": quiz_activity.name,
+        "answered_count": answered_count,
+        "total_questions": total_questions_val,
+        "is_completed": False,
+    }
+
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def log_public_quiz_audit(event_type, quiz_name=None, student=None, student_group=None, attempt_id=None, details=None):
     """Capture client-side quiz audit checkpoints before Quiz Activity creation."""
@@ -1412,8 +1556,18 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
         activity_id = None
         activity_error = None
         try:
-            print(f"\n[QUIZ ACTIVITY] Creating Quiz Activity...")
-            quiz_activity = frappe.new_doc("Quiz Activity")
+            print(f"\n[QUIZ ACTIVITY] Creating/Updating Quiz Activity...")
+
+            quiz_activity = None
+            existing_activity_name = _get_quiz_activity_for_attempt(attempt_id)
+            if existing_activity_name and frappe.db.exists("Quiz Activity", existing_activity_name):
+                existing_activity = frappe.get_doc("Quiz Activity", existing_activity_name)
+                if existing_activity.docstatus == 0:
+                    quiz_activity = existing_activity
+
+            if not quiz_activity:
+                quiz_activity = frappe.new_doc("Quiz Activity")
+
             if enrollment:
                 quiz_activity.enrollment = enrollment
             else:
@@ -1460,18 +1614,21 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
                 
                 quiz_activity.append("result", {
                     "question": question_name,
-                    "selected_option": selected_option_text,
+                    "selected_option": _safe_selected_option_text(selected_option_text),
                     "quiz_result": "Correct" if is_correct else "Wrong"
                 })
 
-            if enrollment:
-                quiz_activity.insert(ignore_permissions=True)
-                quiz_activity.submit()
+            if quiz_activity.name and quiz_activity.get("__islocal") is None:
+                quiz_activity.save(ignore_permissions=True)
             else:
-                quiz_activity.insert(ignore_permissions=True, ignore_mandatory=True)
+                quiz_activity.insert(ignore_permissions=True, ignore_mandatory=not bool(enrollment))
+
+            if enrollment and quiz_activity.docstatus == 0:
+                quiz_activity.submit()
 
             frappe.db.commit()
             activity_id = quiz_activity.name
+            _set_quiz_activity_for_attempt(attempt_id, activity_id)
             print(f"  ✓ Quiz Activity created: {activity_id}")
             
             # Add error message to Quiz Activity comments if Assessment Result creation failed

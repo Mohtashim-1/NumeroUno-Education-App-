@@ -25,6 +25,38 @@
             padding: 2rem;
             text-align: center;
         }
+        .brand-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 1rem;
+        }
+        .brand-logo {
+            width: 96px;
+            height: auto;
+            object-fit: contain;
+            border-radius: 0;
+            background: transparent;
+            padding: 0;
+            box-shadow: none;
+            display: block;
+        }
+        .brand-text {
+            text-align: center;
+            line-height: 1.2;
+        }
+        .brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+        .brand-subtitle {
+            font-size: 12px;
+            margin: 0;
+            opacity: 0.9;
+        }
         .verification-form {
             padding: 2rem;
         }
@@ -135,7 +167,13 @@
                 <div class="verification-container">
                     <!-- Header Section -->
                     <div class="header-section">
-                        <i class="fas fa-certificate fa-3x mb-3"></i>
+                        <div class="brand-row">
+                            <img class="brand-logo" src="/files/WhatsApp Image 2026-04-30 at 5.38.58 PM.jpeg" alt="NUTC Logo">
+                            <div class="brand-text">
+                                <p class="brand-title">Numero Uno Training Training & Consulting LLC</p>
+                                <p class="brand-subtitle">Official Certificate Verification</p>
+                            </div>
+                        </div>
                         <h2 class="mb-0">Document Verification</h2>
                         <p class="mb-0">Verify assessment results and driving cards</p>
                     </div>

@@ -922,11 +922,59 @@
     if (!quizAttemptState) return;
     quizAttemptState.answers[questionName] = optionId;
     saveAutosaveState();
+    scheduleProgressSync();
   }
 
   function getAnswer(questionName) {
     if (!quizAttemptState) return null;
     return quizAttemptState.answers[questionName] || null;
+  }
+
+  let progressSyncTimer = null;
+  function scheduleProgressSync() {
+    if (!quizAttemptState) return;
+    if (progressSyncTimer) {
+      clearTimeout(progressSyncTimer);
+    }
+    progressSyncTimer = setTimeout(syncQuizProgress, 350);
+  }
+
+  function syncQuizProgress() {
+    if (!quizAttemptState) return;
+    const { quizData, quizName, student, studentGroup, answers } = quizAttemptState;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+
+    const payload = new URLSearchParams();
+    payload.append("quiz_name", quizName || "");
+    payload.append("student", student || "");
+    payload.append("student_group", studentGroup || "");
+    payload.append("attempt_id", getAttemptId() || "");
+    payload.append("total_questions", String((quizData?.questions || []).length));
+    payload.append("answers", JSON.stringify(answers || {}));
+
+    const headers = {
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      "Accept": "application/json"
+    };
+    if (csrfToken) {
+      headers["X-Frappe-CSRF-Token"] = csrfToken;
+    }
+
+    fetch("/api/method/numerouno.numerouno.api.quiz_api.upsert_public_quiz_progress", {
+      method: "POST",
+      headers,
+      body: payload.toString(),
+      keepalive: true
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.message?.status === "success" && data.message.activity_id) {
+          quizAttemptState.activityId = data.message.activity_id;
+        }
+      })
+      .catch((err) => {
+        debugLog("progress-sync failed", err);
+      });
   }
 
   function getSelectedOptionText(question, optionId) {
@@ -1979,6 +2027,9 @@ async function reloadStudentGroups() {
         marks: question.marks
       };
     });
+
+    // Push the latest answer state before final submission.
+    syncQuizProgress();
 
     showLoading(true);
     hideMessages();
