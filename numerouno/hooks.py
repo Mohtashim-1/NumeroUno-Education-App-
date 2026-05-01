@@ -10,7 +10,9 @@ app_license = "mit"
 website_route_rules = [
     {"from_route": "/assessment-result1", "to_route": "numerouno/assessment_result1"},
     {"from_route": "/quiz", "to_route": "numerouno/quiz_index"},
-    {"from_route": "/quiz-attempt", "to_route": "numerouno/quiz_attempt"}
+    {"from_route": "/quiz-attempt", "to_route": "numerouno/quiz_attempt"},
+    # Endpoint must match www/<path>.html — not www/numerouno/<path>.html
+    {"from_route": "/public-forms", "to_route": "public_portal_forms"},
 ]
 
 # Website pages accessible to guests

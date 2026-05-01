@@ -1,0 +1,277 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:IQA-{#####}",
+ "creation": "2026-05-02 02:44:10.888787",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "general_section",
+  "iqa_name",
+  "date_of_iqa_report",
+  "assessor_name",
+  "column_break_rlds",
+  "units_observed",
+  "sampling_section",
+  "date_of_first_sample",
+  "evidences",
+  "column_break_mssw",
+  "outcomes_sampled",
+  "learners_names",
+  "checklist_section",
+  "checklist_instruction",
+  "q_sufficient_direct_evidence",
+  "q_all_performance_met",
+  "column_break_wxpy",
+  "q_all_knowledge_met",
+  "q_learner_observed_during_assessment",
+  "q_documentation_completed",
+  "q_evidence_vcars",
+  "recommendations_section",
+  "iqa_recommendations",
+  "column_break_hwmo",
+  "iqa_comments",
+  "decision_section",
+  "agrees_with_assessment_decision",
+  "iqa_signature",
+  "iqa_signature_date",
+  "column_break_qhsw",
+  "assessor_signature",
+  "assessor_signature_date",
+  "column_break_gekq",
+  "gm_signature",
+  "gm_signature_date",
+  "footer_section",
+  "document_reference"
+ ],
+ "fields": [
+  {
+   "fieldname": "general_section",
+   "fieldtype": "Section Break",
+   "label": "1. General Information"
+  },
+  {
+   "fieldname": "iqa_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "IQA name"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date_of_iqa_report",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date of IQA report"
+  },
+  {
+   "fieldname": "assessor_name",
+   "fieldtype": "Data",
+   "label": "Assessor name"
+  },
+  {
+   "fieldname": "units_observed",
+   "fieldtype": "Small Text",
+   "label": "Unit(s) Observed"
+  },
+  {
+   "fieldname": "sampling_section",
+   "fieldtype": "Section Break",
+   "label": "2. Sampling Details"
+  },
+  {
+   "fieldname": "date_of_first_sample",
+   "fieldtype": "Date",
+   "label": "Date of 1st Sample"
+  },
+  {
+   "fieldname": "outcomes_sampled",
+   "fieldtype": "Small Text",
+   "label": "Outcome(s) sampled"
+  },
+  {
+   "fieldname": "learners_names",
+   "fieldtype": "Small Text",
+   "label": "Learners' Names"
+  },
+  {
+   "fieldname": "evidences",
+   "fieldtype": "Text Editor",
+   "label": "Evidences"
+  },
+  {
+   "fieldname": "checklist_section",
+   "fieldtype": "Section Break",
+   "label": "3. Assessment Checklist"
+  },
+  {
+   "fieldname": "checklist_instruction",
+   "fieldtype": "HTML",
+   "options": "<p><em>Please tick as appropriate (Yes / No)</em></p>"
+  },
+  {
+   "default": "Yes",
+   "fieldname": "q_sufficient_direct_evidence",
+   "fieldtype": "Select",
+   "label": "Is there sufficient direct evidence relating to the unit being assessed?",
+   "options": "Yes\nNo"
+  },
+  {
+   "default": "Yes",
+   "fieldname": "q_all_performance_met",
+   "fieldtype": "Select",
+   "label": "Does the evidence show ALL performance requirements are met?",
+   "options": "Yes\nNo"
+  },
+  {
+   "default": "Yes",
+   "fieldname": "q_all_knowledge_met",
+   "fieldtype": "Select",
+   "label": "Does the evidence show ALL knowledge requirements are met?",
+   "options": "Yes\nNo"
+  },
+  {
+   "default": "Yes",
+   "fieldname": "q_learner_observed_during_assessment",
+   "fieldtype": "Select",
+   "label": "Was the learner observed during the assessment?",
+   "options": "Yes\nNo"
+  },
+  {
+   "default": "Yes",
+   "fieldname": "q_documentation_completed",
+   "fieldtype": "Select",
+   "label": "Has the required documentation been completed appropriately?",
+   "options": "Yes\nNo"
+  },
+  {
+   "default": "Yes",
+   "fieldname": "q_evidence_vcars",
+   "fieldtype": "Select",
+   "label": "Is the evidence Valid, Current, Authentic, Auditable, Reliable, Sufficient?",
+   "options": "Yes\nNo"
+  },
+  {
+   "fieldname": "recommendations_section",
+   "fieldtype": "Section Break",
+   "label": "4. Recommendations and Comments"
+  },
+  {
+   "fieldname": "iqa_recommendations",
+   "fieldtype": "Text Editor",
+   "label": "IQA Recommendations"
+  },
+  {
+   "fieldname": "iqa_comments",
+   "fieldtype": "Text Editor",
+   "label": "IQA Comments"
+  },
+  {
+   "fieldname": "decision_section",
+   "fieldtype": "Section Break",
+   "label": "5. Final Decision and Sign-offs"
+  },
+  {
+   "default": "Yes",
+   "fieldname": "agrees_with_assessment_decision",
+   "fieldtype": "Select",
+   "label": "Does IQA agree with assessment decision?",
+   "options": "Yes\nNo"
+  },
+  {
+   "fieldname": "iqa_signature",
+   "fieldtype": "Signature",
+   "label": "IQA Signature"
+  },
+  {
+   "fieldname": "iqa_signature_date",
+   "fieldtype": "Date",
+   "label": "IQA Signature Date"
+  },
+  {
+   "fieldname": "assessor_signature",
+   "fieldtype": "Signature",
+   "label": "Assessor's Signature"
+  },
+  {
+   "fieldname": "assessor_signature_date",
+   "fieldtype": "Date",
+   "label": "Assessor's Signature Date"
+  },
+  {
+   "fieldname": "gm_signature",
+   "fieldtype": "Signature",
+   "label": "General Manager Signature"
+  },
+  {
+   "fieldname": "gm_signature_date",
+   "fieldtype": "Date",
+   "label": "General Manager Signature Date"
+  },
+  {
+   "fieldname": "footer_section",
+   "fieldtype": "Section Break",
+   "label": "Document Reference"
+  },
+  {
+   "default": "NUTC-P14-F05 Rev 2 Dated 25.01.2025",
+   "fieldname": "document_reference",
+   "fieldtype": "Data",
+   "label": "Form reference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_rlds",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_mssw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_wxpy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_hwmo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_qhsw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_gekq",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-02 02:59:03.857318",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Internal Quality Assurance",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "iqa_name",
+ "track_changes": 1
+}
