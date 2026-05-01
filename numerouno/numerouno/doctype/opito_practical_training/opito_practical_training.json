@@ -1,25 +1,124 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:OPT-{#####}",
  "creation": "2026-05-02 03:16:45.692460",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "section_break_y7fe"
+  "course",
+  "column_break_idxp",
+  "date",
+  "column_break_vwwg",
+  "time",
+  "trainer_section",
+  "traineraccessor_name",
+  "column_break_ypqb",
+  "instructor_signature",
+  "technician_section",
+  "technician_name",
+  "column_break_xpqr",
+  "technician_signature",
+  "section_break_viks",
+  "total_no_of_learner",
+  "column_break_pjhc",
+  "learners_comment"
  ],
  "fields": [
   {
-   "fieldname": "section_break_y7fe",
-   "fieldtype": "Section Break"
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "fieldname": "column_break_idxp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Data",
+   "label": "Date"
+  },
+  {
+   "fieldname": "column_break_vwwg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Now",
+   "fieldname": "time",
+   "fieldtype": "Time",
+   "label": "Time"
+  },
+  {
+   "fieldname": "trainer_section",
+   "fieldtype": "Section Break",
+   "label": "Trainer"
+  },
+  {
+   "fieldname": "traineraccessor_name",
+   "fieldtype": "Link",
+   "label": "Trainer/Accessor Name",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "column_break_ypqb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "instructor_signature",
+   "fieldtype": "Signature",
+   "label": "Instructor Signature"
+  },
+  {
+   "fieldname": "technician_section",
+   "fieldtype": "Section Break",
+   "label": "Technician"
+  },
+  {
+   "fieldname": "technician_name",
+   "fieldtype": "Link",
+   "label": "Technician Name",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "column_break_xpqr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "technician_signature",
+   "fieldtype": "Signature",
+   "label": "Technician Signature"
+  },
+  {
+   "fieldname": "section_break_viks",
+   "fieldtype": "Section Break",
+   "label": "Comment"
+  },
+  {
+   "fieldname": "total_no_of_learner",
+   "fieldtype": "Float",
+   "label": "Total No of Learner"
+  },
+  {
+   "fieldname": "column_break_pjhc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "learners_comment",
+   "fieldtype": "Text Editor",
+   "label": "Learner's Comment"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-02 03:16:45.692460",
+ "modified": "2026-05-02 03:50:06.810993",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "OPITO Practical Training",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -39,5 +138,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

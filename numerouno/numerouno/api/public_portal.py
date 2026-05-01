@@ -14,6 +14,7 @@ SUBMITTABLE_FIELD_TYPES = frozenset(
 		"Date",
 		"Datetime",
 		"Time",
+		"Link",
 		"Small Text",
 		"Text",
 		"Text Editor",
@@ -91,7 +92,13 @@ def build_public_form_schema(reference_doctype: str):
 			continue
 
 		if not current_section:
-			continue
+			# Fields listed before the first Section Break are otherwise skipped.
+			current_section = {
+				"fieldname": "_public_portal_header",
+				"label": "",
+				"items": [],
+			}
+			sections.append(current_section)
 
 		if df.fieldtype == "Column Break":
 			continue
