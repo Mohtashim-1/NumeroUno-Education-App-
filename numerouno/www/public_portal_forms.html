@@ -151,6 +151,50 @@
 
     .req { color: var(--danger); }
 
+    /* Link field typeahead (guest search API) */
+    .link-autocomplete {
+      position: relative;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .link-autocomplete__list {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 300000;
+      margin: 0;
+      padding: 6px 0;
+      list-style: none;
+      max-height: 260px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1.5px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .link-autocomplete__list li {
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      color: var(--ink);
+      line-height: 1.35;
+    }
+
+    .link-autocomplete__list li:hover,
+    .link-autocomplete__list li.is-highlighted {
+      background: #eef4f7;
+    }
+
+    .link-autocomplete__list li.link-autocomplete__empty {
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: default;
+    }
+
     /* Flatpickr rewrites DOM — paint icons on the actual input so they stay aligned */
     .input-with-icon {
       width: 100%;
@@ -431,19 +475,89 @@
       border-color: var(--button);
     }
 
-    /* Time-only flatpickr — floated to body so the panel is not clipped */
+    /* Time-only popover: high z-index (above next .section) + undo global input() rules */
     .flatpickr-calendar.hasTime.noCalendar {
       box-shadow: var(--shadow);
-      border-radius: 12px;
-      padding: 10px 12px 12px;
-      z-index: 10060 !important;
-      min-width: 220px;
+      border-radius: 14px;
+      border: 1.5px solid var(--line);
+      background: #fff;
+      padding: 16px 20px 18px !important;
+      z-index: 200000 !important;
+      min-width: 280px !important;
+      overflow: visible !important;
     }
 
-    .flatpickr-time {
-      border-top: 1px solid var(--line);
-      margin-top: 8px;
-      padding-top: 10px;
+    .flatpickr-calendar.hasTime.noCalendar .flatpickr-time {
+      border: none;
+      margin: 0;
+      padding: 0;
+      min-height: 3.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px 10px;
+      line-height: 1;
+    }
+
+    .flatpickr-time:after {
+      display: none;
+    }
+
+    .flatpickr-time .numInputWrapper {
+      flex: 0 0 auto;
+      height: auto !important;
+      width: auto !important;
+      min-width: 3.5rem !important;
+      padding: 6px 4px 4px !important;
+      border: 1.5px solid var(--line) !important;
+      border-radius: 12px !important;
+      background: #f8fbfd !important;
+      box-shadow: none !important;
+    }
+
+    .flatpickr-time .numInputWrapper:hover {
+      border-color: var(--accent-strong) !important;
+    }
+
+    .flatpickr-time .numInput.flatpickr-hour,
+    .flatpickr-time .numInput.flatpickr-minute,
+    .flatpickr-time .numInput.flatpickr-second {
+      width: 100% !important;
+      max-width: none !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 6px 6px 8px !important;
+      font-family: inherit !important;
+      font-size: 1.375rem !important;
+      font-weight: 700 !important;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2 !important;
+      text-align: center !important;
+      color: var(--ink) !important;
+      background: transparent !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .flatpickr-time .flatpickr-time-separator {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 0 2px;
+    }
+
+    .flatpickr-time .arrowUp,
+    .flatpickr-time .arrowDown {
+      border: none !important;
+      padding: 2px 0 !important;
+      opacity: 0.65;
+    }
+
+    .flatpickr-time .arrowUp:hover,
+    .flatpickr-time .arrowDown:hover {
+      opacity: 1;
     }
 
     .flatpickr-time input {
@@ -566,6 +680,97 @@
           clickOpens: true,
           disableMobile: true,
           locale: { firstDayOfWeek: 1 },
+        });
+      });
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), ms);
+      };
+    }
+
+    let portalLinkDocCloseBound = false;
+
+    function bindPortalLinkCloseOnce() {
+      if (portalLinkDocCloseBound) return;
+      portalLinkDocCloseBound = true;
+      document.addEventListener("mousedown", (e) => {
+        if (e.target.closest(".link-autocomplete")) return;
+        document.querySelectorAll(".link-autocomplete__list").forEach((ul) => {
+          ul.hidden = true;
+        });
+      });
+    }
+
+    function initLinkAutocomplete() {
+      bindPortalLinkCloseOnce();
+      document.querySelectorAll(".field-link[data-link-autocomplete]").forEach((fieldEl) => {
+        const fieldname = fieldEl.getAttribute("data-fieldname");
+        if (!fieldname || !targetDoctype) return;
+        const wrap = fieldEl.querySelector(".link-autocomplete");
+        const hidden = wrap && wrap.querySelector('input[type="hidden"]');
+        const display = wrap && wrap.querySelector(".link-autocomplete__display");
+        const list = wrap && wrap.querySelector(".link-autocomplete__list");
+        if (!hidden || !display || !list) return;
+
+        const loadOptions = debounce(async () => {
+          const txt = display.value.trim();
+          const url =
+            "/api/method/numerouno.numerouno.api.public_portal.search_public_portal_link?" +
+            new URLSearchParams({
+              reference_doctype: targetDoctype,
+              fieldname: fieldname,
+              txt: txt,
+              page_length: "25",
+            }).toString();
+          try {
+            const res = await fetch(url);
+            const json = await res.json();
+            const rows = Array.isArray(json.message) ? json.message : [];
+            list.innerHTML = "";
+            if (!rows.length) {
+              const li = document.createElement("li");
+              li.className = "link-autocomplete__empty";
+              li.setAttribute("role", "presentation");
+              li.textContent = txt ? "No matches" : "No records found";
+              list.appendChild(li);
+              list.hidden = false;
+              return;
+            }
+            rows.forEach((row) => {
+              const li = document.createElement("li");
+              li.setAttribute("role", "option");
+              li.dataset.value = row.value;
+              li.dataset.label = row.label;
+              li.textContent = row.label;
+              list.appendChild(li);
+            });
+            list.hidden = false;
+          } catch (err) {
+            list.innerHTML = "";
+            list.hidden = true;
+          }
+        }, 280);
+
+        display.addEventListener("focus", () => {
+          loadOptions();
+        });
+
+        display.addEventListener("input", () => {
+          if (!display.value.trim()) hidden.value = "";
+          loadOptions();
+        });
+
+        list.addEventListener("mousedown", (e) => {
+          const li = e.target.closest("li");
+          if (!li || li.classList.contains("link-autocomplete__empty")) return;
+          e.preventDefault();
+          hidden.value = li.dataset.value || "";
+          display.value = li.dataset.label || "";
+          list.hidden = true;
         });
       });
     }
@@ -711,13 +916,19 @@
 
       if (field.fieldtype === "Link") {
         const opt = String(field.options || "").trim();
-        const ph = opt ? `Exact ${opt} name as in the system` : "";
+        const ph = opt ? `Search ${opt}…` : "Search…";
+        const defVal = field.default != null ? String(field.default) : "";
         return `
-          <div class="field${fullClass}" data-fieldname="${escapeHtml(field.fieldname)}">
-            <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
-            <input type="text" id="${escapeHtml(field.fieldname)}" name="${escapeHtml(field.fieldname)}"
-              value="${escapeHtml(field.default || "")}" placeholder="${escapeHtml(ph)}"
-              autocomplete="off" spellcheck="false" ${field.reqd ? "required" : ""}>
+          <div class="field${fullClass} field-link" data-fieldname="${escapeHtml(field.fieldname)}" data-link-autocomplete="1">
+            <label for="${escapeHtml(field.fieldname)}_display">${escapeHtml(field.label)} ${requiredMark}</label>
+            <div class="link-autocomplete">
+              <input type="hidden" name="${escapeHtml(field.fieldname)}" id="${escapeHtml(field.fieldname)}"
+                value="${escapeHtml(defVal)}" ${field.reqd ? "required" : ""}>
+              <input type="text" class="link-autocomplete__display" id="${escapeHtml(field.fieldname)}_display"
+                value="${escapeHtml(defVal)}" placeholder="${escapeHtml(ph)}"
+                autocomplete="off" spellcheck="false" aria-autocomplete="list">
+              <ul class="link-autocomplete__list" role="listbox" hidden></ul>
+            </div>
           </div>
         `;
       }
@@ -782,6 +993,7 @@
       initSignaturePads();
       initDatePickers();
       initTimePickers();
+      initLinkAutocomplete();
       document.getElementById("reset-form").addEventListener("click", resetForm);
       form.addEventListener("submit", submitForm);
     }

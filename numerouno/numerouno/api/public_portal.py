@@ -68,6 +68,71 @@ def get_public_portal_form_list():
 
 
 @frappe.whitelist(allow_guest=True)
+def search_public_portal_link(
+	reference_doctype: str | None = None,
+	fieldname: str | None = None,
+	txt: str | None = None,
+	page_length: int = 20,
+):
+	"""Typeahead options for Link fields on active public portal forms (guest-safe)."""
+	if not reference_doctype or not fieldname:
+		frappe.throw(frappe._("Invalid request."))
+	if not _portal_form_allowed(reference_doctype):
+		frappe.throw(frappe._("This form is not available on the public portal."))
+
+	meta = get_meta(reference_doctype)
+	df = meta.get_field(fieldname)
+	if not df or df.fieldtype != "Link":
+		frappe.throw(frappe._("Not a link field."))
+
+	link_doctype = (df.options or "").strip()
+	if not link_doctype or not frappe.db.exists("DocType", link_doctype):
+		frappe.throw(frappe._("Invalid link target."))
+
+	txt = (txt or "").strip()[:120]
+	page_length = max(1, min(cint(page_length) or 20, 50))
+
+	link_meta = get_meta(link_doctype)
+	title_field = link_meta.get_title_field()
+	fields: list = ["name"]
+	if title_field and title_field != "name" and link_meta.has_field(title_field):
+		fields.append(title_field)
+
+	if txt:
+		or_filters = [["name", "like", f"%{txt}%"]]
+		if title_field and title_field != "name" and link_meta.has_field(title_field):
+			or_filters.append([title_field, "like", f"%{txt}%"])
+		rows = frappe.get_all(
+			link_doctype,
+			or_filters=or_filters,
+			fields=fields,
+			limit_page_length=page_length,
+			order_by="name asc",
+			ignore_permissions=True,
+		)
+	else:
+		rows = frappe.get_all(
+			link_doctype,
+			fields=fields,
+			limit_page_length=page_length,
+			order_by="modified desc",
+			ignore_permissions=True,
+		)
+
+	out = []
+	for row in rows:
+		name = row.get("name")
+		if not name:
+			continue
+		if title_field and title_field != "name" and row.get(title_field) is not None:
+			label = str(row.get(title_field)).strip() or name
+		else:
+			label = name
+		out.append({"value": name, "label": label})
+	return out
+
+
+@frappe.whitelist(allow_guest=True)
 def get_public_portal_form_schema(reference_doctype: str | None = None):
 	if not reference_doctype:
 		frappe.throw(frappe._("Choose a form first."))

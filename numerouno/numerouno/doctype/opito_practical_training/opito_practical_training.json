@@ -1,11 +1,13 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:OPT-{#####}",
+ "autoname": "naming_series:naming_series",
  "creation": "2026-05-02 03:16:45.692460",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "naming_series",
+  "column_break_yjfo",
   "course",
   "column_break_idxp",
   "date",
@@ -109,16 +111,26 @@
    "fieldname": "learners_comment",
    "fieldtype": "Text Editor",
    "label": "Learner's Comment"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "OPT-.#."
+  },
+  {
+   "fieldname": "column_break_yjfo",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-02 03:50:06.810993",
+ "modified": "2026-05-02 04:16:58.946920",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "OPITO Practical Training",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
