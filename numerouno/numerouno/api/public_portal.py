@@ -118,6 +118,8 @@ def build_public_form_schema(reference_doctype: str):
 				"read_only": cint(df.read_only),
 				"default": normalize_default(df),
 				"options": df.options or "",
+				# Desk often uses Data + default "Today" for dates; portal needs a calendar for those too.
+				"use_date_picker": cint(df.fieldtype == "Data" and (df.default or "").strip() == "Today"),
 			}
 		)
 
@@ -128,6 +130,11 @@ def normalize_default(df):
 	v = df.default
 	if v == "Today":
 		return frappe.utils.nowdate()
+	if df.fieldtype == "Time" and (v or "").strip() == "Now":
+		t = frappe.utils.nowtime()
+		if isinstance(t, str) and "." in t:
+			t = t.split(".")[0]
+		return t or ""
 	return v or ""
 
 
