@@ -1,25 +1,180 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
  "creation": "2026-05-02 04:18:34.424854",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "section_break_jxuy"
+  "attendance_date",
+  "naming_series",
+  "section_break_lead",
+  "lead_instructor",
+  "column_break_lead_sig",
+  "lead_instructor_signature",
+  "section_break_diver1",
+  "diver_1",
+  "column_break_diver1_sig",
+  "diver_1_signature",
+  "section_break_diver2",
+  "diver_2",
+  "column_break_diver2_sig",
+  "diver_2_signature",
+  "section_break_trainee_crane",
+  "trainee_crane_operator",
+  "column_break_trainee_crane_sig",
+  "trainee_crane_operator_signature",
+  "section_break_crane",
+  "crane_operator",
+  "column_break_crane_sig",
+  "crane_operator_signature",
+  "section_break_pool",
+  "pool_safety_person",
+  "column_break_pool_sig",
+  "pool_safety_person_signature"
  ],
  "fields": [
   {
-   "fieldname": "section_break_jxuy",
-   "fieldtype": "Section Break"
+   "default": "Today",
+   "fieldname": "attendance_date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "section_break_lead",
+   "fieldtype": "Section Break",
+   "label": "Lead Instructor (Name & Signature)"
+  },
+  {
+   "fieldname": "lead_instructor",
+   "fieldtype": "Link",
+   "label": "Name",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "column_break_lead_sig",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lead_instructor_signature",
+   "fieldtype": "Signature",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "section_break_diver1",
+   "fieldtype": "Section Break",
+   "label": "Diver 1 (Name & Signature)"
+  },
+  {
+   "fieldname": "diver_1",
+   "fieldtype": "Link",
+   "label": "Name",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "column_break_diver1_sig",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "diver_1_signature",
+   "fieldtype": "Signature",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "section_break_diver2",
+   "fieldtype": "Section Break",
+   "label": "Diver 2 (Name & Signature)"
+  },
+  {
+   "fieldname": "diver_2",
+   "fieldtype": "Link",
+   "label": "Name",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "column_break_diver2_sig",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "diver_2_signature",
+   "fieldtype": "Signature",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "section_break_trainee_crane",
+   "fieldtype": "Section Break",
+   "label": "Trainee Crane Operator (Name & Signature)"
+  },
+  {
+   "fieldname": "trainee_crane_operator",
+   "fieldtype": "Link",
+   "label": "Name",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "column_break_trainee_crane_sig",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "trainee_crane_operator_signature",
+   "fieldtype": "Signature",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "section_break_crane",
+   "fieldtype": "Section Break",
+   "label": "Crane Operator (Name & Signature)"
+  },
+  {
+   "fieldname": "crane_operator",
+   "fieldtype": "Link",
+   "label": "Name",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "column_break_crane_sig",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "crane_operator_signature",
+   "fieldtype": "Signature",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "section_break_pool",
+   "fieldtype": "Section Break",
+   "label": "Pool Safety Person (Name & Signature)"
+  },
+  {
+   "fieldname": "pool_safety_person",
+   "fieldtype": "Link",
+   "label": "Name",
+   "options": "Instructor"
+  },
+  {
+   "fieldname": "column_break_pool_sig",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pool_safety_person_signature",
+   "fieldtype": "Signature",
+   "label": "Signature"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "SA-.#."
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-02 04:18:34.424854",
+ "modified": "2026-05-02 04:30:14.287428",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Staff Attendance",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -39,5 +194,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
