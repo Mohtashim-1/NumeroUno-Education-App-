@@ -82,7 +82,7 @@
    "fieldname": "technician_name",
    "fieldtype": "Link",
    "label": "Technician Name",
-   "options": "Instructor"
+   "options": "Employee"
   },
   {
    "fieldname": "column_break_xpqr",
@@ -126,7 +126,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-02 04:16:58.946920",
+ "modified": "2026-05-04 13:28:18.612560",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "OPITO Practical Training",

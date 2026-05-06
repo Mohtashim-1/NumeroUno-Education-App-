@@ -16,6 +16,10 @@ def auto_create_assessment_documents(doc, method):
 	This function is called via doc_events hook in hooks.py
 	"""
 	try:
+		if getattr(doc.flags, "skip_assessment_auto_create", False):
+			frappe.logger().info(f"[QUIZ ACTIVITY AUTO-CREATE] Skipping draft progress save for Quiz Activity: {doc.name}")
+			return
+
 		# Skip if already has assessment result
 		if hasattr(doc, 'custom_assesment_result') and doc.custom_assesment_result:
 			frappe.logger().info(f"[QUIZ ACTIVITY AUTO-CREATE] Quiz Activity {doc.name} already has Assessment Result: {doc.custom_assesment_result}. Skipping auto-creation.")
@@ -81,4 +85,3 @@ def auto_create_assessment_documents(doc, method):
 		error_msg = f"Error in auto_create_assessment_documents for Quiz Activity {doc.name}: {str(e)}"
 		frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Quiz Activity Auto-Create Error")
 		frappe.logger().error(f"[QUIZ ACTIVITY AUTO-CREATE] {error_msg}")
-

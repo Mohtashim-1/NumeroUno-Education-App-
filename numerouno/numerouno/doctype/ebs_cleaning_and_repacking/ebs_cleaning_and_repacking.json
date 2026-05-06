@@ -1,0 +1,130 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2026-05-06 21:22:46.892197",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "date",
+  "ebs_no",
+  "disenfect",
+  "column_break_vtzs",
+  "riinse",
+  "dry",
+  "repack",
+  "vac",
+  "column_break_hsrb",
+  "sign",
+  "column_break_nkxr",
+  "remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "Now",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "ebs_no",
+   "fieldtype": "Data",
+   "label": "EBS No"
+  },
+  {
+   "fieldname": "disenfect",
+   "fieldtype": "Data",
+   "label": "DISENFECT"
+  },
+  {
+   "fieldname": "riinse",
+   "fieldtype": "Data",
+   "label": "RIINSE"
+  },
+  {
+   "fieldname": "column_break_vtzs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "dry",
+   "fieldtype": "Data",
+   "label": "DRY"
+  },
+  {
+   "fieldname": "repack",
+   "fieldtype": "Data",
+   "label": "REPACK"
+  },
+  {
+   "fieldname": "vac",
+   "fieldtype": "Data",
+   "label": "VAC"
+  },
+  {
+   "fieldname": "column_break_hsrb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sign",
+   "fieldtype": "Signature",
+   "label": "SIGN"
+  },
+  {
+   "fieldname": "column_break_nkxr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "REMARKS"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "EBS Cleaning and Repacking",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "ECR-.#."
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-05-06 21:25:30.310777",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "EBS Cleaning and Repacking",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -7,7 +7,10 @@
  "engine": "InnoDB",
  "field_order": [
   "student_group",
-  "mcqs"
+  "mcqs",
+  "assignment_flow",
+  "quiz_section_profile",
+  "section_setup_hint"
  ],
  "fields": [
   {
@@ -21,6 +24,31 @@
    "fieldtype": "Link",
    "label": "MCQS",
    "options": "Quiz"
+  },
+  {
+   "default": "Direct MCQs",
+   "description": "Use Direct MCQs for normal quiz attempts. Use Section Wise MCQs when the quiz has a Quiz Section Profile and question rows are mapped with Section Key.",
+   "fieldname": "assignment_flow",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Assignment Flow",
+   "options": "Direct MCQs\nSection Wise MCQs"
+  },
+  {
+   "depends_on": "eval:doc.assignment_flow=='Section Wise MCQs'",
+   "description": "Must point to a profile for the selected MCQS quiz.",
+   "fieldname": "quiz_section_profile",
+   "fieldtype": "Link",
+   "label": "Quiz Section Profile",
+   "mandatory_depends_on": "eval:doc.assignment_flow=='Section Wise MCQs'",
+   "options": "Quiz Section Profile"
+  },
+  {
+   "depends_on": "eval:doc.assignment_flow=='Section Wise MCQs'",
+   "fieldname": "section_setup_hint",
+   "fieldtype": "HTML",
+   "label": "Section Setup Hint",
+   "options": "<div class=\"text-muted small\">For section-wise MCQs: create a Quiz Section Profile for the quiz, then open the Quiz and fill Section Key on every question row (for example S1, S2, S3) so it matches the profile rows.</div>"
   }
  ],
  "grid_page_length": 50,

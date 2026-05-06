@@ -66,6 +66,77 @@ def _get_group_students(group_names):
     return grouped
 
 
+def _get_quiz_passing_score_map(quiz_names):
+    if not quiz_names:
+        return {}
+
+    rows = frappe.get_all(
+        "Quiz",
+        filters={"name": ["in", list(quiz_names)]},
+        fields=["name", "passing_score"],
+    )
+    return {row.name: float(row.passing_score or 75) for row in rows}
+
+
+def _get_activity_score_summary(activities):
+    activity_names = [row.name for row in activities if row.name]
+    if not activity_names:
+        return {}
+
+    result_rows = frappe.get_all(
+        "Quiz Result",
+        filters={"parent": ["in", activity_names], "parenttype": "Quiz Activity"},
+        fields=["parent", "quiz_result"],
+        ignore_permissions=True,
+    )
+
+    summary = {}
+    for row in result_rows:
+        data = summary.setdefault(row.parent, {"correct": 0, "total": 0})
+        data["total"] += 1
+        if (row.quiz_result or "").strip().lower() == "correct":
+            data["correct"] += 1
+
+    passing_scores = _get_quiz_passing_score_map({row.quiz for row in activities if row.quiz})
+    activity_quiz_map = {row.name: row.quiz for row in activities if row.name}
+    for activity_name, data in summary.items():
+        total = data["total"]
+        correct = data["correct"]
+        percentage = (correct / total * 100) if total else 0
+        passing_score = passing_scores.get(activity_quiz_map.get(activity_name), 75)
+        data["score"] = f"{correct}/{total}"
+        data["status"] = "Pass" if percentage >= passing_score else "Fail"
+
+    return summary
+
+
+def _sync_activity_score_fields(activities, score_summary):
+    updated = False
+    for activity in activities:
+        summary = score_summary.get(activity.name)
+        if not summary:
+            continue
+
+        if activity.score == summary["score"] and activity.status == summary["status"]:
+            continue
+
+        frappe.db.set_value(
+            "Quiz Activity",
+            activity.name,
+            {
+                "score": summary["score"],
+                "status": summary["status"],
+            },
+            update_modified=False,
+        )
+        activity.score = summary["score"]
+        activity.status = summary["status"]
+        updated = True
+
+    if updated:
+        frappe.db.commit()
+
+
 def _resolve_student_group_names(user, roles, instructor_name=None):
     instructor_name = (instructor_name or "").strip()
     if user == "Administrator" or "System Manager" in roles:
@@ -261,7 +332,14 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
             order_by="creation desc",
             ignore_permissions=True,
         )
+        score_summary = _get_activity_score_summary(activities)
+        _sync_activity_score_fields(activities, score_summary)
         for activity in activities:
+            summary = score_summary.get(activity.name)
+            if summary:
+                activity.score = summary["score"]
+                activity.status = summary["status"]
+
             key = (activity.student, activity.quiz)
             if key not in activity_map:
                 activity_map[key] = activity

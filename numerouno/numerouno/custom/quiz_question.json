@@ -1,0 +1,19 @@
+{
+ "custom_fields": [
+  {
+   "dt": "Quiz Question",
+   "fieldname": "custom_section_key",
+   "fieldtype": "Data",
+   "insert_after": "question",
+   "label": "Section Key",
+   "description": "Matches Quiz Section Profile → Sections → Section Key (e.g. s1). Required when the quiz uses a section profile.",
+   "in_list_view": 1,
+   "module": "Numerouno"
+  }
+ ],
+ "custom_perms": [],
+ "doctype": "Quiz Question",
+ "links": [],
+ "property_setters": [],
+ "sync_on_migrate": 1
+}

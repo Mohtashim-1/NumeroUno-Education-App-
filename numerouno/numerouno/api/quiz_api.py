@@ -110,69 +110,156 @@ def _selected_option_text_for_question(question_name, option_id):
     return _safe_selected_option_text(str(option_id))
 
 
+def _selected_answers_for_check(option_id):
+    if option_id in (None, ""):
+        return []
+    if isinstance(option_id, list):
+        values = option_id
+    else:
+        values = [option_id]
+
+    selected_answers = []
+    for value in values:
+        try:
+            selected_answers.append(int(value))
+        except Exception:
+            selected_answers.append(value)
+    return selected_answers
+
+
+def _quiz_result_for_question(question_name, option_id):
+    if not question_name or option_id in (None, ""):
+        return "Wrong"
+    try:
+        question_doc = frappe.get_doc("Question", question_name)
+        return "Correct" if check_quiz_answer(question_doc, _selected_answers_for_check(option_id)) else "Wrong"
+    except Exception:
+        frappe.log_error(
+            f"Failed to check draft quiz answer for question {question_name}: {frappe.get_traceback()}",
+            "Public Quiz Progress",
+        )
+        return "Wrong"
+
+
+def _replace_quiz_activity_result_rows(quiz_activity):
+    """Replace set-only-once Quiz Activity result rows for draft autosave/submission."""
+    result_rows = [row.as_dict() for row in (quiz_activity.get("result") or [])]
+
+    parent_updates = {
+        "student": quiz_activity.student,
+        "quiz": quiz_activity.quiz,
+        "activity_date": quiz_activity.activity_date,
+        "score": quiz_activity.score,
+        "status": quiz_activity.status,
+    }
+    if getattr(quiz_activity, "enrollment", None):
+        parent_updates["enrollment"] = quiz_activity.enrollment
+    if hasattr(quiz_activity, "custom_student_group"):
+        parent_updates["custom_student_group"] = quiz_activity.custom_student_group
+    if hasattr(quiz_activity, "custom_assesment_plan"):
+        parent_updates["custom_assesment_plan"] = quiz_activity.custom_assesment_plan
+
+    frappe.db.set_value("Quiz Activity", quiz_activity.name, parent_updates, update_modified=True)
+    frappe.db.delete("Quiz Result", {
+        "parent": quiz_activity.name,
+        "parenttype": "Quiz Activity",
+        "parentfield": "result",
+    })
+
+    for idx, row in enumerate(result_rows, start=1):
+        child = frappe.get_doc({
+            "doctype": "Quiz Result",
+            "parent": quiz_activity.name,
+            "parenttype": "Quiz Activity",
+            "parentfield": "result",
+            "idx": idx,
+            "question": row.get("question"),
+            "selected_option": row.get("selected_option"),
+            "quiz_result": row.get("quiz_result"),
+        })
+        child.db_insert()
+
+    quiz_activity.reload()
+    return quiz_activity
+
+
+def _save_quiz_activity_with_replaceable_results(quiz_activity, ignore_mandatory=False):
+    if quiz_activity.name and quiz_activity.get("__islocal") is None:
+        return _replace_quiz_activity_result_rows(quiz_activity)
+
+    quiz_activity.insert(ignore_permissions=True, ignore_mandatory=ignore_mandatory)
+    return quiz_activity
+
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def upsert_public_quiz_progress(quiz_name, student, student_group, answers=None, attempt_id=None, total_questions=None):
     """Persist draft Quiz Activity as user answers questions one-by-one."""
     import json
 
-    if not quiz_name or not student or not student_group:
-        return {"status": "error", "message": "Quiz, student, and student group are required"}
+    try:
+        if not quiz_name or not student or not student_group:
+            return {"status": "error", "message": "Quiz, student, and student group are required"}
 
-    if isinstance(answers, str):
-        try:
-            answers = json.loads(answers)
-        except Exception:
-            answers = {}
+        if isinstance(answers, str):
+            try:
+                answers = json.loads(answers)
+            except Exception:
+                answers = {}
 
-    answer_map = _to_answer_map(answers)
-    total_questions_val = int(total_questions or 0)
-    answered_count = len([v for v in answer_map.values() if v not in (None, "")])
+        answer_map = _to_answer_map(answers)
+        total_questions_val = int(total_questions or 0)
+        answered_count = len([v for v in answer_map.values() if v not in (None, "")])
 
-    quiz_activity_name = _get_quiz_activity_for_attempt(attempt_id)
-    quiz_activity = None
-    if quiz_activity_name and frappe.db.exists("Quiz Activity", quiz_activity_name):
-        quiz_activity = frappe.get_doc("Quiz Activity", quiz_activity_name)
-        if quiz_activity.docstatus != 0:
-            quiz_activity = None
+        quiz_activity_name = _get_quiz_activity_for_attempt(attempt_id)
+        quiz_activity = None
+        if quiz_activity_name and frappe.db.exists("Quiz Activity", quiz_activity_name):
+            quiz_activity = frappe.get_doc("Quiz Activity", quiz_activity_name)
+            if quiz_activity.docstatus != 0:
+                quiz_activity = None
 
-    if not quiz_activity:
-        quiz_activity = frappe.new_doc("Quiz Activity")
-        quiz_activity.student = student
-        quiz_activity.quiz = quiz_name
-        quiz_activity.activity_date = today()
-        if hasattr(quiz_activity, "custom_student_group"):
-            quiz_activity.custom_student_group = student_group
+        if not quiz_activity:
+            quiz_activity = frappe.new_doc("Quiz Activity")
+            quiz_activity.student = student
+            quiz_activity.quiz = quiz_name
+            quiz_activity.activity_date = today()
+            if hasattr(quiz_activity, "custom_student_group"):
+                quiz_activity.custom_student_group = student_group
 
-    quiz_activity.result = []
-    for question_name, option_id in answer_map.items():
-        if option_id in (None, ""):
-            continue
-        quiz_activity.append("result", {
-            "question": question_name,
-            "selected_option": _selected_option_text_for_question(question_name, option_id),
-            "quiz_result": "Pending"
-        })
+        quiz_activity.flags.skip_assessment_auto_create = True
+        quiz_activity.result = []
+        for question_name, option_id in answer_map.items():
+            if option_id in (None, ""):
+                continue
+            quiz_activity.append("result", {
+                "question": question_name,
+                "selected_option": _selected_option_text_for_question(question_name, option_id),
+                "quiz_result": _quiz_result_for_question(question_name, option_id)
+            })
 
-    if total_questions_val > 0:
-        quiz_activity.score = f"{answered_count}/{total_questions_val}"
-    else:
-        quiz_activity.score = f"{answered_count}/{max(answered_count, 1)}"
+        if total_questions_val > 0:
+            quiz_activity.score = f"{answered_count}/{total_questions_val}"
+        else:
+            quiz_activity.score = f"{answered_count}/{max(answered_count, 1)}"
 
-    if quiz_activity.name and quiz_activity.get("__islocal") is None:
-        quiz_activity.save(ignore_permissions=True)
-    else:
-        quiz_activity.insert(ignore_permissions=True)
-    frappe.db.commit()
+        _save_quiz_activity_with_replaceable_results(quiz_activity, ignore_mandatory=True)
+        frappe.db.commit()
 
-    _set_quiz_activity_for_attempt(attempt_id, quiz_activity.name)
+        _set_quiz_activity_for_attempt(attempt_id, quiz_activity.name)
 
-    return {
-        "status": "success",
-        "activity_id": quiz_activity.name,
-        "answered_count": answered_count,
-        "total_questions": total_questions_val,
-        "is_completed": False,
-    }
+        return {
+            "status": "success",
+            "activity_id": quiz_activity.name,
+            "answered_count": answered_count,
+            "total_questions": total_questions_val,
+            "is_completed": False,
+        }
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(
+            f"Error saving public quiz progress: {str(e)}\nTraceback: {frappe.get_traceback()}",
+            "Public Quiz Progress",
+        )
+        return {"status": "error", "message": "Failed to save quiz progress"}
 
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
@@ -913,6 +1000,83 @@ def get_available_quizzes_from_mcqs(student_group, student):
             "message": error_msg
         }
 
+
+def _get_section_profile_for_quiz(quiz_name, student_group=None):
+    profile_name = None
+    if student_group:
+        profile_name = frappe.db.get_value(
+            "MCQS Assignment",
+            {
+                "student_group": student_group,
+                "mcqs": quiz_name,
+                "assignment_flow": "Section Wise MCQs",
+            },
+            "quiz_section_profile",
+        )
+
+    if not profile_name:
+        profile_name = frappe.db.exists("Quiz Section Profile", quiz_name)
+
+    if not profile_name:
+        return None
+
+    return frappe.get_doc("Quiz Section Profile", profile_name)
+
+
+@frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
+def get_available_section_quizzes_from_mcqs(student_group, student=None):
+    """Return only MCQS assignments configured for Section Wise MCQs."""
+    try:
+        if not student_group:
+            return {"status": "error", "message": "Student group is required"}
+
+        assignments = frappe.get_all(
+            "MCQS Assignment",
+            filters={
+                "student_group": student_group,
+                "assignment_flow": "Section Wise MCQs",
+            },
+            fields=["name", "mcqs", "quiz_section_profile"],
+            order_by="modified desc",
+        )
+
+        quizzes = []
+        seen = set()
+        for assignment in assignments:
+            quiz_name = assignment.get("mcqs")
+            if not quiz_name or quiz_name in seen or not frappe.db.exists("Quiz", quiz_name):
+                continue
+
+            profile_name = assignment.get("quiz_section_profile") or frappe.db.exists("Quiz Section Profile", quiz_name)
+            if not profile_name:
+                continue
+
+            quiz_doc = frappe.get_doc("Quiz", quiz_name)
+            question_count = frappe.db.count("Quiz Question", {"parent": quiz_name})
+            section_count = frappe.db.count("Quiz Section Item", {"parent": profile_name})
+            quizzes.append({
+                "name": quiz_doc.name,
+                "title": quiz_doc.title or quiz_doc.name,
+                "total_marks": question_count,
+                "passing_percentage": quiz_doc.passing_score or 75,
+                "max_attempts": quiz_doc.max_attempts or 0,
+                "quiz_section_profile": profile_name,
+                "section_count": section_count,
+            })
+            seen.add(quiz_name)
+
+        return {
+            "status": "success",
+            "quizzes": quizzes,
+        }
+    except Exception as e:
+        frappe.log_error(
+            f"Error getting section quizzes: {str(e)}\nTraceback: {frappe.get_traceback()}",
+            "Section Quiz API",
+        )
+        return {"status": "error", "message": "Failed to load section quizzes"}
+
+
 def _normalize_quiz_language(lang):
     """Normalize incoming language code for quiz content localization."""
     if not lang:
@@ -1219,6 +1383,125 @@ def get_quiz_questions_from_quiz(quiz_name, lang=None):
         }
     finally:
         frappe.local.lang = previous_lang
+
+
+@frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
+def get_section_quiz_questions_from_quiz(quiz_name, student_group=None, lang=None):
+    """Get Quiz questions grouped by Quiz Section Profile sections."""
+    previous_lang = getattr(frappe.local, "lang", None)
+    try:
+        lang_code = _normalize_quiz_language(lang)
+        frappe.local.lang = lang_code
+
+        if not quiz_name:
+            return {"status": "error", "message": "Quiz name is required"}
+
+        quiz_doc = frappe.get_doc("Quiz", quiz_name)
+        profile_doc = _get_section_profile_for_quiz(quiz_name, student_group)
+        if not profile_doc:
+            return {
+                "status": "error",
+                "message": "This quiz is not configured for section-wise attempts",
+            }
+
+        section_rows = sorted(
+            profile_doc.section_items or [],
+            key=lambda row: (row.sort_order or row.idx or 0, row.idx or 0),
+        )
+        sections = []
+        section_map = {}
+        for row in section_rows:
+            section_key = (row.section_key or "").strip()
+            if not section_key:
+                continue
+            section = {
+                "key": section_key,
+                "title": row.section_title or section_key,
+                "min_pass_percentage": row.min_pass_percentage or 0,
+                "weightage": row.weightage or 0,
+                "questions": [],
+            }
+            sections.append(section)
+            section_map[section_key.lower()] = section
+
+        quiz_questions = frappe.get_all(
+            "Quiz Question",
+            filters={"parent": quiz_name},
+            fields=["question_link", "idx", "custom_section_key"],
+            order_by="idx asc",
+        )
+
+        unmapped_questions = []
+        for quiz_question in quiz_questions:
+            question_link = quiz_question.get("question_link")
+            if not question_link:
+                continue
+
+            section_key = (quiz_question.get("custom_section_key") or "").strip()
+            section = section_map.get(section_key.lower())
+            if not section:
+                unmapped_questions.append(question_link)
+                continue
+
+            question_doc = frappe.get_doc("Question", question_link)
+            question_data = {
+                "name": question_doc.name,
+                "question": _tr_text(question_doc.question, lang_code),
+                "type": getattr(question_doc, "question_type", "Single Correct Answer"),
+                "marks": 1,
+                "section_key": section_key,
+                "section_title": section.get("title"),
+                "options": [],
+            }
+
+            for opt_idx, opt in enumerate(getattr(question_doc, "options", None) or []):
+                option_text = _tr_text(getattr(opt, "option", ""), lang_code)
+                if option_text:
+                    question_data["options"].append({
+                        "id": opt_idx + 1,
+                        "text": option_text,
+                        "is_correct": getattr(opt, "is_correct", 0),
+                    })
+
+            section["questions"].append(question_data)
+
+        questions = []
+        for section in sections:
+            questions.extend(section["questions"])
+
+        if unmapped_questions:
+            return {
+                "status": "error",
+                "message": (
+                    f"{len(unmapped_questions)} question(s) are missing a matching Section Key. "
+                    "Please map every Quiz Question row to the Quiz Section Profile."
+                ),
+            }
+
+        return {
+            "status": "success",
+            "quiz": {
+                "name": quiz_doc.name,
+                "title": _tr_text(quiz_doc.title, lang_code),
+                "total_marks": len(questions),
+                "passing_percentage": quiz_doc.passing_score or 75,
+                "max_attempts": quiz_doc.max_attempts or 0,
+                "quiz_section_profile": profile_doc.name,
+                "require_all_sections_pass": profile_doc.require_all_sections_pass,
+                "enforce_overall_percentage": profile_doc.enforce_overall_percentage,
+            },
+            "sections": sections,
+            "questions": questions,
+        }
+    except Exception as e:
+        frappe.log_error(
+            f"Error getting section quiz questions: {str(e)}\nTraceback: {frappe.get_traceback()}",
+            "Section Quiz API",
+        )
+        return {"status": "error", "message": f"Failed to load section quiz: {str(e)}"}
+    finally:
+        frappe.local.lang = previous_lang
+
 
 @frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
 def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id=None):
@@ -1583,6 +1866,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
             if assessment_plan and hasattr(quiz_activity, "custom_assesment_plan"):
                 quiz_activity.custom_assesment_plan = assessment_plan
             
+            quiz_activity.result = []
             # Add result details
             for answer_data in answers:
                 question_name = answer_data.get("question")
@@ -1618,18 +1902,40 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
                     "quiz_result": "Correct" if is_correct else "Wrong"
                 })
 
-            if quiz_activity.name and quiz_activity.get("__islocal") is None:
-                quiz_activity.save(ignore_permissions=True)
-            else:
-                quiz_activity.insert(ignore_permissions=True, ignore_mandatory=not bool(enrollment))
+            quiz_activity = _save_quiz_activity_with_replaceable_results(
+                quiz_activity,
+                ignore_mandatory=not bool(enrollment),
+            )
 
             if enrollment and quiz_activity.docstatus == 0:
+                quiz_activity.reload()
+                quiz_activity._doc_before_save = None
                 quiz_activity.submit()
 
             frappe.db.commit()
             activity_id = quiz_activity.name
             _set_quiz_activity_for_attempt(attempt_id, activity_id)
             print(f"  ✓ Quiz Activity created: {activity_id}")
+
+            if assessment_result_id:
+                try:
+                    meta = frappe.get_meta("Quiz Activity")
+                    if meta.has_field("custom_assesment_result"):
+                        frappe.db.set_value(
+                            "Quiz Activity",
+                            activity_id,
+                            "custom_assesment_result",
+                            assessment_result_id,
+                            update_modified=False,
+                        )
+                        frappe.db.commit()
+                        print(f"  ✓ Linked Assessment Result to Quiz Activity: {assessment_result_id}")
+                except Exception as link_err:
+                    frappe.log_error(
+                        f"Failed to link Assessment Result {assessment_result_id} to Quiz Activity {activity_id}: {str(link_err)}\n"
+                        f"Traceback: {frappe.get_traceback()}",
+                        "Quiz Submission",
+                    )
             
             # Add error message to Quiz Activity comments if Assessment Result creation failed
             if assessment_result_error:

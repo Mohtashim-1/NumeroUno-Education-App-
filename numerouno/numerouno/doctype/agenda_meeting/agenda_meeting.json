@@ -1,0 +1,96 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2026-05-06 21:27:08.589319",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "column_break_ustf",
+  "posting_date",
+  "column_break_owus",
+  "meeting_date",
+  "section_break_hhxr",
+  "weekly_highlights",
+  "section_break_ruzw",
+  "meeting_agenda_table"
+ ],
+ "fields": [
+  {
+   "default": "Now",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date"
+  },
+  {
+   "default": "Now",
+   "fieldname": "meeting_date",
+   "fieldtype": "Date",
+   "label": "Meeting Date"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "AM-.#."
+  },
+  {
+   "fieldname": "column_break_ustf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_owus",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_ruzw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "meeting_agenda_table",
+   "fieldtype": "Table",
+   "label": "Meeting Agenda Table",
+   "options": "Meeting Agenda Table"
+  },
+  {
+   "fieldname": "section_break_hhxr",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "weekly_highlights",
+   "fieldtype": "Table",
+   "label": "Weekly Highlights",
+   "options": "Weekly Highlight"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-06 21:54:28.856780",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Agenda Meeting",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

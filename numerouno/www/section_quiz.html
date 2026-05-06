@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
+  <title>Section Quiz</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css"/>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Newsreader:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+    :root {
+      --ink: #14212f;
+      --muted: #607080;
+      --panel: #ffffff;
+      --line: #d9e1e8;
+      --accent: #f36a3d;
+      --accent-dark: #c9532a;
+      --teal: #2b7a78;
+      --bg: #f4f7f8;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(900px 420px at 12% -5%, rgba(243, 106, 61, 0.16), transparent 60%),
+        radial-gradient(800px 420px at 88% 0%, rgba(43, 122, 120, 0.18), transparent 62%),
+        var(--bg);
+      color: var(--ink);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .shell {
+      max-width: 1180px;
+      margin: 28px auto;
+      padding: 0 16px;
+    }
+
+    .topbar {
+      background: #1b2838;
+      color: #fff;
+      border-radius: 10px;
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      box-shadow: 0 16px 34px rgba(20, 33, 47, 0.16);
+    }
+
+    .topbar h1 {
+      font-size: 24px;
+      margin: 0;
+      font-weight: 750;
+      letter-spacing: 0;
+    }
+
+    .topbar p {
+      color: rgba(255,255,255,0.72);
+      margin: 4px 0 0;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(20, 33, 47, 0.08);
+      border-radius: 8px;
+      box-shadow: 0 14px 30px rgba(20, 33, 47, 0.09);
+    }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+      gap: 12px;
+      padding: 16px;
+      align-items: end;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #304152;
+    }
+
+    .form-select,
+    .form-control {
+      border-radius: 8px;
+      min-height: 42px;
+      border-color: var(--line);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      border-radius: 8px;
+      font-weight: 700;
+      min-height: 42px;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+    }
+
+    .btn-outline-secondary,
+    .btn-light {
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    .quiz-card {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .quiz-card:last-child {
+      border-bottom: 0;
+    }
+
+    .quiz-title {
+      font-weight: 760;
+      font-size: 17px;
+    }
+
+    .quiz-meta {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .attempt-layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .section-nav {
+      padding: 10px;
+      position: sticky;
+      top: 14px;
+    }
+
+    .section-tab {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: left;
+      display: grid;
+      gap: 4px;
+      color: var(--ink);
+    }
+
+    .section-tab.active {
+      background: #e9f4f2;
+      color: #123f3e;
+    }
+
+    .section-tab-title {
+      font-weight: 760;
+    }
+
+    .section-tab-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .progress-line {
+      height: 8px;
+      background: #e8edf1;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-line span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--teal);
+      border-radius: inherit;
+      transition: width 0.2s ease;
+    }
+
+    .question-card {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .question-card:last-child {
+      border-bottom: 0;
+    }
+
+    .question-title {
+      font-weight: 720;
+      font-size: 16px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .option {
+      border: 1px solid var(--line);
+      background: #fbfcfd;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+
+    .option.selected {
+      background: #fff3ed;
+      border-color: #f5a07f;
+    }
+
+    .option input {
+      margin-top: 4px;
+    }
+
+    .attempt-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .attempt-head h2 {
+      font-size: 20px;
+      font-weight: 780;
+      margin: 0;
+    }
+
+    .message {
+      display: none;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 16px 0;
+      font-weight: 650;
+    }
+
+    .message.error {
+      display: block;
+      color: #842029;
+      background: #f8d7da;
+      border: 1px solid #f5c2c7;
+    }
+
+    .message.success {
+      display: block;
+      color: #0f5132;
+      background: #d1e7dd;
+      border: 1px solid #badbcc;
+    }
+
+    .loading {
+      display: none;
+      color: var(--muted);
+      padding: 14px 0;
+      font-weight: 700;
+    }
+
+    .actions {
+      padding: 16px 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 860px) {
+      .setup-grid,
+      .attempt-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar,
+      .quiz-card,
+      .attempt-head,
+      .actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .section-nav {
+      position: static;
+      }
+    }
+
+    .awesomplete {
+      display: block;
+      width: 100%;
+    }
+
+    .awesomplete > ul {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      max-height: 260px;
+      overflow: auto;
+      margin-top: 6px;
+      padding: 6px;
+      background: #fff;
+      z-index: 9999;
+    }
+
+    .awesomplete > ul > li {
+      border-radius: 8px;
+      padding: 10px 10px;
+      font-size: 14px;
+    }
+
+    .awesomplete > ul > li[aria-selected="true"] {
+      background: #eef2ff;
+      color: #111827;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+
+    /* Public Quiz 3 visual skin */
+    :root {
+      --muted: #5b6776;
+      --paper: #f5f1ea;
+      --panel: #ffffff;
+      --line: #ece6dc;
+      --mint: #2b7a78;
+      --shadow: 0 18px 45px rgba(20, 33, 47, 0.14);
+    }
+
+    body {
+      background:
+        radial-gradient(1200px 600px at 5% -10%, #fde2c6 0%, rgba(253, 226, 198, 0) 65%),
+        radial-gradient(1000px 500px at 90% 0%, #cbe9e4 0%, rgba(203, 233, 228, 0) 60%),
+        linear-gradient(180deg, #f6f2ec 0%, #eef3f5 100%);
+      font-family: "Space Grotesk", "Newsreader", sans-serif;
+      color: var(--ink);
+    }
+
+    .shell {
+      max-width: 980px;
+      margin: 3rem auto;
+      padding: 0;
+      background: var(--panel);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid rgba(20, 33, 47, 0.08);
+      animation: liftIn 0.5s ease;
+    }
+
+    .topbar {
+      position: relative;
+      display: block;
+      background: linear-gradient(135deg, #1b2838 0%, #2f4860 100%);
+      color: #ffffff;
+      border-radius: 0;
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+      font-family: "Newsreader", serif;
+      box-shadow: none;
+    }
+
+    .topbar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(300px 200px at 20% 20%, rgba(243, 106, 61, 0.35), transparent 60%),
+        radial-gradient(260px 200px at 80% 10%, rgba(43, 122, 120, 0.35), transparent 60%);
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    .topbar > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #ffffff;
+      padding: 8px;
+      box-shadow: 0 12px 24px rgba(20, 33, 47, 0.25);
+      object-fit: contain;
+      margin-bottom: 12px;
+    }
+
+    .topbar h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .topbar p {
+      color: rgba(255, 255, 255, 0.8);
+      margin: 4px 0 0;
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    #resetBtn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(255,255,255,0.35);
+      color: #1b2838;
+      border-radius: 10px;
+      padding: 6px 12px;
+      min-height: 0;
+      font-size: 14px;
+    }
+
+    #setupPanel,
+    #quizListPanel,
+    #attemptPanel {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(180deg, #ffffff 0%, #fdfbf8 100%);
+      box-shadow: none;
+      border: 0;
+      border-radius: 0;
+    }
+
+    #setupPanel {
+      padding: 2rem;
+    }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      padding: 0;
+      align-items: end;
+    }
+
+    .form-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .form-select,
+    .form-control {
+      border-radius: 12px;
+      border: 2px solid #e6e1d7;
+      padding: 12px 15px;
+      min-height: 50px;
+      font-size: 16px;
+      transition: all 0.2s ease;
+      background: #fffdf9;
+    }
+
+    .form-select:focus,
+    .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 0.2rem rgba(243, 106, 61, 0.2);
+    }
+
+    #startBtn {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f36a3d 0%, #d8582a 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      transition: all 0.3s ease;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(243, 106, 61, 0.35);
+    }
+
+    .btn-outline-secondary,
+    .btn-light {
+      background: #eef1f4;
+      border: 1px solid #d6dde3;
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 10px 22px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn-outline-secondary:hover,
+    .btn-light:hover {
+      background: #e5eaef;
+      transform: translateY(-1px);
+    }
+
+    #quizListPanel {
+      padding: 0 2rem 2rem;
+    }
+
+    #quizList {
+      background: #f8f4ec;
+      border-radius: 14px;
+      padding: 1.5rem;
+      border: 1px solid rgba(20, 33, 47, 0.08);
+    }
+
+    .quiz-card {
+      background: white;
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ece6dc;
+      transition: all 0.3s ease;
+    }
+
+    .quiz-card:hover {
+      box-shadow: 0 10px 20px rgba(20, 33, 47, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .quiz-card:last-child {
+      margin-bottom: 0;
+      border-bottom: 1px solid #ece6dc;
+    }
+
+    .quiz-title {
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+      font-family: "Newsreader", serif;
+      font-size: 20px;
+    }
+
+    .quiz-meta {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .btn-attempt {
+      background: linear-gradient(135deg, #2b7a78 0%, #206460 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    .btn-attempt:hover {
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(43, 122, 120, 0.35);
+    }
+
+    #attemptPanel {
+      padding: 2rem;
+    }
+
+    .attempt-layout {
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 1rem;
+    }
+
+    .panel {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #ece6dc;
+      box-shadow: 0 10px 24px rgba(20, 33, 47, 0.08);
+    }
+
+    .section-nav {
+      background: #f8f4ec;
+      border-radius: 16px;
+      border: 1px solid #ece6dc;
+      padding: 1rem;
+    }
+
+    .section-tab {
+      border: 1px solid #ece6dc;
+      border-radius: 12px;
+      background: #fffdf9;
+      margin-bottom: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .section-tab.active {
+      border-color: var(--accent);
+      background: #fff1ea;
+      box-shadow: 0 6px 16px rgba(243, 106, 61, 0.18);
+      color: var(--ink);
+    }
+
+    .progress-line {
+      background: #ede4d7;
+    }
+
+    .progress-line span {
+      background: var(--mint);
+    }
+
+    .attempt-head {
+      background: #f7f1e7;
+      border-bottom: 1px solid #ece6dc;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .attempt-head h2 {
+      font-family: "Newsreader", serif;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .question-card {
+      background: #ffffff;
+      border-bottom: 1px solid #f0e8dd;
+      padding: 1.25rem;
+    }
+
+    .question-title {
+      font-size: 16px;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .option {
+      border: 1px solid #ece6dc;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      background: #fffdf9;
+    }
+
+    .option.selected {
+      border-color: var(--accent);
+      background: #fff1ea;
+      box-shadow: 0 6px 16px rgba(243, 106, 61, 0.18);
+    }
+
+    .actions {
+      border-top: 1px solid #ece6dc;
+      background: #fffdf9;
+      border-radius: 0 0 16px 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .message {
+      border-radius: 12px;
+      margin: 1rem 2rem 0;
+      padding: 1rem;
+    }
+
+    .message.error {
+      background: #ffe4de;
+      color: #8a2b1d;
+      border: 1px solid rgba(243, 106, 61, 0.3);
+    }
+
+    .message.success {
+      background: #e0f2f1;
+      color: #1d5450;
+      border: 1px solid rgba(43, 122, 120, 0.3);
+    }
+
+    .loading {
+      padding: 1rem 2rem 0;
+      color: var(--muted);
+    }
+
+    .submit-message {
+      display: none;
+      margin: 1rem 1.25rem 0;
+      border-radius: 12px;
+      padding: 1rem;
+      font-weight: 600;
+    }
+
+    .submit-message.error {
+      display: block;
+      background: #ffe4de;
+      color: #8a2b1d;
+      border: 1px solid rgba(243, 106, 61, 0.3);
+    }
+
+    .submit-message.success {
+      display: block;
+      background: #e0f2f1;
+      color: #1d5450;
+      border: 1px solid rgba(43, 122, 120, 0.3);
+    }
+
+    .result-card {
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #ece6dc;
+      box-shadow: 0 12px 28px rgba(20, 33, 47, 0.12);
+      padding: 2rem;
+      margin: 1.25rem;
+      text-align: center;
+    }
+
+    .result-card .result-icon {
+      color: var(--mint);
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .result-card h3 {
+      font-family: "Newsreader", serif;
+      font-weight: 700;
+      font-size: 28px;
+      margin-bottom: 1rem;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 1.25rem auto;
+      max-width: 620px;
+      text-align: left;
+    }
+
+    .result-metric {
+      background: #f8f4ec;
+      border: 1px solid #ece6dc;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .result-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .result-metric strong {
+      color: var(--ink);
+      font-size: 16px;
+    }
+
+    .redirect-note {
+      background: #e8f3f2;
+      color: #1d5450;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      margin-top: 1rem;
+    }
+
+    @keyframes liftIn {
+      from {
+        transform: translateY(18px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .shell {
+        margin: 1rem auto;
+      }
+
+      .setup-grid,
+      .attempt-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        padding: 4.25rem 1.25rem 1.5rem;
+      }
+
+      .topbar h1 {
+        font-size: 28px;
+      }
+
+      #setupPanel,
+      #attemptPanel,
+      #quizListPanel {
+        padding: 1rem;
+      }
+
+      .quiz-card,
+      .attempt-head,
+      .actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .section-nav {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <img class="brand-logo" src="https://erp.nutc.cloud/files/nutclogo.jpg" alt="NUTC Logo">
+      <div>
+        <h1>Section Quiz</h1>
+        <p>Section-wise MCQS attempt</p>
+      </div>
+      <button class="btn btn-light" type="button" id="resetBtn">
+        <i class="fas fa-rotate-left me-1"></i> Reset
+      </button>
+    </header>
+
+    <div id="message" class="message"></div>
+    <div id="loading" class="loading">
+      <span class="spinner-border spinner-border-sm me-2"></span>Loading...
+    </div>
+
+    <section class="panel mt-3" id="setupPanel">
+      <div class="setup-grid">
+        <div>
+          <label class="form-label" for="studentGroupTxt">Student Group</label>
+          <input id="studentGroupTxt" class="form-control" type="text" placeholder="Select Student Group" autocomplete="off">
+          <input id="studentGroupVal" type="hidden" value="">
+          <div class="hint">Type to search</div>
+        </div>
+        <div>
+          <label class="form-label" for="studentTxt">Student</label>
+          <input id="studentTxt" class="form-control" type="text" placeholder="Select Student" autocomplete="off" disabled>
+          <input id="studentVal" type="hidden" value="">
+          <div class="hint">Type to search</div>
+        </div>
+        <div>
+          <label class="form-label" for="quizTxt">Section Quiz</label>
+          <input id="quizTxt" class="form-control" type="text" placeholder="Select Section Quiz" autocomplete="off" disabled>
+          <input id="quizVal" type="hidden" value="">
+          <div class="hint">Type to search</div>
+        </div>
+        <button class="btn btn-primary" type="button" id="startBtn" disabled>
+          <i class="fas fa-play me-1"></i> Start
+        </button>
+      </div>
+    </section>
+
+    <section class="panel mt-3" id="quizListPanel" style="display:none;">
+      <div id="quizList"></div>
+    </section>
+
+    <section id="attemptPanel" class="mt-3" style="display:none;">
+      <div class="attempt-layout">
+        <aside class="panel section-nav">
+          <div class="mb-3">
+            <div class="fw-bold">Sections</div>
+            <div class="small text-muted" id="overallText">0 answered</div>
+          </div>
+          <div class="progress-line mb-2"><span id="overallBar"></span></div>
+          <div id="sectionTabs"></div>
+        </aside>
+
+        <main class="panel">
+          <div class="attempt-head">
+            <div>
+              <h2 id="attemptTitle"></h2>
+              <div class="text-muted small" id="attemptMeta"></div>
+            </div>
+            <button class="btn btn-outline-secondary" type="button" id="backBtn">
+              <i class="fas fa-arrow-left me-1"></i> Back
+            </button>
+          </div>
+          <div id="questions"></div>
+          <div id="submitMessage" class="submit-message"></div>
+          <div class="actions">
+            <button class="btn btn-outline-secondary" type="button" id="prevSectionBtn">
+              <i class="fas fa-arrow-left me-1"></i> Previous Section
+            </button>
+            <button class="btn btn-outline-secondary" type="button" id="nextSectionBtn">
+              Next Section <i class="fas fa-arrow-right ms-1"></i>
+            </button>
+            <button class="btn btn-primary" type="button" id="submitBtn">
+              <i class="fas fa-paper-plane me-1"></i> Submit Quiz
+            </button>
+          </div>
+        </main>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
+  <script>
+    const apiBase = "/api/method/numerouno.numerouno.api.quiz_api.";
+    const COURSE_EVALUATION_URL = "https://erpnext.nutc.cloud/course-evaluation/new";
+    const autosavePrefix = "section_quiz_autosave:v1";
+    let state = null;
+    let activeSectionIndex = 0;
+    let syncTimer = null;
+    let redirectTimer = null;
+    let studentGroupItems = [];
+    let studentItems = [];
+    let quizItems = [];
+    const linkFields = {};
+
+    const $ = (id) => document.getElementById(id);
+
+    function showLoading(show) {
+      $("loading").style.display = show ? "block" : "none";
+    }
+
+    function showMessage(text, type = "error") {
+      const el = $("message");
+      el.className = `message ${type}`;
+      el.textContent = text;
+      el.style.display = "block";
+    }
+
+    function hideMessage() {
+      $("message").style.display = "none";
+    }
+
+    function showSubmitMessage(text, type = "error") {
+      const el = $("submitMessage");
+      if (!el) return;
+      el.className = `submit-message ${type}`;
+      el.textContent = text;
+      el.style.display = "block";
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function hideSubmitMessage() {
+      const el = $("submitMessage");
+      if (el) el.style.display = "none";
+    }
+
+    function getCsrfHeaders() {
+      const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+      const headers = {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Accept": "application/json"
+      };
+      if (token) headers["X-Frappe-CSRF-Token"] = token;
+      return headers;
+    }
+
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        studentGroup: params.get("student_group") || "",
+        student: params.get("student") || "",
+        quiz: params.get("quiz") || ""
+      };
+    }
+
+    function createAttemptId() {
+      return `section-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function autosaveKey() {
+      if (!state) return "";
+      return `${autosavePrefix}:${state.quizName}:${state.student}:${state.studentGroup}`;
+    }
+
+    function saveLocal() {
+      if (!state) return;
+      localStorage.setItem(autosaveKey(), JSON.stringify({
+        answers: state.answers,
+        attemptId: state.attemptId,
+        activeSectionIndex
+      }));
+    }
+
+    function restoreLocal() {
+      if (!state) return;
+      try {
+        const raw = localStorage.getItem(autosaveKey());
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        state.answers = parsed.answers || {};
+        state.attemptId = parsed.attemptId || state.attemptId;
+        activeSectionIndex = Number(parsed.activeSectionIndex) || 0;
+      } catch (err) {
+        console.warn("Could not restore section quiz autosave", err);
+      }
+    }
+
+    function clearLocal() {
+      if (state) localStorage.removeItem(autosaveKey());
+    }
+
+    async function apiGet(method, params = {}) {
+      const query = new URLSearchParams(params);
+      const res = await fetch(`${apiBase}${method}?${query.toString()}`, {
+        method: "GET",
+        headers: { "Accept": "application/json" }
+      });
+      const data = await res.json();
+      return data.message || data;
+    }
+
+    function debounce(fn, delay = 200) {
+      let timer = null;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    function makeLinkField({ txtId, valId, placeholder, getItems, onSelect }) {
+      const txtEl = $(txtId);
+      const valEl = $(valId);
+      txtEl.placeholder = placeholder || "";
+
+      const field = {
+        txtEl,
+        valEl,
+        items: [],
+        aw: new Awesomplete(txtEl, {
+          minChars: 0,
+          autoFirst: true,
+          maxItems: 50
+        }),
+        setList(items) {
+          field.items = items || [];
+          field.aw.list = field.items.map((item) => item.label);
+        },
+        clear() {
+          txtEl.value = "";
+          valEl.value = "";
+        },
+        setDisabled(disabled) {
+          txtEl.disabled = !!disabled;
+        }
+      };
+
+      const refresh = debounce(async () => {
+        const items = await getItems(txtEl.value || "");
+        field.setList(items);
+        field.aw.evaluate();
+      });
+
+      txtEl.addEventListener("input", () => {
+        valEl.value = "";
+        refresh();
+      });
+      txtEl.addEventListener("focus", refresh);
+      txtEl.addEventListener("click", refresh);
+      txtEl.addEventListener("awesomplete-selectcomplete", () => {
+        const selectedLabel = txtEl.value;
+        const selected = field.items.find((item) => item.label === selectedLabel);
+        if (selected) {
+          valEl.value = selected.value;
+          txtEl.value = selected.label;
+          onSelect(selected);
+        }
+      });
+
+      return field;
+    }
+
+    function filterItems(items, text) {
+      const query = (text || "").trim().toLowerCase();
+      if (!query) return items;
+      return items.filter((item) => item.label.toLowerCase().includes(query));
+    }
+
+    async function loadStudentGroups() {
+      showLoading(true);
+      const data = await apiGet("get_student_groups");
+      studentGroupItems = (data.student_groups || []).map((group) => ({
+        value: group.name,
+        label: group.student_group_name && group.student_group_name !== group.name
+          ? `${group.student_group_name} (${group.name})`
+          : group.name
+      }));
+      linkFields.studentGroup.setList(studentGroupItems);
+      showLoading(false);
+    }
+
+    async function loadStudents() {
+      const studentGroup = $("studentGroupVal").value;
+      linkFields.student.clear();
+      linkFields.quiz.clear();
+      linkFields.student.setDisabled(true);
+      linkFields.quiz.setDisabled(true);
+      $("startBtn").disabled = true;
+      studentItems = [];
+      quizItems = [];
+      $("quizListPanel").style.display = "none";
+      if (!studentGroup) return;
+
+      showLoading(true);
+      const data = await apiGet("get_students_by_group", { student_group: studentGroup });
+      studentItems = (data.students || []).map((student) => ({
+        value: student.student,
+        label: student.student_name && student.student_name !== student.student
+          ? `${student.student_name} (${student.student})`
+          : student.student
+      }));
+      linkFields.student.setList(studentItems);
+      linkFields.student.setDisabled(false);
+      showLoading(false);
+    }
+
+    async function loadSectionQuizzes() {
+      const studentGroup = $("studentGroupVal").value;
+      const student = $("studentVal").value;
+      linkFields.quiz.clear();
+      linkFields.quiz.setDisabled(true);
+      $("startBtn").disabled = true;
+      quizItems = [];
+      $("quizList").innerHTML = "";
+      $("quizListPanel").style.display = "none";
+      if (!studentGroup || !student) return;
+
+      showLoading(true);
+      hideMessage();
+      const data = await apiGet("get_available_section_quizzes_from_mcqs", {
+        student_group: studentGroup,
+        student
+      });
+      showLoading(false);
+
+      if (data.status !== "success") {
+        showMessage(data.message || "Failed to load section quizzes");
+        return;
+      }
+
+      const quizzes = data.quizzes || [];
+      if (!quizzes.length) {
+        showMessage("No Section Wise MCQS assignment found for this student group.");
+        return;
+      }
+
+      quizItems = quizzes.map((quiz) => ({
+        value: quiz.name,
+        label: quiz.title && quiz.title !== quiz.name ? `${quiz.title} (${quiz.name})` : quiz.name,
+        quiz
+      }));
+      linkFields.quiz.setList(quizItems);
+
+      quizzes.forEach((quiz) => {
+        const card = document.createElement("div");
+        card.className = "quiz-card";
+        card.innerHTML = `
+          <div>
+            <div class="quiz-title">${escapeHtml(quiz.title || quiz.name)}</div>
+            <div class="quiz-meta">
+              <span><i class="fas fa-layer-group me-1"></i>${quiz.section_count || 0} sections</span>
+              <span><i class="fas fa-list-check me-1"></i>${quiz.total_marks || 0} questions</span>
+              <span><i class="fas fa-percent me-1"></i>${quiz.passing_percentage || 75}% passing</span>
+            </div>
+          </div>
+          <button class="btn btn-attempt" type="button" data-quiz="${escapeAttr(quiz.name)}">
+            <i class="fas fa-play me-1"></i> Start
+          </button>
+        `;
+        card.querySelector("button").addEventListener("click", () => {
+          const item = quizItems.find((candidate) => candidate.value === quiz.name);
+          $("quizVal").value = quiz.name;
+          $("quizTxt").value = item ? item.label : (quiz.title || quiz.name);
+          toggleStart();
+          startQuiz();
+        });
+        $("quizList").appendChild(card);
+      });
+
+      linkFields.quiz.setDisabled(false);
+      $("quizListPanel").style.display = "block";
+      toggleStart();
+    }
+
+    function toggleStart() {
+      $("startBtn").disabled = !$("studentGroupVal").value || !$("studentVal").value || !$("quizVal").value;
+    }
+
+    async function startQuiz() {
+      clearInterval(redirectTimer);
+      $("prevSectionBtn").style.display = "";
+      $("nextSectionBtn").style.display = "";
+      $("submitBtn").style.display = "";
+      const quizName = $("quizVal").value;
+      const studentGroup = $("studentGroupVal").value;
+      const student = $("studentVal").value;
+      if (!quizName || !studentGroup || !student) return;
+
+      showLoading(true);
+      hideMessage();
+      const data = await apiGet("get_section_quiz_questions_from_quiz", {
+        quiz_name: quizName,
+        student_group: studentGroup
+      });
+      showLoading(false);
+
+      if (data.status !== "success") {
+        showMessage(data.message || "Failed to load section quiz");
+        return;
+      }
+
+      state = {
+        quizName,
+        studentGroup,
+        student,
+        quiz: data.quiz,
+        sections: data.sections || [],
+        questions: data.questions || [],
+        answers: {},
+        attemptId: createAttemptId()
+      };
+      activeSectionIndex = 0;
+      restoreLocal();
+      $("setupPanel").style.display = "none";
+      $("quizListPanel").style.display = "none";
+      $("attemptPanel").style.display = "block";
+      renderAttempt();
+      scheduleSync();
+    }
+
+    function renderAttempt() {
+      if (!state) return;
+      activeSectionIndex = Math.max(0, Math.min(activeSectionIndex, state.sections.length - 1));
+      const activeSection = state.sections[activeSectionIndex] || { questions: [] };
+      $("attemptTitle").textContent = state.quiz.title || state.quiz.name;
+      $("attemptMeta").textContent = `${state.sections.length} sections, ${state.questions.length} questions`;
+
+      renderSectionTabs();
+      renderQuestions(activeSection);
+      updateProgress();
+    }
+
+    function renderSectionTabs() {
+      $("sectionTabs").innerHTML = "";
+      state.sections.forEach((section, index) => {
+        const answered = section.questions.filter((q) => state.answers[q.name]).length;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `section-tab ${index === activeSectionIndex ? "active" : ""}`;
+        btn.innerHTML = `
+          <span class="section-tab-title">${escapeHtml(section.title)}</span>
+          <span class="section-tab-meta">${answered}/${section.questions.length} answered - pass ${section.min_pass_percentage || 0}%</span>
+        `;
+        btn.addEventListener("click", () => {
+          activeSectionIndex = index;
+          saveLocal();
+          renderAttempt();
+        });
+        $("sectionTabs").appendChild(btn);
+      });
+    }
+
+    function renderQuestions(section) {
+      $("questions").innerHTML = "";
+      if (!section.questions.length) {
+        $("questions").innerHTML = `<div class="question-card text-muted">No questions mapped to this section.</div>`;
+        return;
+      }
+
+      section.questions.forEach((question, index) => {
+        const card = document.createElement("div");
+        card.className = "question-card";
+        const selected = state.answers[question.name];
+        card.innerHTML = `
+          <div class="question-title">Q${index + 1}. ${cleanQuestionHtml(question.question || question.name)}</div>
+          <div>
+            ${(question.options || []).map((option) => `
+              <label class="option ${String(selected) === String(option.id) ? "selected" : ""}">
+                <input type="radio" name="q_${escapeAttr(question.name)}" value="${option.id}" ${String(selected) === String(option.id) ? "checked" : ""}>
+                <span>${escapeHtml(option.text)}</span>
+              </label>
+            `).join("")}
+          </div>
+        `;
+        card.querySelectorAll("input").forEach((input) => {
+          input.addEventListener("change", () => {
+            state.answers[question.name] = Number(input.value);
+            saveLocal();
+            renderAttempt();
+            scheduleSync();
+          });
+        });
+        $("questions").appendChild(card);
+      });
+    }
+
+    function updateProgress() {
+      const answered = state.questions.filter((q) => state.answers[q.name]).length;
+      const total = state.questions.length || 1;
+      $("overallText").textContent = `${answered}/${state.questions.length} answered`;
+      $("overallBar").style.width = `${Math.round((answered / total) * 100)}%`;
+      $("prevSectionBtn").disabled = activeSectionIndex === 0;
+      $("nextSectionBtn").disabled = activeSectionIndex >= state.sections.length - 1;
+    }
+
+    function scheduleSync() {
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(syncProgress, 300);
+    }
+
+    function syncProgress() {
+      if (!state) return;
+      const params = new URLSearchParams();
+      params.append("quiz_name", state.quizName);
+      params.append("student", state.student);
+      params.append("student_group", state.studentGroup);
+      params.append("attempt_id", state.attemptId);
+      params.append("total_questions", String(state.questions.length));
+      params.append("answers", JSON.stringify(state.answers));
+
+      fetch(`${apiBase}upsert_public_quiz_progress`, {
+        method: "POST",
+        headers: getCsrfHeaders(),
+        body: params.toString(),
+        keepalive: true
+      }).catch((err) => console.warn("Section quiz progress sync failed", err));
+    }
+
+    async function submitQuiz() {
+      if (!state) return;
+      const unanswered = state.questions.filter((q) => !state.answers[q.name]);
+      if (unanswered.length) {
+        showSubmitMessage(`Please answer all questions. Remaining: ${unanswered.length}`);
+        return;
+      }
+
+      syncProgress();
+      showLoading(true);
+      hideMessage();
+      hideSubmitMessage();
+      $("submitBtn").disabled = true;
+
+      const submissionAnswers = state.questions.map((question) => ({
+        question: question.name,
+        answers: [state.answers[question.name]],
+        marks: question.marks || 1
+      }));
+
+      const params = new URLSearchParams();
+      params.append("quiz_name", state.quizName);
+      params.append("student", state.student);
+      params.append("student_group", state.studentGroup);
+      params.append("attempt_id", state.attemptId);
+      params.append("answers", JSON.stringify(submissionAnswers));
+
+      try {
+        const res = await fetch(`${apiBase}submit_quiz_from_mcqs`, {
+          method: "POST",
+          headers: getCsrfHeaders(),
+          body: params.toString()
+        });
+        const data = await res.json();
+        const result = data.message || data;
+        showLoading(false);
+        $("submitBtn").disabled = false;
+
+        if (result.status !== "success") {
+          showSubmitMessage(result.message || "Failed to submit quiz");
+          return;
+        }
+
+        clearLocal();
+        showQuizResult(result);
+      } catch (err) {
+        showLoading(false);
+        $("submitBtn").disabled = false;
+        showSubmitMessage("Error while submitting section quiz");
+        console.error(err);
+      }
+    }
+
+    async function fetchCourseEvaluationPrefill(studentGroup, student) {
+      const params = new URLSearchParams();
+      params.append("student_group", studentGroup);
+      params.append("student", student);
+      const data = await apiGet("get_course_evaluation_prefill", Object.fromEntries(params));
+      return data.status === "success" ? (data.data || {}) : {};
+    }
+
+    function buildCourseEvaluationUrl(prefill) {
+      const params = new URLSearchParams();
+      [
+        "course_name",
+        "company",
+        "instructor_name",
+        "dates",
+        "trainee_name",
+        "email_id",
+        "trainee_mobile",
+        "student_group"
+      ].forEach((field) => {
+        const value = prefill[field];
+        if (value) params.append(field, value);
+      });
+      const qs = params.toString();
+      return qs ? `${COURSE_EVALUATION_URL}?${qs}` : COURSE_EVALUATION_URL;
+    }
+
+    async function getCourseEvaluationUrl() {
+      const prefill = {
+        trainee_name: state?.student || "",
+        student_group: state?.studentGroup || ""
+      };
+
+      try {
+        const apiPrefill = await fetchCourseEvaluationPrefill(state?.studentGroup, state?.student);
+        Object.assign(prefill, apiPrefill || {});
+      } catch (err) {
+        console.warn("Course Evaluation prefill fetch failed", err);
+      }
+
+      return buildCourseEvaluationUrl(prefill);
+    }
+
+    async function showQuizResult(result) {
+      const percentage = Number(result.percentage || result.score_exact || result.score || 0);
+      const passed = !!result.passed;
+      $("questions").innerHTML = `
+        <div class="result-card">
+          <i class="fas fa-clipboard-check result-icon"></i>
+          <h3>Quiz Submitted</h3>
+          <div class="result-grid">
+            <div class="result-metric">
+              <span>Score</span>
+              <strong>${escapeHtml(result.score || 0)}/100</strong>
+            </div>
+            <div class="result-metric">
+              <span>Percentage</span>
+              <strong>${percentage.toFixed(1)}%</strong>
+            </div>
+            <div class="result-metric">
+              <span>Status</span>
+              <strong>${passed ? "Passed" : "Failed"}</strong>
+            </div>
+            <div class="result-metric">
+              <span>Assessment Result</span>
+              <strong>${escapeHtml(result.assessment_result_id || "Not created")}</strong>
+            </div>
+            <div class="result-metric">
+              <span>Quiz Activity</span>
+              <strong>${escapeHtml(result.activity_id || "Not created")}</strong>
+            </div>
+          </div>
+          <div class="redirect-note">
+            Redirecting to Course Evaluation in <span id="redirectCountdown">10</span> seconds...
+          </div>
+          <button class="btn btn-primary mt-3" type="button" id="goEvaluationNowBtn">
+            <i class="fas fa-arrow-right me-1"></i> Go to Course Evaluation
+          </button>
+        </div>
+      `;
+      $("submitMessage").style.display = "none";
+      $("sectionTabs").innerHTML = "";
+      $("overallText").textContent = "Submitted";
+      $("overallBar").style.width = "100%";
+      $("prevSectionBtn").style.display = "none";
+      $("nextSectionBtn").style.display = "none";
+      $("submitBtn").style.display = "none";
+
+      const evaluationUrl = await getCourseEvaluationUrl();
+      const goNow = $("goEvaluationNowBtn");
+      if (goNow) {
+        goNow.addEventListener("click", () => {
+          window.location.href = evaluationUrl;
+        });
+      }
+
+      let remaining = 10;
+      clearInterval(redirectTimer);
+      redirectTimer = setInterval(() => {
+        remaining -= 1;
+        const countdown = $("redirectCountdown");
+        if (countdown) countdown.textContent = String(Math.max(remaining, 0));
+        if (remaining <= 0) {
+          clearInterval(redirectTimer);
+          window.location.href = evaluationUrl;
+        }
+      }, 1000);
+    }
+
+    function goBack() {
+      $("attemptPanel").style.display = "none";
+      $("setupPanel").style.display = "block";
+      $("quizListPanel").style.display = $("quizList").children.length ? "block" : "none";
+    }
+
+    function resetPage() {
+      clearInterval(redirectTimer);
+      if (state) clearLocal();
+      state = null;
+      activeSectionIndex = 0;
+      $("attemptPanel").style.display = "none";
+      $("setupPanel").style.display = "block";
+      $("quizListPanel").style.display = "none";
+      linkFields.studentGroup.clear();
+      linkFields.student.clear();
+      linkFields.quiz.clear();
+      linkFields.student.setDisabled(true);
+      linkFields.quiz.setDisabled(true);
+      $("startBtn").disabled = true;
+      hideMessage();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replaceAll("`", "&#096;");
+    }
+
+    function cleanQuestionHtml(value) {
+      const text = String(value ?? "");
+      if (!/<[a-z][\s\S]*>/i.test(text)) {
+        return escapeHtml(text);
+      }
+
+      const template = document.createElement("template");
+      template.innerHTML = text;
+      template.content.querySelectorAll("script,style,iframe,object,embed").forEach((node) => node.remove());
+      template.content.querySelectorAll("*").forEach((node) => {
+        [...node.attributes].forEach((attr) => {
+          if (attr.name.toLowerCase().startsWith("on")) {
+            node.removeAttribute(attr.name);
+          }
+        });
+      });
+      return template.innerHTML;
+    }
+
+    async function init() {
+      linkFields.studentGroup = makeLinkField({
+        txtId: "studentGroupTxt",
+        valId: "studentGroupVal",
+        placeholder: "Select Student Group",
+        getItems: (text) => filterItems(studentGroupItems, text),
+        onSelect: loadStudents
+      });
+      linkFields.student = makeLinkField({
+        txtId: "studentTxt",
+        valId: "studentVal",
+        placeholder: "Select Student",
+        getItems: (text) => filterItems(studentItems, text),
+        onSelect: loadSectionQuizzes
+      });
+      linkFields.quiz = makeLinkField({
+        txtId: "quizTxt",
+        valId: "quizVal",
+        placeholder: "Select Section Quiz",
+        getItems: (text) => filterItems(quizItems, text),
+        onSelect: toggleStart
+      });
+
+      $("startBtn").addEventListener("click", startQuiz);
+      $("submitBtn").addEventListener("click", submitQuiz);
+      $("backBtn").addEventListener("click", goBack);
+      $("resetBtn").addEventListener("click", resetPage);
+      $("prevSectionBtn").addEventListener("click", () => {
+        activeSectionIndex -= 1;
+        saveLocal();
+        renderAttempt();
+      });
+      $("nextSectionBtn").addEventListener("click", () => {
+        activeSectionIndex += 1;
+        saveLocal();
+        renderAttempt();
+      });
+
+      await loadStudentGroups();
+      const params = getUrlParams();
+      if (params.studentGroup) {
+        const groupItem = studentGroupItems.find((item) => item.value === params.studentGroup);
+        $("studentGroupVal").value = params.studentGroup;
+        $("studentGroupTxt").value = groupItem ? groupItem.label : params.studentGroup;
+        await loadStudents();
+      }
+      if (params.student) {
+        const studentItem = studentItems.find((item) => item.value === params.student);
+        $("studentVal").value = params.student;
+        $("studentTxt").value = studentItem ? studentItem.label : params.student;
+        await loadSectionQuizzes();
+      }
+      if (params.quiz) {
+        const quizItem = quizItems.find((item) => item.value === params.quiz);
+        $("quizVal").value = params.quiz;
+        $("quizTxt").value = quizItem ? quizItem.label : params.quiz;
+        toggleStart();
+      }
+    }
+
+    init().catch((err) => {
+      showLoading(false);
+      showMessage("Could not initialize section quiz page");
+      console.error(err);
+    });
+  </script>
+</body>
+</html>

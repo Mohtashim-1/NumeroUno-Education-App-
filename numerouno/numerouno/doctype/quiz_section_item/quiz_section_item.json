@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "creation": "2026-05-02 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_key",
+  "section_title",
+  "min_pass_percentage",
+  "weightage",
+  "sort_order"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_key",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section Key",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section Title",
+   "reqd": 1
+  },
+  {
+   "default": "60",
+   "fieldname": "min_pass_percentage",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Min Pass %",
+   "precision": "2"
+  },
+  {
+   "default": "20",
+   "fieldname": "weightage",
+   "fieldtype": "Float",
+   "label": "Weightage",
+   "precision": "2"
+  },
+  {
+   "default": "0",
+   "fieldname": "sort_order",
+   "fieldtype": "Int",
+   "label": "Sort Order"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Quiz Section Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
