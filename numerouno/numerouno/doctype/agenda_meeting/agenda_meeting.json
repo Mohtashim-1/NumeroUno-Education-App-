@@ -11,10 +11,13 @@
   "posting_date",
   "column_break_owus",
   "meeting_date",
+  "column_break_uzqq",
+  "user",
   "section_break_hhxr",
   "weekly_highlights",
   "section_break_ruzw",
-  "meeting_agenda_table"
+  "meeting_agenda_table",
+  "amended_from"
  ],
  "fields": [
   {
@@ -62,12 +65,33 @@
    "fieldtype": "Table",
    "label": "Weekly Highlights",
    "options": "Weekly Highlight"
+  },
+  {
+   "fieldname": "column_break_uzqq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Agenda Meeting",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-05-06 21:54:28.856780",
+ "modified": "2026-05-10 18:31:20.427500",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Agenda Meeting",
