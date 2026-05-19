@@ -165,6 +165,12 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
+    "Asset Maintenance": {
+        "on_update": "numerouno.numerouno.asset_management.sync_asset_maintenance_log_custom_fields"
+    },
+    "Asset Maintenance Log": {
+        "on_submit": "numerouno.numerouno.asset_management.update_asset_performance_from_log"
+    },
 	"Student Group": {
 		"before_save": "numerouno.numerouno.doctype.student_group.student_group.create_academic_term",
         "validate": ["numerouno.numerouno.doctype.student_group.student_group.validate_course_location",
@@ -232,7 +238,8 @@ doc_events = {
 
 scheduler_events = {
 	"daily": [
-		"numerouno.numerouno.doctype.student_group.student_group.send_daily_unpaid_notifications"
+		"numerouno.numerouno.doctype.student_group.student_group.send_daily_unpaid_notifications",
+        "numerouno.numerouno.asset_management.send_asset_maintenance_reminders",
 	]
 }
 

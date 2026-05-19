@@ -1,0 +1,79 @@
+{
+ "charts": [
+  {
+   "chart_name": "Maintenance Status",
+   "label": "Maintenance Status"
+  },
+  {
+   "chart_name": "Asset Criticality",
+   "label": "Asset Criticality"
+  }
+ ],
+ "content": "[{\"type\":\"number_card\",\"data\":{\"card_name\":\"Total Assets\",\"col\":3}},{\"type\":\"number_card\",\"data\":{\"card_name\":\"Open Maintenance Tasks\",\"col\":3}},{\"type\":\"number_card\",\"data\":{\"card_name\":\"Overdue Maintenance Tasks\",\"col\":3}},{\"type\":\"number_card\",\"data\":{\"card_name\":\"Certificates Requiring Renewal\",\"col\":3}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Maintenance Status\",\"col\":6}},{\"type\":\"chart\",\"data\":{\"chart_name\":\"Asset Criticality\",\"col\":6}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Asset\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Asset Maintenance\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Maintenance Log\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Asset Portal\",\"col\":3}}]",
+ "creation": "2026-05-18 10:23:43.046535",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "icon": "assets",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Asset Management",
+ "links": [],
+ "modified": "2026-05-18 11:35:10.249260",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Asset Management",
+ "number_cards": [
+  {
+   "label": "Total Assets",
+   "number_card_name": "Total Assets"
+  },
+  {
+   "label": "Open Maintenance Tasks",
+   "number_card_name": "Open Maintenance Tasks"
+  },
+  {
+   "label": "Overdue Maintenance Tasks",
+   "number_card_name": "Overdue Maintenance Tasks"
+  },
+  {
+   "label": "Certificates Requiring Renewal",
+   "number_card_name": "Certificates Requiring Renewal"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "Assets",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 0.0,
+ "shortcuts": [
+  {
+   "doc_view": "",
+   "label": "Asset",
+   "link_to": "Asset",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "Asset Maintenance",
+   "link_to": "Asset Maintenance",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "Maintenance Log",
+   "link_to": "Asset Maintenance Log",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "Asset Portal",
+   "link_to": "asset-management-portal",
+   "type": "Page"
+  }
+ ],
+ "title": "Asset Management"
+}
