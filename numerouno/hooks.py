@@ -200,10 +200,13 @@ doc_events = {
         "before_cancel": "numerouno.numerouno.utils.quotation_workflow.require_cancellation_reason"
     },
     "Assessment Result": {
+        "validate": "numerouno.numerouno.utils.assessment_result_validation.validate_assessment_eligibility",
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_assessment_pending",
-        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_assessment_creation"
+        "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_assessment_creation",
+        "on_submit": "numerouno.numerouno.unified_assessment_system.trigger_assessment_result_events",
     },
     "Student Attendance": {
+        "on_submit": "numerouno.numerouno.doctype.student_attendance.student_attendance.validate_signature_before_submit",
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_student_absence",
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_attendance_eligibility"
     },
@@ -225,11 +228,9 @@ doc_events = {
             "numerouno.numerouno.utils.user_roles.assign_vehicle_user_role",
         ]
     },
-    "Assessment Result": {
-        "on_submit": "numerouno.numerouno.unified_assessment_system.trigger_assessment_result_events"
-    },
     "Quiz Activity": {
-        "after_insert": "numerouno.numerouno.doctype.quiz_activity.quiz_activity.auto_create_assessment_documents"
+        "validate": "numerouno.numerouno.doctype.quiz_activity.quiz_activity_validation.validate_quiz_activity_eligibility",
+        "after_insert": "numerouno.numerouno.doctype.quiz_activity.quiz_activity.auto_create_assessment_documents",
     }
 }
 

@@ -6,6 +6,11 @@ import json
 import urllib.parse
 import urllib.request
 
+from numerouno.numerouno.utils.assessment_eligibility import (
+	ensure_assessment_eligible,
+	get_assessment_eligibility,
+)
+
 
 def _log_public_quiz_audit(event_type, quiz_name=None, student=None, student_group=None, attempt_id=None, details=None):
     """Write structured public quiz audit events to a dedicated site log."""
@@ -199,6 +204,10 @@ def upsert_public_quiz_progress(quiz_name, student, student_group, answers=None,
     try:
         if not quiz_name or not student or not student_group:
             return {"status": "error", "message": "Quiz, student, and student group are required"}
+
+        eligibility = get_assessment_eligibility(student, student_group)
+        if not eligibility.get("eligible"):
+            return {"status": "error", "message": eligibility.get("message"), "eligibility": eligibility}
 
         if isinstance(answers, str):
             try:
@@ -490,6 +499,15 @@ def get_available_quizzes(student_group, student):
                 "status": "error",
                 "message": "Student group and student are required"
             }
+
+        eligibility = get_assessment_eligibility(student, student_group)
+        if not eligibility.get("eligible"):
+            return {
+                "status": "error",
+                "message": eligibility.get("message"),
+                "eligibility": eligibility,
+                "quizzes": [],
+            }
         
         # Get the student group details
         student_group_doc = frappe.get_doc("Student Group", student_group)
@@ -682,6 +700,15 @@ def get_available_quizzes_from_mcqs(student_group, student):
             return {
                 "status": "error",
                 "message": "Student group and student are required"
+            }
+
+        eligibility = get_assessment_eligibility(student, student_group)
+        if not eligibility.get("eligible"):
+            return {
+                "status": "error",
+                "message": eligibility.get("message"),
+                "eligibility": eligibility,
+                "quizzes": [],
             }
         
         # Get MCQS Assignment records for this student group
@@ -985,6 +1012,7 @@ def get_available_quizzes_from_mcqs(student_group, student):
         return {
             "status": "success",
             "quizzes": quiz_list,
+            "eligibility": eligibility,
             "debug_info": {
                 "student_group": student_group,
                 "assignments_found": len(mcqs_assignments),
@@ -1513,6 +1541,14 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
             return {
                 "status": "error",
                 "message": "Quiz name, student, and student group are required"
+            }
+
+        eligibility = get_assessment_eligibility(student, student_group)
+        if not eligibility.get("eligible"):
+            return {
+                "status": "error",
+                "message": eligibility.get("message"),
+                "eligibility": eligibility,
             }
         
         # Get quiz details
@@ -2406,6 +2442,15 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
             )
             if student_groups:
                 student_group = student_groups[0].parent
+
+        if student_group:
+            eligibility = get_assessment_eligibility(student, student_group)
+            if not eligibility.get("eligible"):
+                return {
+                    "status": "error",
+                    "message": eligibility.get("message"),
+                    "eligibility": eligibility,
+                }
         
         if not student_group:
             error_msg = "Student Group not found. Please ensure student is assigned to a Student Group."

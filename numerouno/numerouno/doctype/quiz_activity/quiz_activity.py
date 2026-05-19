@@ -49,6 +49,16 @@ def auto_create_assessment_documents(doc, method):
 		if not doc.quiz:
 			frappe.logger().warning(f"[QUIZ ACTIVITY AUTO-CREATE] Quiz Activity {doc.name} has no quiz. Cannot create Assessment documents.")
 			return
+
+		if doc.custom_student_group:
+			from numerouno.numerouno.utils.assessment_eligibility import get_assessment_eligibility
+
+			eligibility = get_assessment_eligibility(doc.student, doc.custom_student_group)
+			if not eligibility.get("eligible"):
+				frappe.logger().warning(
+					f"[QUIZ ACTIVITY AUTO-CREATE] Skipped for {doc.name}: {eligibility.get('message')}"
+				)
+				return
 		
 		frappe.logger().info(f"[QUIZ ACTIVITY AUTO-CREATE] Starting auto-creation for Quiz Activity: {doc.name}")
 		

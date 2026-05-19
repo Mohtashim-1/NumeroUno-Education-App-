@@ -32,6 +32,23 @@ class StudentAttendance(StudentAttendance):
                             )
                         )
 
+
+def validate_signature_before_submit(doc, method=None):
+	"""Require student signature before attendance can be submitted."""
+	if doc.docstatus != 1:
+		return
+	if doc.status != "Present":
+		return
+	if doc.custom_student_signature:
+		return
+	frappe.throw(
+		_(
+			"Please provide your signature in the Signature field before submitting attendance."
+		),
+		title=_("Signature Required"),
+	)
+
+
 # @frappe.whitelist()
 # def attendance_restriction(doc, method):
 #     if not doc.custom_student_signature:

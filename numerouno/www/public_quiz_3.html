@@ -1486,6 +1486,11 @@ async function reloadStudentGroups() {
         showLoading(false);
         debugLog("QUIZ API RESPONSE", data);
         
+        if (data.message?.status === "error") {
+          showError(data.message?.message || t("failed_load_quizzes"));
+          return;
+        }
+
         if (data.message?.status === "success") {
           const quizzes = data.message.quizzes || [];
           const debugInfo = data.message.debug_info || {};
