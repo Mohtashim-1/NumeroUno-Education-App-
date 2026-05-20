@@ -334,6 +334,17 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				color: var(--ink);
 			}
 
+			.quiz-actions {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				flex-wrap: wrap;
+			}
+
+			.quiz-actions .portal-btn {
+				margin-top: 0;
+			}
+
 			.status-pill {
 				display: inline-flex;
 				align-items: center;
@@ -553,6 +564,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	var cardsOffset = 0;
 	var quizOffset = 0;
 	var pageSize = 50;
+	var isAdnocInstructor = false;
 	var filterState = {
 		student_group: "",
 		student: "",
@@ -858,6 +870,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			},
 			callback: function (r) {
 				var message = r.message || {};
+				isAdnocInstructor = !!message.is_adnoc_instructor;
 				render_quiz_status(message.records || [], quizOffset > 0);
 			},
 			error: function () {
@@ -896,7 +909,24 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				: "";
 			var actionCell = "-";
 			if (row.activity) {
-				actionCell = `<a href="/app/quiz-activity/${frappe.utils.escape_html(row.activity)}">View</a>`;
+				var actionLinks = [
+					`<a href="/app/quiz-activity/${frappe.utils.escape_html(row.activity)}">View</a>`
+				];
+
+				if (isAdnocInstructor && row.assessment_result) {
+					var pdfParams = new URLSearchParams();
+					pdfParams.append("assessment_result", row.assessment_result);
+					actionLinks.push(`
+						<a class="portal-btn portal-btn-primary"
+							href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_adnoc_theory_assessment?${pdfParams.toString()}"
+							target="_blank"
+							rel="noopener">
+							Download Theory Assesment
+						</a>
+					`);
+				}
+
+				actionCell = `<div class="quiz-actions">${actionLinks.join("")}</div>`;
 			} else {
 				var params = new URLSearchParams();
 				params.append("student_group", row.student_group || "");

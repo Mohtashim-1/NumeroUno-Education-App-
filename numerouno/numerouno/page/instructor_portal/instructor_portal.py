@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 
 
 def _get_instructor_names_for_user(user):
@@ -26,6 +27,59 @@ def _get_student_group_names_for_instructors(instructor_names):
         group_by="parent",
     )
     return [row.parent for row in rows]
+
+
+def _get_adnoc_instructor_names(instructor_names):
+    if not instructor_names:
+        return set()
+
+    rows = frappe.get_all(
+        "Instructor",
+        filters={
+            "name": ["in", list(instructor_names)],
+            "custom_is_adnoc_instructor": 1,
+        },
+        pluck="name",
+    )
+    return set(rows)
+
+
+def _is_adnoc_instructor(user, roles, instructor_name=None):
+    if user == "Administrator" or "System Manager" in roles:
+        return True
+
+    instructor_name = (instructor_name or "").strip()
+    if instructor_name:
+        return bool(
+            frappe.db.get_value("Instructor", instructor_name, "custom_is_adnoc_instructor")
+        )
+
+    return bool(_get_adnoc_instructor_names(_get_instructor_names_for_user(user)))
+
+
+def _can_download_adnoc_theory_assessment(assessment_result, user, roles):
+    student_group = frappe.db.get_value(
+        "Assessment Result", assessment_result, "student_group"
+    )
+    if not student_group:
+        return False
+
+    if user == "Administrator" or "System Manager" in roles:
+        return True
+
+    group_instructors = set(
+        frappe.get_all(
+            "Student Group Instructor",
+            filters={"parent": student_group},
+            pluck="instructor",
+        )
+    )
+    adnoc_group_instructors = _get_adnoc_instructor_names(group_instructors)
+    if not adnoc_group_instructors:
+        return False
+
+    user_instructors = set(_get_instructor_names_for_user(user))
+    return bool(user_instructors.intersection(adnoc_group_instructors))
 
 
 def _get_student_name_map(student_ids):
@@ -108,6 +162,36 @@ def _get_activity_score_summary(activities):
         data["status"] = "Pass" if percentage >= passing_score else "Fail"
 
     return summary
+
+
+def _get_assessment_result_map(activities):
+    assessment_result_map = {}
+    fallback_filters = []
+
+    for activity in activities:
+        if getattr(activity, "custom_assesment_result", None):
+            assessment_result_map[activity.name] = activity.custom_assesment_result
+        elif (
+            getattr(activity, "student", None)
+            and getattr(activity, "custom_student_group", None)
+            and getattr(activity, "custom_assesment_plan", None)
+        ):
+            fallback_filters.append(activity)
+
+    for activity in fallback_filters:
+        assessment_result = frappe.db.get_value(
+            "Assessment Result",
+            {
+                "student": activity.student,
+                "student_group": activity.custom_student_group,
+                "assessment_plan": activity.custom_assesment_plan,
+            },
+            "name",
+        )
+        if assessment_result:
+            assessment_result_map[activity.name] = assessment_result
+
+    return assessment_result_map
 
 
 def _sync_activity_score_fields(activities, score_summary):
@@ -281,9 +365,17 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
     instructor = (instructor or "").strip()
 
     student_group_names = _resolve_student_group_names(user, roles, instructor)
+    is_adnoc_instructor = _is_adnoc_instructor(user, roles, instructor)
 
     if student_group_names == []:
-        return {"records": [], "total": 0, "pending": 0, "passed": 0, "failed": 0}
+        return {
+            "records": [],
+            "total": 0,
+            "pending": 0,
+            "passed": 0,
+            "failed": 0,
+            "is_adnoc_instructor": is_adnoc_instructor,
+        }
 
     if student_group:
         if student_group_names is None:
@@ -291,11 +383,25 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
         elif student_group in student_group_names:
             student_group_names = [student_group]
         else:
-            return {"records": [], "total": 0, "pending": 0, "passed": 0, "failed": 0}
+            return {
+                "records": [],
+                "total": 0,
+                "pending": 0,
+                "passed": 0,
+                "failed": 0,
+                "is_adnoc_instructor": is_adnoc_instructor,
+            }
 
     assignments = _get_mcqs_assignments(student_group_names)
     if not assignments:
-        return {"records": [], "total": 0, "pending": 0, "passed": 0, "failed": 0}
+        return {
+            "records": [],
+            "total": 0,
+            "pending": 0,
+            "passed": 0,
+            "failed": 0,
+            "is_adnoc_instructor": is_adnoc_instructor,
+        }
 
     group_names = {row.student_group for row in assignments if row.student_group}
     group_students = _get_group_students(group_names)
@@ -328,12 +434,24 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
                 "student": ["in", list(student_ids)],
                 "quiz": ["in", list(quiz_names)],
             },
-            fields=["name", "student", "quiz", "score", "status", "activity_date", "creation"],
+            fields=[
+                "name",
+                "student",
+                "quiz",
+                "score",
+                "status",
+                "activity_date",
+                "creation",
+                "custom_student_group",
+                "custom_assesment_plan",
+                "custom_assesment_result",
+            ],
             order_by="creation desc",
             ignore_permissions=True,
         )
         score_summary = _get_activity_score_summary(activities)
         _sync_activity_score_fields(activities, score_summary)
+        assessment_result_map = _get_assessment_result_map(activities)
         for activity in activities:
             summary = score_summary.get(activity.name)
             if summary:
@@ -343,6 +461,7 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
             key = (activity.student, activity.quiz)
             if key not in activity_map:
                 activity_map[key] = activity
+                activity.assessment_result = assessment_result_map.get(activity.name)
 
     pending = passed = failed = 0
     for row in page_rows:
@@ -352,6 +471,7 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
             row["score"] = activity.score
             row["status"] = activity.status
             row["activity_date"] = activity.activity_date or activity.creation
+            row["assessment_result"] = getattr(activity, "assessment_result", None)
         else:
             row["status"] = "Pending"
 
@@ -370,4 +490,37 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
         "failed": failed,
         "limit": limit,
         "offset": offset,
+        "is_adnoc_instructor": is_adnoc_instructor,
     }
+
+
+@frappe.whitelist()
+def download_adnoc_theory_assessment(assessment_result):
+    assessment_result = (assessment_result or "").strip()
+    if not assessment_result:
+        frappe.throw(_("Assessment Result is required."))
+
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    if not _can_download_adnoc_theory_assessment(assessment_result, user, roles):
+        frappe.throw(
+            _("Only System Managers or ADNOC instructors assigned to this student group can download this report."),
+            frappe.PermissionError,
+        )
+
+    doc = frappe.get_doc("Assessment Result", assessment_result)
+    pdf_file = frappe.get_print(
+        "Assessment Result",
+        assessment_result,
+        "Theory Assesment",
+        doc=doc,
+        as_pdf=True,
+        no_letterhead=1,
+    )
+
+    frappe.local.response.filename = "{}-Theory-Assesment.pdf".format(
+        assessment_result.replace(" ", "-").replace("/", "-")
+    )
+    frappe.local.response.filecontent = pdf_file
+    frappe.local.response.type = "pdf"

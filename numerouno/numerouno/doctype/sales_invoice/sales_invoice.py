@@ -1,6 +1,10 @@
 import frappe
 from frappe import _
 
+from numerouno.numerouno.utils.student_invoice_sync import (
+	backfill_invoiced_students_from_sales_invoices,
+)
+
 @frappe.whitelist()
 def fetch_students_group(customer):
     """Fetch Student Groups for a specific customer"""
@@ -127,7 +131,14 @@ def fetch_students_from_sg(customer, student_group, exclude_invoiced=True):
         frappe.logger().info(f"Returning {len(students_data)} students (after excluding invoiced)")
         return students_data
         
-    except Exception:
+    except Exception as e:
         frappe.logger().error(f"Error fetching students from student groups: {str(e)}")
         frappe.throw(f"Error fetching students: {str(e)}")
-        return [] 
+        return []
+
+
+@frappe.whitelist()
+def run_student_invoice_backfill():
+	"""Sync Student Group Student invoice flags from all submitted Sales Invoices."""
+	frappe.only_for(("System Manager", "Administrator"))
+	return backfill_invoiced_students_from_sales_invoices()

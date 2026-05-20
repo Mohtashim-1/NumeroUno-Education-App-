@@ -4,6 +4,12 @@
 import frappe
 from frappe import _
 
+from numerouno.numerouno.utils.student_invoice_sync import (
+	INVOICE_NO_SQL,
+	INVOICE_STATUS_SQL,
+	SUBMITTED_INVOICE_JOIN_SQL,
+)
+
 
 def execute(filters=None):
 	filters = filters or {}
@@ -119,10 +125,11 @@ def get_data(filters):
 			GROUP_CONCAT(DISTINCT sgi.instructor_name ORDER BY sgi.idx SEPARATOR ', ') AS instructor_name,
 			sgs.student_name AS student_name,
 			sg.from_date AS from_date,
-			sgs.sales_invoice AS invoice_no,
+			{INVOICE_NO_SQL} AS invoice_no,
 			sgs.customer_purchase_order AS customer_lpo,
-			CASE WHEN sgs.paid = 1 THEN 'Invoiced' ELSE 'Pending' END AS invoice_status
+			{INVOICE_STATUS_SQL} AS invoice_status
 		FROM `tabStudent Group Student` AS sgs
+		{SUBMITTED_INVOICE_JOIN_SQL}
 		LEFT JOIN `tabStudent Group` AS sg
 			ON sg.name = sgs.student_group
 		LEFT JOIN `tabStudent Group Instructor` AS sgi

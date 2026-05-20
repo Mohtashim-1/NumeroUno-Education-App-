@@ -196,6 +196,10 @@ doc_events = {
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_missing_po",
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_sales_order_creation"
     },
+    "Sales Invoice": {
+        "on_submit": "numerouno.numerouno.utils.student_invoice_sync.sync_student_group_student_from_sales_invoice",
+        "on_cancel": "numerouno.numerouno.utils.student_invoice_sync.clear_student_group_student_on_invoice_cancel",
+    },
     "Quotation": {
         "before_cancel": "numerouno.numerouno.utils.quotation_workflow.require_cancellation_reason"
     },
