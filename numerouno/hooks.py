@@ -144,10 +144,12 @@ jinja = {
 # Permissions evaluated in scripted ways
 
 permission_query_conditions = {
+    "Instructor": "numerouno.numerouno.permissions.get_instructor_permission_query_conditions",
     "Overtime Request": "numerouno.numerouno.doctype.overtime_request.overtime_request.get_permission_query_conditions"
 }
 
 has_permission = {
+    "Instructor": "numerouno.numerouno.permissions.has_instructor_permission",
     "Overtime Request": "numerouno.numerouno.doctype.overtime_request.overtime_request.has_permission"
 }
 

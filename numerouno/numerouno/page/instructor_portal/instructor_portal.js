@@ -908,6 +908,23 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				? `<a href="/app/quiz/${frappe.utils.escape_html(row.quiz)}">${frappe.utils.escape_html(row.quiz)}</a>`
 				: "";
 			var actionCell = "-";
+			var bulkResultAction = "";
+			if (row.bulk_result_enabled) {
+				if (row.bulk_assessment_result) {
+					bulkResultAction = `<a href="/app/assessment-result/${frappe.utils.escape_html(row.bulk_assessment_result)}">View Result</a>`;
+				} else if ((row.status || "Pending") === "Pending") {
+					bulkResultAction = `
+						<button type="button"
+							class="portal-btn portal-btn-primary bulk-result-btn"
+							data-student="${frappe.utils.escape_html(row.student || "")}"
+							data-student-name="${frappe.utils.escape_html(row.student_name || "")}"
+							data-student-group="${frappe.utils.escape_html(row.student_group || "")}">
+							Submit Result
+						</button>
+					`;
+				}
+			}
+
 			if (row.activity) {
 				var actionLinks = [
 					`<a href="/app/quiz-activity/${frappe.utils.escape_html(row.activity)}">View</a>`
@@ -926,6 +943,10 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					`);
 				}
 
+				if (bulkResultAction) {
+					actionLinks.push(bulkResultAction);
+				}
+
 				actionCell = `<div class="quiz-actions">${actionLinks.join("")}</div>`;
 			} else {
 				var params = new URLSearchParams();
@@ -936,11 +957,15 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					params.append("student_name", row.student_name);
 				}
 				params.append("autostart", "1");
-				actionCell = `
+				var actionLinks = [`
 					<a class="portal-btn portal-btn-primary" href="/public_quiz_3.html?${params.toString()}" target="_blank" rel="noopener">
 						Create
 					</a>
-				`;
+				`];
+				if (bulkResultAction) {
+					actionLinks.push(bulkResultAction);
+				}
+				actionCell = `<div class="quiz-actions">${actionLinks.join("")}</div>`;
 			}
 
 			var statusLabel = row.status || "Pending";
@@ -963,7 +988,69 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			`);
 		});
 
+		bind_bulk_result_buttons();
 		bind_quiz_load_more(records.length);
+	}
+
+	function bind_bulk_result_buttons() {
+		$(".bulk-result-btn").off("click").on("click", function () {
+			var $button = $(this);
+			show_pass_fail_result_dialog({
+				student: $button.data("student"),
+				student_name: $button.data("student-name"),
+				student_group: $button.data("student-group")
+			});
+		});
+	}
+
+	function show_pass_fail_result_dialog(row) {
+		var dialog = new frappe.ui.Dialog({
+			title: "Submit Assessment Result",
+			fields: [
+				{
+					fieldtype: "HTML",
+					options: `
+						<div class="data-title">${frappe.utils.escape_html(row.student || "")}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_name || "")}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_group || "")}</div>
+					`
+				},
+				{
+					label: "Status",
+					fieldname: "status",
+					fieldtype: "Select",
+					options: "Pass\nFail",
+					default: "Pass",
+					reqd: 1
+				}
+			],
+			primary_action_label: "Submit",
+			primary_action(values) {
+				frappe.call({
+					method: "numerouno.numerouno.page.instructor_portal.instructor_portal.submit_instructor_pass_fail_result",
+					args: {
+						student_group: row.student_group,
+						student: row.student,
+						status: values.status
+					},
+					freeze: true,
+					freeze_message: "Submitting result...",
+					callback: function (r) {
+						if (r.exc) {
+							return;
+						}
+						dialog.hide();
+						frappe.show_alert({
+							message: "Assessment Result submitted",
+							indicator: "green"
+						});
+						quizOffset = 0;
+						load_quiz_status();
+					}
+				});
+			}
+		});
+		dialog.show();
 	}
 
 	function bind_quiz_load_more(count) {

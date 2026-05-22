@@ -7,7 +7,6 @@ from frappe import _
 from numerouno.numerouno.utils.student_invoice_sync import (
 	INVOICE_NO_SQL,
 	INVOICE_STATUS_SQL,
-	SUBMITTED_INVOICE_JOIN_SQL,
 )
 
 
@@ -95,6 +94,43 @@ def get_columns():
 	]
 
 
+def _build_invoice_join_sql(has_date_filter):
+	# When a date range is set, restrict the invoice subquery to only the
+	# student+group pairs that fall in that range — avoids a full table scan
+	# of tabSales Invoice Student (~150K+ rows) on every report run.
+	date_scope = (
+		"AND sis.student_group IN ("
+		"  SELECT DISTINCT student_group FROM `tabStudent Group Student`"
+		"  WHERE start_date BETWEEN %(from_date)s AND %(to_date)s"
+		")"
+		if has_date_filter
+		else ""
+	)
+	return f"""
+LEFT JOIN (
+	SELECT
+		sis.student,
+		sis.student_group,
+		SUBSTRING_INDEX(
+			GROUP_CONCAT(si.name ORDER BY si.posting_date DESC, si.creation DESC),
+			',',
+			1
+		) AS invoice_no
+	FROM `tabSales Invoice Student` sis
+	INNER JOIN `tabSales Invoice` si
+		ON si.name = sis.parent
+		AND si.docstatus = 1
+	WHERE sis.student IS NOT NULL
+		AND sis.student_group IS NOT NULL
+		AND sis.student_group != ''
+		{date_scope}
+	GROUP BY sis.student, sis.student_group
+) AS inv
+	ON inv.student = sgs.student
+	AND inv.student_group = sgs.student_group
+"""
+
+
 def get_data(filters):
 	conditions = ["sgs.student_group != ''"]
 	values = {}
@@ -107,12 +143,14 @@ def get_data(filters):
 		conditions.append("sgs.student_group = %(student_group)s")
 		values["student_group"] = filters.get("student_group")
 
-	if filters.get("from_date") and filters.get("to_date"):
+	has_date_filter = bool(filters.get("from_date") and filters.get("to_date"))
+	if has_date_filter:
 		conditions.append("sgs.start_date BETWEEN %(from_date)s AND %(to_date)s")
 		values["from_date"] = filters.get("from_date")
 		values["to_date"] = filters.get("to_date")
 
 	where_clause = " AND ".join(conditions)
+	invoice_join_sql = _build_invoice_join_sql(has_date_filter)
 
 	return frappe.db.sql(
 		f"""
@@ -129,7 +167,7 @@ def get_data(filters):
 			sgs.customer_purchase_order AS customer_lpo,
 			{INVOICE_STATUS_SQL} AS invoice_status
 		FROM `tabStudent Group Student` AS sgs
-		{SUBMITTED_INVOICE_JOIN_SQL}
+		{invoice_join_sql}
 		LEFT JOIN `tabStudent Group` AS sg
 			ON sg.name = sgs.student_group
 		LEFT JOIN `tabStudent Group Instructor` AS sgi

@@ -38,8 +38,10 @@ def auto_create_assessment_documents(doc, method):
 					"docstatus": ["<", 2]
 				})
 				if existing_result:
-					frappe.logger().info(f"[QUIZ ACTIVITY AUTO-CREATE] Assessment Result already exists: {existing_result}. Skipping auto-creation.")
-					return
+					frappe.logger().info(
+						f"[QUIZ ACTIVITY AUTO-CREATE] Assessment Result already exists: {existing_result}. "
+						"Will link/sync it from this Quiz Activity."
+					)
 		
 		# Check if required fields are present
 		if not doc.student:

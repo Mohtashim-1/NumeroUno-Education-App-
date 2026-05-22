@@ -2355,6 +2355,75 @@ def _auto_create_assessment_plan(student_group_doc, student_group, quiz_name, to
     return assessment_plan
 
 
+def _update_assessment_result_from_quiz_activity(assessment_result_name, quiz_activity, total_score, total_marks):
+    """Sync an existing Assessment Result with the score from the latest Quiz Activity."""
+    assessment_result = frappe.get_doc("Assessment Result", assessment_result_name)
+    grading_scale = getattr(assessment_result, "grading_scale", None)
+    maximum_score = total_marks or getattr(assessment_result, "maximum_score", None) or total_marks
+    percentage = (float(total_score) / float(maximum_score) * 100) if maximum_score else 0
+    grade = None
+
+    if grading_scale:
+        try:
+            from education.education.api import get_grade
+
+            grade = get_grade(grading_scale, percentage)
+        except Exception:
+            frappe.log_error(
+                f"Failed to calculate grade for Assessment Result {assessment_result_name}: {frappe.get_traceback()}",
+                "Assessment Result Quiz Sync",
+            )
+
+    updates = {"total_score": total_score}
+    if grade is not None:
+        updates["grade"] = grade
+
+    frappe.db.set_value("Assessment Result", assessment_result_name, updates, update_modified=True)
+
+    details_rows = list(getattr(assessment_result, "details", []) or [])
+    target_row = None
+    for detail in details_rows:
+        if "Written Assessment" in (detail.assessment_criteria or ""):
+            target_row = detail
+            break
+    if not target_row and details_rows:
+        target_row = details_rows[0]
+
+    if target_row:
+        detail_updates = {"score": total_score}
+        detail_maximum = getattr(target_row, "maximum_score", None) or total_marks
+        if grading_scale and detail_maximum:
+            try:
+                from education.education.api import get_grade
+
+                detail_updates["grade"] = get_grade(grading_scale, (float(total_score) / float(detail_maximum)) * 100)
+            except Exception:
+                frappe.log_error(
+                    f"Failed to calculate detail grade for Assessment Result {assessment_result_name}: {frappe.get_traceback()}",
+                    "Assessment Result Quiz Sync",
+                )
+
+        frappe.db.set_value(target_row.doctype, target_row.name, detail_updates, update_modified=False)
+
+    try:
+        assessment_result.add_comment(
+            "Comment",
+            (
+                f"Synced from Quiz Activity {quiz_activity.name}.\n"
+                f"Quiz status: {quiz_activity.status or ''}\n"
+                f"Updated score: {total_score}/{total_marks}"
+            ),
+        )
+    except Exception as comment_err:
+        frappe.log_error(
+            f"Failed to add sync comment to Assessment Result {assessment_result_name}: {str(comment_err)}",
+            "Assessment Result Quiz Sync",
+        )
+
+    frappe.db.commit()
+    return grade
+
+
 @frappe.whitelist()
 def create_assessment_result_from_quiz_activity(quiz_activity_name):
     """Create Assessment Result from Quiz Activity manually"""
@@ -2584,6 +2653,26 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         if existing_result:
             frappe.logger().info(f"[ASSESSMENT RESULT] Existing Assessment Result found: {existing_result}")
 
+            try:
+                synced_grade = _update_assessment_result_from_quiz_activity(
+                    existing_result,
+                    quiz_activity,
+                    total_score,
+                    total_marks,
+                )
+                frappe.logger().info(
+                    f"[ASSESSMENT RESULT] Synced existing result {existing_result} "
+                    f"from Quiz Activity {quiz_activity_name}: score={total_score}/{total_marks}, grade={synced_grade}"
+                )
+            except Exception as sync_err:
+                error_msg = f"Failed to sync existing Assessment Result {existing_result}: {str(sync_err)}"
+                frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Assessment Result Quiz Sync")
+                return {
+                    "status": "error",
+                    "message": error_msg,
+                    "assessment_result_id": existing_result
+                }
+
             # Ensure existing result is submitted (not left in draft)
             try:
                 existing_result_doc = frappe.get_doc("Assessment Result", existing_result)
@@ -2659,7 +2748,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
             
             return {
                 "status": "info",
-                "message": f"Assessment Result already exists: {existing_result}",
+                "message": f"Assessment Result already exists and was synced: {existing_result}",
                 "assessment_result_id": existing_result
             }
         

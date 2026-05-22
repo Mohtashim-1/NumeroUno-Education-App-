@@ -278,6 +278,14 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 				color: var(--ink);
 			}
 
+			.asset-cell-title {
+				display: block;
+				margin-top: 3px;
+				color: var(--muted);
+				font-size: 12px;
+				line-height: 1.25;
+			}
+
 			.asset-pill {
 				display: inline-flex;
 				align-items: center;
@@ -957,10 +965,16 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 			return;
 		}
 		$("#maintenance-plan-body").html(rows.map(function (row) {
+			const assetTitle = row.asset_title && row.asset_title !== row.asset_name
+				? `<span class="asset-cell-title">${escape_html(row.asset_title)}</span>`
+				: "";
 			return `
 				<tr>
 					<td><a href="/app/asset-maintenance/${encodeURIComponent(row.name)}">${escape_html(row.name)}</a></td>
-					<td>${escape_html(row.asset_name || "-")}</td>
+					<td>
+						<a href="/app/asset/${encodeURIComponent(row.asset_name || "")}">${escape_html(row.asset_name || "-")}</a>
+						${assetTitle}
+					</td>
 					<td>${escape_html(row.custom_maintenance_strategy || "-")}</td>
 					<td>${criticality_pill(row.custom_criticality_rating)}</td>
 					<td>${escape_html(row.maintenance_team || "-")}</td>

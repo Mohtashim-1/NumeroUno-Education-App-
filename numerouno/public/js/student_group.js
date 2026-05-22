@@ -15,6 +15,8 @@ frappe.ui.form.on('Student Group', {
             show_bulk_assessment_result_dialog(frm);
         }, __('Actions'));
 
+        add_bulk_pass_fail_result_button(frm);
+
         frm.add_custom_button(__('Create Sales Order'), () => {
             create_sales_order(frm);
         }, __('Actions'));
@@ -411,6 +413,140 @@ function show_bulk_assessment_result_dialog(frm) {
     // ✅ Make dialog larger
     dialog.$wrapper.css('width', '90%');
     dialog.$wrapper.find('.modal-dialog').css('max-width', '95%');
+}
+
+function add_bulk_pass_fail_result_button(frm) {
+    if (!frm.doc.course) {
+        return;
+    }
+
+    frappe.db.get_value('Course', frm.doc.course, 'custom_result_bulk').then(r => {
+        if (r.message && cint(r.message.custom_result_bulk) === 1) {
+            frm.add_custom_button(__('Submit Pass/Fail Results'), () => {
+                show_bulk_pass_fail_result_dialog(frm);
+            }, __('Actions'));
+        }
+    });
+}
+
+function show_bulk_pass_fail_result_dialog(frm) {
+    frappe.call({
+        method: 'numerouno.numerouno.doctype.assessment_result.assessment_result.get_students_for_bulk_pass_fail_result',
+        args: {
+            student_group: frm.doc.name
+        },
+        freeze: true,
+        freeze_message: __('Loading students...')
+    }).then(r => {
+        const message = r.message || {};
+        const students = message.students || [];
+        if (!students.length) {
+            frappe.msgprint(__('No active students found in this student group.'));
+            return;
+        }
+
+        const dialog = new frappe.ui.Dialog({
+            title: __('Submit Pass/Fail Results'),
+            fields: [
+                {
+                    fieldtype: 'HTML',
+                    options: `<div class="text-muted">
+                        ${__('Assessment Plan')}: <b>${frappe.utils.escape_html(message.assessment_plan || '')}</b>
+                    </div>`
+                },
+                {
+                    fieldtype: 'Section Break',
+                    label: __('Students')
+                },
+                {
+                    label: __('Results'),
+                    fieldname: 'results',
+                    fieldtype: 'Table',
+                    cannot_add_rows: true,
+                    reqd: 1,
+                    data: students.map(student => ({
+                        student: student.student,
+                        student_name: student.student_name,
+                        result_status: student.result_status === 'Existing' ? '' : (student.result_status || 'Pass'),
+                        assessment_result: student.assessment_result || ''
+                    })),
+                    fields: [
+                        {
+                            label: __('Student'),
+                            fieldname: 'student',
+                            fieldtype: 'Link',
+                            options: 'Student',
+                            in_list_view: 1,
+                            read_only: 1
+                        },
+                        {
+                            label: __('Student Name'),
+                            fieldname: 'student_name',
+                            fieldtype: 'Data',
+                            in_list_view: 1,
+                            read_only: 1
+                        },
+                        {
+                            label: __('Status'),
+                            fieldname: 'result_status',
+                            fieldtype: 'Select',
+                            options: '\nPass\nFail',
+                            in_list_view: 1,
+                            read_only: 0
+                        },
+                        {
+                            label: __('Assessment Result'),
+                            fieldname: 'assessment_result',
+                            fieldtype: 'Link',
+                            options: 'Assessment Result',
+                            in_list_view: 1,
+                            read_only: 1
+                        }
+                    ]
+                }
+            ],
+            primary_action_label: __('Submit Results'),
+            primary_action() {
+                document.activeElement.blur();
+                const result_data = dialog.fields_dict.results.grid.get_data()
+                    .filter(row => !row.assessment_result && row.result_status);
+
+                if (!result_data.length) {
+                    frappe.msgprint(__('Please select Pass or Fail for at least one student without an existing result.'));
+                    return;
+                }
+
+                frappe.call({
+                    method: 'numerouno.numerouno.doctype.assessment_result.assessment_result.create_bulk_pass_fail_assessment_results',
+                    args: {
+                        student_group: frm.doc.name,
+                        results_data: result_data
+                    },
+                    freeze: true,
+                    freeze_message: __('Submitting assessment results...'),
+                    callback: function(res) {
+                        if (res.exc) {
+                            return;
+                        }
+                        const created = (res.message && res.message.created) || [];
+                        const skipped = (res.message && res.message.skipped) || [];
+                        frappe.msgprint({
+                            title: __('Results Submitted'),
+                            message: __('Submitted {0} result(s). Skipped {1}.', [created.length, skipped.length]),
+                            indicator: 'green'
+                        });
+                        dialog.hide();
+                        if (created.length) {
+                            frappe.set_route('Form', 'Assessment Result', created[0].assessment_result);
+                        }
+                    }
+                });
+            }
+        });
+
+        dialog.show();
+        dialog.$wrapper.find('.modal-dialog').css('max-width', '95%');
+    });
 }
 
 

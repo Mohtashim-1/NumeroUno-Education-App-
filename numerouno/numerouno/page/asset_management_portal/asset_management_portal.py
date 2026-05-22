@@ -121,12 +121,13 @@ def get_asset_management_portal_data(
         for row in frappe.get_all(
             "Asset",
             filters={"name": ["in", asset_names]},
-            fields=["name", "location", "department", "status"],
+            fields=["name", "asset_name", "location", "department", "status"],
         ):
             asset_map[row.name] = row
 
     for row in maintenance:
         asset = asset_map.get(row.asset_name) or {}
+        row["asset_title"] = asset.get("asset_name")
         row["location"] = asset.get("location")
         row["department"] = asset.get("department")
         row["asset_status"] = asset.get("status")
