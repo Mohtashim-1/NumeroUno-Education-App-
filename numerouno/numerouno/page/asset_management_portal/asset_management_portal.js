@@ -164,6 +164,27 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 				flex-wrap: wrap;
 			}
 
+			.asset-pagination {
+				display: flex;
+				align-items: center;
+				justify-content: flex-end;
+				gap: 10px;
+				flex-wrap: wrap;
+				margin-top: 12px;
+				color: var(--muted);
+				font-size: 12px;
+				font-weight: 700;
+			}
+
+			.asset-pagination select {
+				border: 1px solid var(--line);
+				border-radius: 10px;
+				background: #ffffff;
+				padding: 6px 28px 6px 10px;
+				color: var(--ink);
+				font-weight: 700;
+			}
+
 			.asset-focus-bar {
 				display: none;
 				align-items: center;
@@ -437,6 +458,16 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 							</tbody>
 						</table>
 					</div>
+					<div class="asset-pagination" data-section="assets">
+						<span id="assets-page-info">Showing 0 of 0</span>
+						<label>Rows <select class="asset-page-size" data-section="assets">
+							<option value="20" selected>20</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+							<option value="500">500</option>
+						</select></label>
+						<button type="button" class="asset-btn asset-btn-ghost asset-load-more" data-section="assets">Load More</button>
+					</div>
 				</div>
 			</div>
 
@@ -470,6 +501,16 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 								<tr><td colspan="8" class="asset-empty-state">Loading...</td></tr>
 							</tbody>
 						</table>
+					</div>
+					<div class="asset-pagination" data-section="maintenance">
+						<span id="maintenance-page-info">Showing 0 of 0</span>
+						<label>Rows <select class="asset-page-size" data-section="maintenance">
+							<option value="20" selected>20</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+							<option value="500">500</option>
+						</select></label>
+						<button type="button" class="asset-btn asset-btn-ghost asset-load-more" data-section="maintenance">Load More</button>
 					</div>
 				</div>
 			</div>
@@ -506,6 +547,16 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 							</tbody>
 						</table>
 					</div>
+					<div class="asset-pagination" data-section="compliance">
+						<span id="compliance-page-info">Showing 0 of 0</span>
+						<label>Rows <select class="asset-page-size" data-section="compliance">
+							<option value="20" selected>20</option>
+							<option value="50">50</option>
+							<option value="100">100</option>
+							<option value="500">500</option>
+						</select></label>
+						<button type="button" class="asset-btn asset-btn-ghost asset-load-more" data-section="compliance">Load More</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -520,9 +571,15 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 		asset_name: ""
 	};
 	var filterControls = {};
+	var pageState = {
+		assets: { limit: 20, offset: 0, loaded: 0, total: 0 },
+		maintenance: { limit: 20, offset: 0, loaded: 0, total: 0 },
+		compliance: { limit: 20, offset: 0, loaded: 0, total: 0 }
+	};
 
 	init_filters();
 	init_tabs();
+	init_pagination();
 	load_portal_data();
 
 	function init_filters() {
@@ -568,10 +625,12 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 				control.set_value("");
 			});
 			filterState.asset_name = "";
+			reset_pagination();
 			apply_filters();
 		});
 		$("#asset-clear-focus").on("click", function () {
 			filterState.asset_name = "";
+			reset_pagination();
 			load_portal_data();
 		});
 		$("#jump-maintenance").on("click", function () {
@@ -604,7 +663,30 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 			filterState[key] = filterControls[key].get_value() || "";
 		});
 		filterState.asset_name = "";
+		reset_pagination();
 		load_portal_data();
+	}
+
+	function init_pagination() {
+		$(".asset-page-size").on("change", function () {
+			var section = $(this).data("section");
+			pageState[section].limit = cint($(this).val()) || 20;
+			reset_pagination();
+			load_portal_data();
+		});
+
+		$(".asset-load-more").on("click", function () {
+			var section = $(this).data("section");
+			pageState[section].offset = pageState[section].loaded;
+			load_portal_data({ append_section: section });
+		});
+	}
+
+	function reset_pagination() {
+		Object.keys(pageState).forEach(function (section) {
+			pageState[section].offset = 0;
+			pageState[section].loaded = 0;
+		});
 	}
 
 	function init_tabs() {
@@ -620,18 +702,30 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 		$(`#${target}`).removeAttr("hidden");
 	}
 
-	function load_portal_data() {
-		set_loading();
+	function load_portal_data(options) {
+		options = options || {};
+		var appendSection = options.append_section || "";
+		if (!appendSection) {
+			set_loading();
+		}
 		frappe.call({
 			method: "numerouno.numerouno.page.asset_management_portal.asset_management_portal.get_asset_management_portal_data",
-			args: filterState,
+			args: get_portal_args(),
 			callback: function (r) {
 				var message = r.message || {};
 				render_metrics(message.metrics || {});
 				render_focus();
-				render_assets(message.assets || []);
-				render_maintenance(message.maintenance || []);
-				render_compliance(message.compliance || []);
+				update_pagination_state(message.pagination || {}, message, appendSection);
+				if (!appendSection || appendSection === "assets") {
+					render_assets(message.assets || [], appendSection === "assets");
+				}
+				if (!appendSection || appendSection === "maintenance") {
+					render_maintenance(message.maintenance || [], appendSection === "maintenance");
+				}
+				if (!appendSection || appendSection === "compliance") {
+					render_compliance(message.compliance || [], appendSection === "compliance");
+				}
+				render_pagination_controls();
 			},
 			error: function () {
 				render_assets([]);
@@ -640,6 +734,51 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 				frappe.msgprint("Unable to load asset management data.");
 			}
 		});
+	}
+
+	function get_portal_args() {
+		return Object.assign({}, filterState, {
+			asset_limit: pageState.assets.limit,
+			asset_offset: pageState.assets.offset,
+			maintenance_limit: pageState.maintenance.limit,
+			maintenance_offset: pageState.maintenance.offset,
+			compliance_limit: pageState.compliance.limit,
+			compliance_offset: pageState.compliance.offset
+		});
+	}
+
+	function update_pagination_state(pagination, message, appendSection) {
+		if (appendSection) {
+			var totalKey = appendSection === "assets" ? "asset_total" : `${appendSection}_total`;
+			update_section_page_state(appendSection, pagination[totalKey], message[appendSection] || []);
+			return;
+		}
+
+		update_section_page_state("assets", pagination.asset_total, message.assets || []);
+		update_section_page_state("maintenance", pagination.maintenance_total, message.maintenance || []);
+		update_section_page_state("compliance", pagination.compliance_total, message.compliance || []);
+	}
+
+	function update_section_page_state(section, total, rows) {
+		var state = pageState[section];
+		state.total = cint(total) || 0;
+		if (state.offset === 0) {
+			state.loaded = rows.length;
+		} else {
+			state.loaded = Math.min(state.offset + rows.length, state.total);
+		}
+	}
+
+	function render_pagination_controls() {
+		render_section_pagination("assets");
+		render_section_pagination("maintenance");
+		render_section_pagination("compliance");
+	}
+
+	function render_section_pagination(section) {
+		var state = pageState[section];
+		$(`#${section}-page-info`).text(`Showing ${state.loaded} of ${state.total}`);
+		$(`.asset-load-more[data-section="${section}"]`).prop("disabled", state.loaded >= state.total);
 	}
 
 	function set_loading() {
@@ -665,12 +804,14 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 		$("#metric-certificates").text(metrics.certificates_due || 0);
 	}
 
-	function render_assets(rows) {
+	function render_assets(rows, append) {
 		if (!rows.length) {
-			$("#asset-register-body").html(`<tr><td colspan="9" class="asset-empty-state">No assets found.</td></tr>`);
+			if (!append) {
+				$("#asset-register-body").html(`<tr><td colspan="9" class="asset-empty-state">No assets found.</td></tr>`);
+			}
 			return;
 		}
-		$("#asset-register-body").html(rows.map(function (row) {
+		var html = rows.map(function (row) {
 			var model = [row.custom_manufacturer, row.custom_model].filter(Boolean).join(" / ") || "-";
 			var reliability = `${format_number(row.custom_mtbf_hours)} / ${format_number(row.custom_mttr_hours)}`;
 			return `
@@ -691,7 +832,12 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 					</td>
 				</tr>
 			`;
-		}).join(""));
+		}).join("");
+		if (append) {
+			$("#asset-register-body").append(html);
+		} else {
+			$("#asset-register-body").html(html);
+		}
 		bind_asset_row_actions();
 	}
 
@@ -952,6 +1098,7 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 	function after_record_created(message, target, alert_message) {
 		message = message || {};
 		filterState.asset_name = message.asset_name || filterState.asset_name;
+		reset_pagination();
 		load_portal_data();
 		show_section(target);
 		frappe.show_alert({
@@ -960,12 +1107,14 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 		});
 	}
 
-	function render_maintenance(rows) {
+	function render_maintenance(rows, append) {
 		if (!rows.length) {
-			$("#maintenance-plan-body").html(`<tr><td colspan="8" class="asset-empty-state">No maintenance plans found.</td></tr>`);
+			if (!append) {
+				$("#maintenance-plan-body").html(`<tr><td colspan="8" class="asset-empty-state">No maintenance plans found.</td></tr>`);
+			}
 			return;
 		}
-		$("#maintenance-plan-body").html(rows.map(function (row) {
+		var html = rows.map(function (row) {
 			const assetTitle = row.asset_title && row.asset_title !== row.asset_name
 				? `<span class="asset-cell-title">${escape_html(row.asset_title)}</span>`
 				: "";
@@ -984,15 +1133,22 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 					<td><a class="asset-btn asset-btn-ghost" href="/app/asset-maintenance/${encodeURIComponent(row.name)}">Open</a></td>
 				</tr>
 			`;
-		}).join(""));
+		}).join("");
+		if (append) {
+			$("#maintenance-plan-body").append(html);
+		} else {
+			$("#maintenance-plan-body").html(html);
+		}
 	}
 
-	function render_compliance(rows) {
+	function render_compliance(rows, append) {
 		if (!rows.length) {
-			$("#compliance-body").html(`<tr><td colspan="9" class="asset-empty-state">No certificate records found.</td></tr>`);
+			if (!append) {
+				$("#compliance-body").html(`<tr><td colspan="9" class="asset-empty-state">No certificate records found.</td></tr>`);
+			}
 			return;
 		}
-		$("#compliance-body").html(rows.map(function (row) {
+		var html = rows.map(function (row) {
 			const assetLabel = row.asset_title && row.asset_title !== row.asset_name
 				? `${escape_html(row.asset_name || "-")}<span class="asset-cell-title">${escape_html(row.asset_title)}</span>`
 				: escape_html(row.asset_name || "-");
@@ -1015,7 +1171,12 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 					<td>${expiry_pill(row.days_to_expiry)}</td>
 				</tr>
 			`;
-		}).join(""));
+		}).join("");
+		if (append) {
+			$("#compliance-body").append(html);
+		} else {
+			$("#compliance-body").html(html);
+		}
 	}
 
 	function status_pill(status) {

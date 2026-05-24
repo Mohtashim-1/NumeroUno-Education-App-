@@ -42,12 +42,18 @@ def get_asset_management_portal_data(
     criticality=None,
     asset_name=None,
     asset_limit=30,
+    asset_offset=0,
     maintenance_limit=30,
+    maintenance_offset=0,
     compliance_limit=30,
+    compliance_offset=0,
 ):
     asset_limit = int(asset_limit or 30)
+    asset_offset = int(asset_offset or 0)
     maintenance_limit = int(maintenance_limit or 30)
+    maintenance_offset = int(maintenance_offset or 0)
     compliance_limit = int(compliance_limit or 30)
+    compliance_offset = int(compliance_offset or 0)
     asset_filters, maintenance_filters = _get_filters(
         asset_category=asset_category,
         location=location,
@@ -104,8 +110,10 @@ def get_asset_management_portal_data(
         ],
         order_by="modified desc",
         limit=asset_limit,
+        start=asset_offset,
     )
 
+    maintenance_total = frappe.db.count("Asset Maintenance", filters=maintenance_filters)
     maintenance = frappe.get_all(
         "Asset Maintenance",
         filters=maintenance_filters,
@@ -121,6 +129,7 @@ def get_asset_management_portal_data(
         ],
         order_by="modified desc",
         limit=maintenance_limit,
+        start=maintenance_offset,
     )
 
     asset_names = [row.asset_name for row in maintenance if row.asset_name]
@@ -176,7 +185,6 @@ def get_asset_management_portal_data(
                 "custom_certificate_expiry_date",
             ],
             order_by="custom_certificate_expiry_date asc",
-            limit=compliance_limit,
         )
 
     parents = [row.parent for row in compliance if row.parent]
@@ -213,7 +221,6 @@ def get_asset_management_portal_data(
             "custom_compliance_certificate_expiry",
         ],
         order_by="custom_compliance_certificate_expiry asc, modified desc",
-        limit=compliance_limit,
     )
 
     direct_asset_names = [row.name for row in direct_assets]
@@ -260,7 +267,8 @@ def get_asset_management_portal_data(
             row.get("asset_name") or "",
         )
     )
-    compliance = compliance[:compliance_limit]
+    compliance_total = len(compliance)
+    compliance = compliance[compliance_offset:compliance_offset + compliance_limit]
 
     return {
         "metrics": {
@@ -272,6 +280,17 @@ def get_asset_management_portal_data(
         "assets": assets,
         "maintenance": maintenance,
         "compliance": compliance,
+        "pagination": {
+            "asset_total": total_assets,
+            "asset_limit": asset_limit,
+            "asset_offset": asset_offset,
+            "maintenance_total": maintenance_total,
+            "maintenance_limit": maintenance_limit,
+            "maintenance_offset": maintenance_offset,
+            "compliance_total": compliance_total,
+            "compliance_limit": compliance_limit,
+            "compliance_offset": compliance_offset,
+        },
     }
 
 
