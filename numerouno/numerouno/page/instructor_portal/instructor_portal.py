@@ -592,6 +592,366 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
 
 
 @frappe.whitelist()
+def get_instructor_results(limit=50, offset=0, student_group=None, student=None, instructor=None):
+    limit = int(limit or 50)
+    offset = int(offset or 0)
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    student_group = (student_group or "").strip()
+    student = (student or "").strip()
+    instructor = (instructor or "").strip()
+
+    student_group_names = _resolve_student_group_names(user, roles, instructor)
+    is_adnoc_instructor = _is_adnoc_instructor(user, roles, instructor)
+
+    if student_group_names == []:
+        return {
+            "records": [],
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "is_adnoc_instructor": is_adnoc_instructor,
+        }
+
+    filters = {"docstatus": ["<", 2]}
+    if student_group:
+        if student_group_names is None:
+            filters["student_group"] = student_group
+        elif student_group in student_group_names:
+            filters["student_group"] = student_group
+        else:
+            return {
+                "records": [],
+                "total": 0,
+                "limit": limit,
+                "offset": offset,
+                "is_adnoc_instructor": is_adnoc_instructor,
+            }
+    elif student_group_names:
+        filters["student_group"] = ["in", student_group_names]
+
+    if student:
+        filters["student"] = student
+
+    total = frappe.db.count("Assessment Result", filters=filters)
+    records = frappe.get_all(
+        "Assessment Result",
+        filters=filters,
+        fields=[
+            "name",
+            "assessment_plan",
+            "student",
+            "student_name",
+            "student_group",
+            "course",
+            "total_score",
+            "maximum_score",
+            "grade",
+            "docstatus",
+            "modified",
+            "creation",
+        ],
+        order_by="modified desc",
+        limit=limit,
+        start=offset,
+        ignore_permissions=True,
+    )
+
+    student_ids = {row.student for row in records if row.student and not row.student_name}
+    student_name_map = _get_student_name_map(student_ids)
+    for row in records:
+        if not row.get("student_name"):
+            row["student_name"] = student_name_map.get(row.student)
+
+    return {
+        "records": records,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "is_adnoc_instructor": is_adnoc_instructor,
+    }
+
+
+@frappe.whitelist()
+def get_instructor_bulk_assessments(student_group=None, student=None, instructor=None):
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    student_group = (student_group or "").strip()
+    student = (student or "").strip()
+    instructor = (instructor or "").strip()
+
+    student_group_names = _resolve_student_group_names(user, roles, instructor)
+    if student_group_names == []:
+        return {"records": []}
+
+    if student_group:
+        if student_group_names is None:
+            group_names = [student_group]
+        elif student_group in student_group_names:
+            group_names = [student_group]
+        else:
+            return {"records": []}
+    else:
+        group_names = student_group_names
+
+    group_filters = {}
+    if group_names:
+        group_filters["name"] = ["in", group_names]
+
+    groups = frappe.get_all(
+        "Student Group",
+        filters=group_filters,
+        fields=["name", "course"],
+        order_by="name asc",
+    )
+    if not groups:
+        return {"records": []}
+
+    course_map = {row.name: row.course for row in groups}
+    bulk_course_map = _get_bulk_result_course_map(set(course_map.values()))
+    eligible_groups = [
+        row.name
+        for row in groups
+        if bulk_course_map.get(row.course)
+    ]
+    if not eligible_groups:
+        return {"records": []}
+
+    plan_map = _get_latest_submitted_plan_map(eligible_groups)
+    plan_names = {plan for plan in plan_map.values() if plan}
+
+    result_map = {}
+    if plan_names:
+        result_rows = frappe.get_all(
+            "Assessment Result",
+            filters={"assessment_plan": ["in", list(plan_names)], "docstatus": ["<", 2]},
+            fields=["name", "student", "assessment_plan", "docstatus"],
+            ignore_permissions=True,
+        )
+        for row in result_rows:
+            result_map[(row.student, row.assessment_plan)] = row
+
+    student_filters = {"parent": ["in", eligible_groups], "active": 1}
+    if student:
+        student_filters["student"] = student
+
+    student_rows = frappe.get_all(
+        "Student Group Student",
+        filters=student_filters,
+        fields=["parent", "student", "student_name", "idx"],
+        order_by="parent asc, idx asc",
+    )
+
+    records = []
+    for row in student_rows:
+        group_name = row.parent
+        course = course_map.get(group_name)
+        assessment_plan = plan_map.get(group_name)
+        existing_result = result_map.get((row.student, assessment_plan)) if assessment_plan else None
+        records.append(
+            {
+                "student": row.student,
+                "student_name": row.student_name,
+                "student_group": group_name,
+                "course": course,
+                "assessment_plan": assessment_plan,
+                "assessment_result": existing_result.name if existing_result else None,
+                "assessment_result_docstatus": existing_result.docstatus if existing_result else None,
+                "ready": bool(assessment_plan and not existing_result),
+            }
+        )
+
+    return {"records": records}
+
+
+def _validate_bulk_assessment_group_access(student_group, instructor=None):
+    student_group = (student_group or "").strip()
+    if not student_group:
+        frappe.throw(_("Student Group is required."))
+
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+    student_group_names = _resolve_student_group_names(user, roles, instructor)
+    if student_group_names is not None and student_group not in student_group_names:
+        frappe.throw(_("You are not allowed to manage bulk assessments for this student group."), frappe.PermissionError)
+
+
+def _get_or_create_default_assessment_group():
+    assessment_group = frappe.get_all("Assessment Group", fields=["name"], limit=1)
+    if assessment_group:
+        return assessment_group[0].name
+
+    doc = frappe.new_doc("Assessment Group")
+    doc.assessment_group_name = "Default Assessment Group"
+    doc.insert(ignore_permissions=True)
+    return doc.name
+
+
+def _get_or_create_pass_fail_criteria():
+    criteria_name = "Pass/Fail Assessment"
+    criteria = frappe.get_all(
+        "Assessment Criteria",
+        filters={"assessment_criteria": criteria_name},
+        fields=["name"],
+        limit=1,
+    )
+    if criteria:
+        return criteria[0].name
+
+    doc = frappe.new_doc("Assessment Criteria")
+    doc.assessment_criteria = criteria_name
+    doc.insert(ignore_permissions=True)
+    return doc.name
+
+
+def _get_default_grading_scale(course):
+    grading_scale = frappe.db.get_value("Course", course, "default_grading_scale")
+    if grading_scale:
+        return grading_scale
+
+    grading_scales = frappe.get_all("Grading Scale", fields=["name"], limit=1)
+    if grading_scales:
+        return grading_scales[0].name
+
+    frappe.throw(_("Please create a Grading Scale before creating Assessment Plans."))
+
+
+def _get_bulk_assessment_slot(student_group):
+    try:
+        from numerouno.numerouno.api.quiz_api import _find_available_assessment_slot
+
+        return _find_available_assessment_slot(student_group)
+    except Exception:
+        return frappe.utils.today(), "06:00:00", "08:00:00"
+
+
+def _ensure_bulk_assessment_plan(student_group):
+    course = frappe.db.get_value("Student Group", student_group, "course")
+    if not course:
+        frappe.throw(_("Student Group {0} does not have a course.").format(student_group))
+
+    if not _get_bulk_result_course_map({course}).get(course):
+        frappe.throw(_("Bulk pass/fail result is not enabled for course {0}.").format(course))
+
+    existing_plan = _get_latest_submitted_plan_map([student_group]).get(student_group)
+    if existing_plan:
+        return existing_plan
+
+    student_group_doc = frappe.get_doc("Student Group", student_group)
+    assessment_group = _get_or_create_default_assessment_group()
+    criteria = _get_or_create_pass_fail_criteria()
+    grading_scale = _get_default_grading_scale(course)
+    schedule_date, from_time, to_time = _get_bulk_assessment_slot(student_group)
+
+    if not schedule_date:
+        schedule_date = frappe.utils.today()
+    if not from_time:
+        from_time = "06:00:00"
+    if not to_time:
+        to_time = "08:00:00"
+
+    plan = frappe.new_doc("Assessment Plan")
+    plan.student_group = student_group
+    plan.course = course
+    plan.assessment_name = "Bulk Pass/Fail Assessment - {0}".format(student_group)
+    plan.assessment_group = assessment_group
+    plan.grading_scale = grading_scale
+    plan.schedule_date = schedule_date
+    plan.from_time = from_time
+    plan.to_time = to_time
+    plan.maximum_assessment_score = 100
+    plan.append(
+        "assessment_criteria",
+        {
+            "assessment_criteria": criteria,
+            "maximum_score": 100,
+        },
+    )
+
+    if getattr(student_group_doc, "program", None):
+        plan.program = student_group_doc.program
+    if getattr(student_group_doc, "academic_year", None):
+        plan.academic_year = student_group_doc.academic_year
+    if getattr(student_group_doc, "academic_term", None):
+        plan.academic_term = student_group_doc.academic_term
+
+    plan.insert(ignore_permissions=True)
+    plan.flags.ignore_permissions = True
+    plan.submit()
+    frappe.db.commit()
+    return plan.name
+
+
+@frappe.whitelist()
+def get_instructor_bulk_assessment_students(student_group, instructor=None):
+    _validate_bulk_assessment_group_access(student_group, instructor)
+
+    from numerouno.numerouno.doctype.assessment_result.assessment_result import (
+        get_students_for_bulk_pass_fail_result,
+    )
+
+    return get_students_for_bulk_pass_fail_result(student_group)
+
+
+@frappe.whitelist()
+def submit_instructor_bulk_assessment_results(student_group, results_data, instructor=None):
+    _validate_bulk_assessment_group_access(student_group, instructor)
+    _ensure_bulk_assessment_plan(student_group)
+
+    from numerouno.numerouno.doctype.assessment_result.assessment_result import (
+        create_bulk_pass_fail_assessment_results,
+    )
+
+    return create_bulk_pass_fail_assessment_results(student_group, results_data)
+
+
+@frappe.whitelist()
+def submit_instructor_bulk_assessment_rows(results_data, instructor=None):
+    if isinstance(results_data, str):
+        import json
+
+        results_data = json.loads(results_data)
+
+    grouped_results = {}
+    for row in results_data or []:
+        student_group = (row.get("student_group") or "").strip()
+        student = (row.get("student") or "").strip()
+        result_status = (row.get("result_status") or row.get("status") or "").strip()
+        if not student_group or not student or result_status.lower() not in ("pass", "fail"):
+            continue
+
+        grouped_results.setdefault(student_group, []).append(
+            {"student": student, "result_status": result_status}
+        )
+
+    if not grouped_results:
+        frappe.throw(_("Select at least one student result."))
+
+    from numerouno.numerouno.doctype.assessment_result.assessment_result import (
+        create_bulk_pass_fail_assessment_results,
+    )
+
+    created = []
+    skipped = []
+    assessment_plans = {}
+    for student_group, rows in grouped_results.items():
+        _validate_bulk_assessment_group_access(student_group, instructor)
+        _ensure_bulk_assessment_plan(student_group)
+        result = create_bulk_pass_fail_assessment_results(student_group, rows)
+        assessment_plans[student_group] = result.get("assessment_plan")
+        created.extend(result.get("created") or [])
+        skipped.extend(result.get("skipped") or [])
+
+    return {
+        "assessment_plans": assessment_plans,
+        "created": created,
+        "skipped": skipped,
+    }
+
+
+@frappe.whitelist()
 def submit_instructor_pass_fail_result(student_group, student, status):
     student_group = (student_group or "").strip()
     student = (student or "").strip()

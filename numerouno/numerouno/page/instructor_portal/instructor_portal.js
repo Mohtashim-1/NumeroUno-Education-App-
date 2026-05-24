@@ -345,6 +345,42 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				margin-top: 0;
 			}
 
+			.bulk-toolbar {
+				display: flex;
+				align-items: center;
+				justify-content: flex-end;
+				gap: 8px;
+				flex-wrap: wrap;
+				margin-bottom: 10px;
+			}
+
+			.bulk-student-table {
+				width: 100%;
+				border-collapse: separate;
+				border-spacing: 0 8px;
+			}
+
+			.bulk-student-table th {
+				font-size: 11px;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: var(--muted);
+				padding: 0 10px 4px;
+			}
+
+			.bulk-student-table td {
+				background: var(--surface-muted);
+				padding: 10px;
+			}
+
+			.bulk-student-table td:first-child {
+				border-radius: 10px 0 0 10px;
+			}
+
+			.bulk-student-table td:last-child {
+				border-radius: 0 10px 10px 0;
+			}
+
 			.status-pill {
 				display: inline-flex;
 				align-items: center;
@@ -452,6 +488,8 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					<button type="button" class="portal-tab active" data-target="attendance-section">Attendance</button>
 					<button type="button" class="portal-tab" data-target="cards-section">Student Cards</button>
 					<button type="button" class="portal-tab" data-target="quiz-section">Quiz Status</button>
+					<button type="button" class="portal-tab" data-target="result-section">Result</button>
+					<button type="button" class="portal-tab" data-target="bulk-assessment-section">Bulk Assessment</button>
 				</div>
 			</div>
 
@@ -557,12 +595,83 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					</div>
 				</div>
 			</div>
+
+			<div class="portal-section" id="result-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>RS</span>
+							<div>
+								<h3>Result</h3>
+								<p class="panel-subtitle">Assessment results created from quiz activity and pass/fail submissions.</p>
+							</div>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Result</th>
+									<th>Student</th>
+									<th>Group</th>
+									<th>Assessment Plan</th>
+									<th>Score</th>
+									<th>Grade</th>
+									<th>Status</th>
+									<th>Modified</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-result-body">
+								<tr>
+									<td colspan="9" class="empty-state">Loading...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="portal-section" id="bulk-assessment-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>BA</span>
+							<div>
+								<h3>Bulk Assessment</h3>
+								<p class="panel-subtitle">Students assigned to courses where bulk result is enabled.</p>
+							</div>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Student</th>
+									<th>Group</th>
+									<th>Course</th>
+									<th>Assessment Plan</th>
+									<th>Existing Result</th>
+									<th>Status</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-bulk-assessment-body">
+								<tr>
+									<td colspan="7" class="empty-state">Loading...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
 		</div>
 	`).appendTo(page.body);
 
 	var attendanceOffset = 0;
 	var cardsOffset = 0;
 	var quizOffset = 0;
+	var resultOffset = 0;
 	var pageSize = 50;
 	var isAdnocInstructor = false;
 	var filterState = {
@@ -575,6 +684,8 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	init_filters();
 	load_portal_data();
 	load_quiz_status();
+	load_results();
+	load_bulk_assessments();
 	init_tabs();
 
 	function load_portal_data() {
@@ -680,8 +791,11 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		attendanceOffset = 0;
 		cardsOffset = 0;
 		quizOffset = 0;
+		resultOffset = 0;
 		load_portal_data();
 		load_quiz_status();
+		load_results();
+		load_bulk_assessments();
 	}
 
 	function render_attendance(records, append) {
@@ -1045,7 +1159,9 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 							indicator: "green"
 						});
 						quizOffset = 0;
+						resultOffset = 0;
 						load_quiz_status();
+						load_results();
 					}
 				});
 			}
@@ -1067,6 +1183,286 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			quizOffset += pageSize;
 			load_quiz_status();
 		});
+	}
+
+	function load_results() {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_results",
+			args: {
+				limit: pageSize,
+				offset: resultOffset,
+				student_group: filterState.student_group,
+				student: filterState.student,
+				instructor: filterState.instructor
+			},
+			callback: function (r) {
+				var message = r.message || {};
+				isAdnocInstructor = !!message.is_adnoc_instructor;
+				render_results(message.records || [], resultOffset > 0);
+			},
+			error: function () {
+				render_results([]);
+				frappe.msgprint("Unable to load results.");
+			}
+		});
+	}
+
+	function render_results(records, append) {
+		var $body = $("#instructor-result-body");
+		if (!append) {
+			$body.empty();
+		}
+
+		if (!records.length) {
+			if (!append) {
+				$body.append(`
+					<tr>
+						<td colspan="9" class="empty-state">No assessment results found.</td>
+					</tr>
+				`);
+			}
+			return;
+		}
+
+		records.forEach(function (row) {
+			var resultLink = row.name
+				? `<a href="/app/assessment-result/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`
+				: "";
+			var studentLink = row.student
+				? `<a href="/app/student/${frappe.utils.escape_html(row.student)}">${frappe.utils.escape_html(row.student)}</a>`
+				: "";
+			var groupLink = row.student_group
+				? `<a href="/app/student-group/${frappe.utils.escape_html(row.student_group)}">${frappe.utils.escape_html(row.student_group)}</a>`
+				: "";
+			var planLink = row.assessment_plan
+				? `<a href="/app/assessment-plan/${frappe.utils.escape_html(row.assessment_plan)}">${frappe.utils.escape_html(row.assessment_plan)}</a>`
+				: "";
+			var scoreLabel = format_result_score(row);
+			var statusLabel = row.docstatus === 1 ? "Submitted" : "Draft";
+			var statusClass = row.docstatus === 1 ? "pass" : "pending";
+			var modifiedLabel = row.modified ? frappe.datetime.str_to_user(row.modified) : "-";
+			var actionLinks = [
+				`<a href="/app/assessment-result/${frappe.utils.escape_html(row.name || "")}">View</a>`
+			];
+
+			if (isAdnocInstructor && row.name) {
+				var pdfParams = new URLSearchParams();
+				pdfParams.append("assessment_result", row.name);
+				actionLinks.push(`
+					<a class="portal-btn portal-btn-primary"
+						href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_adnoc_theory_assessment?${pdfParams.toString()}"
+						target="_blank"
+						rel="noopener">
+						Download Theory Assesment
+					</a>
+				`);
+			}
+
+			$body.append(`
+				<tr>
+					<td><div class="data-title">${resultLink}</div></td>
+					<td>
+						<div class="data-title">${studentLink}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_name || "")}</div>
+					</td>
+					<td><div class="data-title">${groupLink}</div></td>
+					<td><div class="data-title">${planLink}</div></td>
+					<td><div class="data-title">${frappe.utils.escape_html(scoreLabel)}</div></td>
+					<td><div class="data-title">${frappe.utils.escape_html(row.grade || "-")}</div></td>
+					<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
+					<td><div class="data-title">${frappe.utils.escape_html(modifiedLabel)}</div></td>
+					<td><div class="quiz-actions">${actionLinks.join("")}</div></td>
+				</tr>
+			`);
+		});
+
+		bind_result_load_more(records.length);
+	}
+
+	function format_result_score(row) {
+		var totalScore = row.total_score;
+		var maximumScore = row.maximum_score;
+		if (totalScore !== null && totalScore !== undefined && maximumScore) {
+			return `${totalScore}/${maximumScore}`;
+		}
+		if (totalScore !== null && totalScore !== undefined) {
+			return String(totalScore);
+		}
+		return "-";
+	}
+
+	function bind_result_load_more(count) {
+		$("#result-load-more").remove();
+		if (count < pageSize) return;
+
+		$("#result-section .portal-panel").append(`
+			<div class="mt-2 text-center">
+				<button type="button" class="portal-btn portal-btn-ghost" id="result-load-more">Load more</button>
+			</div>
+		`);
+
+		$("#result-load-more").off('click').on('click', function () {
+			resultOffset += pageSize;
+			load_results();
+		});
+	}
+
+	function load_bulk_assessments() {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_bulk_assessments",
+			args: {
+				student_group: filterState.student_group,
+				student: filterState.student,
+				instructor: filterState.instructor
+			},
+			callback: function (r) {
+				var message = r.message || {};
+				render_bulk_assessments(message.records || []);
+			},
+			error: function () {
+				render_bulk_assessments([]);
+				frappe.msgprint("Unable to load bulk assessments.");
+			}
+		});
+	}
+
+	function render_bulk_assessments(records) {
+		var $body = $("#instructor-bulk-assessment-body");
+		$body.empty();
+
+		if (!records.length) {
+			$body.append(`
+				<tr>
+					<td colspan="7" class="empty-state">No bulk assessment students found.</td>
+				</tr>
+			`);
+			bind_bulk_assessment_actions();
+			return;
+		}
+
+		records.forEach(function (row) {
+			var studentLink = row.student
+				? `<a href="/app/student/${frappe.utils.escape_html(row.student)}">${frappe.utils.escape_html(row.student)}</a>`
+				: "";
+			var groupLink = row.student_group
+				? `<a href="/app/student-group/${frappe.utils.escape_html(row.student_group)}">${frappe.utils.escape_html(row.student_group)}</a>`
+				: "";
+			var courseLink = row.course
+				? `<a href="/app/course/${frappe.utils.escape_html(row.course)}">${frappe.utils.escape_html(row.course)}</a>`
+				: "";
+			var planLink = row.assessment_plan
+				? `<a href="/app/assessment-plan/${frappe.utils.escape_html(row.assessment_plan)}">${frappe.utils.escape_html(row.assessment_plan)}</a>`
+				: `<span class="text-muted">No submitted plan</span>`;
+			var resultLink = row.assessment_result
+				? `<a href="/app/assessment-result/${frappe.utils.escape_html(row.assessment_result)}">${frappe.utils.escape_html(row.assessment_result)}</a>`
+				: `<span class="text-muted">Pending</span>`;
+			var statusLabel = row.assessment_result ? "Submitted" : row.ready ? "Ready" : "Needs Plan";
+			var statusClass = row.assessment_result || row.ready ? "pass" : "pending";
+			var actionCell = row.assessment_result
+				? `<a href="/app/assessment-result/${frappe.utils.escape_html(row.assessment_result)}">View</a>`
+				: `
+					<button type="button"
+						class="portal-btn portal-btn-primary bulk-row-result-btn"
+						data-student="${frappe.utils.escape_html(row.student || "")}"
+						data-student-name="${frappe.utils.escape_html(row.student_name || "")}"
+						data-student-group="${frappe.utils.escape_html(row.student_group || "")}"
+						data-course="${frappe.utils.escape_html(row.course || "")}"
+						data-assessment-plan="${frappe.utils.escape_html(row.assessment_plan || "")}">
+						Create
+					</button>
+				`;
+
+			$body.append(`
+				<tr>
+					<td>
+						<div class="data-title">${studentLink}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_name || "")}</div>
+					</td>
+					<td><div class="data-title">${groupLink}</div></td>
+					<td><div class="data-title">${courseLink}</div></td>
+					<td><div class="data-title">${planLink}</div></td>
+					<td><div class="data-title">${resultLink}</div></td>
+					<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
+					<td>${actionCell}</td>
+				</tr>
+			`);
+		});
+
+		bind_bulk_assessment_actions();
+	}
+
+	function bind_bulk_assessment_actions() {
+		$(".bulk-row-result-btn").off("click").on("click", function () {
+			var $button = $(this);
+			show_bulk_row_result_dialog({
+				student: $button.data("student"),
+				student_name: $button.data("student-name"),
+				student_group: $button.data("student-group"),
+				course: $button.data("course"),
+				assessment_plan: $button.data("assessment-plan")
+			});
+		});
+	}
+
+	function show_bulk_row_result_dialog(row) {
+		var dialog = new frappe.ui.Dialog({
+			title: "Create Assessment Result",
+			fields: [
+				{
+					fieldtype: "HTML",
+					options: `
+						<div class="data-title">${frappe.utils.escape_html(row.student || "")}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_name || "")}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_group || "")}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.course || "")}</div>
+						<div class="data-meta">Assessment Plan: ${frappe.utils.escape_html(row.assessment_plan || "No submitted plan")}</div>
+					`
+				},
+				{
+					label: "Result",
+					fieldname: "result_status",
+					fieldtype: "Select",
+					options: "Pass\nFail",
+					default: "Pass",
+					reqd: 1
+				}
+			],
+			primary_action_label: "Submit",
+			primary_action: function (values) {
+				frappe.call({
+					method: "numerouno.numerouno.page.instructor_portal.instructor_portal.submit_instructor_bulk_assessment_rows",
+					args: {
+						results_data: [
+							{
+								student_group: row.student_group,
+								student: row.student,
+								result_status: values.result_status
+							}
+						],
+						instructor: filterState.instructor
+					},
+					freeze: true,
+					freeze_message: "Submitting assessment result...",
+					callback: function (r) {
+						if (r.exc) {
+							return;
+						}
+						var message = r.message || {};
+						dialog.hide();
+						frappe.show_alert({
+							message: `Created ${((message.created || []).length)} result(s), skipped ${((message.skipped || []).length)}.`,
+							indicator: "green"
+						});
+						quizOffset = 0;
+						resultOffset = 0;
+						load_quiz_status();
+						load_results();
+						load_bulk_assessments();
+					}
+				});
+			}
+		});
+		dialog.show();
 	}
 
 	function render_metrics(attendance, cards, attendanceTotal, presentTotal, cardsTotal) {
