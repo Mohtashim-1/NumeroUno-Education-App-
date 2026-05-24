@@ -66,13 +66,20 @@ def get_asset_management_portal_data(
     total_assets = frappe.db.count("Asset", filters=asset_filters)
     in_maintenance = frappe.db.count("Asset", filters={**asset_filters, "status": "In Maintenance"})
     overdue_tasks = frappe.db.count("Asset Maintenance Log", filters={"maintenance_status": "Overdue"})
-    certificates_due = frappe.db.count(
+    task_certificates_due = frappe.db.count(
         "Asset Maintenance Task",
         filters={
             "certificate_required": 1,
             "custom_certificate_expiry_date": ["between", [today, next_30_days]],
         },
     )
+    asset_certificate_filters = {
+        **asset_filters,
+        "custom_compliance_certificate": ["is", "set"],
+        "custom_compliance_certificate_expiry": ["between", [today, next_30_days]],
+    }
+    asset_certificates_due = frappe.db.count("Asset", filters=asset_certificate_filters)
+    certificates_due = task_certificates_due + asset_certificates_due
 
     assets = frappe.get_all(
         "Asset",
@@ -90,6 +97,7 @@ def get_asset_management_portal_data(
             "custom_model",
             "custom_serial_number",
             "custom_warranty_expiry_date",
+            "custom_compliance_certificate",
             "custom_compliance_certificate_expiry",
             "custom_mtbf_hours",
             "custom_mttr_hours",
@@ -144,39 +152,32 @@ def get_asset_management_portal_data(
         "certificate_required": 1,
         "custom_certificate_expiry_date": ["is", "set"],
     }
+    maintenance_names = []
     if maintenance_filters:
         maintenance_names = frappe.get_all("Asset Maintenance", filters=maintenance_filters, pluck="name")
         if maintenance_names:
             compliance_filters["parent"] = ["in", maintenance_names]
         else:
-            return {
-                "metrics": {
-                    "total_assets": total_assets,
-                    "in_maintenance": in_maintenance,
-                    "overdue_tasks": overdue_tasks,
-                    "certificates_due": certificates_due,
-                },
-                "assets": assets,
-                "maintenance": maintenance,
-                "compliance": [],
-            }
+            compliance_filters = None
 
-    compliance = frappe.get_all(
-        "Asset Maintenance Task",
-        filters=compliance_filters,
-        fields=[
-            "name",
-            "parent",
-            "maintenance_task",
-            "maintenance_type",
-            "periodicity",
-            "next_due_date",
-            "assign_to_name",
-            "custom_certificate_expiry_date",
-        ],
-        order_by="custom_certificate_expiry_date asc",
-        limit=compliance_limit,
-    )
+    compliance = []
+    if compliance_filters:
+        compliance = frappe.get_all(
+            "Asset Maintenance Task",
+            filters=compliance_filters,
+            fields=[
+                "name",
+                "parent",
+                "maintenance_task",
+                "maintenance_type",
+                "periodicity",
+                "next_due_date",
+                "assign_to_name",
+                "custom_certificate_expiry_date",
+            ],
+            order_by="custom_certificate_expiry_date asc",
+            limit=compliance_limit,
+        )
 
     parents = [row.parent for row in compliance if row.parent]
     parent_map = {}
@@ -195,6 +196,71 @@ def get_asset_management_portal_data(
         row["criticality"] = parent.get("custom_criticality_rating")
         if row.custom_certificate_expiry_date:
             row["days_to_expiry"] = (getdate(row.custom_certificate_expiry_date) - today).days
+        row["source_type"] = "Maintenance Task"
+
+    direct_asset_filters = {**asset_filters, "custom_compliance_certificate": ["is", "set"]}
+    if asset_name:
+        direct_asset_filters["name"] = asset_name
+    direct_assets = frappe.get_all(
+        "Asset",
+        filters=direct_asset_filters,
+        fields=[
+            "name",
+            "asset_name",
+            "asset_category",
+            "owner",
+            "custom_compliance_certificate",
+            "custom_compliance_certificate_expiry",
+        ],
+        order_by="custom_compliance_certificate_expiry asc, modified desc",
+        limit=compliance_limit,
+    )
+
+    direct_asset_names = [row.name for row in direct_assets]
+    direct_asset_criticality_map = {}
+    if direct_asset_names:
+        direct_maintenance_filters = {"asset_name": ["in", direct_asset_names]}
+        if criticality:
+            direct_maintenance_filters["custom_criticality_rating"] = criticality
+        for row in frappe.get_all(
+            "Asset Maintenance",
+            filters=direct_maintenance_filters,
+            fields=["asset_name", "custom_criticality_rating"],
+        ):
+            direct_asset_criticality_map[row.asset_name] = row.custom_criticality_rating
+
+    for row in direct_assets:
+        if criticality and row.name not in direct_asset_criticality_map:
+            continue
+
+        compliance_row = frappe._dict(
+            {
+                "name": row.name,
+                "source_type": "Asset Certificate",
+                "maintenance_task": "Compliance Certificate",
+                "asset_name": row.name,
+                "asset_title": row.asset_name,
+                "asset_category": row.asset_category,
+                "maintenance_type": "Asset Certificate",
+                "periodicity": "-",
+                "assign_to_name": row.owner,
+                "next_due_date": None,
+                "custom_certificate_expiry_date": row.custom_compliance_certificate_expiry,
+                "certificate_url": row.custom_compliance_certificate,
+                "criticality": direct_asset_criticality_map.get(row.name),
+            }
+        )
+        if row.custom_compliance_certificate_expiry:
+            compliance_row["days_to_expiry"] = (getdate(row.custom_compliance_certificate_expiry) - today).days
+        compliance.append(compliance_row)
+
+    compliance.sort(
+        key=lambda row: (
+            getdate(row.custom_certificate_expiry_date) if row.get("custom_certificate_expiry_date") else getdate("2999-12-31"),
+            row.get("asset_name") or "",
+        )
+    )
+    compliance = compliance[:compliance_limit]
 
     return {
         "metrics": {

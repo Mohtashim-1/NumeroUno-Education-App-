@@ -497,11 +497,12 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 									<th>Owner</th>
 									<th>Next Due</th>
 									<th>Certificate Expiry</th>
+									<th>Certificate</th>
 									<th>Urgency</th>
 								</tr>
 							</thead>
 							<tbody id="compliance-body">
-								<tr><td colspan="8" class="asset-empty-state">Loading...</td></tr>
+								<tr><td colspan="9" class="asset-empty-state">Loading...</td></tr>
 							</tbody>
 						</table>
 					</div>
@@ -644,7 +645,7 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 	function set_loading() {
 		$("#asset-register-body").html(`<tr><td colspan="9" class="asset-empty-state">Loading...</td></tr>`);
 		$("#maintenance-plan-body").html(`<tr><td colspan="8" class="asset-empty-state">Loading...</td></tr>`);
-		$("#compliance-body").html(`<tr><td colspan="8" class="asset-empty-state">Loading...</td></tr>`);
+		$("#compliance-body").html(`<tr><td colspan="9" class="asset-empty-state">Loading...</td></tr>`);
 	}
 
 	function render_focus() {
@@ -988,19 +989,29 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 
 	function render_compliance(rows) {
 		if (!rows.length) {
-			$("#compliance-body").html(`<tr><td colspan="8" class="asset-empty-state">No certificate records found.</td></tr>`);
+			$("#compliance-body").html(`<tr><td colspan="9" class="asset-empty-state">No certificate records found.</td></tr>`);
 			return;
 		}
 		$("#compliance-body").html(rows.map(function (row) {
+			const assetLabel = row.asset_title && row.asset_title !== row.asset_name
+				? `${escape_html(row.asset_name || "-")}<span class="asset-cell-title">${escape_html(row.asset_title)}</span>`
+				: escape_html(row.asset_name || "-");
+			const assetLink = row.asset_name
+				? `<a href="/app/asset/${encodeURIComponent(row.asset_name)}">${assetLabel}</a>`
+				: "-";
+			const certificateLink = row.certificate_url
+				? `<a class="asset-btn asset-btn-small asset-btn-ghost" href="${escape_attr(row.certificate_url)}" target="_blank" rel="noopener">View</a>`
+				: "-";
 			return `
 				<tr>
 					<td>${escape_html(row.maintenance_task || "-")}</td>
-					<td>${escape_html(row.asset_name || "-")}</td>
+					<td>${assetLink}</td>
 					<td>${escape_html(row.maintenance_type || "-")}</td>
 					<td>${escape_html(row.periodicity || "-")}</td>
 					<td>${escape_html(row.assign_to_name || "-")}</td>
 					<td>${format_date(row.next_due_date)}</td>
 					<td>${format_date(row.custom_certificate_expiry_date)}</td>
+					<td>${certificateLink}</td>
 					<td>${expiry_pill(row.days_to_expiry)}</td>
 				</tr>
 			`;
