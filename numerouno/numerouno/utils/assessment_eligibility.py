@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import formatdate, getdate
+from frappe.utils import formatdate, getdate, today
 
 
 def can_bypass_assessment_eligibility_check():
@@ -60,8 +60,14 @@ def get_assessment_eligibility(student, student_group):
 
 	missing_dates = []
 	missing_reasons = []
+	today_date = getdate(today())
 
 	for schedule in schedules:
+		schedule_date = getdate(schedule.schedule_date) if schedule.schedule_date else None
+		# Attendance is only required for days that have already occurred (including today).
+		if schedule_date and schedule_date > today_date:
+			continue
+
 		attendance = frappe.db.get_value(
 			"Student Attendance",
 			{
