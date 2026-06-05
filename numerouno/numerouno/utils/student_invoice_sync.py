@@ -1,22 +1,33 @@
-"""Keep Student Group Student invoice flags aligned with submitted Sales Invoices."""
+"""Keep Student Group Student invoice flags aligned with Sales Invoices."""
 
 import frappe
 
-# Latest submitted invoice per (student, student_group) for report queries.
+# Latest submitted/draft invoice per (student, student_group) for report queries.
 SUBMITTED_INVOICE_JOIN_SQL = """
 LEFT JOIN (
 	SELECT
 		sis.student,
 		sis.student_group,
 		SUBSTRING_INDEX(
-			GROUP_CONCAT(si.name ORDER BY si.posting_date DESC, si.creation DESC),
+			GROUP_CONCAT(
+				CASE WHEN si.docstatus = 1 THEN si.name END
+				ORDER BY si.posting_date DESC, si.creation DESC
+			),
 			',',
 			1
-		) AS invoice_no
+		) AS submitted_invoice_no,
+		SUBSTRING_INDEX(
+			GROUP_CONCAT(
+				CASE WHEN si.docstatus = 0 THEN si.name END
+				ORDER BY si.posting_date DESC, si.creation DESC
+			),
+			',',
+			1
+		) AS draft_invoice_no
 	FROM `tabSales Invoice Student` sis
 	INNER JOIN `tabSales Invoice` si
 		ON si.name = sis.parent
-		AND si.docstatus = 1
+		AND si.docstatus IN (0, 1)
 	WHERE sis.student IS NOT NULL
 		AND sis.student_group IS NOT NULL
 		AND sis.student_group != ''
@@ -28,24 +39,27 @@ LEFT JOIN (
 
 INVOICE_NO_SQL = """
 COALESCE(
-	inv.invoice_no,
+	inv.submitted_invoice_no,
 	NULLIF(sgs.sales_invoice, ''),
-	NULLIF(sgs.custom_sales_invoice, '')
+	NULLIF(sgs.custom_sales_invoice, ''),
+	inv.draft_invoice_no
 )
 """
 
 INVOICE_STATUS_SQL = """
 CASE
-	WHEN inv.invoice_no IS NOT NULL THEN 'Invoiced'
+	WHEN inv.submitted_invoice_no IS NOT NULL THEN 'Invoiced'
 	WHEN sgs.paid = 1 THEN 'Invoiced'
 	WHEN sgs.custom_invoiced = 1 THEN 'Invoiced'
+	WHEN inv.draft_invoice_no IS NOT NULL THEN 'In Process'
 	ELSE 'Pending'
 END
 """
 
 NOT_INVOICED_CONDITION_SQL = """
 (
-	inv.invoice_no IS NULL
+	inv.submitted_invoice_no IS NULL
+	AND inv.draft_invoice_no IS NULL
 	AND (sgs.paid = 0 OR sgs.paid IS NULL)
 	AND (sgs.custom_invoiced = 0 OR sgs.custom_invoiced IS NULL)
 )

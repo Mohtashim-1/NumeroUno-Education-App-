@@ -23,7 +23,8 @@ frappe.ui.form.on('Sales Invoice', {
 			"method": "numerouno.numerouno.doctype.sales_invoice.sales_invoice.fetch_students_from_sg",
 			"args": {
 				'customer': frm.doc.customer,
-				'student_group': stud_grp
+				'student_group': stud_grp,
+				'current_invoice': frm.doc.docstatus === 0 ? frm.doc.name : null
 			},
 			callback: function (r) {
 				if (r.message && r.message.length > 0) {
@@ -40,7 +41,7 @@ frappe.ui.form.on('Sales Invoice', {
 					});
 					frappe.show_alert(__('Fetched {0} students', [r.message.length]));
 				} else {
-					frappe.msgprint(__('No students found in selected Student Groups'));
+					frappe.msgprint(__('No pending students found in selected Student Groups'));
 				}
 			}
 		});

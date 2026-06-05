@@ -112,14 +112,25 @@ LEFT JOIN (
 		sis.student,
 		sis.student_group,
 		SUBSTRING_INDEX(
-			GROUP_CONCAT(si.name ORDER BY si.posting_date DESC, si.creation DESC),
+			GROUP_CONCAT(
+				CASE WHEN si.docstatus = 1 THEN si.name END
+				ORDER BY si.posting_date DESC, si.creation DESC
+			),
 			',',
 			1
-		) AS invoice_no
+		) AS submitted_invoice_no,
+		SUBSTRING_INDEX(
+			GROUP_CONCAT(
+				CASE WHEN si.docstatus = 0 THEN si.name END
+				ORDER BY si.posting_date DESC, si.creation DESC
+			),
+			',',
+			1
+		) AS draft_invoice_no
 	FROM `tabSales Invoice Student` sis
 	INNER JOIN `tabSales Invoice` si
 		ON si.name = sis.parent
-		AND si.docstatus = 1
+		AND si.docstatus IN (0, 1)
 	WHERE sis.student IS NOT NULL
 		AND sis.student_group IS NOT NULL
 		AND sis.student_group != ''
