@@ -15,6 +15,11 @@ class InvoicedCreationPage {
 		this.active_customer_index = 0;
 		this.active_group_index = 0;
 		this.selected_rows = new Set();
+		this.search = {
+			customers: "",
+			groups: "",
+			students: "",
+		};
 		this.make_filters();
 		this.make_layout();
 		this.bind_events();
@@ -79,6 +84,9 @@ class InvoicedCreationPage {
 								<div class="pane-subtitle">${__("pending invoice queue")}</div>
 							</div>
 						</div>
+						<div class="pane-search">
+							<input type="search" class="invoice-search customer-search" placeholder="${__("Search customers")}">
+						</div>
 						<div class="customer-list"></div>
 					</div>
 					<div class="invoice-pane group-pane">
@@ -92,6 +100,9 @@ class InvoicedCreationPage {
 								<span>${__("All Groups")}</span>
 							</label>
 						</div>
+						<div class="pane-search">
+							<input type="search" class="invoice-search group-search" placeholder="${__("Search groups, courses")}">
+						</div>
 						<div class="group-list"></div>
 					</div>
 					<div class="invoice-pane student-pane">
@@ -104,6 +115,9 @@ class InvoicedCreationPage {
 								<input type="checkbox" class="select-all-students">
 								<span>${__("All Students")}</span>
 							</label>
+						</div>
+						<div class="pane-search">
+							<input type="search" class="invoice-search student-search" placeholder="${__("Search students, PO, status")}">
 						</div>
 						<div class="student-list"></div>
 					</div>
@@ -176,6 +190,26 @@ class InvoicedCreationPage {
 				}
 				.pane-title { font-weight: 700; color: var(--invoice-text); }
 				.pane-subtitle { margin-top: 1px; color: var(--invoice-muted); font-size: 12px; }
+				.pane-search {
+					padding: 8px 10px;
+					border-bottom: 1px solid var(--invoice-line);
+					background: #fff;
+				}
+				.invoice-search {
+					width: 100%;
+					height: 32px;
+					border: 1px solid var(--invoice-line);
+					border-radius: 6px;
+					background: #fff;
+					color: var(--invoice-text);
+					font-size: 13px;
+					padding: 6px 10px;
+					outline: none;
+				}
+				.invoice-search:focus {
+					border-color: var(--invoice-active-border);
+					box-shadow: 0 0 0 2px rgba(34, 139, 230, .12);
+				}
 				.customer-list, .group-list, .student-list { max-height: 68vh; overflow: auto; }
 				.invoice-row {
 					position: relative;
@@ -285,7 +319,7 @@ class InvoicedCreationPage {
 		});
 
 		this.$root.on("click", ".select-visible-pending", () => {
-			this.customers.forEach((customer) => this.set_customer_selection(customer, true));
+			this.filtered_customers().forEach(({ row }) => this.set_customer_selection(row, true));
 			this.render_groups();
 			this.render_students();
 			this.update_selection_bar();
@@ -303,6 +337,25 @@ class InvoicedCreationPage {
 		});
 
 		this.$root.on("click", ".create-invoice", () => this.create_invoice());
+
+		this.$root.on("input", ".customer-search", (event) => {
+			this.search.customers = event.currentTarget.value || "";
+			this.active_customer_index = this.first_visible_customer_index();
+			this.active_group_index = 0;
+			this.render();
+		});
+
+		this.$root.on("input", ".group-search", (event) => {
+			this.search.groups = event.currentTarget.value || "";
+			this.active_group_index = this.first_visible_group_index();
+			this.render_groups();
+			this.render_students();
+		});
+
+		this.$root.on("input", ".student-search", (event) => {
+			this.search.students = event.currentTarget.value || "";
+			this.render_students();
+		});
 	}
 
 	get active_customer() {
@@ -326,6 +379,10 @@ class InvoicedCreationPage {
 		this.selected_rows.clear();
 		this.active_customer_index = 0;
 		this.active_group_index = 0;
+		this.search.customers = "";
+		this.search.groups = "";
+		this.search.students = "";
+		this.$root.find(".invoice-search").val("");
 		this.$root.find(".customer-list").html(`<div class="empty-state">${__("Loading")}</div>`);
 		this.$root.find(".group-list, .student-list").html("");
 		frappe.call({
@@ -360,7 +417,8 @@ class InvoicedCreationPage {
 	}
 
 	render_customers() {
-		const html = this.customers.map((row, index) => `
+		const visible_customers = this.filtered_customers();
+		const html = visible_customers.map(({ row, index }) => `
 			<div class="invoice-row customer-row ${this.active_customer_index === index ? "active" : ""}" data-customer-index="${index}">
 				<div class="row-main">
 					<div class="row-title">${this.escape(row.customer)}</div>
@@ -373,12 +431,13 @@ class InvoicedCreationPage {
 				</div>
 			</div>
 		`).join("");
-		this.$root.find(".customer-list").html(html || `<div class="empty-state">${__("No pending customers")}</div>`);
+		this.$root.find(".customer-list").html(html || `<div class="empty-state">${__("No matching customers")}</div>`);
 	}
 
 	render_groups() {
 		const groups = this.active_customer?.groups || [];
-		const html = groups.map((row, index) => {
+		const visible_groups = this.filtered_groups(groups);
+		const html = visible_groups.map(({ row, index }) => {
 			const pending = this.pending_students_for_group(row);
 			const selected = pending.length > 0 && pending.every((student) => this.selected_rows.has(student.row_name));
 			const partial = pending.some((student) => this.selected_rows.has(student.row_name)) && !selected;
@@ -399,9 +458,13 @@ class InvoicedCreationPage {
 				</div>
 			`;
 		}).join("");
-		this.$root.find(".group-list").html(html || `<div class="empty-state">${__("No student groups")}</div>`);
+		this.$root.find(".group-list").html(html || `<div class="empty-state">${__("No matching student groups")}</div>`);
 		this.$root.find(".group-summary").text(this.active_customer ?
-			__("{0} groups, {1} pending students", [groups.length, this.active_customer.pending_students || 0]) :
+			__("{0} of {1} groups, {2} pending students", [
+				visible_groups.length,
+				groups.length,
+				this.active_customer.pending_students || 0,
+			]) :
 			__("choose a customer"));
 
 		const customer_pending = this.pending_students_for_customer(this.active_customer);
@@ -414,9 +477,10 @@ class InvoicedCreationPage {
 	render_students() {
 		const selected_groups = this.selected_groups_for_customer(this.active_customer);
 		const showing_selected_groups = selected_groups.length > 1;
-		const students = showing_selected_groups ?
+		const all_students = showing_selected_groups ?
 			selected_groups.flatMap((group) => this.pending_students_for_group(group)) :
 			(this.active_group?.students || []);
+		const students = this.filtered_students(all_students);
 		const html = students.map((student) => {
 			const disabled = student.is_pending ? "" : "disabled";
 			const checked = this.selected_rows.has(student.row_name) ? "checked" : "";
@@ -441,22 +505,83 @@ class InvoicedCreationPage {
 				</div>
 			`;
 		}).join("");
-		this.$root.find(".student-list").html(html || `<div class="empty-state">${__("No students")}</div>`);
+		this.$root.find(".student-list").html(html || `<div class="empty-state">${__("No matching students")}</div>`);
 
-		const pending = showing_selected_groups ? students : this.pending_students_for_group(this.active_group);
+		const pending = showing_selected_groups ? all_students : this.pending_students_for_group(this.active_group);
 		const all_selected = pending.length > 0 && pending.every((student) => this.selected_rows.has(student.row_name));
 		this.$root.find(".select-all-students")
 			.prop("disabled", pending.length === 0)
 			.prop("checked", all_selected);
 		this.$root.find(".student-select-wrap span").text(showing_selected_groups ? __("Shown Students") : __("All Students"));
 		this.$root.find(".student-summary").text(showing_selected_groups ?
-			__("{0} selected groups, {1} selected students shown", [selected_groups.length, students.length]) :
+			__("{0} selected groups, {1} of {2} students shown", [
+				selected_groups.length,
+				students.length,
+				all_students.length,
+			]) :
 			(this.active_group ?
 				__("{0} pending, {1} selected", [
 				pending.length,
 				pending.filter((student) => this.selected_rows.has(student.row_name)).length,
 				]) :
 				__("choose a group")));
+	}
+
+	filtered_customers() {
+		const query = this.normalize_search(this.search.customers);
+		return this.customers
+			.map((row, index) => ({ row, index }))
+			.filter(({ row }) => !query || this.matches_query(query, [
+				row.customer,
+				row.pending_students,
+				row.in_process_students,
+				row.invoiced_students,
+			]));
+	}
+
+	filtered_groups(groups) {
+		const query = this.normalize_search(this.search.groups);
+		return groups
+			.map((row, index) => ({ row, index }))
+			.filter(({ row }) => !query || this.matches_query(query, [
+				row.student_group,
+				row.student_group_name,
+				row.course,
+				row.pending_students,
+				row.in_process_students,
+				row.invoiced_students,
+			]));
+	}
+
+	filtered_students(students) {
+		const query = this.normalize_search(this.search.students);
+		return students.filter((student) => !query || this.matches_query(query, [
+			student.student,
+			student.student_name,
+			student.student_group,
+			student.course,
+			student.invoice_status,
+			student.customer_purchase_order,
+			student.sales_person,
+			student.start_date,
+			student.end_date,
+		]));
+	}
+
+	first_visible_customer_index() {
+		return this.filtered_customers()[0]?.index ?? -1;
+	}
+
+	first_visible_group_index() {
+		return this.filtered_groups(this.active_customer?.groups || [])[0]?.index ?? -1;
+	}
+
+	normalize_search(value) {
+		return String(value || "").trim().toLowerCase();
+	}
+
+	matches_query(query, values) {
+		return values.some((value) => String(value == null ? "" : value).toLowerCase().includes(query));
 	}
 
 	pending_students_for_group(group) {

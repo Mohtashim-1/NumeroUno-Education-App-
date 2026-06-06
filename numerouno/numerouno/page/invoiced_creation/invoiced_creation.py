@@ -241,6 +241,86 @@ def _set_missing_item_accounts(invoice):
 			)
 
 
+def _get_default_sales_tax_template(company=None):
+	filters = {"disabled": 0}
+	if company:
+		filters["company"] = company
+
+	template = frappe.db.get_value(
+		"Sales Taxes and Charges Template",
+		{**filters, "is_default": 1},
+		"name",
+	)
+	if template:
+		return template
+
+	return frappe.db.get_value(
+		"Sales Taxes and Charges Template",
+		{**filters, "title": "UAE VAT 5%"},
+		"name",
+	) or frappe.db.get_value(
+		"Sales Taxes and Charges Template",
+		{**filters, "name": ["like", "%VAT 5%"]},
+		"name",
+	)
+
+
+def _copy_sales_taxes_from_template(invoice, template):
+	invoice.taxes_and_charges = template
+	template_doc = frappe.get_doc("Sales Taxes and Charges Template", template)
+
+	for row in template_doc.get("taxes"):
+		invoice.append(
+			"taxes",
+			{
+				"charge_type": row.charge_type,
+				"account_head": row.account_head,
+				"description": row.description,
+				"rate": row.rate,
+				"cost_center": row.cost_center,
+				"included_in_print_rate": row.included_in_print_rate,
+				"included_in_paid_amount": row.included_in_paid_amount,
+				"account_currency": row.account_currency,
+				"tax_amount": row.tax_amount,
+				"total": row.total,
+				"tax_amount_after_discount_amount": row.tax_amount_after_discount_amount,
+				"base_tax_amount": row.base_tax_amount,
+				"base_total": row.base_total,
+				"base_tax_amount_after_discount_amount": row.base_tax_amount_after_discount_amount,
+				"item_wise_tax_detail": row.item_wise_tax_detail,
+				"dont_recompute_tax": row.dont_recompute_tax,
+			},
+		)
+
+
+def _apply_default_vat(invoice):
+	if invoice.get("taxes"):
+		return
+
+	company = invoice.company or frappe.defaults.get_global_default("company")
+	template = _get_default_sales_tax_template(company)
+	if template:
+		_copy_sales_taxes_from_template(invoice, template)
+		return
+
+	default_cost_center = frappe.db.get_value("Company", company, "cost_center") if company else None
+	invoice.append(
+		"taxes",
+		{
+			"charge_type": "On Net Total",
+			"account_head": "VAT 5% - NUTC",
+			"description": "VAT 5%",
+			"rate": 5,
+			"cost_center": default_cost_center or "Main - NUTC",
+		},
+	)
+
+
+def _set_item_tax_amounts(invoice):
+	for item in invoice.get("items"):
+		item.tax_amount = flt(item.amount) * 0.05
+
+
 @frappe.whitelist()
 def create_invoice(customer, row_names):
 	if not customer:
@@ -290,7 +370,11 @@ def create_invoice(customer, row_names):
 	if rows[0].customer_purchase_order:
 		invoice.po_no = rows[0].customer_purchase_order
 
+	_apply_default_vat(invoice)
+	invoice.set_missing_values()
 	_set_missing_item_accounts(invoice)
+	invoice.calculate_taxes_and_totals()
+	_set_item_tax_amounts(invoice)
 	invoice.insert(ignore_permissions=True)
 
 	return {
