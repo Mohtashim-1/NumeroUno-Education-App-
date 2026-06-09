@@ -10,4 +10,7 @@ numerouno.patches.v1_0.add_quotation_cancellation_reason
 numerouno.patches.v1_0.update_quotation_cancellation_reason_field
 numerouno.patches.v1_0.create_quotation_workflow_notifications
 numerouno.patches.v1_0.setup_asset_management_customizations
+numerouno.patches.v1_0.create_attendance_staff_and_migrate
+numerouno.patches.v1_0.setup_staff_attendance_user_role
+numerouno.patches.v1_0.fix_attendance_staff_roles_column
 # Patches added in this section will be executed after doctypes are migrated

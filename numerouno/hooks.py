@@ -228,6 +228,10 @@ doc_events = {
     "LMS Quiz Submission": {
         "validate": "numerouno.numerouno.doctype.lms_quiz_submission.lms_quiz_submission.on_submit"
     },
+    "Employee": {
+        "after_insert": "numerouno.numerouno.doctype.attendance_staff.attendance_staff.sync_attendance_staff_from_employee",
+        "on_update": "numerouno.numerouno.doctype.attendance_staff.attendance_staff.sync_attendance_staff_from_employee",
+    },
     "User": {
         "after_insert": [
             "numerouno.numerouno.doctype.student.student.send_lms_welcome_email_to_user",

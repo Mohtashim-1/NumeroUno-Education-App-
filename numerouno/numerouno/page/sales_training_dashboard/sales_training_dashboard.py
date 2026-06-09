@@ -24,13 +24,26 @@ def _normalize_filters(filters=None):
 	)
 
 
-def _sales_order_conditions(filters):
-	conditions = ["so.docstatus = 1", "so.transaction_date BETWEEN %(from_date)s AND %(to_date)s"]
+def _sales_invoice_conditions(filters):
+	conditions = ["si.docstatus = 1", "si.posting_date BETWEEN %(from_date)s AND %(to_date)s"]
 	values = {"from_date": filters.from_date, "to_date": filters.to_date}
 
 	if filters.customer:
-		conditions.append("so.customer = %(customer)s")
+		conditions.append("si.customer = %(customer)s")
 		values["customer"] = filters.customer
+
+	if filters.course:
+		conditions.append(
+			"""
+			EXISTS (
+				SELECT 1
+				FROM `tabSales Invoice Student` sis
+				WHERE sis.parent = si.name
+					AND sis.course = %(course)s
+			)
+			"""
+		)
+		values["course"] = filters.course
 
 	return conditions, values
 
@@ -74,14 +87,14 @@ def _pending_condition():
 	"""
 
 
-def _sales_booked(filters):
-	conditions, values = _sales_order_conditions(filters)
+def _total_sales(filters):
+	conditions, values = _sales_invoice_conditions(filters)
 	row = frappe.db.sql(
 		f"""
 		SELECT
-			COUNT(*) AS orders_count,
-			SUM(so.base_grand_total) AS total_sales
-		FROM `tabSales Order` so
+			SUM(si.base_grand_total) AS total_sales,
+			SUM(si.total_qty) AS sales_volume
+		FROM `tabSales Invoice` si
 		WHERE {' AND '.join(conditions)}
 		""",
 		values,
@@ -89,8 +102,8 @@ def _sales_booked(filters):
 	)[0]
 
 	return {
-		"orders_count": row.orders_count or 0,
 		"total_sales": flt(row.total_sales, 2),
+		"sales_volume": flt(row.sales_volume, 0),
 	}
 
 
@@ -245,17 +258,16 @@ def _course_breakdown(filters):
 
 
 def _sales_by_customer(filters):
-	conditions, values = _sales_order_conditions(filters)
+	conditions, values = _sales_invoice_conditions(filters)
 	return frappe.db.sql(
 		f"""
 		SELECT
-			COALESCE(so.customer, 'No Customer') AS customer,
-			COUNT(*) AS orders_count,
-			SUM(so.base_grand_total) AS amount
-		FROM `tabSales Order` so
+			COALESCE(si.customer, 'No Customer') AS customer,
+			SUM(si.base_grand_total) AS amount
+		FROM `tabSales Invoice` si
 		WHERE {' AND '.join(conditions)}
 		GROUP BY customer
-		ORDER BY amount DESC, orders_count DESC
+		ORDER BY amount DESC
 		LIMIT 8
 		""",
 		values,
@@ -360,14 +372,14 @@ def _sales_trend(filters):
 		values.append(0)
 		cursor += timedelta(days=1)
 
-	conditions, sql_values = _sales_order_conditions(filters)
+	conditions, sql_values = _sales_invoice_conditions(filters)
 	rows = frappe.db.sql(
 		f"""
-		SELECT so.transaction_date, SUM(so.base_grand_total) AS amount
-		FROM `tabSales Order` so
+		SELECT si.posting_date, SUM(si.base_grand_total) AS amount
+		FROM `tabSales Invoice` si
 		WHERE {' AND '.join(conditions)}
-		GROUP BY so.transaction_date
-		ORDER BY so.transaction_date
+		GROUP BY si.posting_date
+		ORDER BY si.posting_date
 		""",
 		sql_values,
 		as_dict=True,
@@ -377,7 +389,7 @@ def _sales_trend(filters):
 	}
 
 	for row in rows:
-		idx = index_by_date.get(getdate(row.transaction_date).isoformat())
+		idx = index_by_date.get(getdate(row.posting_date).isoformat())
 		if idx is not None:
 			values[idx] = flt(row.amount, 2)
 
@@ -387,7 +399,7 @@ def _sales_trend(filters):
 @frappe.whitelist()
 def get_dashboard_data(filters=None):
 	filters = _normalize_filters(filters)
-	sales = _sales_booked(filters)
+	sales = _total_sales(filters)
 	training = _training_summary(filters)
 	pending = _pending_invoice_summary(filters)
 	courses = _course_breakdown(filters)
@@ -403,8 +415,8 @@ def get_dashboard_data(filters=None):
 			"to_date": filters.to_date.isoformat(),
 		},
 		"kpis": {
-			"total_sales_booked": sales["total_sales"],
-			"sales_orders": sales["orders_count"],
+			"total_sales": sales["total_sales"],
+			"sales_volume": sales["sales_volume"],
 			"pending_candidates": pending["pending_candidates"],
 			"tentative_invoice_value": pending["tentative_value"],
 			"avg_previous_invoice_value": pending["avg_candidate_value"],
@@ -413,10 +425,6 @@ def get_dashboard_data(filters=None):
 			"training_groups": training["groups_count"],
 		},
 		"charts": {
-			"sales_vs_tentative": {
-				"labels": ["Sales Booked", "Tentative Invoice"],
-				"values": [sales["total_sales"], pending["tentative_value"]],
-			},
 			"course_candidates": {
 				"labels": [row.course for row in courses],
 				"values": [row.candidates for row in courses],
@@ -425,7 +433,6 @@ def get_dashboard_data(filters=None):
 			"sales_by_customer": {
 				"labels": [row.customer for row in sales_customers],
 				"values": [flt(row.amount, 2) for row in sales_customers],
-				"orders": [row.orders_count for row in sales_customers],
 			},
 			"pending_by_customer": {
 				"labels": [row.customer for row in pending_customers],

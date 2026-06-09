@@ -13,7 +13,7 @@ class SalesTrainingDashboard {
 		this.page = page;
 		this.charts = {};
 		this.apex_ready = false;
-		this.active_sales_view = "pipeline";
+		this.active_sales_view = "customer";
 		this.active_training_view = "course";
 		this.make_filters();
 		this.make_layout();
@@ -64,7 +64,7 @@ class SalesTrainingDashboard {
 					<div class="std-active-filters"></div>
 				</div>
 				<div class="std-kpi-grid">
-					${this.kpi_card("total_sales_booked", __("Total Sales Booked"), __("Submitted Sales Orders"))}
+					${this.kpi_card("total_sales", __("Total Sales"), __("Sales volume"))}
 					${this.kpi_card("pending_candidates", __("Candidates To Invoice"), __("Pending invoice creation"))}
 					${this.kpi_card("tentative_invoice_value", __("Tentative Value"), __("Based on previous invoice value"))}
 					${this.kpi_card("training_candidates", __("Training Candidates"), __("Candidates in training period"))}
@@ -74,8 +74,7 @@ class SalesTrainingDashboard {
 						<div class="std-panel-head">
 							<h3>${__("Sales Data")}</h3>
 							<div class="std-segments" data-chart-group="sales">
-								<button class="active" data-sales-view="pipeline">${__("Pipeline")}</button>
-								<button data-sales-view="customer">${__("Customer")}</button>
+								<button class="active" data-sales-view="customer">${__("Customer")}</button>
 								<button data-sales-view="pending">${__("Pending")}</button>
 							</div>
 						</div>
@@ -96,7 +95,7 @@ class SalesTrainingDashboard {
 				<section class="std-panel std-wide-panel">
 					<div class="std-panel-head">
 						<h3>${__("Sales Trend")}</h3>
-						<span>${__("Daily sales orders in selected period")}</span>
+						<span>${__("Daily sales in selected period")}</span>
 					</div>
 					<div id="std-trend-chart" class="std-chart std-chart-short"></div>
 				</section>
@@ -214,7 +213,7 @@ class SalesTrainingDashboard {
 
 	render() {
 		const kpis = this.data.kpis || {};
-		this.set_kpi("total_sales_booked", this.format_currency(kpis.total_sales_booked), `${kpis.sales_orders || 0} ${__("sales orders")}`);
+		this.set_kpi("total_sales", this.format_currency(kpis.total_sales), `${this.format_number(kpis.sales_volume)} ${__("sales volume")}`);
 		this.set_kpi("pending_candidates", this.format_number(kpis.pending_candidates), __("Candidates ready for invoice review"));
 		this.set_kpi("tentative_invoice_value", this.format_currency(kpis.tentative_invoice_value), `${__("Avg")} ${this.format_currency(kpis.avg_previous_invoice_value)}`);
 		this.set_kpi("training_candidates", this.format_number(kpis.training_candidates), `${this.format_number(kpis.training_groups)} ${__("groups")} / ${this.format_number(kpis.unique_candidates)} ${__("unique")}`);
@@ -234,16 +233,12 @@ class SalesTrainingDashboard {
 
 	render_sales_chart() {
 		const charts = this.data.charts || {};
-		const chart = this.active_sales_view === "customer"
-			? charts.sales_by_customer || { labels: [], values: [] }
-			: this.active_sales_view === "pending"
-				? charts.pending_by_customer || { labels: [], values: [] }
-				: charts.sales_vs_tentative || { labels: [], values: [] };
-		const is_customer_chart = ["customer", "pending"].includes(this.active_sales_view);
-		const labels = is_customer_chart
-			? (chart.labels || []).map((label) => this.short_label(label, 30))
-			: chart.labels || [];
-		const title = this.active_sales_view === "pending" ? __("Pending Candidates") : __("Amount");
+		const chart = this.active_sales_view === "pending"
+			? charts.pending_by_customer || { labels: [], values: [] }
+			: charts.sales_by_customer || { labels: [], values: [] };
+		const is_pending = this.active_sales_view === "pending";
+		const labels = (chart.labels || []).map((label) => this.short_label(label, 30));
+		const title = is_pending ? __("Pending Candidates") : __("Total Sales");
 
 		this.make_chart("sales", "#std-sales-chart", {
 			chart: { type: "bar", height: 285, toolbar: { show: false } },
@@ -254,20 +249,20 @@ class SalesTrainingDashboard {
 			},
 			yaxis: {
 				labels: {
-					formatter: (value) => this.active_sales_view === "pending" ? this.format_number(value) : this.short_currency(value),
+					formatter: (value) => is_pending ? this.format_number(value) : this.short_currency(value),
 				},
 			},
-			colors: [this.active_sales_view === "pending" ? "#f59e0b" : "#2563eb"],
+			colors: [is_pending ? "#f59e0b" : "#2563eb"],
 			plotOptions: {
 				bar: {
 					borderRadius: 7,
-					columnWidth: is_customer_chart ? "55%" : "42%",
-					horizontal: is_customer_chart,
+					columnWidth: "55%",
+					horizontal: true,
 					barHeight: "56%",
 				},
 			},
 			dataLabels: {
-				enabled: this.active_sales_view === "pending",
+				enabled: is_pending,
 				style: { colors: ["#253244"] },
 				offsetX: 8,
 			},
@@ -275,12 +270,12 @@ class SalesTrainingDashboard {
 			tooltip: {
 				x: { formatter: (_value, opts) => chart.labels?.[opts.dataPointIndex] || "" },
 				y: {
-					formatter: (value) => this.active_sales_view === "pending" ? this.format_number(value) : this.format_currency(value),
+					formatter: (value) => is_pending ? this.format_number(value) : this.format_currency(value),
 				},
 			},
 		}, {
 			labels: chart.labels || [],
-			filter: is_customer_chart ? "customer" : null,
+			filter: "customer",
 		});
 	}
 
@@ -342,7 +337,7 @@ class SalesTrainingDashboard {
 		const chart = this.data.charts?.sales_trend || { labels: [], values: [] };
 		this.make_chart("trend", "#std-trend-chart", {
 			chart: { type: "area", height: 235, toolbar: { show: false }, zoom: { enabled: false } },
-			series: [{ name: __("Sales Booked"), data: chart.values || [] }],
+			series: [{ name: __("Total Sales"), data: chart.values || [] }],
 			xaxis: {
 				categories: chart.labels || [],
 				tickAmount: 8,

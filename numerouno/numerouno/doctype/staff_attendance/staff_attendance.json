@@ -49,7 +49,7 @@
    "fieldname": "lead_instructor",
    "fieldtype": "Link",
    "label": "Name",
-   "options": "Employee"
+   "options": "Attendance Staff"
   },
   {
    "fieldname": "column_break_lead_sig",
@@ -69,7 +69,7 @@
    "fieldname": "diver_1",
    "fieldtype": "Link",
    "label": "Name",
-   "options": "Employee"
+   "options": "Attendance Staff"
   },
   {
    "fieldname": "column_break_diver1_sig",
@@ -89,7 +89,7 @@
    "fieldname": "diver_2",
    "fieldtype": "Link",
    "label": "Name",
-   "options": "Employee"
+   "options": "Attendance Staff"
   },
   {
    "fieldname": "column_break_diver2_sig",
@@ -109,7 +109,7 @@
    "fieldname": "trainee_crane_operator",
    "fieldtype": "Link",
    "label": "Name",
-   "options": "Employee"
+   "options": "Attendance Staff"
   },
   {
    "fieldname": "column_break_trainee_crane_sig",
@@ -129,7 +129,7 @@
    "fieldname": "crane_operator",
    "fieldtype": "Link",
    "label": "Name",
-   "options": "Employee"
+   "options": "Attendance Staff"
   },
   {
    "fieldname": "column_break_crane_sig",
@@ -149,7 +149,7 @@
    "fieldname": "pool_safety_person",
    "fieldtype": "Link",
    "label": "Name",
-   "options": "Employee"
+   "options": "Attendance Staff"
   },
   {
    "fieldname": "column_break_pool_sig",
@@ -186,6 +186,51 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee Self Service",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Staff Attendance User",
    "share": 1,
    "write": 1
   }
