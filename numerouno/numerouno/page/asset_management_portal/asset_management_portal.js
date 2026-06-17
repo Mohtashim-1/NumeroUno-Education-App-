@@ -522,10 +522,12 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 							<span>CP</span>
 							<div>
 								<h3>Compliance & Certification</h3>
-								<p>Certificate expiry, recertification urgency, and assigned owners.</p>
+								<p>Upload or renew compliance certificates on the asset. Previous files are archived automatically.</p>
 							</div>
 						</div>
-						<a class="asset-btn asset-btn-ghost" href="/app/asset-maintenance-log">Logs</a>
+						<div style="display:flex; gap:8px; flex-wrap:wrap;">
+							<a class="asset-btn asset-btn-ghost" href="/app/asset-maintenance-log">Logs</a>
+						</div>
 					</div>
 					<div class="table-responsive">
 						<table class="table">
@@ -828,6 +830,7 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 						<div class="asset-row-actions">
 							<button type="button" class="asset-btn asset-btn-small asset-btn-primary asset-maintenance-action" data-asset="${escape_attr(row.name)}" data-asset-title="${escape_attr(row.asset_name || row.name)}">Maintenance</button>
 							<button type="button" class="asset-btn asset-btn-small asset-btn-ghost asset-compliance-action" data-asset="${escape_attr(row.name)}" data-asset-title="${escape_attr(row.asset_name || row.name)}">Compliance</button>
+							<button type="button" class="asset-btn asset-btn-small asset-btn-ghost asset-documents-action" data-asset="${escape_attr(row.name)}" data-asset-title="${escape_attr(row.asset_name || row.name)}">Documents</button>
 						</div>
 					</td>
 				</tr>
@@ -848,6 +851,251 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 		$(".asset-compliance-action").off("click").on("click", function () {
 			open_compliance_dialog($(this).data("asset"), $(this).data("asset-title"));
 		});
+		$(".asset-documents-action").off("click").on("click", function () {
+			open_documents_dialog($(this).data("asset"), $(this).data("asset-title"));
+		});
+	}
+
+	function open_documents_dialog(asset_name, asset_title) {
+		frappe.call({
+			method: "numerouno.numerouno.asset_document_archive.get_asset_documents",
+			args: { asset_name: asset_name },
+			freeze: true,
+			freeze_message: "Loading documents...",
+			callback: function (r) {
+				var data = r.message || {};
+				var dialog = new frappe.ui.Dialog({
+					title: `Documents - ${asset_title || asset_name}`,
+					size: "large",
+					fields: [
+						{
+							fieldtype: "HTML",
+							fieldname: "documents_html"
+						}
+					],
+					primary_action_label: "Add / Renew Document",
+					primary_action: function () {
+						open_renew_document_dialog(asset_name, asset_title, data.document_types || [], function () {
+							dialog.hide();
+							open_documents_dialog(asset_name, asset_title);
+						});
+					},
+					secondary_action_label: "Add Compliance Certificate",
+					secondary_action: function () {
+						open_compliance_certificate_dialog(asset_name, asset_title, {
+							expiry_date: (data.compliance_certificate || {}).expiry_date,
+							has_certificate: !!(data.compliance_certificate || {}).document,
+							on_success: function () {
+								dialog.hide();
+								open_documents_dialog(asset_name, asset_title);
+							}
+						});
+					}
+				});
+				dialog.fields_dict.documents_html.$wrapper.html(render_documents_html(data));
+				dialog.fields_dict.documents_html.$wrapper.find(".asset-inline-compliance-cert-action").on("click", function () {
+					open_compliance_certificate_dialog($(this).data("asset"), $(this).data("asset-title"), {
+						expiry_date: $(this).data("expiry"),
+						has_certificate: $(this).data("has-cert") == 1,
+						on_success: function () {
+							dialog.hide();
+							open_documents_dialog(asset_name, asset_title);
+						}
+					});
+				});
+				dialog.show();
+			}
+		});
+	}
+
+	function render_documents_html(data) {
+		var compliance = data.compliance_certificate || {};
+		var complianceSection = `
+			<div style="margin-bottom:18px; padding:14px; border:1px solid var(--line, #dde4ed); border-radius:12px; background:#f8fbfa;">
+				<div style="display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap;">
+					<div>
+						<h4 style="margin:0 0 6px;">Compliance Certificate</h4>
+						<p class="asset-muted" style="margin:0;">Saved on Asset field: <strong>custom_compliance_certificate</strong></p>
+					</div>
+					<button type="button" class="asset-btn asset-btn-primary asset-inline-compliance-cert-action"
+						data-asset="${escape_attr(data.asset_name)}"
+						data-asset-title="${escape_attr(data.asset_title || data.asset_name)}"
+						data-expiry="${escape_attr(compliance.expiry_date || "")}"
+						data-has-cert="${compliance.document ? "1" : "0"}">
+						${compliance.document ? "Renew Certificate" : "Add Certificate"}
+					</button>
+				</div>
+				<div style="margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+					<div><span class="asset-muted">Current File</span><br>${compliance.document ? `<a href="${escape_attr(compliance.document)}" target="_blank" rel="noopener">View Certificate</a>` : "-"}</div>
+					<div><span class="asset-muted">Expiry</span><br>${format_date(compliance.expiry_date)}</div>
+				</div>
+			</div>
+		`;
+
+		var currentRows = (data.current_documents || []).map(function (row) {
+			return `
+				<tr>
+					<td>${escape_html(row.document_type)}</td>
+					<td><a href="${escape_attr(row.document)}" target="_blank" rel="noopener">View Current</a></td>
+					<td>${format_date(row.effective_from)}</td>
+					<td>${format_date(row.expiry_date)}</td>
+					<td><span class="asset-pill ok">Current</span></td>
+				</tr>
+			`;
+		}).join("");
+
+		var archivedRows = (data.archived_documents || []).map(function (row) {
+			return `
+				<tr>
+					<td>${escape_html(row.document_type)}</td>
+					<td><a href="${escape_attr(row.document)}" target="_blank" rel="noopener">View Archived</a></td>
+					<td>${format_date(row.effective_from)}</td>
+					<td>${format_date(row.expiry_date)}</td>
+					<td>${format_date(row.archived_on)}</td>
+					<td>${escape_html(row.archived_by || "-")}</td>
+					<td>${escape_html(row.notes || "-")}</td>
+				</tr>
+			`;
+		}).join("");
+
+		return `
+			${complianceSection}
+			<div style="margin-bottom:18px;">
+				<h4 style="margin:0 0 10px;">Current Documents</h4>
+				<div class="table-responsive">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Type</th>
+								<th>File</th>
+								<th>Effective From</th>
+								<th>Expiry</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>${currentRows || `<tr><td colspan="5" class="asset-empty-state">No current documents uploaded.</td></tr>`}</tbody>
+					</table>
+				</div>
+			</div>
+			<div>
+				<h4 style="margin:0 0 10px;">Archived / History</h4>
+				<p class="asset-muted" style="margin:0 0 10px;">When a document is renewed, the previous file is kept here automatically.</p>
+				<div class="table-responsive">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Type</th>
+								<th>File</th>
+								<th>Effective From</th>
+								<th>Expiry</th>
+								<th>Archived On</th>
+								<th>Archived By</th>
+								<th>Notes</th>
+							</tr>
+						</thead>
+						<tbody>${archivedRows || `<tr><td colspan="7" class="asset-empty-state">No archived documents yet.</td></tr>`}</tbody>
+					</table>
+				</div>
+			</div>
+		`;
+	}
+
+	function open_renew_document_dialog(asset_name, asset_title, document_types, on_success, defaults) {
+		defaults = defaults || {};
+		var isRenewal = !!defaults.has_certificate;
+		var renewDialog = new frappe.ui.Dialog({
+			title: `${isRenewal ? "Renew" : "Add"} Document - ${asset_title || asset_name}`,
+			fields: [
+				{
+					fieldtype: "Select",
+					fieldname: "document_type",
+					label: "Document Type",
+					options: ["", ...(document_types || [])],
+					default: defaults.document_type || "",
+					read_only: defaults.document_type ? 1 : 0,
+					reqd: 1
+				},
+				{
+					fieldtype: "Attach",
+					fieldname: "file_url",
+					label: defaults.document_type ? `${defaults.document_type} File` : "Document File",
+					reqd: 1
+				},
+				{
+					fieldtype: "Column Break"
+				},
+				{
+					fieldtype: "Date",
+					fieldname: "effective_from",
+					label: "Effective From",
+					default: defaults.effective_from || ""
+				},
+				{
+					fieldtype: "Date",
+					fieldname: "expiry_date",
+					label: "Expiry Date",
+					default: defaults.expiry_date || "",
+					reqd: defaults.document_type === "Compliance Certificate" ? 1 : 0
+				},
+				{
+					fieldtype: "Section Break"
+				},
+				{
+					fieldtype: "Small Text",
+					fieldname: "notes",
+					label: "Notes",
+					default: defaults.notes || ""
+				}
+			],
+			primary_action_label: isRenewal ? "Save Renewal" : "Save Document",
+			primary_action: function (values) {
+				frappe.call({
+					method: "numerouno.numerouno.asset_document_archive.renew_asset_document",
+					args: {
+						asset_name: asset_name,
+						document_type: values.document_type,
+						file_url: values.file_url,
+						expiry_date: values.expiry_date,
+						effective_from: values.effective_from,
+						notes: values.notes
+					},
+					freeze: true,
+					freeze_message: "Saving document...",
+					callback: function () {
+						renewDialog.hide();
+						frappe.show_alert({
+							message: isRenewal ? "Document renewed. Previous file archived." : "Document saved successfully.",
+							indicator: "green"
+						});
+						if (on_success) {
+							on_success();
+						}
+					}
+				});
+			}
+		});
+		renewDialog.show();
+	}
+
+	function open_compliance_certificate_dialog(asset_name, asset_title, options) {
+		options = options || {};
+		open_renew_document_dialog(
+			asset_name,
+			asset_title,
+			["Compliance Certificate"],
+			function () {
+				reset_pagination();
+				load_portal_data();
+				if (options.on_success) {
+					options.on_success();
+				}
+			},
+			{
+				document_type: "Compliance Certificate",
+				expiry_date: options.expiry_date || "",
+				has_certificate: !!options.has_certificate
+			}
+		);
 	}
 
 	function open_maintenance_dialog(asset_name, asset_title) {
@@ -1157,6 +1405,14 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 				: "-";
 			const certificateLink = row.certificate_url
 				? `<a class="asset-btn asset-btn-small asset-btn-ghost" href="${escape_attr(row.certificate_url)}" target="_blank" rel="noopener">View</a>`
+				: "";
+			const certActionLabel = row.certificate_url ? "Renew" : "Add";
+			const certAction = row.asset_name
+				? `<button type="button" class="asset-btn asset-btn-small asset-btn-primary asset-cert-upload-action"
+					data-asset="${escape_attr(row.asset_name)}"
+					data-asset-title="${escape_attr(row.asset_title || row.asset_name)}"
+					data-expiry="${escape_attr(row.custom_certificate_expiry_date || "")}"
+					data-has-cert="${row.certificate_url ? "1" : "0"}">${certActionLabel}</button>`
 				: "-";
 			return `
 				<tr>
@@ -1167,7 +1423,7 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 					<td>${escape_html(row.assign_to_name || "-")}</td>
 					<td>${format_date(row.next_due_date)}</td>
 					<td>${format_date(row.custom_certificate_expiry_date)}</td>
-					<td>${certificateLink}</td>
+					<td><div class="asset-row-actions">${certificateLink}${certAction}</div></td>
 					<td>${expiry_pill(row.days_to_expiry)}</td>
 				</tr>
 			`;
@@ -1177,6 +1433,16 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 		} else {
 			$("#compliance-body").html(html);
 		}
+		bind_compliance_row_actions();
+	}
+
+	function bind_compliance_row_actions() {
+		$(".asset-cert-upload-action").off("click").on("click", function () {
+			open_compliance_certificate_dialog($(this).data("asset"), $(this).data("asset-title"), {
+				expiry_date: $(this).data("expiry"),
+				has_certificate: $(this).data("has-cert") == 1
+			});
+		});
 	}
 
 	function status_pill(status) {

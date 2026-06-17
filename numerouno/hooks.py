@@ -167,6 +167,10 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
+    "Asset": {
+        "validate": "numerouno.numerouno.asset_document_archive.archive_changed_asset_documents",
+        "before_update_after_submit": "numerouno.numerouno.asset_document_archive.archive_changed_asset_documents",
+    },
     "Asset Maintenance": {
         "on_update": "numerouno.numerouno.asset_management.sync_asset_maintenance_log_custom_fields"
     },

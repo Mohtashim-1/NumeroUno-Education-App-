@@ -206,6 +206,30 @@ def get_asset_management_portal_data(
             row["days_to_expiry"] = (getdate(row.custom_certificate_expiry_date) - today).days
         row["source_type"] = "Maintenance Task"
 
+    compliance_asset_names = list({row.asset_name for row in compliance if row.get("asset_name")})
+    compliance_asset_map = {}
+    if compliance_asset_names:
+        for asset_row in frappe.get_all(
+            "Asset",
+            filters={"name": ["in", compliance_asset_names]},
+            fields=[
+                "name",
+                "asset_name",
+                "custom_compliance_certificate",
+                "custom_compliance_certificate_expiry",
+            ],
+        ):
+            compliance_asset_map[asset_row.name] = asset_row
+
+    for row in compliance:
+        asset_row = compliance_asset_map.get(row.asset_name) or {}
+        row["asset_title"] = asset_row.get("asset_name") or row.get("asset_title")
+        row["certificate_url"] = asset_row.get("custom_compliance_certificate") or row.get("certificate_url")
+        asset_expiry = asset_row.get("custom_compliance_certificate_expiry")
+        if asset_expiry and not row.get("custom_certificate_expiry_date"):
+            row["custom_certificate_expiry_date"] = asset_expiry
+            row["days_to_expiry"] = (getdate(asset_expiry) - today).days
+
     direct_asset_filters = {**asset_filters, "custom_compliance_certificate": ["is", "set"]}
     if asset_name:
         direct_asset_filters["name"] = asset_name

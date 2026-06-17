@@ -30,7 +30,7 @@ class AttendanceStaff(Document):
 			self.staff_roles = ", ".join(DEFAULT_STAFF_ROLES)
 
 
-def sync_attendance_staff_from_employee(employee_doc):
+def sync_attendance_staff_from_employee(employee_doc, method=None):
 	"""Create or update Attendance Staff when an Employee is saved."""
 	if not employee_doc.name:
 		return
