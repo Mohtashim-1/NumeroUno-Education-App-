@@ -1,0 +1,101 @@
+<div class="acl-form">
+	<div class="acl-header">
+		<div class="acl-title">{{ doc.title or doc.checklist_type }}</div>
+		<div class="acl-meta">
+			{% if doc.form_code %}<span>{{ doc.form_code }}</span>{% endif %}
+			{% if doc.course_code %}<span>Code: {{ doc.course_code }}</span>{% endif %}
+			{% if doc.assessment_date %}<span>Date: {{ frappe.utils.formatdate(doc.assessment_date, 'dd-MM-yyyy') }}</span>{% endif %}
+		</div>
+		{% if doc.checklist_type == 'Basic H2S' %}
+		<div class="acl-variants">
+			9014 {% if doc.variant_9014 %}☑{% else %}☐{% endif %}
+			&nbsp; 9014-A {% if doc.variant_9014_a %}☑{% else %}☐{% endif %}
+			&nbsp; 9014-B {% if doc.variant_9014_b %}☑{% else %}☐{% endif %}
+		</div>
+		{% endif %}
+		{% if doc.ebs_no %}
+		<div class="acl-ebs">EBS NO: {{ doc.ebs_no }}</div>
+		{% endif %}
+	</div>
+
+	{% if doc.module_groups %}
+	<table class="acl-modules">
+		<tr>
+			{% for mg in doc.module_groups %}
+			<th colspan="{{ (doc.outcomes | selectattr('module_group', 'equalto', mg.module_code) | list | length) or 1 }}">
+				{{ mg.module_code }}<br><small>{{ mg.module_title }}</small>
+			</th>
+			{% endfor %}
+		</tr>
+	</table>
+	{% endif %}
+
+	<table class="acl-grid">
+		<tr class="acl-grid-head">
+			<th class="col-no">No.</th>
+			<th class="col-name">Learner Name</th>
+			{% for outcome in doc.outcomes %}
+			<th class="col-outcome">
+				<div>{{ outcome.outcome_code }}</div>
+				<small>{{ outcome.assessment_method }}</small>
+			</th>
+			{% endfor %}
+		</tr>
+		{% for row in doc.learners %}
+		<tr>
+			<td class="col-no">{{ row.row_no or loop.index }}</td>
+			<td class="col-name">{{ row.learner_name or '' }}</td>
+			{% for oidx in range(1, (doc.outcomes|length) + 1) %}
+			<td class="col-result">{{ row['result_' ~ oidx] or '' }}</td>
+			{% endfor %}
+		</tr>
+		{% endfor %}
+	</table>
+
+	{% if doc.demo_ebs_used_by %}
+	<p class="acl-demo-ebs"><strong>Demo EBS used by:</strong> {{ doc.demo_ebs_used_by }}</p>
+	{% endif %}
+
+	{% if doc.remarks %}
+	<p class="acl-remarks"><strong>Remarks:</strong> {{ doc.remarks }}</p>
+	{% endif %}
+
+	{% if doc.footer_notes %}
+	<div class="acl-footer-notes">{{ doc.footer_notes }}</div>
+	{% endif %}
+
+	{% if doc.unit_description %}
+	<div class="acl-unit-desc">{{ doc.unit_description }}</div>
+	{% endif %}
+
+	{% if doc.assessors %}
+	<table class="acl-assessors">
+		<tr class="acl-grid-head">
+			<th>Sr</th>
+			<th>Assessor Name</th>
+			<th>Module</th>
+			<th>Description</th>
+			<th>Signature</th>
+			<th>Date</th>
+			<th>Day</th>
+			<th>Time</th>
+		</tr>
+		{% for row in doc.assessors %}
+		<tr>
+			<td>{{ row.sr_no or loop.index }}</td>
+			<td>{{ row.assessor_name or '' }}</td>
+			<td>{{ row.module or '' }}</td>
+			<td>{{ row.description or '' }}</td>
+			<td>{% if row.signature %}<img src="{{ row.signature }}" class="sig-img" />{% endif %}</td>
+			<td>{{ frappe.utils.formatdate(row.assessor_date, 'dd-MM-yyyy') if row.assessor_date else '' }}</td>
+			<td>{{ row.day or '' }}</td>
+			<td>{{ row.time_ampm or '' }}</td>
+		</tr>
+		{% endfor %}
+	</table>
+	{% endif %}
+
+	<div class="acl-form-footer">
+		<span>{{ doc.form_code or '' }}</span>
+	</div>
+</div>

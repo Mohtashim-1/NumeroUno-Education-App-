@@ -1,0 +1,1250 @@
+{
+  "Basic H2S": {
+    "checklist_type": "Basic H2S",
+    "form_code": "NUTC-P14-F01.00",
+    "title": "Basic H2S Training - 9014",
+    "course_code": "",
+    "show_course_variants": true,
+    "show_ebs_no": false,
+    "show_demo_ebs": false,
+    "module_groups": [],
+    "outcomes": [
+      {
+        "outcome_code": "1",
+        "assessment_method": "WA",
+        "module_group": ""
+      },
+      {
+        "outcome_code": "2.1",
+        "assessment_method": "DO",
+        "module_group": ""
+      },
+      {
+        "outcome_code": "2.2",
+        "assessment_method": "DO",
+        "module_group": ""
+      },
+      {
+        "outcome_code": "2.3",
+        "assessment_method": "DO",
+        "module_group": ""
+      },
+      {
+        "outcome_code": "2.4",
+        "assessment_method": "DO",
+        "module_group": ""
+      },
+      {
+        "outcome_code": "2.5",
+        "assessment_method": "DO",
+        "module_group": ""
+      },
+      {
+        "outcome_code": "2.6",
+        "assessment_method": "DO",
+        "module_group": ""
+      }
+    ],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS-91(L01)",
+        "description": "H2S Theory"
+      },
+      {
+        "sr_no": 2,
+        "module": "OIS-91(L02)",
+        "description": "H2S Practical"
+      }
+    ],
+    "footer_notes": [
+      "Assessment Methods: DO-Direct Observation , WA-Written Assessment",
+      "Final Assessment Result: C-Competent , NYC-Not Yet Competent"
+    ],
+    "unit_description": "UNIT OIS-91 to successfully complete this unit,",
+    "learner_rows": 16
+  },
+  "BOSIET EBS": {
+    "checklist_type": "BOSIET EBS",
+    "form_code": "NUTC-P14-F01.01",
+    "title": "BOSIET with EBS - Assessor Checklist",
+    "course_code": "",
+    "show_course_variants": false,
+    "show_ebs_no": true,
+    "show_demo_ebs": true,
+    "module_groups": [
+      {
+        "module_code": "OIS - 01",
+        "module_title": "Safety Induction",
+        "col_start": 3
+      },
+      {
+        "module_code": "OIS - 02",
+        "module_title": "Helicopter Safety and Escape - EBS",
+        "col_start": 5
+      },
+      {
+        "module_code": "OIS - 03",
+        "module_title": "Sea Survival and First Aid",
+        "col_start": 20
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "01 to 07",
+        "assessment_method": "GD",
+        "module_group": "OIS - 01"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "GD",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.5",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.6",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.7",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.8",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.9",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.1.0",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.11",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.12",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.13",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "GD",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "3.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      }
+    ],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS 01",
+        "description": "SI"
+      },
+      {
+        "sr_no": 2,
+        "module": "OIS 02 (L01 & L02)",
+        "description": "HS&E Theory"
+      },
+      {
+        "sr_no": 3,
+        "module": "OIS 02 (L03)",
+        "description": "HS&E  Practical"
+      },
+      {
+        "sr_no": 4,
+        "module": "OIS 03 (L01)",
+        "description": "SS Theory"
+      },
+      {
+        "sr_no": 5,
+        "module": "OIS 03 (L03)",
+        "description": "LB Practical"
+      },
+      {
+        "sr_no": 6,
+        "module": "OIS 03 (L04)",
+        "description": "SS Practical"
+      },
+      {
+        "sr_no": 7,
+        "module": "OIS 03 (L02 & L05)",
+        "description": "FA"
+      },
+      {
+        "sr_no": 8,
+        "module": "OIS 04 (L01 & L02)",
+        "description": "FF & SR\n Theory"
+      },
+      {
+        "sr_no": 9,
+        "module": "OIS 04 (L03 & L04)",
+        "description": "FF & SR\n Practical"
+      }
+    ],
+    "footer_notes": [],
+    "unit_description": "UNIT OIS-01 Safety Induction, to successfully complete this unit,",
+    "learner_rows": 16
+  },
+  "TBOSIET": {
+    "checklist_type": "TBOSIET",
+    "form_code": "NUTC-P14-F01.02",
+    "title": "Tropical BOSIET - Assessor Checklist",
+    "course_code": "",
+    "show_course_variants": false,
+    "show_ebs_no": false,
+    "show_demo_ebs": false,
+    "module_groups": [
+      {
+        "module_code": "OIS - 01",
+        "module_title": "Safety Induction",
+        "col_start": 3
+      },
+      {
+        "module_code": "OIS - 81",
+        "module_title": "Helicopter Safety and Escape -Tropical",
+        "col_start": 4
+      },
+      {
+        "module_code": "OIS - 03",
+        "module_title": "Sea Survival and First Aid",
+        "col_start": 15
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "01 to 07",
+        "assessment_method": "GD",
+        "module_group": "OIS - 01"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "GD",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "3.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "3.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "3.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "3.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "3.5",
+        "assessment_method": "DO",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "3.6",
+        "assessment_method": "DO",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "3.7",
+        "assessment_method": "DO",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "3.8",
+        "assessment_method": "DO",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "3.9",
+        "assessment_method": "DO",
+        "module_group": "OIS - 81"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "GD",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "3.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "4.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "4.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "4.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "4.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "5.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      }
+    ],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS 01",
+        "description": "SI"
+      },
+      {
+        "sr_no": 2,
+        "module": "OIS 81 (L01 & L02)",
+        "description": "HS&E(T)"
+      },
+      {
+        "sr_no": 3,
+        "module": "OIS 81 (L03)",
+        "description": "HS&E(P)"
+      },
+      {
+        "sr_no": 4,
+        "module": "OIS 3 (L01)",
+        "description": "SS(T)"
+      },
+      {
+        "sr_no": 5,
+        "module": "OIS 3 (L03)",
+        "description": "LB(P)"
+      },
+      {
+        "sr_no": 6,
+        "module": "OIS 3 (L04)",
+        "description": "SS(P)"
+      },
+      {
+        "sr_no": 7,
+        "module": "OIS 3 (L02 & L05)",
+        "description": "FA(T & P)"
+      },
+      {
+        "sr_no": 8,
+        "module": "OIS 4 (L01 & L02)",
+        "description": "FF & SR(T)"
+      },
+      {
+        "sr_no": 9,
+        "module": "OIS 4 (L03 & L04)",
+        "description": "FF & SR(P)"
+      }
+    ],
+    "footer_notes": [
+      "Assessment Methods:(DO)-Dorect Observation, (GD)- Group Discussion"
+    ],
+    "unit_description": "",
+    "learner_rows": 16
+  },
+  "FOET EBS": {
+    "checklist_type": "FOET EBS",
+    "form_code": "NUTC-P14-F01.03",
+    "title": "FOET with EBS - Assessor Checklist",
+    "course_code": "",
+    "show_course_variants": false,
+    "show_ebs_no": true,
+    "show_demo_ebs": true,
+    "module_groups": [
+      {
+        "module_code": "OIS - 73",
+        "module_title": "Further Helicopter Safety and Escape - EBS",
+        "col_start": 4
+      },
+      {
+        "module_code": "OIS - 75",
+        "module_title": "Further Emergency First Aid",
+        "col_start": 17
+      },
+      {
+        "module_code": "OIS - 74",
+        "module_title": "Further Fire fighting & Self Rescue",
+        "col_start": 22
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.5",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.6",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.7",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.8",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.9",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.1.0",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.11",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "2.12",
+        "assessment_method": "DO",
+        "module_group": "OIS - 73"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "2.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "2.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "2.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "2.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "1.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 74"
+      }
+    ],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS 73(L01)",
+        "description": "OIS 73(L01)"
+      },
+      {
+        "sr_no": 2,
+        "module": "OIS 73(L02)",
+        "description": "OIS 73(L02)"
+      },
+      {
+        "sr_no": 3,
+        "module": "OIS 74(L01 & L02)",
+        "description": "OIS 74(L01 & L02)"
+      },
+      {
+        "sr_no": 4,
+        "module": "OIS 74\n(LO 1 &L02)",
+        "description": "OIS 74\n(LO 1 &L02)"
+      }
+    ],
+    "footer_notes": [
+      "Assessment Methods:(DO)-Direct Observation, (GD)-Group Discussion",
+      "Final Assessment Result: C-Competent , NYC- Not Yet Competent",
+      "Description:HS&E:Helicopoter Safety & Escape, FF:Fire Fighting, FA: First Aid"
+    ],
+    "unit_description": "",
+    "learner_rows": 16
+  },
+  "T FOET": {
+    "checklist_type": "T FOET",
+    "form_code": "NUTC-P14-F01.04",
+    "title": "Tropical FOET - Assessor Checklist",
+    "course_code": "",
+    "show_course_variants": false,
+    "show_ebs_no": false,
+    "show_demo_ebs": false,
+    "module_groups": [
+      {
+        "module_code": "OIS - 84",
+        "module_title": "Further Helicopter Safety and Escape - Tropical",
+        "col_start": 3
+      },
+      {
+        "module_code": "OIS - 75",
+        "module_title": "Further Emergency First Aid",
+        "col_start": 13
+      },
+      {
+        "module_code": "OIS - 74",
+        "module_title": "Further Fire fighting & Self Rescue",
+        "col_start": 18
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "2.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "2.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "2.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "2.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "2.5",
+        "assessment_method": "DO",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "2.6",
+        "assessment_method": "DO",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "2.7",
+        "assessment_method": "DO",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "2.8",
+        "assessment_method": "DO",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "2.9",
+        "assessment_method": "DO",
+        "module_group": "OIS - 84"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "2.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "2.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "2.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "2.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 75"
+      },
+      {
+        "outcome_code": "1.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 74"
+      },
+      {
+        "outcome_code": "1.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 74"
+      },
+      {
+        "outcome_code": "2.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 74"
+      },
+      {
+        "outcome_code": "2.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 74"
+      },
+      {
+        "outcome_code": "2.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 74"
+      }
+    ],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS 84(L01)",
+        "description": "HUET\n(T)"
+      },
+      {
+        "sr_no": 2,
+        "module": "OIS 84(L02)",
+        "description": "HUET\n(P)"
+      },
+      {
+        "sr_no": 3,
+        "module": "OIS 75(L01 & L02)",
+        "description": "FA(T & P)"
+      },
+      {
+        "sr_no": 4,
+        "module": "OIS 74(LO1 &\n L02)",
+        "description": "FF & SR (P)"
+      }
+    ],
+    "footer_notes": [
+      "Assessment Methods:(DO)-Direct Observation, (GD)-Group Discussion",
+      "Final Assessment Result: C-Competent , NYC- Not Yet Competent",
+      "Description:HUET:Helicopoter Safet & Escape, FF & SR:Fire Fighting & Self Recue, FA: First Aid , T-Theory, P-Practical"
+    ],
+    "unit_description": "",
+    "learner_rows": 16
+  },
+  "HUET EBS": {
+    "checklist_type": "HUET EBS",
+    "form_code": "NUTC-P14-F01.05",
+    "title": "HUET with EBS - Assessor Checklist",
+    "course_code": "",
+    "show_course_variants": false,
+    "show_ebs_no": true,
+    "show_demo_ebs": true,
+    "module_groups": [
+      {
+        "module_code": "OIS - 02",
+        "module_title": "Helicopter Safety and Escape - EBS",
+        "col_start": 4
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "GD",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.5",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.6",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.7",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.8",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.9",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.1.0",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.11",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.12",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      },
+      {
+        "outcome_code": "3.13",
+        "assessment_method": "DO",
+        "module_group": "OIS - 02"
+      }
+    ],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS-02(L01 & L02)",
+        "description": "OIS-02(L01 & L02)"
+      },
+      {
+        "sr_no": 2,
+        "module": "OIS-02(L03)",
+        "description": "OIS-02(L03)"
+      }
+    ],
+    "footer_notes": [
+      "Assessment Methods: (DO) Direct Observation, (OQ)-Oral Question, (GD)-Group Discussion",
+      "Final Assessment Result: C- Competent , NYC- Not Yet Competent",
+      "Description:"
+    ],
+    "unit_description": "OIS-02(L01 & L02)\nUNIT OIS-02 Helicopter Safety and Escape - EBS, to successfully complete this unit,",
+    "learner_rows": 16
+  },
+  "THUET": {
+    "checklist_type": "THUET",
+    "form_code": "NUTC-P14-F01.06",
+    "title": "Tropical HUET - Assessor Checklist",
+    "course_code": "",
+    "show_course_variants": false,
+    "show_ebs_no": false,
+    "show_demo_ebs": false,
+    "module_groups": [
+      {
+        "module_code": "OIS-81",
+        "module_title": "Helicopter Safety & Escape - Tropical",
+        "col_start": 3
+      },
+      {
+        "module_code": "OIS-83",
+        "module_title": "Sea Survival - THUET",
+        "col_start": 14
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "GD",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "3.1",
+        "assessment_method": "DO",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "3.2",
+        "assessment_method": "DO",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "3.3",
+        "assessment_method": "DO",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "3.4",
+        "assessment_method": "DO",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "3.5",
+        "assessment_method": "DO",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "3.6",
+        "assessment_method": "DO",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "3.7",
+        "assessment_method": "DO",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "3.8",
+        "assessment_method": "DO",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "3.9",
+        "assessment_method": "DO",
+        "module_group": "OIS-81"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS-83"
+      },
+      {
+        "outcome_code": "2.1",
+        "assessment_method": "DO",
+        "module_group": "OIS-83"
+      },
+      {
+        "outcome_code": "2.2",
+        "assessment_method": "DO",
+        "module_group": "OIS-83"
+      },
+      {
+        "outcome_code": "3.1",
+        "assessment_method": "DO",
+        "module_group": "OIS-83"
+      },
+      {
+        "outcome_code": "3.2",
+        "assessment_method": "DO",
+        "module_group": "OIS-83"
+      },
+      {
+        "outcome_code": "3.3",
+        "assessment_method": "DO",
+        "module_group": "OIS-83"
+      }
+    ],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS-81 (L01 & L02)",
+        "description": "HS&E(T)"
+      },
+      {
+        "sr_no": 2,
+        "module": "OIS-81 (L03)",
+        "description": "HS&E(P)"
+      },
+      {
+        "sr_no": 3,
+        "module": "OIS-83 (L01)",
+        "description": "SS(T)"
+      },
+      {
+        "sr_no": 4,
+        "module": "OIS-83 (L02 & L03)",
+        "description": "SS(P)"
+      }
+    ],
+    "footer_notes": [
+      "Assessment Methods: (DO)- Direct Observation, (GD)-Group Discussion",
+      "Description:SS: Sea Survival , HS&E: Helicopter Safety & Escape Training"
+    ],
+    "unit_description": "OIS-81 (L01 & L02)\nOIS-81 (L03)\nOIS-83 (L01)\nOIS-83 (L02 & L03)\nUNIT OIS-81 Helicopter Safety and Escape \u2013 Tropical to successfully complete this unit,",
+    "learner_rows": 16
+  },
+  "Gas Monitor": {
+    "checklist_type": "Gas Monitor",
+    "form_code": "NUTC-P14-F01.08",
+    "title": "Gas Monitor - Assessor Checklist",
+    "course_code": "9241",
+    "show_course_variants": false,
+    "show_ebs_no": false,
+    "show_demo_ebs": false,
+    "module_groups": [
+      {
+        "module_code": "OIS-105",
+        "module_title": "",
+        "col_start": 3
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "1",
+        "assessment_method": "WA",
+        "module_group": "OIS-105"
+      }
+    ],
+    "assessors": [],
+    "footer_notes": [
+      "Final Assessment Result: C-Competent, NYC- Not Yet Competent"
+    ],
+    "unit_description": "OIS-105 Gas Monitoring: 1. Providing Safety Watch duties (1.1-1.16)",
+    "learner_rows": 16
+  },
+  "AGT": {
+    "checklist_type": "AGT",
+    "form_code": "NUTC-P14-F01.09",
+    "title": "Authorized Gas Tester - Assessor Checklist",
+    "course_code": "9240",
+    "show_course_variants": false,
+    "show_ebs_no": false,
+    "show_demo_ebs": false,
+    "module_groups": [
+      {
+        "module_code": "OIS-102",
+        "module_title": "",
+        "col_start": 3
+      },
+      {
+        "module_code": "OIS-103",
+        "module_title": "",
+        "col_start": 6
+      },
+      {
+        "module_code": "OIS-104",
+        "module_title": "",
+        "col_start": 7
+      },
+      {
+        "module_code": "OIS-105",
+        "module_title": "",
+        "col_start": 8
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "1",
+        "assessment_method": "WA",
+        "module_group": "OIS-102"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "WA",
+        "module_group": "OIS-102"
+      },
+      {
+        "outcome_code": "3",
+        "assessment_method": "WA",
+        "module_group": "OIS-102"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "WA",
+        "module_group": "OIS-103"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "WA",
+        "module_group": "OIS-104"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "WA",
+        "module_group": "OIS-105"
+      }
+    ],
+    "assessors": [],
+    "footer_notes": [],
+    "unit_description": "OIS- 102 Authorized Gas Tester\nOIS-103 Testing for flammable gas in preparation for hot works\nOIS-104 Confined Space Testing\nOIS-105 Gas Monitoring",
+    "learner_rows": 16
+  },
+  "TSbB Initial": {
+    "checklist_type": "TSbB Initial",
+    "form_code": "NUTC-P14-F01.10",
+    "title": "TSbB Initial Training - Assessor Checklist",
+    "course_code": "",
+    "show_course_variants": false,
+    "show_ebs_no": false,
+    "show_demo_ebs": false,
+    "module_groups": [
+      {
+        "module_code": "OIS-351",
+        "module_title": "",
+        "col_start": 3
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "GD",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "3.1",
+        "assessment_method": "DO",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "3.2",
+        "assessment_method": "DO",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "3.3",
+        "assessment_method": "DO",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "3.4",
+        "assessment_method": "DO",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "4.1",
+        "assessment_method": "DO",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "5.1",
+        "assessment_method": "DO",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "5.2",
+        "assessment_method": "DO",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "5.3",
+        "assessment_method": "DO",
+        "module_group": "OIS-351"
+      },
+      {
+        "outcome_code": "6.1",
+        "assessment_method": "DO",
+        "module_group": "OIS-351"
+      }
+    ],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS-351(L01 & L02)",
+        "description": "TSbB Theory"
+      },
+      {
+        "sr_no": 2,
+        "module": "OIS-351(lL03 to L06)",
+        "description": "TSbB Practical"
+      }
+    ],
+    "footer_notes": [
+      "Assessment Methods: (DO)-Direct Observation ,(GD)- Group Discussion, (OQ)- Oral Questioning",
+      "Description: TSbB Travel Safely by Boat"
+    ],
+    "unit_description": "OIS-351(L01 & L02)\nOIS-351(lL03 to L06)\nThe learner will understand:\nThe learner will perform:",
+    "learner_rows": 16
+  },
+  "TSbB Further": {
+    "checklist_type": "TSbB Further",
+    "form_code": "NUTC-P14-F01.11",
+    "title": "TSbB Further Training - Assessor Checklist",
+    "course_code": "",
+    "show_course_variants": false,
+    "show_ebs_no": false,
+    "show_demo_ebs": false,
+    "module_groups": [
+      {
+        "module_code": "OIS-350",
+        "module_title": "",
+        "col_start": 3
+      }
+    ],
+    "outcomes": [
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS-350"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "GD",
+        "module_group": "OIS-350"
+      },
+      {
+        "outcome_code": "3",
+        "assessment_method": "GD",
+        "module_group": "OIS-350"
+      },
+      {
+        "outcome_code": "4.1",
+        "assessment_method": "DO",
+        "module_group": "OIS-350"
+      },
+      {
+        "outcome_code": "4.2",
+        "assessment_method": "DO",
+        "module_group": "OIS-350"
+      },
+      {
+        "outcome_code": "4.3",
+        "assessment_method": "DO",
+        "module_group": "OIS-350"
+      },
+      {
+        "outcome_code": "4.4",
+        "assessment_method": "DO",
+        "module_group": "OIS-350"
+      },
+      {
+        "outcome_code": "4.5",
+        "assessment_method": "DO",
+        "module_group": "OIS-350"
+      },
+      {
+        "outcome_code": "5.1",
+        "assessment_method": "DO",
+        "module_group": "OIS-350"
+      },
+      {
+        "outcome_code": "5.2",
+        "assessment_method": "DO",
+        "module_group": "OIS-350"
+      }
+    ],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS-350 (L01 & L03)",
+        "description": "TSbB Theory"
+      },
+      {
+        "sr_no": 2,
+        "module": "OIS-350(L04 & L05)",
+        "description": "TSbB Practical"
+      }
+    ],
+    "footer_notes": [
+      "Assessment Methods:(OQ)-Oral Questioning, (DO)- Direct Observation, (GD)- Group Discussion",
+      "Description: TSbB Travel Safely by Boat"
+    ],
+    "unit_description": "OIS-350 (L01 & L03)\nOIS-350(L04 & L05)\nThe learner will perform:\nThe learner will understand:",
+    "learner_rows": 16
+  }
+}

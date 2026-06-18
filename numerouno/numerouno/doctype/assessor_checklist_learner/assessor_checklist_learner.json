@@ -1,0 +1,200 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-06-19 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "row_no",
+  "learner_name",
+  "module_group",
+  "result_1",
+  "result_2",
+  "result_3",
+  "result_4",
+  "result_5",
+  "result_6",
+  "result_7",
+  "result_8",
+  "result_9",
+  "result_10",
+  "result_11",
+  "result_12",
+  "result_13",
+  "result_14",
+  "result_15",
+  "result_16",
+  "result_17",
+  "result_18",
+  "result_19",
+  "result_20"
+ ],
+ "fields": [
+  {
+   "fieldname": "row_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "No."
+  },
+  {
+   "fieldname": "learner_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Learner Name"
+  },
+  {
+   "fieldname": "module_group",
+   "fieldtype": "Data",
+   "label": "Module Group"
+  },
+  {
+   "fieldname": "result_1",
+   "fieldtype": "Select",
+   "label": "Result 1",
+   "options": "\nC\nNYC",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "result_2",
+   "fieldtype": "Select",
+   "label": "Result 2",
+   "options": "\nC\nNYC",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "result_3",
+   "fieldtype": "Select",
+   "label": "Result 3",
+   "options": "\nC\nNYC",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "result_4",
+   "fieldtype": "Select",
+   "label": "Result 4",
+   "options": "\nC\nNYC",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "result_5",
+   "fieldtype": "Select",
+   "label": "Result 5",
+   "options": "\nC\nNYC",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "result_6",
+   "fieldtype": "Select",
+   "label": "Result 6",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_7",
+   "fieldtype": "Select",
+   "label": "Result 7",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_8",
+   "fieldtype": "Select",
+   "label": "Result 8",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_9",
+   "fieldtype": "Select",
+   "label": "Result 9",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_10",
+   "fieldtype": "Select",
+   "label": "Result 10",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_11",
+   "fieldtype": "Select",
+   "label": "Result 11",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_12",
+   "fieldtype": "Select",
+   "label": "Result 12",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_13",
+   "fieldtype": "Select",
+   "label": "Result 13",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_14",
+   "fieldtype": "Select",
+   "label": "Result 14",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_15",
+   "fieldtype": "Select",
+   "label": "Result 15",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_16",
+   "fieldtype": "Select",
+   "label": "Result 16",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_17",
+   "fieldtype": "Select",
+   "label": "Result 17",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_18",
+   "fieldtype": "Select",
+   "label": "Result 18",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_19",
+   "fieldtype": "Select",
+   "label": "Result 19",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_20",
+   "fieldtype": "Select",
+   "label": "Result 20",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  }
+ ],
+ "istable": 1,
+ "module": "Numerouno",
+ "name": "Assessor Checklist Learner",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

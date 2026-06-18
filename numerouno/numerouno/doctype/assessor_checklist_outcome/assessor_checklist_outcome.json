@@ -1,0 +1,42 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-06-19 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "outcome_code",
+  "assessment_method",
+  "module_group"
+ ],
+ "fields": [
+  {
+   "fieldname": "outcome_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Outcome",
+   "reqd": 1
+  },
+  {
+   "fieldname": "assessment_method",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Method"
+  },
+  {
+   "fieldname": "module_group",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Module Group"
+  }
+ ],
+ "istable": 1,
+ "module": "Numerouno",
+ "name": "Assessor Checklist Outcome",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

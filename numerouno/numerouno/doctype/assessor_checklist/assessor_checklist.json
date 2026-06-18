@@ -1,0 +1,251 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2026-06-19 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "checklist_type",
+  "form_code",
+  "title",
+  "course_code",
+  "column_break_header",
+  "assessment_date",
+  "student_group",
+  "course",
+  "section_break_variants",
+  "variant_9014",
+  "variant_9014_a",
+  "variant_9014_b",
+  "ebs_no",
+  "demo_ebs_used_by",
+  "remarks",
+  "section_break_modules",
+  "module_groups",
+  "section_break_outcomes",
+  "outcomes",
+  "section_break_learners",
+  "learners",
+  "section_break_notes",
+  "footer_notes",
+  "unit_description",
+  "section_break_assessors",
+  "assessors",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "ACL-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "ACL-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "checklist_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Checklist Type",
+   "options": "\nBasic H2S\nBOSIET EBS\nTBOSIET\nFOET EBS\nT FOET\nHUET EBS\nTHUET\nGas Monitor\nAGT\nTSbB Initial\nTSbB Further",
+   "reqd": 1
+  },
+  {
+   "fieldname": "form_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Form Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "course_code",
+   "fieldtype": "Data",
+   "label": "Course Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "assessment_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date"
+  },
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "label": "Student Group",
+   "options": "Student Group"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "depends_on": "eval:doc.checklist_type=='Basic H2S'",
+   "fieldname": "section_break_variants",
+   "fieldtype": "Section Break",
+   "label": "Course Variants"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.checklist_type=='Basic H2S'",
+   "fieldname": "variant_9014",
+   "fieldtype": "Check",
+   "label": "9014"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.checklist_type=='Basic H2S'",
+   "fieldname": "variant_9014_a",
+   "fieldtype": "Check",
+   "label": "9014-A"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.checklist_type=='Basic H2S'",
+   "fieldname": "variant_9014_b",
+   "fieldtype": "Check",
+   "label": "9014-B"
+  },
+  {
+   "depends_on": "eval:['BOSIET EBS','FOET EBS','HUET EBS'].includes(doc.checklist_type)",
+   "fieldname": "ebs_no",
+   "fieldtype": "Data",
+   "label": "EBS NO"
+  },
+  {
+   "depends_on": "eval:['BOSIET EBS','FOET EBS','HUET EBS'].includes(doc.checklist_type)",
+   "fieldname": "demo_ebs_used_by",
+   "fieldtype": "Data",
+   "label": "Demo EBS Used By"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "section_break_modules",
+   "fieldtype": "Section Break",
+   "label": "Module Groups"
+  },
+  {
+   "fieldname": "module_groups",
+   "fieldtype": "Table",
+   "label": "Module Groups",
+   "options": "Assessor Checklist Module"
+  },
+  {
+   "fieldname": "section_break_outcomes",
+   "fieldtype": "Section Break",
+   "label": "Outcomes"
+  },
+  {
+   "fieldname": "outcomes",
+   "fieldtype": "Table",
+   "label": "Outcomes",
+   "options": "Assessor Checklist Outcome",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_learners",
+   "fieldtype": "Section Break",
+   "label": "Learners"
+  },
+  {
+   "fieldname": "learners",
+   "fieldtype": "Table",
+   "label": "Learners",
+   "options": "Assessor Checklist Learner"
+  },
+  {
+   "fieldname": "section_break_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "footer_notes",
+   "fieldtype": "Small Text",
+   "label": "Footer Notes",
+   "read_only": 1
+  },
+  {
+   "fieldname": "unit_description",
+   "fieldtype": "Text Editor",
+   "label": "Unit Description",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_assessors",
+   "fieldtype": "Section Break",
+   "label": "Assessors"
+  },
+  {
+   "fieldname": "assessors",
+   "fieldtype": "Table",
+   "label": "Assessors",
+   "options": "Assessor Checklist Assessor"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Assessor Checklist",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "is_submittable": 1,
+ "module": "Numerouno",
+ "name": "Assessor Checklist",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
