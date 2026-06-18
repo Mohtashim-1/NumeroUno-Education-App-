@@ -1,0 +1,37 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-06-18 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": ["instructor_name", "module", "signature"],
+ "fields": [
+  {
+   "fieldname": "instructor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Instructor Name"
+  },
+  {
+   "fieldname": "module",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Module"
+  },
+  {
+   "fieldname": "signature",
+   "fieldtype": "Signature",
+   "in_list_view": 1,
+   "label": "Signature"
+  }
+ ],
+ "istable": 1,
+ "module": "Numerouno",
+ "name": "Safety Briefing Instructor",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

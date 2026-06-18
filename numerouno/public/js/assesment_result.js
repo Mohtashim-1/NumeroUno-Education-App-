@@ -3,6 +3,10 @@
 
 frappe.ui.form.on('Assessment Result', {
 	refresh: function(frm) {
+		if (frm.doctype && typeof frm.doctype === "string") {
+			frm.doctype = frm.doctype.trim();
+		}
+		patch_certificate_upload(frm);
 		console.log('Assessment Result refresh called');
 		console.log('frm.doc.custom_certificate:', frm.doc.custom_certificate);
 		console.log('frm.doc.ocr_extracted_text:', frm.doc.ocr_extracted_text);
@@ -29,6 +33,10 @@ frappe.ui.form.on('Assessment Result', {
 	},
 	
 	onload: function(frm) {
+		if (frm.doctype && typeof frm.doctype === "string") {
+			frm.doctype = frm.doctype.trim();
+		}
+		patch_certificate_upload(frm);
 		console.log('Assessment Result onload called');
 		console.log('frm.doc.custom_certificate:', frm.doc.custom_certificate);
 	},
@@ -41,6 +49,24 @@ frappe.ui.form.on('Assessment Result', {
 		}
 	}
 });
+
+function patch_certificate_upload(frm) {
+	const field = frm.fields_dict.custom_certificate;
+	if (!field || field._upload_sanitize_patched) {
+		return;
+	}
+
+	const original_set_upload_options = field.set_upload_options.bind(field);
+	field.set_upload_options = function () {
+		original_set_upload_options();
+		if (this.upload_options) {
+			this.upload_options.doctype = (frm.doctype || "Assessment Result").trim();
+			this.upload_options.docname = (frm.docname || "").trim();
+			this.upload_options.fieldname = "custom_certificate";
+		}
+	};
+	field._upload_sanitize_patched = true;
+}
 
 function extract_certificate_text(frm) {
 	console.log('extract_certificate_text called');

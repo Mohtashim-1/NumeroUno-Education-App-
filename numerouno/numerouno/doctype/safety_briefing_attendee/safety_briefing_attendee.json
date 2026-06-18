@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-06-18 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "learner_name",
+  "student",
+  "company",
+  "signed",
+  "sign_col_1",
+  "sign_col_2",
+  "sign_col_3",
+  "sign_col_4",
+  "sign_col_5"
+ ],
+ "fields": [
+  {
+   "fieldname": "learner_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Learner Name"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Company"
+  },
+  {
+   "fieldname": "signed",
+   "fieldtype": "Signature",
+   "in_list_view": 1,
+   "label": "Signed"
+  },
+  {
+   "fieldname": "sign_col_1",
+   "fieldtype": "Check",
+   "label": "Sign 1"
+  },
+  {
+   "fieldname": "sign_col_2",
+   "fieldtype": "Check",
+   "label": "Sign 2"
+  },
+  {
+   "fieldname": "sign_col_3",
+   "fieldtype": "Check",
+   "label": "Sign 3"
+  },
+  {
+   "fieldname": "sign_col_4",
+   "fieldtype": "Check",
+   "label": "Sign 4"
+  },
+  {
+   "fieldname": "sign_col_5",
+   "fieldtype": "Check",
+   "label": "Sign 5"
+  }
+ ],
+ "istable": 1,
+ "module": "Numerouno",
+ "name": "Safety Briefing Attendee",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

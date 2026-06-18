@@ -526,6 +526,7 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 							</div>
 						</div>
 						<div style="display:flex; gap:8px; flex-wrap:wrap;">
+							<a class="asset-btn asset-btn-ghost" href="/app/query-report/Asset%20Document%20History">Document History</a>
 							<a class="asset-btn asset-btn-ghost" href="/app/asset-maintenance-log">Logs</a>
 						</div>
 					</div>

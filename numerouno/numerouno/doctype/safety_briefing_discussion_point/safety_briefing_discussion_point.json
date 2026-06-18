@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-06-18 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": ["sr_no", "discussion_point", "confirmed"],
+ "fields": [
+  {
+   "fieldname": "sr_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Sr No"
+  },
+  {
+   "fieldname": "discussion_point",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Discussion Point",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "confirmed",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Y/N"
+  }
+ ],
+ "istable": 1,
+ "module": "Numerouno",
+ "name": "Safety Briefing Discussion Point",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

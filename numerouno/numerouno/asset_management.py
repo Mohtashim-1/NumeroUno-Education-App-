@@ -778,6 +778,7 @@ def get_asset_management_workspace():
         {"type": "shortcut", "data": {"shortcut_name": "Asset Maintenance", "col": 3}},
         {"type": "shortcut", "data": {"shortcut_name": "Maintenance Log", "col": 3}},
         {"type": "shortcut", "data": {"shortcut_name": "Asset Portal", "col": 3}},
+        {"type": "shortcut", "data": {"shortcut_name": "Document History", "col": 3}},
     ]
     return {
         "doctype": "Workspace",
@@ -805,6 +806,7 @@ def get_asset_management_workspace():
             {"label": "Asset Maintenance", "link_to": "Asset Maintenance", "type": "DocType"},
             {"label": "Maintenance Log", "link_to": "Asset Maintenance Log", "type": "DocType"},
             {"label": "Asset Portal", "link_to": "asset-management-portal", "type": "Page"},
+            {"label": "Document History", "link_to": "Asset Document History", "type": "Report"},
         ],
     }
 

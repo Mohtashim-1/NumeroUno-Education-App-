@@ -1,0 +1,327 @@
+{
+  "Basic H2S": {
+    "briefing_type": "Basic H2S",
+    "form_code": "NUTC-P11-F02.00",
+    "title": "Safety Briefing - Basic H2S",
+    "attendee_mode": "simple",
+    "signature_labels": "",
+    "module_dates": [],
+    "instructor_mode": "single",
+    "instructor_rows": 0,
+    "discussion_points": [
+      "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
+      "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",
+      "Weather conditions of training area",
+      "Medical Provisions \u2013 Location of equipment",
+      "Medical Emergency Response Staff & telephone numbers",
+      "Verification & Confirmation of safety checks / pre-check lists / inspections / EBA pressure gauges indicator needle green zone (fully charged).",
+      "Exercises to be undertaken and their performance/ Assessment criteria",
+      "All jewelry, including but not limited to rings, bracelets, watches, necklaces, earrings, and piercings, must be removed before the commencement of any practical session."
+    ],
+    "practical_items": [
+      {
+        "sr_no": 9,
+        "exercise_group": "H2S",
+        "activity_detail": "Lifting EBA cylinders\nBreathing from pressurized EBA cylinders\nConnecting pressurized cascade cylinders",
+        "risk_points": "Exercise Risk and corresponding emergency responses\n1.Poor air quality/ Contaminated air\n2.Lumbar strain while lifting fully charged EBA cylinders\n3.BA Cylinder Explosion if over charged, dropped, not frequently maintained\n4.Drop Cylinder on foot\n5.Learners has right to stop the exercise if in case EBA cylinders not fully charged."
+      }
+    ]
+  },
+  "TBOSIET": {
+    "briefing_type": "TBOSIET",
+    "form_code": "NUTC-P11-F02.01",
+    "title": "Safety Briefing - TBOSIET",
+    "attendee_mode": "modules",
+    "signature_labels": "FF,FA,SS,HUET,LB",
+    "module_dates": [
+      "date_ff",
+      "date_fa",
+      "date_ss",
+      "date_lb",
+      "date_huet"
+    ],
+    "instructor_mode": "table",
+    "instructor_rows": 5,
+    "discussion_points": [
+      "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
+      "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",
+      "Conditions of training area (weather, temperature, noise)",
+      "Medical Provisions \u2013 Location of equipment",
+      "Medical Emergency Response Staff & telephone numbers",
+      "Verification & Confirmation of safety checks / pre-check lists / inspections"
+    ],
+    "practical_items": [
+      {
+        "sr_no": 8,
+        "exercise_group": "TEMPSC",
+        "activity_detail": "Mustering\nDonning of lifejacket\nBoarding (Please follow instructions on\nboarding and where to sit)\nStrapping In (Please ensure that when you\nhave boarded, take your seat as indicated\nand fasten belt)",
+        "risk_points": "TEMPSC\nInjury when boarding\n/disembarking due to tight\ndoorway / manoeuvring\nduring boarding\nUncontrolled release of\nLifeboat\nPresence of FPD as a\nsecondary safety device to\navoid free fall"
+      },
+      {
+        "sr_no": 9,
+        "exercise_group": "Sea Survival",
+        "activity_detail": "Individual:\nSwimming\nHELP\nWave Slap Protection\nGroup survival techniques\nTowing\nChain\nHuddle\nCircle\nThe fitting of a helicopter lifting strop,\nsubsequent lifting and (simulated) entry\ninto a rescue helicopter including\nboarding a marine liferaft from the water\nand carrying out initial actions",
+        "risk_points": "Sea Survival\nDrowning (swimmers /\nnon-swimmers shall be\nidentified by helmet\ncolour)\nImpact injury\nSlip trip and fall injury\nRescue rings with rope\nattached placed in centre\narea of pool, close to\nPool Lifeguards."
+      },
+      {
+        "sr_no": 10,
+        "exercise_group": "Emergency First Aid",
+        "activity_detail": "Raising the alarm\nDanger\nResponse the Instructor approaches the\ncasualty, goes down on one knee\nAirway\nBreathing - The Instructor then\ndemonstrates checking for breathing by\nleaning forward over the casualty CPR",
+        "risk_points": "Emergency First Aid\nCross contamination.\nInjury when raising the\nAlarm, Ergonomics, Back\ninjury, bending whilst\nconducting CPR / Standing\nfrom CPR position\nSlip, trip fall or strain"
+      },
+      {
+        "sr_no": 11,
+        "exercise_group": "Fire Fighting",
+        "activity_detail": "Actions on discovering a fire\nRaising the alarm\nClass of Fire (A / B)\nCorrect selection of fire extinguisher\nWater / Foam\nCO2\nCorrect Operation and use of fire\nextinguisher",
+        "risk_points": "Fire Fighting\nClose proximity to\ndemonstrations using live\nclass A and B materials\nReal fires so main risk is\nburns from fire\nPotential risk is of fire\nextinguisher failure (Hose\n/ valve assembly failure\nat thread / high pressure\nrelease)\nImpact injury"
+      },
+      {
+        "sr_no": 12,
+        "exercise_group": "HUET",
+        "activity_detail": "Donning of an aviation lifejacket\nEvacuation from HUET into Liferaft\n(Operating a push out window) - on water\nsurface\nSubmerge HUET\nCapsize HUET\nInflate lifejacket, don spray hood, board\naviation liferaft",
+        "risk_points": "HUET\nDrowning (swimmers /\nnon-swimmers shall be\nidentified by RED helmet\ncolour)\nEntrapment. Delegate fails\nto exit HUET\nImpact injury"
+      }
+    ]
+  },
+  "TSbB": {
+    "briefing_type": "TSbB",
+    "form_code": "NUTC-P11-F02.02",
+    "title": "Safety Briefing - TSbB",
+    "attendee_mode": "simple",
+    "signature_labels": "",
+    "module_dates": [],
+    "instructor_mode": "table",
+    "instructor_rows": 1,
+    "discussion_points": [
+      "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
+      "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",
+      "Conditions of training area (weather, temperature, noise)",
+      "Medical Provisions \u2013 Location of equipment",
+      "Medical Emergency Response Staff & telephone numbers",
+      "Verification & Confirmation of safety checks / pre-check lists / inspections"
+    ],
+    "practical_items": [
+      {
+        "sr_no": 7,
+        "exercise_group": "Swing rope Transfer",
+        "activity_detail": "Donning of Work-vest\nPull the rope, hitch the luggage, swing\ntransfer the luggage\nCheck the rope secure it to one\u2019s body,\nsuitable body positioning, communication,\nswing transfer of personnel",
+        "risk_points": "Swing rope Transfer\nCollision with floating\nplatform\nCollision with staff\npersonnel\nFalling in to the water\nHead, neck and bodily\ninjury with the pool side\nEntrapment between\npoolside and floating\nplatform"
+      },
+      {
+        "sr_no": 8,
+        "exercise_group": "Sea Survival",
+        "activity_detail": "Individual:\nSwimming\nHELP\nWave Slap Protection\nGroup survival techniques\nTowing\nChain\nHuddle\nCircle",
+        "risk_points": "Sea Survival\nDrowning (swimmers / non\nswimmers shall be\nidentified by helmet\ncolour)\nImpact injury\nSlip trip and fall injury\nRescue rings with rope\nattached placed in centre\narea of pool, close to\nPool Lifeguards."
+      }
+    ]
+  },
+  "TFOET": {
+    "briefing_type": "TFOET",
+    "form_code": "NUTC-P11-F02.03",
+    "title": "Safety Briefing - TFOET",
+    "attendee_mode": "modules",
+    "signature_labels": "FF,FA,SS,HUET,LB",
+    "module_dates": [],
+    "instructor_mode": "table",
+    "instructor_rows": 4,
+    "discussion_points": [
+      "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
+      "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",
+      "Conditions of training area (weather, temperature, noise)",
+      "Medical Provisions \u2013 Location of equipment",
+      "Medical Emergency Response Staff & telephone numbers",
+      "Verification & Confirmation of safety checks / pre-check lists / inspections"
+    ],
+    "practical_items": [
+      {
+        "sr_no": 7,
+        "exercise_group": "Sea Survival",
+        "activity_detail": "Individual:\nSwimming\nHELP\nWave Slap Protection\nGroup survival techniques\nTowing\nChain\nHuddle\nCircle\nThe fitting of a helicopter lifting strop,\nsubsequent lifting and (simulated) entry\ninto a rescue helicopter including\nboarding a marine liferaft from the water\nand carrying out initial actions",
+        "risk_points": "Sea Survival\nDrowning (swimmers /\nnon-swimmers shall be\nidentified by helmet\ncolour)\nImpact injury\nSlip trip and fall injury\nRescue rings with rope\nattached placed in centre\narea of pool, close to\nPool Lifeguards."
+      },
+      {
+        "sr_no": 8,
+        "exercise_group": "Emergency First Aid",
+        "activity_detail": "Raising the alarm\nDanger\nResponse the Instructor approaches the\ncasualty, goes down on one knee\nAirway\nBreathing - The Instructor then\ndemonstrates checking for breathing by\nleaning forward over the casualty CPR",
+        "risk_points": "Emergency First Aid\nCross contamination.\nInjury when raising the\nAlarm, Ergonomics, Back\ninjury, bending whilst\nconducting CPR / Standing\nfrom CPR position\nSlip, trip fall or strain"
+      },
+      {
+        "sr_no": 9,
+        "exercise_group": "Fire Fighting",
+        "activity_detail": "Actions on discovering a fire\nRaising the alarm\nClass of Fire (A / B)\nCorrect selection of fire extinguisher\nWater / Foam\nCO2\nCorrect Operation and use of fire\nextinguisher",
+        "risk_points": "Fire Fighting\nClose proximity to\ndemonstrations using live\nclass A and B materials\nReal fires so main risk is\nburns from fire\nPotential risk is of fire\nextinguisher failure (Hose\n/ valve assembly failure\nat thread / high pressure\nrelease)\nImpact injury"
+      },
+      {
+        "sr_no": 10,
+        "exercise_group": "HUET",
+        "activity_detail": "Donning of an aviation lifejacket\nEvacuation from HUET into Liferaft\n(Operating a push out window) - on water\nsurface\nSubmerge HUET\nCapsize HUET\nInflate lifejacket, don spray hood, board\naviation liferaft",
+        "risk_points": "HUET\nDrowning (swimmers /\nnon-swimmers shall be\nidentified by RED helmet\ncolour)\nEntrapment. Delegate fails\nto exit HUET\nImpact injury"
+      }
+    ]
+  },
+  "THUET": {
+    "briefing_type": "THUET",
+    "form_code": "NUTC-P11-F02.04",
+    "title": "Safety Briefing - THUET",
+    "attendee_mode": "modules",
+    "signature_labels": "OIS 01,OIS 02,OIS 03,OIS 04,OIS 05",
+    "module_dates": [],
+    "instructor_mode": "table",
+    "instructor_rows": 4,
+    "discussion_points": [
+      "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
+      "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",
+      "Conditions of training area (weather, temperature, noise)",
+      "Medical Provisions \u2013 Location of equipment",
+      "Medical Emergency Response Staff & telephone numbers",
+      "Verification & Confirmation of safety checks / pre-check lists / inspections"
+    ],
+    "practical_items": [
+      {
+        "sr_no": 7,
+        "exercise_group": "TEMPSC",
+        "activity_detail": "Mustering\nDonning of lifejacket\nBoarding (Please follow instructions on\nboarding and where to sit)\nStrapping In (Please ensure that when\nyou have boarded, take your seat as\nindicated and fasten belt)\nLowering the craft (Please remain calm)\nReleasing of craft",
+        "risk_points": "TEMPSC\nInjury when boarding\n/disembarking due to tight\ndoorway / manoeuvring\nduring boarding\nUncontrolled release of\nLifeboat"
+      },
+      {
+        "sr_no": 8,
+        "exercise_group": "Sea Survival",
+        "activity_detail": "Individual:\nSwimming\nHELP\nWave Slap Protection\nGroup survival techniques\nTowing\nChain\nHuddle\nCircle\nThe fitting of a helicopter lifting\nstrop, subsequent lifting and\n(simulated) entry into a rescue\nhelicopter including boarding a marine\nliferaft from the water and carrying out\ninitial actions",
+        "risk_points": "Sea Survival\nDrowning (swimmers / non\nswimmers shall be\nidentified by helmet\ncolour)\nImpact injury\nSlip trip and fall injury\nRescue rings with rope\nattached placed in centre\narea of pool, close to\nPool Lifeguards."
+      },
+      {
+        "sr_no": 9,
+        "exercise_group": "HUET",
+        "activity_detail": "Donning of an aviation lifejacket\nEvacuation from HUET into Liferaft\n(Operating a push out window) - on water\nsurface\nSubmerge HUET\nCapsize HUET\nInflate lifejacket, don spray hood,\nboard aviation liferaft",
+        "risk_points": "HUET\nDrowning (swimmers / non\nswimmers shall be\nidentified by RED helmet\ncolour)\nEntrapment. Delegate fails\nto exit HUET\nImpact injury"
+      }
+    ]
+  },
+  "BOSIET EBS": {
+    "briefing_type": "BOSIET EBS",
+    "form_code": "NUTC-P11-F02.07",
+    "title": "Safety Briefing - BOSIET EBS",
+    "attendee_mode": "modules",
+    "signature_labels": "FF,FA,SS,HUET,LB",
+    "module_dates": [
+      "date_ff",
+      "date_fa",
+      "date_ss",
+      "date_lb",
+      "date_huet",
+      "date_huet_ebs"
+    ],
+    "instructor_mode": "table",
+    "instructor_rows": 5,
+    "discussion_points": [
+      "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
+      "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",
+      "Conditions of training area (weather, temperature, noise)",
+      "Medical Provisions \u2013 Location of equipment",
+      "Medical Emergency Response Staff & telephone numbers",
+      "Verification & Confirmation of safety checks / pre-check lists / inspections"
+    ],
+    "practical_items": [
+      {
+        "sr_no": 8,
+        "exercise_group": "TEMPSC",
+        "activity_detail": "Mustering\nDonning of lifejacket\nBoarding (Please follow instructions on\nboarding and where to sit)\nStrapping In (Please ensure that when you\nhave boarded, take your seat as indicated\nand fasten belt)",
+        "risk_points": "TEMPSC\nInjury when boarding\n/disembarking due to tight\ndoorway / manoeuvring\nduring boarding\nUncontrolled release of\nLifeboat\nPresence of FPD as a\nsecondary safety device to\navoid free fall"
+      },
+      {
+        "sr_no": 9,
+        "exercise_group": "Sea Survival",
+        "activity_detail": "Individual:\nSwimming\nHELP\nWave Slap Protection\nGroup survival techniques\nTowing\nChain\nHuddle\nCircle\nThe fitting of a helicopter lifting strop,\nsubsequent lifting and (simulated) entry\ninto a rescue helicopter including\nboarding a marine liferaft from the water\nand carrying out initial actions",
+        "risk_points": "Sea Survival\nDrowning (swimmers /\nnon-swimmers shall be\nidentified by helmet\ncolour)\nImpact injury\nSlip trip and fall injury\nRescue rings with rope\nattached placed in centre\narea of pool, close to\nPool Lifeguards."
+      },
+      {
+        "sr_no": 10,
+        "exercise_group": "Emergency First Aid",
+        "activity_detail": "Raising the alarm\nDanger\nResponse the Instructor approaches the\ncasualty, goes down on one knee\nAirway\nBreathing - The Instructor then\ndemonstrates checking for breathing by\nleaning forward over the casualty CPR",
+        "risk_points": "Emergency First Aid\nCross contamination.\nInjury when raising the\nAlarm, Ergonomics, Back\ninjury, bending whilst\nconducting CPR / Standing\nfrom CPR position\nSlip, trip fall or strain"
+      },
+      {
+        "sr_no": 11,
+        "exercise_group": "Fire Fighting",
+        "activity_detail": "Actions on discovering a fire\nRaising the alarm\nClass of Fire (A / B)\nCorrect selection of fire extinguisher\nWater / Foam\nCO2\nCorrect Operation and use of fire\nextinguisher",
+        "risk_points": "Fire Fighting\nClose proximity to\ndemonstrations using live\nclass A and B materials\nReal fires so main risk is\nburns from fire\nPotential risk is of fire\nextinguisher failure (Hose\n/ valve assembly failure\nat thread / high pressure\nrelease)\nImpact injury"
+      },
+      {
+        "sr_no": 12,
+        "exercise_group": "HUET WITH REBREATHER EBS",
+        "activity_detail": "Donning of an aviation lifejacket\nDonning submersion / immersion suit\nDonning of a rebreather EBS and practice\nactivation and usage at poolside.\nPractice the use of the rebreather EBS\nwhile standing on the guard rails in a\nsubmerged position underwater, i.e.\nexperience of positive and negative\npressure by the learners.\nPractice the use of the rebreather EBS\nwhile moving across the width of the\nswimming pool in a submerged body position\nby using the guardrail as reference from\none end to the other.\nEvacuation from HUET simulator on water\nsurface into\nHeli raft / Life raft by Operating a push\nout window",
+        "risk_points": "HUET WITH REBREATHER EBS\nDrowning (swimmers /\nnon-swimmers shall be\nidentified by YELLOW\nhelmet colour)\nEntrapment. Delegate fails\nto exit HUET\nImpact injury\nSit and stretch one\u2019s legs\nwhile donning the survival\nsuits.\nIdentify broken neck and\nwrist seals on the\nsurvival suits prior to\nthe underwater exercises\nand report it.\nNasal inhalation with EBS\nprevented by using nose\nclip"
+      }
+    ]
+  },
+  "FOET EBS": {
+    "briefing_type": "FOET EBS",
+    "form_code": "NUTC-P11-F02.08",
+    "title": "Safety Briefing - FOET EBS",
+    "attendee_mode": "modules",
+    "signature_labels": "FF,FA,SS,HUET,LB",
+    "module_dates": [],
+    "instructor_mode": "table",
+    "instructor_rows": 4,
+    "discussion_points": [
+      "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
+      "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",
+      "Conditions of training area (weather, temperature, noise)",
+      "Medical Provisions \u2013 Location of equipment",
+      "Medical Emergency Response Staff & telephone numbers",
+      "Verification & Confirmation of safety checks / pre-check lists / inspections"
+    ],
+    "practical_items": [
+      {
+        "sr_no": 7,
+        "exercise_group": "Sea Survival",
+        "activity_detail": "Individual:\nSwimming\nHELP\nWave Slap Protection\nGroup survival techniques\nTowing\nChain\nHuddle\nCircle\nThe fitting of a helicopter lifting strop,\nsubsequent lifting and (simulated) entry\ninto a rescue helicopter including\nboarding a marine liferaft from the water\nand carrying out initial actions",
+        "risk_points": "Sea Survival\nDrowning (swimmers /\nnon-swimmers shall be\nidentified by helmet\ncolour)\nImpact injury\nSlip trip and fall injury\nRescue rings with rope\nattached placed in centre\narea of pool, close to\nPool Lifeguards."
+      },
+      {
+        "sr_no": 8,
+        "exercise_group": "Emergency First Aid",
+        "activity_detail": "Raising the alarm\nDanger\nResponse the Instructor approaches the\ncasualty, goes down on one knee\nAirway\nBreathing - The Instructor then\ndemonstrates checking for breathing by\nleaning forward over the casualty CPR",
+        "risk_points": "Emergency First Aid\nCross contamination.\nInjury when raising the\nAlarm, Ergonomics, Back\ninjury, bending whilst\nconducting CPR / Standing\nfrom CPR position\nSlip, trip fall or strain"
+      },
+      {
+        "sr_no": 9,
+        "exercise_group": "Fire Fighting",
+        "activity_detail": "Actions on discovering a fire\nRaising the alarm\nClass of Fire (A / B)\nCorrect selection of fire extinguisher\nWater / Foam\nCO2\nCorrect Operation and use of fire\nextinguisher",
+        "risk_points": "Fire Fighting\nClose proximity to\ndemonstrations using live\nclass A and B materials\nReal fires so main risk is\nburns from fire\nPotential risk is of fire\nextinguisher failure (Hose\n/ valve assembly failure\nat thread / high pressure\nrelease)\nImpact injury"
+      },
+      {
+        "sr_no": 10,
+        "exercise_group": "HUET WITH REBREATHER EBS",
+        "activity_detail": "Donning of an aviation lifejacket\nDonning submersion / immersion suit\nDonning of a rebreather EBS and practice\nactivation and usage at poolside.\nPractice the use of the rebreather EBS\nwhile standing on the guard rails in a\nsubmerged position underwater, i.e.\nexperience of positive and negative\npressure by the learners.\nPractice the use of the rebreather EBS\nwhile moving across the width of the\nswimming pool in a submerged body position\nby using the guardrail as reference from\none end to the other.\nEvacuation from HUET simulator on water\nsurface into\nHeliraft / Life raft by Operating a push\nout window\nEvacuate from partially submerged HUET\nsimulator with and without window using an\nactivated rebreather EBS\nEvacuate the capsized HUET simulator with\nor without window using an activated\nrebreather EBS\nInflate lifejacket, don spray hood, board\naviation life raft.",
+        "risk_points": "HUET WITH REBREATHER EBS\nDrowning (swimmers /\nnon-swimmers shall be\nidentified by YELLOW\nhelmet colour)\nEntrapment. Delegate fails\nto exit HUET\nImpact injury\nSit and stretch one\u2019s legs\nwhile donning the survival\nsuits.\nIdentify broken neck and\nwrist seals on the\nsurvival suits prior to\nthe underwater exercises\nand report it.\nNasal inhalation with EBS\nprevented by using nose\nclip\nIf the EBS pouches are\nineffectively or\ninsufficiently secured\naround the neck of the\nlearner it leads to\ndislodgement causing\ninjuries and delays in\nunderwater evacuation.\nOn time activation of the\nrebreather EBS ensures to\navoid water entry into the\ncounter lungs.\nUnable to breathe from the\nEBS due to its\ndislodgement caused by an\nautomatic reflex in the"
+      }
+    ]
+  },
+  "HUET EBS": {
+    "briefing_type": "HUET EBS",
+    "form_code": "NUTC-P11-F02.09",
+    "title": "Safety Briefing - HUET EBS",
+    "attendee_mode": "modules",
+    "signature_labels": "OIS 02",
+    "module_dates": [],
+    "instructor_mode": "table",
+    "instructor_rows": 1,
+    "discussion_points": [
+      "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
+      "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",
+      "Conditions of training area (weather, temperature, noise)",
+      "Medical Provisions \u2013 Location of equipment",
+      "Medical Emergency Response Staff & telephone numbers",
+      "Verification & Confirmation of safety checks / pre-check lists / inspections"
+    ],
+    "practical_items": [
+      {
+        "sr_no": 7,
+        "exercise_group": "HUET WITH REBREATHER EBS",
+        "activity_detail": "Donning of an aviation lifejacket\nDonning submersion / immersion suit\nDonning of a rebreather EBS and practice\nactivation and usage at poolside.\nPractice the use of the rebreather EBS\nwhile standing on the guard rails in a\nsubmerged position underwater, i.e.\nexperience of positive and negative\npressure by the learners.\nPractice the use of the rebreather EBS\nwhile moving across the width of the\nswimming pool in a submerged body\nposition by using the guardrail as\nreference from one end to the other.\nEvacuation from HUET simulator on water\nsurface into\nHeliraft / Life raft by Operating a push\nout window\nEvacuate from partially submerged HUET\nsimulator with and without window using\nan activated rebreather EBS\nEvacuate the capsized HUET simulator\nwith or without window using an\nactivated rebreather EBS\nInflate lifejacket, don spray hood,\nboard aviation liferaft.",
+        "risk_points": "HUET WITH REBREATHER EBS\nDrowning (swimmers / non\nswimmers shall be\nidentified by YELLOW\nhelmet colour)\nEntrapment. Delegate fails\nto exit HUET\nImpact injury\nSit and stretch one\u2019s legs\nwhile donning the survival\nsuits.\nIdentify broken neck and\nwrist seals on the\nsurvival suits prior to\nthe underwater exercises\nand report it.\nNasal inhalation with EBS\nprevented by using nose\nclip\nIf the EBS pouches are\nineffectively or\ninsufficiently secured\naround the neck of the\nlearner it leads to\ndislodgement causing\ninjuries and delays in\nunderwater evacuation.\nOn time activation of the\nrebreather EBS ensures to\navoid water entry into the\ncounter lungs.\nUnable to breathe from the\nEBS due to its\ndislodgement caused by an\nautomatic reflex in the\nbody while water drops\nfrom the counter lung\nenter the airway.\nEBS creates buoyancy when\ninflated which increases\nthe effort required to\nevacuate the simulator\nwhile one\u2019s underwater."
+      }
+    ]
+  }
+}

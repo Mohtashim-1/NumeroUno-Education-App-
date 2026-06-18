@@ -1,0 +1,283 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2026-06-18 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "briefing_type",
+  "form_code",
+  "title",
+  "column_break_main",
+  "briefing_date",
+  "student_group",
+  "course",
+  "section_break_dates",
+  "date_ff",
+  "date_fa",
+  "date_ss",
+  "column_break_dates",
+  "date_lb",
+  "date_huet",
+  "date_huet_ebs",
+  "section_break_config",
+  "attendee_signature_mode",
+  "signature_labels",
+  "instructor_mode",
+  "section_break_discussion",
+  "discussion_points",
+  "section_break_practical",
+  "practical_items",
+  "section_break_attendees",
+  "attendees",
+  "section_break_instructors",
+  "instructor_name",
+  "instructor_signature",
+  "instructor_date",
+  "instructors",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "SB-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "SB-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "briefing_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Briefing Type",
+   "options": "Basic H2S\nTBOSIET\nTSbB\nTFOET\nTHUET\nBOSIET EBS\nFOET EBS\nHUET EBS",
+   "reqd": 1
+  },
+  {
+   "fieldname": "form_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Form Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "briefing_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date"
+  },
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "label": "Student Group",
+   "options": "Student Group"
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "Course"
+  },
+  {
+   "depends_on": "eval:['TBOSIET', 'BOSIET EBS'].includes(doc.briefing_type)",
+   "fieldname": "section_break_dates",
+   "fieldtype": "Section Break",
+   "label": "Module Dates"
+  },
+  {
+   "depends_on": "eval:['TBOSIET', 'BOSIET EBS'].includes(doc.briefing_type)",
+   "fieldname": "date_ff",
+   "fieldtype": "Date",
+   "label": "Date (FF)"
+  },
+  {
+   "depends_on": "eval:['TBOSIET', 'BOSIET EBS'].includes(doc.briefing_type)",
+   "fieldname": "date_fa",
+   "fieldtype": "Date",
+   "label": "Date (FA)"
+  },
+  {
+   "depends_on": "eval:['TBOSIET', 'BOSIET EBS'].includes(doc.briefing_type)",
+   "fieldname": "date_ss",
+   "fieldtype": "Date",
+   "label": "Date (SS)"
+  },
+  {
+   "depends_on": "eval:['TBOSIET', 'BOSIET EBS'].includes(doc.briefing_type)",
+   "fieldname": "column_break_dates",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:['TBOSIET', 'BOSIET EBS'].includes(doc.briefing_type)",
+   "fieldname": "date_lb",
+   "fieldtype": "Date",
+   "label": "Date (LB)"
+  },
+  {
+   "depends_on": "eval:['TBOSIET', 'BOSIET EBS'].includes(doc.briefing_type)",
+   "fieldname": "date_huet",
+   "fieldtype": "Date",
+   "label": "Date (HUET)"
+  },
+  {
+   "depends_on": "eval:doc.briefing_type == 'BOSIET EBS'",
+   "fieldname": "date_huet_ebs",
+   "fieldtype": "Date",
+   "label": "Date (HUET EBS)"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_config",
+   "fieldtype": "Section Break",
+   "label": "Print Configuration"
+  },
+  {
+   "default": "Simple",
+   "fieldname": "attendee_signature_mode",
+   "fieldtype": "Select",
+   "label": "Attendee Signature Mode",
+   "options": "Simple\nModule Columns",
+   "read_only": 1
+  },
+  {
+   "fieldname": "signature_labels",
+   "fieldtype": "Data",
+   "label": "Signature Column Labels",
+   "read_only": 1
+  },
+  {
+   "default": "Course Instructors Table",
+   "fieldname": "instructor_mode",
+   "fieldtype": "Select",
+   "label": "Instructor Mode",
+   "options": "Single Instructor\nCourse Instructors Table",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_discussion",
+   "fieldtype": "Section Break",
+   "label": "Discussion Points"
+  },
+  {
+   "fieldname": "discussion_points",
+   "fieldtype": "Table",
+   "label": "Discussion Points",
+   "options": "Safety Briefing Discussion Point"
+  },
+  {
+   "fieldname": "section_break_practical",
+   "fieldtype": "Section Break",
+   "label": "Practical Exercises"
+  },
+  {
+   "fieldname": "practical_items",
+   "fieldtype": "Table",
+   "label": "Practical Items",
+   "options": "Safety Briefing Practical Item"
+  },
+  {
+   "fieldname": "section_break_attendees",
+   "fieldtype": "Section Break",
+   "label": "Attendees"
+  },
+  {
+   "fieldname": "attendees",
+   "fieldtype": "Table",
+   "label": "Attendees",
+   "options": "Safety Briefing Attendee"
+  },
+  {
+   "fieldname": "section_break_instructors",
+   "fieldtype": "Section Break",
+   "label": "Instructors"
+  },
+  {
+   "depends_on": "eval:doc.instructor_mode==\"Single Instructor\"",
+   "fieldname": "instructor_name",
+   "fieldtype": "Data",
+   "label": "Training Instructor Name"
+  },
+  {
+   "depends_on": "eval:doc.instructor_mode==\"Single Instructor\"",
+   "fieldname": "instructor_signature",
+   "fieldtype": "Signature",
+   "label": "Instructor Signature"
+  },
+  {
+   "depends_on": "eval:doc.instructor_mode==\"Single Instructor\"",
+   "fieldname": "instructor_date",
+   "fieldtype": "Date",
+   "label": "Instructor Date"
+  },
+  {
+   "depends_on": "eval:doc.instructor_mode==\"Course Instructors Table\"",
+   "fieldname": "instructors",
+   "fieldtype": "Table",
+   "label": "Course Instructors",
+   "options": "Safety Briefing Instructor"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Safety Briefing",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-06-18 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Safety Briefing",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

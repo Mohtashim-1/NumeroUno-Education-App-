@@ -1,0 +1,260 @@
+<div class="nutc-safety-briefing">
+	{% if doc.briefing_type == 'Basic H2S' %}
+	{# ── Basic H2S: matches NUTC-P11-F02.00 Word layout ── #}
+	<div class="h2s-title-row">
+		<div class="h2s-title">SAFETY BRIEFING – BASIC H2S</div>
+		<div class="h2s-course-codes">
+			9014 – ☐ &nbsp;&nbsp; 9014 – A ☐ &nbsp;&nbsp; 9014 – B ☐
+		</div>
+	</div>
+
+	<table class="nutc-table nutc-discussion-h2s">
+		<tr class="header-row">
+			<th class="col-discussion-main" colspan="2">
+				<div class="disc-title-line">DISCUSSION POINTS ON RISKS &amp; SAFETY PRECAUTIONS</div>
+				<div class="disc-sub-line">GENERAL INFORMATION DISCUSSED BY EVERY INSTRUCTOR</div>
+			</th>
+			<th class="col-yn">Y/N</th>
+		</tr>
+		{% for row in doc.discussion_points %}
+		<tr>
+			<td class="col-discussion-main" colspan="2">{{ row.discussion_point }}</td>
+			<td class="col-yn">{% if row.confirmed %}✓{% endif %}</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	{% if doc.practical_items %}
+	{% set item = doc.practical_items[0] %}
+	{% set activities = (item.activity_detail or '').split('\n') %}
+	{% set risks = (item.risk_points or '').split('\n') %}
+	{% set act_count = activities | length if activities else 1 %}
+	{% set risk_count = risks | length if risks else 1 %}
+	{% set row_count = act_count if act_count > risk_count else risk_count %}
+	{% if row_count < 1 %}{% set row_count = 1 %}{% endif %}
+	<table class="nutc-table nutc-practical-h2s">
+		<tr class="header-row">
+			<th class="col-exercise-h2s">{{ item.sr_no or 9 }} PRACTICAL EXERCISE TO BE CONDUCTED</th>
+			<th class="col-risk-h2s">DISCUSSION POINTS</th>
+			<th class="col-yn">Y/N</th>
+		</tr>
+		{% for r in range(row_count) %}
+		<tr>
+			{% if r == 0 %}
+			<td class="col-exercise-h2s" rowspan="{{ row_count }}">
+				{% if item.exercise_group %}<strong>{{ item.exercise_group }}</strong><br>{% endif %}
+				{% for act in activities %}{% if act.strip() %}{{ act.strip() }}<br>{% endif %}{% endfor %}
+			</td>
+			{% endif %}
+			<td class="col-risk-h2s">{% if risks[r] is defined and risks[r].strip() %}{{ risks[r].strip() }}{% endif %}</td>
+			{% if r == 0 %}
+			<td class="col-yn" rowspan="{{ row_count }}">{% if item.confirmed %}✓{% endif %}</td>
+			{% endif %}
+		</tr>
+		{% endfor %}
+	</table>
+	{% endif %}
+
+	<table class="nutc-table nutc-attendees nutc-attendees-yellow">
+		<tr class="header-yellow">
+			<th class="col-sr">Sr#</th>
+			<th class="col-name">Learners Name</th>
+			<th class="col-company">Company</th>
+			<th class="col-signed">Signed</th>
+		</tr>
+		{% for i in range(1, 17) %}
+		{% set row = doc.attendees[i - 1] if doc.attendees|length >= i else None %}
+		<tr>
+			<td class="col-sr">{{ i }}</td>
+			<td class="col-name">{{ row.learner_name if row else '' }}</td>
+			<td class="col-company">{{ row.company if row else '' }}</td>
+			<td class="col-signed">{% if row and row.signed %}<img src="{{ row.signed }}" class="sig-img" />{% endif %}</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	<p class="agenda-bottom">All training staff must ensure that they follow at minimum below set agenda for respective safety briefs.</p>
+
+	<table class="nutc-table nutc-instructor-single">
+		<tr>
+			<th>Training Instructor Name:</th>
+			<th>Signature</th>
+			<th>Date</th>
+		</tr>
+		<tr>
+			<td>{{ doc.instructor_name or '' }}</td>
+			<td>{% if doc.instructor_signature %}<img src="{{ doc.instructor_signature }}" class="sig-img" />{% endif %}</td>
+			<td>{{ frappe.utils.formatdate(doc.instructor_date, 'dd-MM-yyyy') if doc.instructor_date else '' }}</td>
+		</tr>
+		{% for i in range(2) %}
+		<tr class="blank-row"><td>&nbsp;</td><td></td><td></td></tr>
+		{% endfor %}
+	</table>
+
+	<div class="form-footer">
+		<span class="form-ref-left">NUTC-P11-F02.00 Rev 10 Dated 06.06.2024</span>
+	</div>
+
+	{% else %}
+	{# ── Other briefing types (TBOSIET, TFOET, etc.) ── #}
+	<div class="form-ref-top">{{ doc.form_code or '' }}</div>
+	<p class="agenda-top">All training staff must ensure that they follow at minimum below set agenda for respective safety briefs</p>
+
+	{% if doc.briefing_type in ['TBOSIET', 'BOSIET EBS'] %}
+	<table class="nutc-table nutc-dates">
+		<tr>
+			<td class="date-line">Date (FF) {{ frappe.utils.formatdate(doc.date_ff, 'dd-MM-yyyy') if doc.date_ff else '………………………………' }}</td>
+			<td class="date-line">Date (FA) {{ frappe.utils.formatdate(doc.date_fa, 'dd-MM-yyyy') if doc.date_fa else '………………………………' }}</td>
+			<td class="date-line">Date (SS) {{ frappe.utils.formatdate(doc.date_ss, 'dd-MM-yyyy') if doc.date_ss else '…………………………….' }}</td>
+			<td class="date-line">Date (LB) {{ frappe.utils.formatdate(doc.date_lb, 'dd-MM-yyyy') if doc.date_lb else '…………………………' }}</td>
+		</tr>
+		<tr>
+			<td class="date-line" colspan="2">Date (HUET) {{ frappe.utils.formatdate(doc.date_huet, 'dd-MM-yyyy') if doc.date_huet else '………………………………' }}</td>
+			{% if doc.briefing_type == 'BOSIET EBS' %}
+			<td class="date-line" colspan="2">Date (HUET EBS) {{ frappe.utils.formatdate(doc.date_huet_ebs, 'dd-MM-yyyy') if doc.date_huet_ebs else '………………………………' }}</td>
+			{% endif %}
+		</tr>
+	</table>
+	{% elif doc.briefing_date %}
+	<p class="date-single">Date {{ frappe.utils.formatdate(doc.briefing_date, 'dd-MM-yyyy') }}</p>
+	{% endif %}
+
+	{% set sig_labels = (doc.signature_labels or '').split(',') %}
+	{% set sig_labels = sig_labels | map('trim') | select | list %}
+	{% set sign_count = sig_labels | length if doc.attendee_signature_mode == 'Module Columns' else 1 %}
+
+	<table class="nutc-table nutc-attendees nutc-attendees-yellow">
+		<tr class="header-yellow">
+			<th class="col-sr" rowspan="2">Sr#</th>
+			<th class="col-name" rowspan="2">Attendees Name</th>
+			<th class="col-company" rowspan="2">Company</th>
+			{% if sign_count > 1 %}
+			<th class="col-signed" colspan="{{ sign_count }}">Signed</th>
+			{% else %}
+			<th class="col-signed" rowspan="2">Signed</th>
+			{% endif %}
+		</tr>
+		{% if sign_count > 1 %}
+		<tr class="header-yellow">
+			{% for label in sig_labels %}
+			<th class="col-sign">{{ label }}</th>
+			{% endfor %}
+		</tr>
+		{% endif %}
+		{% for i in range(1, 17) %}
+		{% set row = doc.attendees[i - 1] if doc.attendees|length >= i else None %}
+		<tr>
+			<td class="col-sr">{{ i }}</td>
+			<td class="col-name">{{ row.learner_name if row else '' }}</td>
+			<td class="col-company">{{ row.company if row else '' }}</td>
+			{% if sign_count > 1 %}
+				{% for j in range(sign_count) %}
+				<td class="col-sign">
+					{% if row %}
+						{% if j == 0 and row.sign_col_1 %}✓
+						{% elif j == 1 and row.sign_col_2 %}✓
+						{% elif j == 2 and row.sign_col_3 %}✓
+						{% elif j == 3 and row.sign_col_4 %}✓
+						{% elif j == 4 and row.sign_col_5 %}✓{% endif %}
+					{% endif %}
+				</td>
+				{% endfor %}
+			{% else %}
+				<td class="col-signed">{% if row and row.signed %}<img src="{{ row.signed }}" class="sig-img" />{% endif %}</td>
+			{% endif %}
+		</tr>
+		{% endfor %}
+	</table>
+
+	{% if doc.instructor_mode == 'Course Instructors Table' %}
+	<table class="nutc-table nutc-instructors">
+		{% if doc.briefing_type == 'TSbB' %}
+		<tr>
+			<th class="col-inst-name">Course Instructor Name:</th>
+			<th class="col-inst-sign">Signature</th>
+		</tr>
+		{% for row in doc.instructors %}
+		<tr>
+			<td>{{ loop.index }}. {{ row.instructor_name or '' }}</td>
+			<td>{% if row.signature %}<img src="{{ row.signature }}" class="sig-img" />{% endif %}</td>
+		</tr>
+		{% endfor %}
+		{% if not doc.instructors %}
+		<tr><td>1.</td><td></td></tr>
+		{% endif %}
+		{% else %}
+		<tr>
+			<th class="col-inst-name">Course Instructor Name:</th>
+			<th class="col-inst-module">Module</th>
+			<th class="col-inst-sign">Signature</th>
+		</tr>
+		{% for row in doc.instructors %}
+		<tr>
+			<td>{{ loop.index }}. {{ row.instructor_name or '' }}</td>
+			<td>{{ row.module or '' }}</td>
+			<td>{% if row.signature %}<img src="{{ row.signature }}" class="sig-img" />{% endif %}</td>
+		</tr>
+		{% endfor %}
+		{% if not doc.instructors %}
+		{% for i in range(1, 6) %}
+		<tr><td>{{ i }}.</td><td>OIS -</td><td></td></tr>
+		{% endfor %}
+		{% endif %}
+		{% endif %}
+	</table>
+	{% endif %}
+
+	<table class="nutc-table nutc-discussion">
+		<tr>
+			<th class="col-sr">Sr.<br>No</th>
+			<th class="col-discussion">DISCUSSION POINTS</th>
+			<th class="col-yn">Y/N</th>
+		</tr>
+		{% for row in doc.discussion_points %}
+		<tr>
+			<td class="col-sr">{{ row.sr_no or loop.index }}</td>
+			<td class="col-discussion">{{ row.discussion_point }}</td>
+			<td class="col-yn">{% if row.confirmed %}✓{% endif %}</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	{% if doc.practical_items %}
+	<table class="nutc-table nutc-practical">
+		<tr>
+			<th class="col-exercise">PRACTICAL EXERCISE TO BE CONDUCTED</th>
+			<th class="col-sr">Sr.<br>No</th>
+			<th class="col-risk">DISCUSSION POINTS<br><span class="sub-head">Exercise Risk and corresponding emergency responses</span></th>
+			<th class="col-yn">Y/N</th>
+		</tr>
+		{% for item in doc.practical_items %}
+		{% set activities = (item.activity_detail or '').split('\n') %}
+		{% set risks = (item.risk_points or '').split('\n') %}
+		{% set act_count = activities | length if activities else 1 %}
+		{% set risk_count = risks | length if risks else 1 %}
+		{% set row_count = act_count if act_count > risk_count else risk_count %}
+		{% if row_count < 1 %}{% set row_count = 1 %}{% endif %}
+		{% for r in range(row_count) %}
+		<tr>
+			{% if r == 0 %}
+			<td class="col-exercise" rowspan="{{ row_count }}">
+				{% if item.exercise_group %}<strong>{{ item.exercise_group }}</strong><br>{% endif %}
+				{% for act in activities %}{% if act.strip() %}<div class="line-item">{{ act.strip() }}</div>{% endif %}{% endfor %}
+			</td>
+			<td class="col-sr" rowspan="{{ row_count }}">{{ item.sr_no or '' }}</td>
+			{% endif %}
+			<td class="col-risk">{% if risks[r] is defined and risks[r].strip() %}{{ risks[r].strip() }}{% endif %}</td>
+			{% if r == 0 %}
+			<td class="col-yn" rowspan="{{ row_count }}">{% if item.confirmed %}✓{% endif %}</td>
+			{% endif %}
+		</tr>
+		{% endfor %}
+		{% endfor %}
+	</table>
+	{% endif %}
+
+	<div class="form-footer">
+		<span class="form-ref-left">{{ doc.form_code or '' }} Rev 10 Dated 06.06.2024</span>
+	</div>
+	{% endif %}
+</div>

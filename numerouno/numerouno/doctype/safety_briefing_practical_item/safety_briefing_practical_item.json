@@ -1,0 +1,50 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-06-18 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": ["sr_no", "exercise_group", "activity_detail", "risk_points", "confirmed"],
+ "fields": [
+  {
+   "fieldname": "sr_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Sr No"
+  },
+  {
+   "fieldname": "exercise_group",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Exercise Group"
+  },
+  {
+   "fieldname": "activity_detail",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Activity / Detail"
+  },
+  {
+   "fieldname": "risk_points",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Discussion Points / Risks"
+  },
+  {
+   "default": "0",
+   "fieldname": "confirmed",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Y/N"
+  }
+ ],
+ "istable": 1,
+ "module": "Numerouno",
+ "name": "Safety Briefing Practical Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

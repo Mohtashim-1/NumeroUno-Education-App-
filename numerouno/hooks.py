@@ -266,9 +266,9 @@ scheduler_events = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "numerouno.event.get_events"
-# }
+override_whitelisted_methods = {
+	"frappe.handler.upload_file": "numerouno.numerouno.utils.upload_sanitize.upload_file",
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

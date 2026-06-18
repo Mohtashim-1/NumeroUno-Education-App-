@@ -4,7 +4,7 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 1,
- "modified": "2026-06-17 19:02:25.108536",
+ "modified": "2026-06-17 23:25:21.981849",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "asset-management-portal",
@@ -13,6 +13,12 @@
  "roles": [
   {
    "role": "Asset User"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Asset Maintenance"
   }
  ],
  "script": null,
