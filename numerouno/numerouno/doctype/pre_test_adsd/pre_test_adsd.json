@@ -1,0 +1,175 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2026-06-19 01:24:26.357082",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "course_title",
+  "test_name",
+  "total_marks",
+  "column_break_header",
+  "test_date",
+  "candidate_name",
+  "telephone",
+  "company_no",
+  "student",
+  "student_group",
+  "section_break_result",
+  "score",
+  "column_break_qygv",
+  "result",
+  "section_break_questions",
+  "questions",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "PTADSD-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "PTADSD-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "default": "ADSD",
+   "fieldname": "course_title",
+   "fieldtype": "Data",
+   "label": "Course Title"
+  },
+  {
+   "default": "Theory Test A (Pre-Test)",
+   "fieldname": "test_name",
+   "fieldtype": "Data",
+   "label": "Test Name"
+  },
+  {
+   "default": "20",
+   "fieldname": "total_marks",
+   "fieldtype": "Int",
+   "label": "Total Marks"
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "test_date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name"
+  },
+  {
+   "fieldname": "telephone",
+   "fieldtype": "Data",
+   "label": "Tel #"
+  },
+  {
+   "fieldname": "company_no",
+   "fieldtype": "Data",
+   "label": "Co # No"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "label": "Student Group",
+   "options": "Student Group"
+  },
+  {
+   "fieldname": "section_break_result",
+   "fieldtype": "Section Break",
+   "label": "Result"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Data",
+   "label": "Score"
+  },
+  {
+   "fieldname": "result",
+   "fieldtype": "Select",
+   "label": "Result",
+   "options": "\nPass\nFail"
+  },
+  {
+   "fieldname": "section_break_questions",
+   "fieldtype": "Section Break",
+   "label": "Questions"
+  },
+  {
+   "fieldname": "questions",
+   "fieldtype": "Table",
+   "label": "Questions",
+   "options": "Pre Test ADSD Question"
+  },
+  {
+   "fieldname": "column_break_qygv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Pre Test ADSD",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-06-19 01:31:11.207968",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Pre Test ADSD",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

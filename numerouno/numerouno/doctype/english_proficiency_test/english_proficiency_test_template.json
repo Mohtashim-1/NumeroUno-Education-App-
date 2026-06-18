@@ -1,0 +1,110 @@
+{
+  "form_title": "English Language Proficiency Assessment V01 '21 WMS Pre-Requisite",
+  "pass_percentage": 80,
+  "reading_title": "DEEPWATER HORIZON OIL SPILL \u2013 BP GULF OF MEXICO OIL SPILL",
+  "reading_passage": "On 20 April 2010, the offshore drilling rig Deepwater Horizon exploded and caught fire in US waters of the Gulf of Mexico.  11 workers were killed in the explosion and 17 injured.  More than 110 worker escaped from the rig. The rig was owned by Transocean. It was on lease to BP, which was the main operator and developer of the site, with Anadarko Petroleum and MOEX Offshore (part of Mitsui Oil Exploration) as minority co-owners.\n\nThe Deepwater Horizon disaster released approximately 134 million gallons (3.19 million barrels) of oil into the environment. Every day for 87 days, BP\u2019s Macondo well released an average of more than 1.5 million gallons of fresh oil into the ocean\u2014the equivalent of a large oil spill occurring every day for nearly 3 months.\n\nThe \u201cblowout preventer\u201d was built by Cameron International.  On 22 April, the rig sank.  Oil leaked from the ruptured well head until 15 July when it was temporarily stopped; approximately 4.9 million barrels of oil had leaked into the Gulf.  Oil directly affected coastal areas in Louisiana, Mississippi, Alabama, Florida and Texas.\n\nThe Gulf of Mexico commercial fishing industry was estimated to have lost $247 million as a result of post spill fisheries closures. The explosion and spill have given rise to many lawsuits.\n\nBy early December 2010, hundreds of lawsuits had been filed against the companies involved; this number is likely to increase further.  People claiming to have suffered economic harm from the spill can also seek compensation through the Gulf Coast Claims Facility.  Emergency payments do not prevent the claimants from suing for additional or future losses; however, if a long-term settlement offer is accepted and received, the claimant forgoes the right to sue BP.\n\nThe oil released into the environment by the Deepwater Horizon incident was toxic to a wide range of organisms. More than 8,000 birds, sea turtles, and marine mammals were found injured or dead in the six months after the spill.\n\nDeepwater Horizon was an ultra-deepwater, dynamically positioned, semi-submersible offshore oil drilling rig owned by Transocean.\n\nFive years after oil from the Deepwater Horizon disaster tainted the Panhandle's sugar-white beaches, petroleum giant BP agreed to an $18.7 billion settlement with Florida, four other Gulf States and the federal government. BP Oil Spill Settlement Amount Finalized, Rises to More Than $20B.",
+  "questions": [
+    {
+      "sr_no": 1,
+      "question": "In which year did the Deep Water Horizon rig explode?",
+      "options": [
+        "2010",
+        "2000",
+        "2011",
+        "2021"
+      ],
+      "question_type": "Single Choice"
+    },
+    {
+      "sr_no": 2,
+      "question": "What was the number of worker killed and injured during the explosion?",
+      "options": [
+        "110 Killed and 11 Injured",
+        "11 Injured and 17 Killed",
+        "11 Killed and 17 Injured"
+      ],
+      "question_type": "Single Choice"
+    },
+    {
+      "sr_no": 3,
+      "question": "Who owned the rig?",
+      "options": [
+        "BP",
+        "Cameron International",
+        "Transocean",
+        "Mexico"
+      ],
+      "question_type": "Single Choice"
+    },
+    {
+      "sr_no": 4,
+      "question": "How many days did the BP' Macondo released fresh oil in to the ocean?",
+      "options": [
+        "87 Days",
+        "1 Year",
+        "3 Months"
+      ],
+      "question_type": "Single Choice"
+    },
+    {
+      "sr_no": 5,
+      "question": "Which coastal areas did the oil affect directly?",
+      "options": [
+        "Louisiana",
+        "Mississippi",
+        "Alabama",
+        "Florida",
+        "Texas",
+        "All of the Above"
+      ],
+      "question_type": "Multiple Choice"
+    },
+    {
+      "sr_no": 6,
+      "question": "People claiming to have suffered economic harm from the spill can also seek compensation through the Gulf Coast Claims Facility.",
+      "options": [
+        "True",
+        "False"
+      ],
+      "question_type": "True/False"
+    },
+    {
+      "sr_no": 7,
+      "question": "How many birds, sea turtles, and marine mammals were found injured or dead in the six months after the spill?",
+      "options": [
+        "Almost 8,000",
+        "More than 8,000"
+      ],
+      "question_type": "Single Choice"
+    },
+    {
+      "sr_no": 8,
+      "question": "What was the finalized amount that BP suffered?",
+      "options": [
+        "More than $20M",
+        "More than $20B"
+      ],
+      "question_type": "Single Choice"
+    },
+    {
+      "sr_no": 9,
+      "question": "Who built the blowout preventer on the rig?",
+      "options": [
+        "BP",
+        "Cameron International",
+        "Transocean"
+      ],
+      "question_type": "Single Choice"
+    },
+    {
+      "sr_no": 10,
+      "question": "What was the estimated loss the Gulf of Mexico commercial fishing industry suffered?",
+      "options": [
+        "$4.9 Million",
+        "$20 Billion",
+        "$247 Million"
+      ],
+      "question_type": "Single Choice"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-06-19 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sr_no",
+  "question",
+  "question_type",
+  "option_1",
+  "option_2",
+  "option_3",
+  "option_4",
+  "option_5",
+  "option_6",
+  "selected_answer"
+ ],
+ "fields": [
+  {
+   "fieldname": "sr_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Sr No"
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1
+  },
+  {
+   "fieldname": "question_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Single Choice\nMultiple Choice\nTrue/False"
+  },
+  {
+   "fieldname": "option_1",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Option 1"
+  },
+  {
+   "fieldname": "option_2",
+   "fieldtype": "Data",
+   "label": "Option 2"
+  },
+  {
+   "fieldname": "option_3",
+   "fieldtype": "Data",
+   "label": "Option 3"
+  },
+  {
+   "fieldname": "option_4",
+   "fieldtype": "Data",
+   "label": "Option 4"
+  },
+  {
+   "fieldname": "option_5",
+   "fieldtype": "Data",
+   "label": "Option 5"
+  },
+  {
+   "fieldname": "option_6",
+   "fieldtype": "Data",
+   "label": "Option 6"
+  },
+  {
+   "fieldname": "selected_answer",
+   "fieldtype": "Data",
+   "label": "Selected Answer"
+  }
+ ],
+ "istable": 1,
+ "module": "Numerouno",
+ "name": "English Proficiency Question",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

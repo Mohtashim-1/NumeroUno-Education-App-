@@ -1,0 +1,44 @@
+<div class="adsd-form">
+	<div class="adsd-header">
+		<div class="adsd-logo">ADNOC</div>
+		<div class="adsd-titles">
+			<div class="adsd-org">ADNOC</div>
+			<div>Course Title: {{ doc.course_title or 'ADSD' }}</div>
+			<div class="adsd-test-name">{{ doc.test_name or 'Theory Test A (Pre-Test)' }}</div>
+		</div>
+	</div>
+
+	<table class="adsd-meta">
+		<tr>
+			<td class="label">Date:</td>
+			<td class="value">{{ frappe.utils.formatdate(doc.test_date, 'dd-MM-yyyy') if doc.test_date else '' }}</td>
+			<td class="label">Total Marks.:</td>
+			<td class="value">{{ doc.total_marks or 20 }}</td>
+		</tr>
+		<tr>
+			<td class="label">Name:</td>
+			<td class="value" colspan="3">{{ doc.candidate_name or '' }}</td>
+		</tr>
+		<tr>
+			<td class="label">Tel #</td>
+			<td class="value">{{ doc.telephone or '' }}</td>
+			<td class="label">Co # No</td>
+			<td class="value">{{ doc.company_no or '' }}</td>
+		</tr>
+	</table>
+
+	<table class="adsd-questions">
+		{% for row in doc.questions %}
+		<tr>
+			<td class="yn yes">Yes {% if row.answer_yes %}☑{% else %}☐{% endif %}</td>
+			<td class="yn no">No {% if row.answer_no %}☑{% else %}☐{% endif %}</td>
+			<td class="qno">{{ row.sr_no or loop.index }}</td>
+			<td class="qtext">{{ row.question }}</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	{% if doc.score or doc.result %}
+	<p class="adsd-result"><strong>Score:</strong> {{ doc.score or '' }} &nbsp; <strong>Result:</strong> {{ doc.result or '' }}</p>
+	{% endif %}
+</div>

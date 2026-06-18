@@ -1,0 +1,160 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2026-06-19 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "form_title",
+  "pass_percentage",
+  "column_break_header",
+  "date_of_training",
+  "candidate_name",
+  "company_name",
+  "student",
+  "student_group",
+  "section_break_result",
+  "score",
+  "result",
+  "section_break_reading",
+  "reading_title",
+  "reading_passage",
+  "section_break_questions",
+  "questions"
+ ],
+ "fields": [
+  {
+   "default": "EPT-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "EPT-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "default": "English Language Proficiency Assessment V01 '21 WMS Pre-Requisite",
+   "fieldname": "form_title",
+   "fieldtype": "Data",
+   "label": "Form Title"
+  },
+  {
+   "default": "80",
+   "fieldname": "pass_percentage",
+   "fieldtype": "Int",
+   "label": "Pass Percentage"
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date_of_training",
+   "fieldtype": "Date",
+   "label": "Date of Training"
+  },
+  {
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name of the Candidate"
+  },
+  {
+   "fieldname": "company_name",
+   "fieldtype": "Data",
+   "label": "Company Name"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "label": "Student Group",
+   "options": "Student Group"
+  },
+  {
+   "fieldname": "section_break_result",
+   "fieldtype": "Section Break",
+   "label": "Result"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Data",
+   "label": "Score (Trainer)"
+  },
+  {
+   "fieldname": "result",
+   "fieldtype": "Select",
+   "label": "Pass/Fail",
+   "options": "\nPass\nFail"
+  },
+  {
+   "fieldname": "section_break_reading",
+   "fieldtype": "Section Break",
+   "label": "Reading Passage"
+  },
+  {
+   "fieldname": "reading_title",
+   "fieldtype": "Data",
+   "label": "Reading Title"
+  },
+  {
+   "fieldname": "reading_passage",
+   "fieldtype": "Text Editor",
+   "label": "Reading Passage"
+  },
+  {
+   "fieldname": "section_break_questions",
+   "fieldtype": "Section Break",
+   "label": "Questions"
+  },
+  {
+   "fieldname": "questions",
+   "fieldtype": "Table",
+   "label": "Questions",
+   "options": "English Proficiency Question"
+  }
+ ],
+ "is_submittable": 1,
+ "module": "Numerouno",
+ "name": "English Proficiency Test",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

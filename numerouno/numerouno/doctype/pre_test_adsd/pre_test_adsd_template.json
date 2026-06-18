@@ -1,0 +1,87 @@
+{
+  "course_title": "ADSD",
+  "test_name": "Theory Test A (Pre-Test)",
+  "total_marks": 20,
+  "questions": [
+    {
+      "sr_no": 1,
+      "question": "In order to do round trip in the field do you require following the ADNOC ONSHORE Journey Management system (Booking Out/In procedure)?"
+    },
+    {
+      "sr_no": 2,
+      "question": "Before your round trip in the field, are you required to check your vehicle?"
+    },
+    {
+      "sr_no": 3,
+      "question": "The tyre pressure on hardtop is same as in the desert."
+    },
+    {
+      "sr_no": 4,
+      "question": "When changing a wheel, the handbrake should be applied."
+    },
+    {
+      "sr_no": 5,
+      "question": "Using mobile phone while driving can be hazardous."
+    },
+    {
+      "sr_no": 6,
+      "question": "When traveling in the desert and remote areas, a desert safety box is a must."
+    },
+    {
+      "sr_no": 7,
+      "question": "The minimum tyre tread depth is 2.4mm"
+    },
+    {
+      "sr_no": 8,
+      "question": "According to ADNOC ONSHORE policy, can you use any type/brand of tyres for the vehicle being used in ADNOC ONSHORE fields."
+    },
+    {
+      "sr_no": 9,
+      "question": "If you find someone stuck in soft sand, stop in safe place and make a plan for it."
+    },
+    {
+      "sr_no": 10,
+      "question": "While driving in fog use the hazard lights in your vehicle and drive slowly."
+    },
+    {
+      "sr_no": 11,
+      "question": "A safety belt is only necessary while driving on high way."
+    },
+    {
+      "sr_no": 12,
+      "question": "Is it safe to wear the shoulder strap without the lap belt?"
+    },
+    {
+      "sr_no": 13,
+      "question": "You don't need to fasten a safety belt if your vehicle has an air bag."
+    },
+    {
+      "sr_no": 14,
+      "question": "If you involve in a traffic incident do you need to complete an accident report?"
+    },
+    {
+      "sr_no": 15,
+      "question": "Is it safer to drive a vehicle continuously up to 3 hours without having a rest / break?"
+    },
+    {
+      "sr_no": 16,
+      "question": "Some drugs can affect your judgment and ability while driving."
+    },
+    {
+      "sr_no": 17,
+      "question": "Is it dangerous to drive a vehicle if you are extremely tired?"
+    },
+    {
+      "sr_no": 18,
+      "question": "Vehicle should be parked off the road always."
+    },
+    {
+      "sr_no": 19,
+      "question": "If passenger refuses to wear a seat belt the driver can refuse to transport"
+    },
+    {
+      "sr_no": 20,
+      "question": "A driver who reaches 12 violation points within 1 year will be subjected to disciplinary action."
+    }
+  ]
+}

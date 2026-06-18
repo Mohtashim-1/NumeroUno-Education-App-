@@ -1,0 +1,38 @@
+<div class="ept-form">
+	<h2 class="ept-title">{{ doc.form_title }}</h2>
+	<p class="ept-subtitle"><strong>English Proficiency Test: Pass Percentage {{ doc.pass_percentage }}%</strong></p>
+
+	<table class="ept-meta">
+		<tr>
+			<td><strong>Date of Training:</strong> {{ frappe.utils.formatdate(doc.date_of_training, 'dd-MM-yyyy') if doc.date_of_training else '…………………………………………………………………………' }}</td>
+		</tr>
+		<tr>
+			<td><strong>Name of the candidate:</strong> {{ doc.candidate_name or '………………………………………………………………' }}</td>
+		</tr>
+		<tr>
+			<td><strong>Company Name:</strong> {{ doc.company_name or '………….................................................................................' }}</td>
+		</tr>
+		<tr>
+			<td><strong>Score:</strong> {{ doc.score or '…………………………………………………..' }} &nbsp;&nbsp; <strong>Pass/Fail:</strong> {{ doc.result or '……………………………….' }}</td>
+		</tr>
+	</table>
+
+	<h3 class="reading-title">{{ doc.reading_title }}</h3>
+	<div class="reading-passage">{{ doc.reading_passage }}</div>
+
+	{% for row in doc.questions %}
+	<div class="question-block">
+		<p class="question-text"><strong>{{ row.sr_no or loop.index }}.</strong> {{ row.question }}</p>
+		<div class="options">
+			{% for opt in [row.option_1, row.option_2, row.option_3, row.option_4, row.option_5, row.option_6] %}
+				{% if opt %}
+				<div class="option-row">
+					<span class="box">{% if row.selected_answer == opt %}✓{% else %}☐{% endif %}</span>
+					<span>{{ opt }}</span>
+				</div>
+				{% endif %}
+			{% endfor %}
+		</div>
+	</div>
+	{% endfor %}
+</div>
