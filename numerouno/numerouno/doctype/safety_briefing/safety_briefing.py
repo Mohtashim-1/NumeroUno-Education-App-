@@ -85,8 +85,8 @@ def load_template(briefing_type, docname=None, clear_existing=0):
 		doc = frappe.get_doc("Safety Briefing", docname)
 	else:
 		doc = frappe.new_doc("Safety Briefing")
-		doc.briefing_type = briefing_type
 
+	doc.briefing_type = briefing_type
 	apply_template(doc, template, clear_existing=clear_existing)
 
 	if not doc.briefing_date:

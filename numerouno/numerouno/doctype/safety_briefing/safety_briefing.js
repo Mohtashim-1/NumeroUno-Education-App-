@@ -39,10 +39,15 @@ frappe.ui.form.on("Safety Briefing", {
 
 	briefing_type(frm) {
 		if (!frm.doc.briefing_type) return;
+		if (frm._loading_briefing_template) return;
+
 		if (frm.doc.discussion_points?.length) {
 			frappe.confirm(
 				__("Load the template for {0}?", [frm.doc.briefing_type]),
-				() => load_safety_briefing_template(frm, true)
+				() => load_safety_briefing_template(frm, true),
+				() => {
+					frm.reload_doc();
+				}
 			);
 		} else {
 			load_safety_briefing_template(frm, false);
@@ -119,23 +124,20 @@ function load_safety_briefing_template(frm, clear_existing) {
 	if (!frm.doc.briefing_type) return;
 
 	const unsaved = is_unsaved_safety_briefing(frm);
-	console.log("[Safety Briefing] load_template", {
-		briefing_type: frm.doc.briefing_type,
-		unsaved,
-		docname: unsaved ? null : frm.doc.name,
-	});
+	const selected_type = frm.doc.briefing_type;
+	frm._loading_briefing_template = true;
 
 	frappe.call({
 		method: "numerouno.numerouno.doctype.safety_briefing.safety_briefing.load_template",
 		args: {
-			briefing_type: frm.doc.briefing_type,
+			briefing_type: selected_type,
 			docname: unsaved ? null : frm.doc.name,
 			clear_existing: clear_existing ? 1 : 0,
 		},
 		freeze: true,
 		callback(r) {
+			frm._loading_briefing_template = false;
 			if (r.exc) {
-				console.error("[Safety Briefing] load_template failed", r.exc);
 				return;
 			}
 
@@ -145,12 +147,7 @@ function load_safety_briefing_template(frm, clear_existing) {
 			}
 
 			const data = r.message || {};
-			console.log("[Safety Briefing] template loaded", {
-				form_code: data.form_code,
-				discussion_points: data.discussion_points?.length,
-				practical_items: data.practical_items?.length,
-			});
-
+			frm.set_value("briefing_type", selected_type);
 			frm.set_value("form_code", data.form_code);
 			frm.set_value("title", data.title);
 			frm.set_value("attendee_signature_mode", data.attendee_signature_mode);
