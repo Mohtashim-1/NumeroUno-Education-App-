@@ -1,0 +1,46 @@
+.user-activity-audit .uaa-note {
+	margin-bottom: 16px;
+}
+
+.user-activity-audit .uaa-kpi {
+	background: #fff;
+	border: 1px solid var(--border-color);
+	border-radius: 8px;
+	padding: 14px 12px;
+	height: 100%;
+}
+
+.user-activity-audit .uaa-kpi-value {
+	font-size: 24px;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--text-color);
+}
+
+.user-activity-audit .uaa-kpi-label {
+	font-size: 12px;
+	color: var(--text-muted);
+	margin-top: 4px;
+}
+
+.user-activity-audit .uaa-table-wrap {
+	max-height: 420px;
+	overflow: auto;
+}
+
+.user-activity-audit .uaa-table th {
+	position: sticky;
+	top: 0;
+	background: var(--control-bg);
+	z-index: 1;
+	white-space: nowrap;
+}
+
+.user-activity-audit .uaa-table td {
+	font-size: 12px;
+	vertical-align: top;
+}
+
+.user-activity-audit .card-header h5 {
+	font-size: 14px;
+}

@@ -115,6 +115,13 @@ def _selected_option_text_for_question(question_name, option_id):
     return _safe_selected_option_text(str(option_id))
 
 
+def get_quiz_expected_question_count(quiz_name):
+    """Return the number of questions mapped to a Quiz."""
+    if not quiz_name:
+        return 0
+    return frappe.db.count("Quiz Question", {"parent": quiz_name})
+
+
 def _selected_answers_for_check(option_id):
     if option_id in (None, ""):
         return []
@@ -216,7 +223,7 @@ def upsert_public_quiz_progress(quiz_name, student, student_group, answers=None,
                 answers = {}
 
         answer_map = _to_answer_map(answers)
-        total_questions_val = int(total_questions or 0)
+        total_questions_val = int(total_questions or 0) or get_quiz_expected_question_count(quiz_name)
         answered_count = len([v for v in answer_map.values() if v not in (None, "")])
 
         quiz_activity_name = _get_quiz_activity_for_attempt(attempt_id)
@@ -1568,6 +1575,20 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
             attempt_id=attempt_id,
             details={"answer_count": len(answers) if isinstance(answers, list) else 0},
         )
+
+        expected_question_count = get_quiz_expected_question_count(quiz_name)
+        submitted_questions = {
+            answer_data.get("question")
+            for answer_data in answers
+            if answer_data.get("question")
+        }
+        if expected_question_count and len(submitted_questions) < expected_question_count:
+            return {
+                "status": "error",
+                "message": _(
+                    "Please answer all {0} questions before submitting. Only {1} answers were received."
+                ).format(expected_question_count, len(submitted_questions)),
+            }
         
         # Calculate raw score first (raw marks), then scale to 100 for UI response
         raw_score = 0
@@ -1608,8 +1629,9 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
             score = marks if is_correct else 0
             raw_score += score
         
-        # Calculate percentage and scaled score out of 100
-        percentage = (raw_score / total_marks * 100) if total_marks > 0 else 0
+        # Score against full quiz length, not just the answered subset.
+        score_out_of = expected_question_count or total_marks
+        percentage = (raw_score / score_out_of * 100) if score_out_of > 0 else 0
         scaled_score = round(percentage, 2)
         display_score = round(percentage)
         passed = percentage >= (quiz_doc.passing_score or 75)
@@ -1622,7 +1644,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
         print(f"\n{'='*80}")
         print(f"QUIZ SUBMISSION - Creating Records")
         print(f"Quiz: {quiz_name}, Student: {student}, Student Group: {student_group}")
-        print(f"Score: {display_score}/100 (raw: {raw_score}/{total_marks}, {percentage:.1f}%) - {'Passed' if passed else 'Failed'}")
+        print(f"Score: {display_score}/100 (raw: {raw_score}/{score_out_of}, {percentage:.1f}%) - {'Passed' if passed else 'Failed'}")
         print(f"{'='*80}\n")
         
         # Try to find existing assessment plan for this student group and course
@@ -1718,7 +1740,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
                     plan_doc.schedule_date = today()
                     plan_doc.from_time = "09:00:00"  # Default time
                     plan_doc.to_time = "17:00:00"    # Default time
-                    plan_doc.maximum_assessment_score = total_marks
+                    plan_doc.maximum_assessment_score = score_out_of
                     
                     if grading_scale:
                         plan_doc.grading_scale = grading_scale
@@ -1727,7 +1749,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
                     if assessment_criteria_name:
                         plan_doc.append("assessment_criteria", {
                             "assessment_criteria": assessment_criteria_name,
-                            "maximum_score": total_marks
+                            "maximum_score": score_out_of
                         })
                     
                     # Set program and academic year from student group if available
@@ -1893,7 +1915,7 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
                 quiz_activity.flags.ignore_mandatory = True
             quiz_activity.student = student
             quiz_activity.quiz = quiz_name
-            quiz_activity.score = f"{raw_score}/{total_marks}"
+            quiz_activity.score = f"{raw_score}/{score_out_of}"
             quiz_activity.status = "Pass" if passed else "Fail"
             quiz_activity.activity_date = today()
             # Preserve exact context from public quiz submission to avoid fallback guessing.
@@ -2084,7 +2106,8 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
                 "score": display_score,
                 "score_exact": scaled_score,
                 "raw_score": raw_score,
-                "total_marks": total_marks,
+                "total_marks": score_out_of,
+                "score_out_of": score_out_of,
                 "percentage": percentage,
                 "passed": passed,
             }
@@ -2121,7 +2144,8 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
             "score": display_score,
             "score_exact": scaled_score,
             "raw_score": raw_score,
-            "total_marks": total_marks,
+            "total_marks": score_out_of,
+            "score_out_of": score_out_of,
             "percentage": percentage,
             "passed": passed
         }

@@ -197,20 +197,26 @@ def _get_activity_score_summary(activities):
 
     summary = {}
     for row in result_rows:
-        data = summary.setdefault(row.parent, {"correct": 0, "total": 0})
-        data["total"] += 1
+        data = summary.setdefault(row.parent, {"correct": 0, "answered": 0})
+        data["answered"] += 1
         if (row.quiz_result or "").strip().lower() == "correct":
             data["correct"] += 1
 
     passing_scores = _get_quiz_passing_score_map({row.quiz for row in activities if row.quiz})
     activity_quiz_map = {row.name: row.quiz for row in activities if row.name}
+    quiz_names = {quiz for quiz in activity_quiz_map.values() if quiz}
+    quiz_question_counts = {}
+    for quiz_name in quiz_names:
+        quiz_question_counts[quiz_name] = frappe.db.count("Quiz Question", {"parent": quiz_name})
+
     for activity_name, data in summary.items():
-        total = data["total"]
+        quiz_name = activity_quiz_map.get(activity_name)
+        expected_total = quiz_question_counts.get(quiz_name) or data["answered"]
         correct = data["correct"]
-        percentage = (correct / total * 100) if total else 0
-        passing_score = passing_scores.get(activity_quiz_map.get(activity_name), 75)
-        data["score"] = f"{correct}/{total}"
-        data["status"] = "Pass" if percentage >= passing_score else "Fail"
+        percentage = (correct / expected_total * 100) if expected_total else 0
+        passing_score = passing_scores.get(quiz_name, 75)
+        data["score"] = f"{correct}/{expected_total}"
+        data["status"] = "Pass" if percentage >= passing_score and data["answered"] >= expected_total else "Fail"
 
     return summary
 

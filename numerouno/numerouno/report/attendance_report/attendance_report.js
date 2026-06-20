@@ -20,12 +20,23 @@ frappe.query_reports["Attendance Report"] = {
 			label: __("From Date"),
 			fieldtype: "Date",
 			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
 			default: frappe.datetime.get_today(),
+			reqd: 1,
 		},
 	],
+	onload(report) {
+		frappe.msgprint(
+			__(
+				"Large date ranges run in the background. For faster results, filter by Customer or Student Group, or keep the range within 3 months."
+			),
+			__("Report Performance Tip"),
+			"blue"
+		);
+	},
 };
