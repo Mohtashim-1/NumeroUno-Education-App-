@@ -4,6 +4,10 @@ frappe.ui.form.on("Safety Briefing", {
 	},
 
 	refresh(frm) {
+		frm.add_custom_button(__("Document View"), () => {
+			open_safety_briefing_document_view(frm);
+		}, __("Actions"));
+
 		frm.add_custom_button(__("Load Template"), () => {
 			if (!frm.doc.briefing_type) {
 				frappe.msgprint(__("Select a Briefing Type first"));
@@ -220,4 +224,21 @@ function toggle_attendee_signature_columns(frm) {
 	});
 	grid.toggle_display("signed", !show_modules);
 	grid.refresh();
+}
+
+function open_safety_briefing_document_view(frm) {
+	if (frm.is_new() || is_unsaved_safety_briefing(frm)) {
+		if (!frm.doc.briefing_type) {
+			frappe.msgprint(__("Select a Briefing Type first"));
+			return;
+		}
+		frappe.route_options = {
+			briefing_type: frm.doc.briefing_type,
+			student_group: frm.doc.student_group || null,
+		};
+		frappe.set_route("safety-briefing-form");
+		return;
+	}
+
+	frappe.set_route("safety-briefing-form", frm.doc.name);
 }

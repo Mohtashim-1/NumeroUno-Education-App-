@@ -1012,6 +1012,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		}
 
 		records.forEach(function (row) {
+			var statusLabel = row.status || "Pending";
 			var studentLink = row.student
 				? `<a href="/app/student/${frappe.utils.escape_html(row.student)}">${frappe.utils.escape_html(row.student)}</a>`
 				: "";
@@ -1057,6 +1058,25 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					`);
 				}
 
+				if (statusLabel === "Fail") {
+					if (row.nyc_checklist) {
+						actionLinks.push(`<a href="/app/nyc-reassessment-checklist/${frappe.utils.escape_html(row.nyc_checklist)}">NYC Checklist</a>`);
+					} else {
+						actionLinks.push(`
+							<button type="button" class="portal-btn portal-btn-secondary nyc-checklist-btn"
+								data-activity="${frappe.utils.escape_html(row.activity || "")}"
+								data-assessment-result="${frappe.utils.escape_html(row.assessment_result || "")}">
+								Create NYC Checklist
+							</button>
+						`);
+					}
+					if (row.retest_eligible === false) {
+						actionLinks.push(`<span class="data-meta nyc-expired">Retest expired</span>`);
+					} else if (row.retest_valid_until) {
+						actionLinks.push(`<span class="data-meta">Retest until ${frappe.utils.escape_html(frappe.datetime.str_to_user(row.retest_valid_until))}</span>`);
+					}
+				}
+
 				if (bulkResultAction) {
 					actionLinks.push(bulkResultAction);
 				}
@@ -1082,7 +1102,6 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				actionCell = `<div class="quiz-actions">${actionLinks.join("")}</div>`;
 			}
 
-			var statusLabel = row.status || "Pending";
 			var statusClass = statusLabel === "Pass" ? "pass" : statusLabel === "Fail" ? "fail" : "pending";
 			var dateLabel = row.activity_date ? frappe.datetime.str_to_user(row.activity_date) : "-";
 
@@ -1103,7 +1122,32 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		});
 
 		bind_bulk_result_buttons();
+		bind_nyc_checklist_buttons();
 		bind_quiz_load_more(records.length);
+	}
+
+	function bind_nyc_checklist_buttons() {
+		$(".nyc-checklist-btn").off("click").on("click", function () {
+			var $button = $(this);
+			frappe.call({
+				method: "numerouno.numerouno.page.instructor_portal.instructor_portal.create_nyc_reassessment_checklist",
+				args: {
+					quiz_activity: $button.data("activity"),
+					assessment_result: $button.data("assessment-result")
+				},
+				freeze: true,
+				callback: function (r) {
+					if (r.exc || !r.message) return;
+					var name = r.message.name;
+					if (r.message.existing) {
+						frappe.show_alert({ message: __("Opening existing NYC Reassessment Checklist"), indicator: "blue" });
+					} else {
+						frappe.show_alert({ message: __("NYC Reassessment Checklist created"), indicator: "green" });
+					}
+					frappe.set_route("Form", "NYC Reassessment Checklist", name);
+				}
+			});
+		});
 	}
 
 	function bind_bulk_result_buttons() {

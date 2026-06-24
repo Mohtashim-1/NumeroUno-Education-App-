@@ -1,0 +1,62 @@
+<div class="nyc-form">
+	<div class="nyc-header">
+		<div class="nyc-title">{{ doc.form_title }}</div>
+	</div>
+
+	<table class="nyc-box">
+		<tr><td><strong>Course Name:</strong> {{ doc.course_name or doc.course or '................................................' }}</td></tr>
+		<tr><td><strong>Candidate Name:</strong> {{ doc.candidate_name or '................................................' }}</td></tr>
+		<tr><td><strong>Company Name:</strong> {{ doc.company_name or '................................................' }}</td></tr>
+		<tr><td><strong>Date &amp; Time of first assessment:</strong>
+			{% if doc.first_assessment_date %}{{ frappe.utils.formatdate(doc.first_assessment_date, 'dd-MM-yyyy') }}{% else %}................{% endif %}
+			{% if doc.first_assessment_time %} {{ doc.first_assessment_time }}{% endif %}
+		</td></tr>
+		<tr><td><strong>Name of Assessor:</strong> {{ doc.assessor_name or '................................................' }}</td></tr>
+	</table>
+
+	<p class="nyc-section-title"><strong>Details of Learning outcome found Not Yet Competent (NYC)</strong></p>
+	<div class="nyc-details-box">{{ doc.nyc_details or '&nbsp;' }}</div>
+
+	<div class="nyc-reassessment-head">
+		<strong>Details of Reassessment</strong>
+		<span class="nyc-date-time">
+			<strong>Date:</strong> {% if doc.reassessment_date %}{{ frappe.utils.formatdate(doc.reassessment_date, 'dd-MM-yyyy') }}{% else %}.................{% endif %}
+			&nbsp;&nbsp;
+			<strong>Time:</strong> {% if doc.reassessment_time %}{{ doc.reassessment_time }}{% else %}.................{% endif %}
+		</span>
+	</div>
+
+	<table class="nyc-grid">
+		<tr>
+			<th class="col-ref">Ref</th>
+			<th class="col-outcome">Learning Outcomes</th>
+			<th class="col-done">Completed</th>
+			<th class="col-source">Source of Evidence</th>
+			<th class="col-remarks">Remarks</th>
+		</tr>
+		{% for row in doc.outcomes %}
+		<tr>
+			<td>{{ row.ref_no or loop.index }}</td>
+			<td>{{ row.learning_outcome or '' }}</td>
+			<td class="center">{% if row.completed %}✓{% endif %}</td>
+			<td>{{ row.source_of_evidence or '' }}</td>
+			<td>{{ row.remarks or '' }}</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	<p class="nyc-declaration">{{ doc.declaration_text }}</p>
+
+	<table class="nyc-sign">
+		<tr>
+			<td><strong>Assessor's Name:</strong> {{ doc.assessor_signature_name or doc.assessor_name or '................................' }}</td>
+			<td><strong>Assessor's Signature:</strong> ................................</td>
+			<td><strong>Date:</strong> {% if doc.assessor_signature_date %}{{ frappe.utils.formatdate(doc.assessor_signature_date, 'dd-MM-yyyy') }}{% else %}................{% endif %}</td>
+		</tr>
+	</table>
+
+	<div class="nyc-footer">
+		<span>{{ doc.form_code }} Rev 0 Dated 22.08.2022</span>
+		<span>Page 1 of 1</span>
+	</div>
+</div>

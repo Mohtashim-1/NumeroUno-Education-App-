@@ -1,0 +1,456 @@
+.safety-briefing-form-page {
+	background: #e8ebef;
+	padding: 12px 0 24px;
+}
+
+.sbf-toolbar-note {
+	font-size: 12px;
+	color: #5f6b7a;
+	margin: 0 0 10px;
+}
+
+.sbf-picker {
+	background: #fff;
+	border-radius: 8px;
+	padding: 20px;
+	max-width: 520px;
+	margin: 0 auto 16px;
+	box-shadow: 0 4px 16px rgba(15, 28, 45, 0.08);
+}
+
+.sbf-picker h4 {
+	margin: 0 0 12px;
+	font-size: 16px;
+}
+
+.sbf-picker-actions {
+	margin-top: 14px;
+}
+
+.sbf-doc-wrap {
+	display: flex;
+	justify-content: center;
+	padding: 8px 12px 24px;
+	overflow-x: auto;
+}
+
+.sbf-doc {
+	width: 210mm;
+	min-height: 297mm;
+	background: #fff;
+	box-shadow: 0 8px 28px rgba(15, 28, 45, 0.12);
+	padding: 10mm 12mm;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 9px;
+	color: #000;
+	box-sizing: border-box;
+	line-height: 1.12;
+}
+
+.sbf-doc * {
+	box-sizing: border-box;
+}
+
+.sbf-doc p {
+	margin: 0;
+}
+
+.nutc-safety-briefing {
+	width: 100%;
+	color: #000;
+}
+
+.nutc-logo-wrap {
+	width: 100%;
+	height: 42px;
+	text-align: center;
+	margin: 0 0 4px;
+}
+
+.nutc-logo-bg {
+	width: 118px;
+	height: 36px;
+	margin: 0 auto;
+	background-image: url("https://erpnext.nutc.cloud/files/IMAGE_NUTC.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-size: contain;
+}
+
+.h2s-title-row {
+	width: 100%;
+	text-align: center;
+	font-weight: 700;
+	font-size: 14px;
+	line-height: 1.15;
+	margin: 0 0 6px;
+}
+
+.h2s-title {
+	display: inline;
+	margin-right: 12px;
+}
+
+.h2s-course-codes {
+	display: inline;
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.nutc-table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	margin: 0;
+}
+
+.nutc-table th,
+.nutc-table td {
+	border: 1px solid #000;
+	padding: 2px 4px;
+	vertical-align: top;
+	color: #000;
+	line-height: 1.15;
+	word-wrap: break-word;
+}
+
+.nutc-table th {
+	font-weight: 700;
+	text-align: center;
+}
+
+.header-row th {
+	background: #e6e6e6;
+}
+
+.disc-title-line {
+	font-size: 9.5px;
+	font-weight: 700;
+	text-align: center;
+	line-height: 1.05;
+}
+
+.disc-sub-line {
+	font-size: 9px;
+	font-weight: 700;
+	text-align: center;
+	line-height: 1.05;
+}
+
+.nutc-discussion-h2s td {
+	font-size: 8.4px;
+}
+
+.discussion-sr {
+	width: 5%;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.discussion-text {
+	width: 91%;
+}
+
+.col-yn {
+	width: 4%;
+	text-align: center;
+	vertical-align: middle;
+	font-weight: 700;
+}
+
+.nutc-practical-h2s th,
+.nutc-practical-h2s td {
+	font-size: 8.4px;
+}
+
+.col-exercise-h2s {
+	width: 38%;
+}
+
+.col-risk-h2s {
+	width: 58%;
+}
+
+.small-list {
+	margin: 0;
+	padding-left: 16px;
+}
+
+.small-list li {
+	margin: 0;
+	line-height: 1.12;
+}
+
+.header-yellow th {
+	background: #ffff99;
+	font-size: 10px;
+	font-weight: 700;
+	text-align: center;
+	vertical-align: middle;
+	padding: 3px 4px;
+}
+
+.nutc-attendees td {
+	min-height: 14.5px;
+	font-size: 8.5px;
+	vertical-align: middle;
+	padding-top: 1px;
+	padding-bottom: 1px;
+	line-height: 1.05;
+}
+
+.col-sr {
+	width: 7%;
+	text-align: center;
+}
+
+.col-name {
+	width: 36%;
+}
+
+.col-company {
+	width: 31%;
+}
+
+.col-signed {
+	width: 26%;
+	text-align: center;
+}
+
+.col-sign {
+	text-align: center;
+}
+
+.agenda-bottom {
+	margin: 0;
+	padding: 4px;
+	border-left: 1px solid #000;
+	border-right: 1px solid #000;
+	font-size: 10px;
+	line-height: 1.15;
+	text-align: center;
+}
+
+.nutc-instructor-single {
+	margin-top: 0;
+}
+
+.nutc-instructor-single th,
+.nutc-instructor-single td {
+	font-size: 10px;
+	min-height: 18px;
+	vertical-align: middle;
+	padding: 2px 4px;
+}
+
+.nutc-instructor-single th {
+	text-align: center;
+	font-weight: 700;
+}
+
+.nutc-instructor-single td {
+	text-align: center;
+}
+
+.form-ref-top {
+	font-size: 9px;
+	margin-bottom: 4px;
+}
+
+.agenda-top {
+	font-size: 10px;
+	text-align: center;
+	margin-bottom: 6px;
+	font-weight: 700;
+}
+
+.date-single {
+	font-size: 10px;
+	margin-bottom: 5px;
+}
+
+.nutc-dates td {
+	font-size: 9px;
+	min-height: 18px;
+	vertical-align: middle;
+}
+
+.nutc-instructors th,
+.nutc-instructors td,
+.nutc-discussion th,
+.nutc-discussion td,
+.nutc-practical th,
+.nutc-practical td {
+	font-size: 9px;
+}
+
+.col-exercise {
+	width: 27%;
+}
+
+.col-risk {
+	width: 58%;
+}
+
+.col-discussion {
+	width: auto;
+}
+
+.sub-head {
+	font-size: 8px;
+	font-weight: 400;
+}
+
+.form-footer {
+	margin-top: 16px;
+	font-size: 8px;
+	width: 100%;
+	line-height: 1;
+	color: #000;
+}
+
+.form-footer:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.form-ref-left {
+	float: left;
+}
+
+.page-text {
+	float: right;
+}
+
+.line-item {
+	margin: 0;
+}
+
+/* Editable controls inside document */
+.sbf-cell-input {
+	width: 100%;
+	border: none;
+	background: transparent;
+	font: inherit;
+	color: inherit;
+	padding: 1px 2px;
+	min-height: 14px;
+}
+
+.sbf-cell-input:focus {
+	outline: 1px dashed #1a7f7a;
+	background: #f8fffe;
+}
+
+.sbf-date-input {
+	width: 90px;
+	border: none;
+	border-bottom: 1px solid #999;
+	background: transparent;
+	font: inherit;
+	padding: 0 2px;
+}
+
+.sbf-date-input:focus {
+	outline: none;
+	border-bottom-color: #1a7f7a;
+}
+
+.sbf-yn-check {
+	width: 14px;
+	height: 14px;
+	margin: 0;
+	cursor: pointer;
+	accent-color: #000;
+}
+
+.sbf-module-check {
+	width: 13px;
+	height: 13px;
+	margin: 0;
+	cursor: pointer;
+}
+
+.sig-img {
+	max-height: 24px;
+	max-width: 95px;
+	object-fit: contain;
+	display: block;
+	margin: 0 auto;
+}
+
+.sbf-signature-wrap {
+	position: relative;
+	min-height: 28px;
+}
+
+.sbf-signature-canvas {
+	width: 100%;
+	height: 28px;
+	display: block;
+	cursor: crosshair;
+	background: #fafafa;
+	border: 1px dashed #ccc;
+}
+
+.sbf-signature-canvas.has-signature {
+	border-style: solid;
+	border-color: #ddd;
+	background: #fff;
+}
+
+.sbf-signature-actions {
+	display: flex;
+	justify-content: center;
+	gap: 4px;
+	margin-top: 2px;
+}
+
+.sbf-signature-actions button {
+	font-size: 8px;
+	padding: 0 4px;
+	line-height: 1.4;
+	border: 1px solid #ccc;
+	background: #fff;
+	border-radius: 2px;
+	cursor: pointer;
+}
+
+.sbf-signature-actions button:hover {
+	background: #f3f3f3;
+}
+
+.sbf-readonly {
+	background: #fff;
+}
+
+@media print {
+	.safety-briefing-form-page {
+		background: #fff;
+		padding: 0;
+	}
+
+	.sbf-doc-wrap {
+		padding: 0;
+	}
+
+	.sbf-doc {
+		box-shadow: none;
+		width: 100%;
+		padding: 0;
+	}
+
+	.sbf-signature-actions,
+	.sbf-toolbar-note,
+	.page-head,
+	.layout-side-section,
+	.form-tabs,
+	.page-actions {
+		display: none !important;
+	}
+
+	.sbf-signature-canvas {
+		border: none;
+	}
+}

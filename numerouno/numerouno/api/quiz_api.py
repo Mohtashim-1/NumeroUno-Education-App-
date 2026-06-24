@@ -1557,6 +1557,15 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
                 "message": eligibility.get("message"),
                 "eligibility": eligibility,
             }
+
+        from numerouno.numerouno.doctype.nyc_reassessment_checklist.nyc_reassessment_checklist import check_retest_allowed
+        retest = check_retest_allowed(student, student_group, quiz_name)
+        if not retest.get("allowed"):
+            return {
+                "status": "error",
+                "message": retest.get("message"),
+                "retest": retest,
+            }
         
         # Get quiz details
         quiz_doc = frappe.get_doc("Quiz", quiz_name)

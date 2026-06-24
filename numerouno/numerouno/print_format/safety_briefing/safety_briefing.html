@@ -1,59 +1,14 @@
 <div class="nutc-safety-briefing">
+	<div class="nutc-logo-wrap">
+		<div class="nutc-logo-bg"></div>
+	</div>
+
 	{% if doc.briefing_type == 'Basic H2S' %}
 	{# ── Basic H2S: matches NUTC-P11-F02.00 Word layout ── #}
 	<div class="h2s-title-row">
-		<div class="h2s-title">SAFETY BRIEFING – BASIC H2S</div>
-		<div class="h2s-course-codes">
-			9014 – ☐ &nbsp;&nbsp; 9014 – A ☐ &nbsp;&nbsp; 9014 – B ☐
-		</div>
+		<span class="h2s-title">SAFETY BRIEFING – BASIC H2S</span>
+		<span class="h2s-course-codes">9014 – ☐ &nbsp;&nbsp; 9014 – A ☐ &nbsp;&nbsp; 9014 – B ☐</span>
 	</div>
-
-	<table class="nutc-table nutc-discussion-h2s">
-		<tr class="header-row">
-			<th class="col-discussion-main" colspan="2">
-				<div class="disc-title-line">DISCUSSION POINTS ON RISKS &amp; SAFETY PRECAUTIONS</div>
-				<div class="disc-sub-line">GENERAL INFORMATION DISCUSSED BY EVERY INSTRUCTOR</div>
-			</th>
-			<th class="col-yn">Y/N</th>
-		</tr>
-		{% for row in doc.discussion_points %}
-		<tr>
-			<td class="col-discussion-main" colspan="2">{{ row.discussion_point }}</td>
-			<td class="col-yn">{% if row.confirmed %}✓{% endif %}</td>
-		</tr>
-		{% endfor %}
-	</table>
-
-	{% if doc.practical_items %}
-	{% set item = doc.practical_items[0] %}
-	{% set activities = (item.activity_detail or '').split('\n') %}
-	{% set risks = (item.risk_points or '').split('\n') %}
-	{% set act_count = activities | length if activities else 1 %}
-	{% set risk_count = risks | length if risks else 1 %}
-	{% set row_count = act_count if act_count > risk_count else risk_count %}
-	{% if row_count < 1 %}{% set row_count = 1 %}{% endif %}
-	<table class="nutc-table nutc-practical-h2s">
-		<tr class="header-row">
-			<th class="col-exercise-h2s">{{ item.sr_no or 9 }} PRACTICAL EXERCISE TO BE CONDUCTED</th>
-			<th class="col-risk-h2s">DISCUSSION POINTS</th>
-			<th class="col-yn">Y/N</th>
-		</tr>
-		{% for r in range(row_count) %}
-		<tr>
-			{% if r == 0 %}
-			<td class="col-exercise-h2s" rowspan="{{ row_count }}">
-				{% if item.exercise_group %}<strong>{{ item.exercise_group }}</strong><br>{% endif %}
-				{% for act in activities %}{% if act.strip() %}{{ act.strip() }}<br>{% endif %}{% endfor %}
-			</td>
-			{% endif %}
-			<td class="col-risk-h2s">{% if risks[r] is defined and risks[r].strip() %}{{ risks[r].strip() }}{% endif %}</td>
-			{% if r == 0 %}
-			<td class="col-yn" rowspan="{{ row_count }}">{% if item.confirmed %}✓{% endif %}</td>
-			{% endif %}
-		</tr>
-		{% endfor %}
-	</table>
-	{% endif %}
 
 	<table class="nutc-table nutc-attendees nutc-attendees-yellow">
 		<tr class="header-yellow">
@@ -91,9 +46,58 @@
 		{% endfor %}
 	</table>
 
+	<table class="nutc-table nutc-discussion-h2s">
+		<tr class="header-row">
+			<th colspan="2">
+				<div class="disc-title-line">DISCUSSION POINTS ON RISKS &amp; SAFETY PRECAUTIONS</div>
+				<div class="disc-sub-line">GENERAL INFORMATION DISCUSSED BY EVERY INSTRUCTOR</div>
+			</th>
+			<th class="col-yn">Y/N</th>
+		</tr>
+		{% for row in doc.discussion_points %}
+		<tr>
+			<td colspan="2" class="discussion-text">{{ row.discussion_point }}</td>
+			<td class="col-yn">{% if row.confirmed %}✓{% endif %}</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	{% if doc.practical_items %}
+	{% set item = doc.practical_items[0] %}
+	{% set activities = (item.activity_detail or '').split('\n') %}
+	{% set risks = (item.risk_points or '').split('\n') %}
+	{% set act_count = activities | length if activities else 1 %}
+	{% set risk_count = risks | length if risks else 1 %}
+	{% set row_count = act_count if act_count > risk_count else risk_count %}
+	{% if row_count < 1 %}{% set row_count = 1 %}{% endif %}
+	<table class="nutc-table nutc-practical-h2s">
+		<tr class="header-row">
+			<th class="col-exercise-h2s">{{ item.sr_no or 9 }} PRACTICAL EXERCISE TO BE CONDUCTED</th>
+			<th class="col-risk-h2s">DISCUSSION POINTS</th>
+			<th class="col-yn">Y/N</th>
+		</tr>
+		{% for r in range(row_count) %}
+		<tr>
+			{% if r == 0 %}
+			<td class="col-exercise-h2s" rowspan="{{ row_count }}">
+				{% if item.exercise_group %}<strong>{{ item.exercise_group }}</strong><br>{% endif %}
+				{% for act in activities %}{% if act.strip() %}{{ act.strip() }}<br>{% endif %}{% endfor %}
+			</td>
+			{% endif %}
+			<td class="col-risk-h2s">{% if risks[r] is defined and risks[r].strip() %}{{ risks[r].strip() }}{% endif %}</td>
+			{% if r == 0 %}
+			<td class="col-yn" rowspan="{{ row_count }}">{% if item.confirmed %}✓{% endif %}</td>
+			{% endif %}
+		</tr>
+		{% endfor %}
+	</table>
+	{% endif %}
+
 	<div class="form-footer">
 		<span class="form-ref-left">NUTC-P11-F02.00 Rev 10 Dated 06.06.2024</span>
+		<span class="page-text">Page 1 of 1</span>
 	</div>
+
 
 	{% else %}
 	{# ── Other briefing types (TBOSIET, TFOET, etc.) ── #}

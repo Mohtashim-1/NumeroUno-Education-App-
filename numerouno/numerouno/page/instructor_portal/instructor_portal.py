@@ -213,12 +213,53 @@ def _get_activity_score_summary(activities):
         quiz_name = activity_quiz_map.get(activity_name)
         expected_total = quiz_question_counts.get(quiz_name) or data["answered"]
         correct = data["correct"]
+        answered = data["answered"]
+        is_complete = answered >= expected_total
         percentage = (correct / expected_total * 100) if expected_total else 0
         passing_score = passing_scores.get(quiz_name, 75)
-        data["score"] = f"{correct}/{expected_total}"
-        data["status"] = "Pass" if percentage >= passing_score and data["answered"] >= expected_total else "Fail"
+
+        if is_complete:
+            data["score"] = f"{correct}/{expected_total}"
+            data["status"] = "Pass" if percentage >= passing_score else "Fail"
+        else:
+            # Incomplete attempt: show answered count so 105/109 is not read as 105/110.
+            data["score"] = f"{correct}/{answered}" if answered else f"0/{expected_total}"
+            data["status"] = "Fail"
+
+        data["is_complete"] = is_complete
+        data["expected_total"] = expected_total
+        data["percentage"] = percentage
 
     return summary
+
+
+def _activity_display_rank(activity, summary):
+    """Higher rank wins when multiple Quiz Activities exist for the same student + quiz."""
+    summary = summary or {}
+    status = (activity.status or summary.get("status") or "").strip()
+    is_complete = summary.get("is_complete", True)
+    correct = summary.get("correct", 0)
+    score_text = activity.score or summary.get("score") or ""
+    if not correct and "/" in score_text:
+        try:
+            correct = int(score_text.split("/", 1)[0])
+        except ValueError:
+            correct = 0
+
+    status_rank = 2 if status == "Pass" else 1
+    complete_rank = 1 if is_complete else 0
+    creation_rank = activity.creation.isoformat() if activity.creation else ""
+    return (status_rank, complete_rank, correct, creation_rank)
+
+
+def _should_prefer_activity(candidate, current, score_summary):
+    if not current:
+        return True
+    candidate_summary = score_summary.get(candidate.name, {})
+    current_summary = score_summary.get(current.name, {})
+    return _activity_display_rank(candidate, candidate_summary) > _activity_display_rank(
+        current, current_summary
+    )
 
 
 def _get_assessment_result_map(activities):
@@ -249,6 +290,41 @@ def _get_assessment_result_map(activities):
             assessment_result_map[activity.name] = assessment_result
 
     return assessment_result_map
+
+
+def _attach_nyc_retest_info(row):
+	"""Add NYC reassessment checklist / 3-month retest info for failed attempts."""
+	from numerouno.numerouno.doctype.nyc_reassessment_checklist.nyc_reassessment_checklist import (
+		check_retest_allowed,
+		get_retest_status_for_activity,
+	)
+
+	row["nyc_checklist"] = None
+	row["retest_eligible"] = None
+	row["retest_valid_until"] = None
+	row["retest_message"] = ""
+
+	if (row.get("status") or "") != "Fail":
+		return
+
+	activity_name = row.get("activity")
+	assessment_result = row.get("assessment_result")
+	if activity_name:
+		status = get_retest_status_for_activity(quiz_activity_name=activity_name)
+	elif assessment_result:
+		status = get_retest_status_for_activity(assessment_result_name=assessment_result)
+	else:
+		retest = check_retest_allowed(row.get("student"), row.get("student_group"), row.get("quiz"))
+		row["retest_eligible"] = retest.get("allowed")
+		row["retest_valid_until"] = retest.get("retest_valid_until")
+		row["retest_message"] = retest.get("message")
+		return
+
+	row["nyc_checklist"] = status.get("checklist")
+	row["retest_eligible"] = status.get("eligible")
+	row["retest_valid_until"] = status.get("retest_valid_until")
+	row["retest_message"] = status.get("message")
+	row["retest_status"] = status.get("retest_status")
 
 
 def _sync_activity_score_fields(activities, score_summary):
@@ -539,7 +615,8 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
                 activity.status = summary["status"]
 
             key = (activity.student, activity.quiz)
-            if key not in activity_map:
+            existing = activity_map.get(key)
+            if _should_prefer_activity(activity, existing, score_summary):
                 activity_map[key] = activity
                 activity.assessment_result = assessment_result_map.get(activity.name)
 
@@ -571,6 +648,8 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
             row["assessment_result"] = getattr(activity, "assessment_result", None)
         else:
             row["status"] = "Pending"
+
+        _attach_nyc_retest_info(row)
 
         if row.get("bulk_result_enabled") and row.get("bulk_assessment_plan"):
             bulk_result = bulk_result_map.get((row.get("student"), row.get("bulk_assessment_plan")))
@@ -1024,3 +1103,19 @@ def download_adnoc_theory_assessment(assessment_result):
     )
     frappe.local.response.filecontent = pdf_file
     frappe.local.response.type = "pdf"
+
+
+@frappe.whitelist()
+def create_nyc_reassessment_checklist(quiz_activity=None, assessment_result=None):
+	from numerouno.numerouno.doctype.nyc_reassessment_checklist.nyc_reassessment_checklist import (
+		create_from_assessment_result,
+		create_from_quiz_activity,
+	)
+
+	quiz_activity = (quiz_activity or "").strip()
+	assessment_result = (assessment_result or "").strip()
+	if quiz_activity:
+		return create_from_quiz_activity(quiz_activity)
+	if assessment_result:
+		return create_from_assessment_result(assessment_result)
+	frappe.throw(_("Quiz Activity or Assessment Result is required."))
