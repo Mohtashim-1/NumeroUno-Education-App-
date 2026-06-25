@@ -62,9 +62,8 @@ def get_columns():
 		{
 			"fieldname": "student_name",
 			"label": _("Student Name"),
-			"fieldtype": "Link",
-			"options": "Student",
-			"width": 150,
+			"fieldtype": "Data",
+			"width": 200,
 		},
 		{
 			"fieldname": "from_date",
@@ -158,7 +157,7 @@ def get_data(filters):
 			sgs.course_name AS course_name,
 			DATE(sg.creation) AS course_creation_date,
 			GROUP_CONCAT(DISTINCT sgi.instructor_name ORDER BY sgi.idx SEPARATOR ', ') AS instructor_name,
-			sgs.student AS student_name,
+			COALESCE(NULLIF(TRIM(sgs.student_name), ''), st.student_name, sgs.student) AS student_name,
 			sgs.start_date AS from_date,
 			{_invoice_no_sql_without_join()} AS invoice_no,
 			sgs.customer_purchase_order AS customer_lpo,
@@ -172,6 +171,8 @@ def get_data(filters):
 			ON sgi.parent = sgs.student_group
 			AND sgi.parenttype = 'Student Group'
 			AND sgi.parentfield = 'instructors'
+		LEFT JOIN `tabStudent` AS st
+			ON st.name = sgs.student
 		WHERE {where_clause}
 		GROUP BY sgs.name
 		ORDER BY sgs.start_date DESC, sgs.student_group DESC

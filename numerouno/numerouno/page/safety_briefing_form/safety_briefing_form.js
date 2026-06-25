@@ -126,7 +126,7 @@ class SafetyBriefingForm {
 		this.loading_key = load_key;
 
 		frappe.call({
-			method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form.get_form_html",
+			method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.get_form_html",
 			args,
 			freeze: true,
 			callback: (r) => {
@@ -485,7 +485,7 @@ class SafetyBriefingForm {
 
 		this.saving = true;
 		frappe.call({
-			method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form.save_form_data",
+			method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.save_form",
 			args: { data: this.collect_data() },
 			freeze: true,
 			callback: (r) => {
@@ -514,7 +514,7 @@ class SafetyBriefingForm {
 		frappe.confirm(__("Submit this Safety Briefing?"), () => {
 			this.save_and_then(() => {
 				frappe.call({
-					method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form.submit_form",
+					method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.submit",
 					args: { docname: this.doc.name },
 					freeze: true,
 					callback: (r) => {
@@ -534,7 +534,7 @@ class SafetyBriefingForm {
 			return;
 		}
 		frappe.call({
-			method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form.save_form_data",
+			method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.save_form",
 			args: { data: this.collect_data() },
 			callback: (r) => {
 				if (r.exc) return;
@@ -575,7 +575,7 @@ class SafetyBriefingForm {
 					: { briefing_type: this.doc.briefing_type, student_group };
 				if (this.doc.name) {
 					frappe.call({
-						method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form.save_form_data",
+						method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.save_form",
 						args: { data: { ...this.collect_data(), attendees: this.doc.attendees, student_group } },
 						callback: (save_r) => {
 							if (!save_r.exc) this.doc = save_r.message;
