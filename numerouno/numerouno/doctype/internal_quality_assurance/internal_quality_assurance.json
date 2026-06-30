@@ -42,7 +42,8 @@
   "gm_signature",
   "gm_signature_date",
   "footer_section",
-  "document_reference"
+  "document_reference",
+  "amended_from"
  ],
  "fields": [
   {
@@ -242,12 +243,23 @@
   {
    "fieldname": "column_break_gekq",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Internal Quality Assurance",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-05-02 02:59:03.857318",
+ "modified": "2026-06-30 14:22:02.343840",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Internal Quality Assurance",

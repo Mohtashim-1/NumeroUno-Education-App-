@@ -404,6 +404,7 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 			</div>
 
 			<div class="asset-filters">
+				<div id="filter-asset-no"></div>
 				<div id="filter-asset-category"></div>
 				<div id="filter-location"></div>
 				<div id="filter-department"></div>
@@ -586,6 +587,20 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 	load_portal_data();
 
 	function init_filters() {
+		filterControls.asset_name = make_filter_control({
+			label: "Asset No",
+			fieldname: "asset_name",
+			fieldtype: "Link",
+			options: "Asset",
+			parent: $("#filter-asset-no"),
+			get_query: function () {
+				return {
+					filters: {
+						docstatus: ["<", 2]
+					}
+				};
+			}
+		});
 		filterControls.asset_category = make_filter_control({
 			label: "Asset Category",
 			fieldname: "asset_category",
@@ -633,6 +648,9 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 		});
 		$("#asset-clear-focus").on("click", function () {
 			filterState.asset_name = "";
+			if (filterControls.asset_name) {
+				filterControls.asset_name.set_value("");
+			}
 			reset_pagination();
 			load_portal_data();
 		});
@@ -645,19 +663,23 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 	}
 
 	function make_filter_control(config) {
+		var df = {
+			fieldtype: config.fieldtype || "Link",
+			fieldname: config.fieldname,
+			label: config.label,
+			options: config.options
+		};
+		if (config.get_query) {
+			df.get_query = config.get_query;
+		}
 		var control = frappe.ui.form.make_control({
 			parent: config.parent,
-			df: {
-				fieldtype: config.fieldtype || "Link",
-				fieldname: config.fieldname,
-				label: config.label,
-				options: config.options,
-				change: function () {
-					filterState[config.fieldname] = control.get_value() || "";
-				}
-			},
+			df: df,
 			render_input: true
 		});
+		control.df.change = function () {
+			filterState[config.fieldname] = control.get_value() || "";
+		};
 		return control;
 	}
 
@@ -665,7 +687,6 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 		Object.keys(filterControls).forEach(function (key) {
 			filterState[key] = filterControls[key].get_value() || "";
 		});
-		filterState.asset_name = "";
 		reset_pagination();
 		load_portal_data();
 	}
@@ -792,6 +813,9 @@ frappe.pages['asset-management-portal'].on_page_load = function(wrapper) {
 
 	function render_focus() {
 		if (filterState.asset_name) {
+			if (filterControls.asset_name && filterControls.asset_name.get_value() !== filterState.asset_name) {
+				filterControls.asset_name.set_value(filterState.asset_name);
+			}
 			$("#asset-focus-label").text(`Showing maintenance and compliance for ${filterState.asset_name}`);
 			$("#asset-focus-bar").addClass("active");
 		} else {

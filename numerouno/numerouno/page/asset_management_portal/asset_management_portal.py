@@ -8,8 +8,39 @@ def _strip(value):
     return (value or "").strip()
 
 
+def _active_asset_filters(extra=None):
+    """Base filters for Asset queries — exclude cancelled documents."""
+    filters = {"docstatus": ["<", 2]}
+    if extra:
+        filters.update(extra)
+    return filters
+
+
+def _cancelled_asset_names():
+    return frappe.get_all("Asset", filters={"docstatus": 2}, pluck="name")
+
+
+def _apply_active_asset_scope(maintenance_filters):
+    """Exclude maintenance rows linked to cancelled assets."""
+    filters = dict(maintenance_filters or {})
+    cancelled = _cancelled_asset_names()
+    if not cancelled:
+        return filters
+
+    asset_name = filters.get("asset_name")
+    if asset_name:
+        if isinstance(asset_name, (list, tuple)) and asset_name and asset_name[0] == "not in":
+            existing = list(asset_name[1] or [])
+            filters["asset_name"] = ["not in", list(set(existing) | set(cancelled))]
+        elif asset_name in cancelled:
+            filters["asset_name"] = ["in", []]
+    else:
+        filters["asset_name"] = ["not in", cancelled]
+    return filters
+
+
 def _get_filters(asset_category=None, location=None, department=None, status=None, criticality=None):
-    asset_filters = {}
+    asset_filters = _active_asset_filters()
     maintenance_filters = {}
 
     asset_category = _strip(asset_category)
@@ -30,6 +61,7 @@ def _get_filters(asset_category=None, location=None, department=None, status=Non
     if criticality:
         maintenance_filters["custom_criticality_rating"] = criticality
 
+    maintenance_filters = _apply_active_asset_scope(maintenance_filters)
     return asset_filters, maintenance_filters
 
 
@@ -63,6 +95,11 @@ def get_asset_management_portal_data(
     )
     asset_name = _strip(asset_name)
     if asset_name:
+        if frappe.db.get_value("Asset", asset_name, "docstatus") == 2:
+            return _empty_portal_response(
+                asset_limit, asset_offset, maintenance_limit, maintenance_offset,
+                compliance_limit, compliance_offset,
+            )
         asset_filters["name"] = asset_name
         maintenance_filters["asset_name"] = asset_name
 
@@ -137,7 +174,7 @@ def get_asset_management_portal_data(
     if asset_names:
         for row in frappe.get_all(
             "Asset",
-            filters={"name": ["in", asset_names]},
+            filters=_active_asset_filters({"name": ["in", asset_names]}),
             fields=["name", "asset_name", "location", "department", "status"],
         ):
             asset_map[row.name] = row
@@ -211,7 +248,7 @@ def get_asset_management_portal_data(
     if compliance_asset_names:
         for asset_row in frappe.get_all(
             "Asset",
-            filters={"name": ["in", compliance_asset_names]},
+            filters=_active_asset_filters({"name": ["in", compliance_asset_names]}),
             fields=[
                 "name",
                 "asset_name",
@@ -230,7 +267,7 @@ def get_asset_management_portal_data(
             row["custom_certificate_expiry_date"] = asset_expiry
             row["days_to_expiry"] = (getdate(asset_expiry) - today).days
 
-    direct_asset_filters = {**asset_filters, "custom_compliance_certificate": ["is", "set"]}
+    direct_asset_filters = _active_asset_filters({**asset_filters, "custom_compliance_certificate": ["is", "set"]})
     if asset_name:
         direct_asset_filters["name"] = asset_name
     direct_assets = frappe.get_all(
@@ -312,6 +349,33 @@ def get_asset_management_portal_data(
             "maintenance_limit": maintenance_limit,
             "maintenance_offset": maintenance_offset,
             "compliance_total": compliance_total,
+            "compliance_limit": compliance_limit,
+            "compliance_offset": compliance_offset,
+        },
+    }
+
+
+def _empty_portal_response(
+    asset_limit, asset_offset, maintenance_limit, maintenance_offset, compliance_limit, compliance_offset
+):
+    return {
+        "metrics": {
+            "total_assets": 0,
+            "in_maintenance": 0,
+            "overdue_tasks": frappe.db.count("Asset Maintenance Log", filters={"maintenance_status": "Overdue"}),
+            "certificates_due": 0,
+        },
+        "assets": [],
+        "maintenance": [],
+        "compliance": [],
+        "pagination": {
+            "asset_total": 0,
+            "asset_limit": asset_limit,
+            "asset_offset": asset_offset,
+            "maintenance_total": 0,
+            "maintenance_limit": maintenance_limit,
+            "maintenance_offset": maintenance_offset,
+            "compliance_total": 0,
             "compliance_limit": compliance_limit,
             "compliance_offset": compliance_offset,
         },
