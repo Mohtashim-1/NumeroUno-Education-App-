@@ -373,56 +373,129 @@
 }
 
 .sig-img {
-	max-height: 24px;
-	max-width: 95px;
+	max-height: 56px;
+	max-width: 140px;
 	object-fit: contain;
 	display: block;
 	margin: 0 auto;
 }
 
 .sbf-signature-wrap {
-	position: relative;
-	min-height: 28px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	min-width: 148px;
+	padding: 2px 0;
 }
 
-.sbf-signature-canvas {
+.sbf-signature-box {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 100%;
-	height: 28px;
-	min-height: 28px;
-	display: block;
-	cursor: crosshair;
-	background: #fafafa;
-	border: 1px dashed #ccc;
-	touch-action: none;
-	-webkit-user-select: none;
-	user-select: none;
+	min-width: 140px;
+	min-height: 64px;
+	padding: 6px;
+	background: #fff7f2;
+	border: 1px dashed #f4c1a5;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.sbf-signature-canvas.has-signature {
+.sbf-signature-box:hover {
+	border-color: #d5a28a;
+	box-shadow: 0 0 0 2px rgba(244, 193, 165, 0.25);
+}
+
+.sbf-signature-box.has-signature {
+	background: #fffdfb;
 	border-style: solid;
-	border-color: #ddd;
-	background: #fff;
+	border-color: #e8c4ad;
+}
+
+.sbf-signature-box.sbf-signature-readonly {
+	cursor: default;
+	pointer-events: none;
+}
+
+.sbf-sig-display {
+	display: block;
+	max-width: 100%;
+	max-height: 56px;
+	object-fit: contain;
+}
+
+.sbf-sig-placeholder-text {
+	color: #9a6a4d;
+	font-size: 11px;
+	font-weight: 600;
+	text-align: center;
+	line-height: 1.3;
+	padding: 0 6px;
 }
 
 .sbf-signature-actions {
 	display: flex;
+	align-items: center;
 	justify-content: center;
-	gap: 4px;
-	margin-top: 2px;
+	gap: 6px;
+	flex-wrap: wrap;
+	width: 100%;
 }
 
-.sbf-signature-actions button {
-	font-size: 8px;
-	padding: 0 4px;
-	line-height: 1.4;
-	border: 1px solid #ccc;
-	background: #fff;
-	border-radius: 2px;
-	cursor: pointer;
+.sbf-signature-actions .btn {
+	min-width: 58px;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 4px 10px;
+	border-radius: 8px;
 }
 
-.sbf-signature-actions button:hover {
-	background: #f3f3f3;
+.sbf-signature-modal-wrap {
+	padding: 4px 2px 0;
+}
+
+.sbf-signature-modal-help {
+	margin: 0 0 12px;
+	color: #617083;
+	font-size: 13px;
+	text-align: center;
+}
+
+.sbf-signature-modal-canvas {
+	display: block;
+	width: 100%;
+	max-width: 560px;
+	height: 200px;
+	margin: 0 auto;
+	background: #fffdfb;
+	border: 1px dashed #d5a28a;
+	border-radius: 12px;
+	touch-action: none;
+	-webkit-user-select: none;
+	user-select: none;
+	cursor: crosshair;
+}
+
+.sbf-signature-modal-actions {
+	display: flex;
+	justify-content: center;
+	margin-top: 10px;
+}
+
+.nutc-instructors .sbf-signature-wrap,
+.nutc-instructor-single .sbf-signature-wrap,
+.nutc-attendees .sbf-signature-wrap {
+	min-width: 132px;
+}
+
+.nutc-instructors td:has(.sbf-signature-wrap),
+.nutc-instructor-single td:has(.sbf-signature-wrap),
+.nutc-attendees .col-signed {
+	min-width: 148px;
+	vertical-align: middle;
 }
 
 .sbf-readonly {
@@ -448,13 +521,23 @@
 }
 
 @media (max-width: 900px) {
-	.sbf-signature-wrap {
-		min-height: 52px;
+	.sbf-signature-box {
+		min-height: 72px;
+		min-width: 150px;
 	}
 
-	.sbf-signature-canvas {
-		height: 48px;
-		min-height: 44px;
+	.sbf-sig-display {
+		max-height: 64px;
+	}
+
+	.sbf-signature-actions .btn {
+		min-width: 68px;
+		padding: 6px 12px;
+		font-size: 12px;
+	}
+
+	.sbf-signature-modal-canvas {
+		height: 220px;
 	}
 
 	.h2s-course-codes .sbf-variant-check input[type="checkbox"] {
@@ -485,15 +568,12 @@
 	}
 
 	.sbf-signature-actions,
+	.sbf-signature-box,
 	.sbf-toolbar-note,
 	.page-head,
 	.layout-side-section,
 	.form-tabs,
 	.page-actions {
 		display: none !important;
-	}
-
-	.sbf-signature-canvas {
-		border: none;
 	}
 }

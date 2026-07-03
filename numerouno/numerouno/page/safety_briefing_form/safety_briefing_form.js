@@ -322,51 +322,46 @@ class SafetyBriefingForm {
 	}
 
 	signature_cell(table, idx, field, value) {
-		const id = `sig-${table}-${idx}-${field}`.replace(/[^a-zA-Z0-9_-]/g, "_");
-		const img = value ? `<img src="${value}" class="sig-img sbf-sig-preview" alt="">` : "";
-		return `<div class="sbf-signature-wrap">
-			${img}
-			<canvas class="sbf-signature-canvas ${value ? "has-signature" : ""}" id="${id}" width="120" height="28"></canvas>
-			<input type="hidden" class="sbf-signature-value" data-table="${table}" data-idx="${idx}" data-field="${field}" value="${value || ""}">
-			<div class="sbf-signature-actions"><button type="button" class="sbf-sig-clear" data-target="${id}">${__("Clear")}</button></div>
-		</div>`;
+		return render_signature_field({
+			value: value,
+			table: table,
+			idx: idx,
+			field: field,
+		});
 	}
 
 	signature_cell_root(field, value) {
-		const id = `sig-root-${field}`;
-		const img = value ? `<img src="${value}" class="sig-img sbf-sig-preview" alt="">` : "";
-		return `<div class="sbf-signature-wrap">
-			${img}
-			<canvas class="sbf-signature-canvas ${value ? "has-signature" : ""}" id="${id}" width="120" height="28"></canvas>
-			<input type="hidden" class="sbf-signature-value" data-root="${field}" value="${value || ""}">
-			<div class="sbf-signature-actions"><button type="button" class="sbf-sig-clear" data-target="${id}">${__("Clear")}</button></div>
-		</div>`;
+		return render_signature_field({
+			value: value,
+			root: field,
+		});
 	}
 
 	init_signature_pads() {
-		this.$root.find(".sbf-signature-canvas").each((_, canvas) => {
-			const $wrap = $(canvas).closest(".sbf-signature-wrap");
-			const $hidden = $wrap.find(".sbf-signature-value");
-			bind_signature_canvas(canvas, $hidden, $wrap);
+		const self = this;
+		this.$root.find(".sbf-sig-open-btn").off("click").on("click", function (e) {
+			e.preventDefault();
+			if (self.doc && cint(self.doc.docstatus) === 1) return;
+			open_safety_briefing_signature_modal($(this).closest(".sbf-signature-wrap"));
 		});
 
-		this.$root.find(".sbf-sig-clear").on("click", function (e) {
+		this.$root.find(".sbf-sig-clear").off("click").on("click", function (e) {
 			e.preventDefault();
-			const id = $(this).data("target");
-			const canvas = document.getElementById(id);
-			if (!canvas) return;
-			const $wrap = $(canvas).closest(".sbf-signature-wrap");
-			const ctx = canvas.getContext("2d");
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
-			$wrap.find(".sbf-signature-value").val("");
-			$wrap.find(".sbf-sig-preview").remove();
-			$(canvas).removeClass("has-signature");
+			if (self.doc && cint(self.doc.docstatus) === 1) return;
+			clear_safety_briefing_signature($(this).closest(".sbf-signature-wrap"));
+		});
+
+		this.$root.find(".sbf-signature-box").off("click").on("click", function (e) {
+			if ($(e.target).closest("button").length) return;
+			if (self.doc && cint(self.doc.docstatus) === 1) return;
+			open_safety_briefing_signature_modal($(this).closest(".sbf-signature-wrap"));
 		});
 	}
 
 	apply_readonly_state() {
 		const submitted = cint(this.doc?.docstatus) === 1;
-		this.$root.find("input, canvas, button.sbf-sig-clear").prop("disabled", submitted);
+		this.$root.find("input, select, textarea, button.sbf-sig-open-btn, button.sbf-sig-clear").prop("disabled", submitted);
+		this.$root.find(".sbf-signature-box").toggleClass("sbf-signature-readonly", submitted);
 		if (submitted) {
 			this.page.clear_primary_action();
 			this.$root.find(".sbf-toolbar-note").html(
@@ -588,26 +583,123 @@ class SafetyBriefingForm {
 	}
 }
 
-function bind_signature_canvas(canvas, $hidden, $wrap) {
+function render_signature_field(config) {
+	const value = config.value || "";
+	const hasSig = !!value;
+	const attrs = config.root
+		? `data-root="${frappe.utils.escape_html(config.root)}"`
+		: `data-table="${frappe.utils.escape_html(config.table)}" data-idx="${config.idx}" data-field="${frappe.utils.escape_html(config.field)}"`;
+	const preview = hasSig
+		? `<img src="${value}" class="sbf-sig-display" alt="${__("Signature")}">`
+		: `<span class="sbf-sig-placeholder-text">${__("Tap to sign")}</span>`;
+
+	return `
+		<div class="sbf-signature-wrap">
+			<div class="sbf-signature-box ${hasSig ? "has-signature" : ""}">
+				${preview}
+			</div>
+			<input type="hidden" class="sbf-signature-value" ${attrs} value="${frappe.utils.escape_html(value)}">
+			<div class="sbf-signature-actions">
+				<button type="button" class="btn btn-primary btn-xs sbf-sig-open-btn">${__("Sign")}</button>
+				<button type="button" class="btn btn-default btn-xs sbf-sig-clear" ${hasSig ? "" : "disabled"}>${__("Clear")}</button>
+			</div>
+		</div>
+	`;
+}
+
+function update_safety_briefing_signature_preview($wrap, dataUrl) {
+	const $hidden = $wrap.find(".sbf-signature-value");
+	const $box = $wrap.find(".sbf-signature-box");
+	$hidden.val(dataUrl || "");
+	if (dataUrl) {
+		$box.addClass("has-signature").html(`<img src="${dataUrl}" class="sbf-sig-display" alt="${__("Signature")}">`);
+		$wrap.find(".sbf-sig-clear").prop("disabled", false);
+	} else {
+		$box.removeClass("has-signature").html(`<span class="sbf-sig-placeholder-text">${__("Tap to sign")}</span>`);
+		$wrap.find(".sbf-sig-clear").prop("disabled", true);
+	}
+}
+
+function clear_safety_briefing_signature($wrap) {
+	update_safety_briefing_signature_preview($wrap, "");
+}
+
+function open_safety_briefing_signature_modal($wrap) {
+	const existing = $wrap.find(".sbf-signature-value").val() || "";
+	const dialog = new frappe.ui.Dialog({
+		title: __("Signature"),
+		size: "large",
+		fields: [
+			{
+				fieldtype: "HTML",
+				fieldname: "signature_pad_html",
+			},
+		],
+		primary_action_label: __("Save Signature"),
+		primary_action: function () {
+			const canvas = dialog.$wrapper.find(".sbf-signature-modal-canvas")[0];
+			if (!canvas || is_safety_briefing_canvas_blank(canvas)) {
+				frappe.msgprint(__("Please draw your signature first."));
+				return;
+			}
+			update_safety_briefing_signature_preview($wrap, canvas.toDataURL("image/png"));
+			dialog.hide();
+			frappe.show_alert({ message: __("Signature saved"), indicator: "green" });
+		},
+	});
+
+	dialog.fields_dict.signature_pad_html.$wrapper.html(`
+		<div class="sbf-signature-modal-wrap">
+			<p class="sbf-signature-modal-help">${__("Draw your signature in the box below. Works with finger on tablet and phone.")}</p>
+			<canvas class="sbf-signature-modal-canvas" width="560" height="200"></canvas>
+			<div class="sbf-signature-modal-actions">
+				<button type="button" class="btn btn-default btn-sm sbf-modal-sig-clear">${__("Clear")}</button>
+			</div>
+		</div>
+	`);
+
+	const canvas = dialog.fields_dict.signature_pad_html.$wrapper.find(".sbf-signature-modal-canvas")[0];
+	const teardown = bind_safety_briefing_signature_canvas(canvas);
+
+	dialog.fields_dict.signature_pad_html.$wrapper.find(".sbf-modal-sig-clear").on("click", function (e) {
+		e.preventDefault();
+		teardown.clear();
+	});
+
+	if (existing) {
+		teardown.load(existing);
+	}
+
+	dialog.onhide = function () {
+		teardown.destroy();
+	};
+
+	dialog.show();
+}
+
+function is_safety_briefing_canvas_blank(canvas) {
+	const ctx = canvas.getContext("2d");
+	const pixels = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+	return !pixels.some((color) => color !== 0);
+}
+
+function bind_safety_briefing_signature_canvas(canvas) {
 	const ctx = canvas.getContext("2d");
 	let drawing = false;
+	const ratio = window.devicePixelRatio || 1;
+	const displayWidth = 560;
+	const displayHeight = 200;
 
-	function displayHeight() {
-		return parseInt(window.getComputedStyle(canvas).height, 10) || 28;
-	}
-
-	function resize() {
-		const ratio = window.devicePixelRatio || 1;
-		const rect = canvas.getBoundingClientRect();
-		const height = displayHeight();
-		canvas.width = Math.max(rect.width, 80) * ratio;
-		canvas.height = height * ratio;
-		ctx.setTransform(1, 0, 0, 1, 0, 0);
-		ctx.scale(ratio, ratio);
-		ctx.lineWidth = 2;
-		ctx.lineCap = "round";
-		ctx.strokeStyle = "#000";
-	}
+	canvas.style.width = `${displayWidth}px`;
+	canvas.style.height = `${displayHeight}px`;
+	canvas.width = displayWidth * ratio;
+	canvas.height = displayHeight * ratio;
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
+	ctx.scale(ratio, ratio);
+	ctx.lineWidth = 2.5;
+	ctx.lineCap = "round";
+	ctx.lineJoin = "round";
+	ctx.strokeStyle = "#111";
 
 	function pointFromEvent(event) {
 		const rect = canvas.getBoundingClientRect();
@@ -616,12 +708,6 @@ function bind_signature_canvas(canvas, $hidden, $wrap) {
 			(event.changedTouches && event.changedTouches[0]) ||
 			event;
 		return { x: source.clientX - rect.left, y: source.clientY - rect.top };
-	}
-
-	function save() {
-		$hidden.val(canvas.toDataURL("image/png"));
-		$wrap.find(".sbf-sig-preview").remove();
-		$(canvas).addClass("has-signature");
 	}
 
 	function startDraw(event) {
@@ -638,7 +724,6 @@ function bind_signature_canvas(canvas, $hidden, $wrap) {
 		const p = pointFromEvent(event);
 		ctx.lineTo(p.x, p.y);
 		ctx.stroke();
-		save();
 	}
 
 	function endDraw(event) {
@@ -646,13 +731,33 @@ function bind_signature_canvas(canvas, $hidden, $wrap) {
 		drawing = false;
 	}
 
-	resize();
-	canvas.addEventListener("mousedown", startDraw);
-	canvas.addEventListener("mousemove", draw);
-	canvas.addEventListener("mouseup", endDraw);
-	canvas.addEventListener("mouseleave", endDraw);
-	canvas.addEventListener("touchstart", startDraw, { passive: false });
-	canvas.addEventListener("touchmove", draw, { passive: false });
-	canvas.addEventListener("touchend", endDraw, { passive: false });
-	canvas.addEventListener("touchcancel", endDraw, { passive: false });
+	const handlers = [
+		["mousedown", startDraw],
+		["mousemove", draw],
+		["mouseup", endDraw],
+		["mouseleave", endDraw],
+		["touchstart", startDraw, { passive: false }],
+		["touchmove", draw, { passive: false }],
+		["touchend", endDraw, { passive: false }],
+		["touchcancel", endDraw, { passive: false }],
+	];
+
+	handlers.forEach(([name, fn, opts]) => canvas.addEventListener(name, fn, opts || false));
+
+	return {
+		clear() {
+			ctx.clearRect(0, 0, displayWidth, displayHeight);
+		},
+		load(dataUrl) {
+			const img = new Image();
+			img.onload = function () {
+				ctx.clearRect(0, 0, displayWidth, displayHeight);
+				ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
+			};
+			img.src = dataUrl;
+		},
+		destroy() {
+			handlers.forEach(([name, fn, opts]) => canvas.removeEventListener(name, fn, opts || false));
+		},
+	};
 }
