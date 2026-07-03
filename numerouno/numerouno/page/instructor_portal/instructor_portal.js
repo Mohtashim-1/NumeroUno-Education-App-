@@ -490,6 +490,11 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					<button type="button" class="portal-tab" data-target="quiz-section">Quiz Status</button>
 					<button type="button" class="portal-tab" data-target="result-section">Result</button>
 					<button type="button" class="portal-tab" data-target="bulk-assessment-section">Bulk Assessment</button>
+					<button type="button" class="portal-tab" data-target="resit-section">Resit</button>
+					<button type="button" class="portal-tab" data-target="assessor-checklist-section">Course Assessor Checklist</button>
+					<button type="button" class="portal-tab" data-target="safety-briefing-section">Safety Briefing</button>
+					<button type="button" class="portal-tab" data-target="wms-pretest-section">WMS Pretest</button>
+					<button type="button" class="portal-tab" data-target="adsd-pretest-section">ADSD Pretest</button>
 				</div>
 			</div>
 
@@ -665,6 +670,183 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					</div>
 				</div>
 			</div>
+
+			<div class="portal-section" id="resit-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>RT</span>
+							<div>
+								<h3>Resit</h3>
+								<p class="panel-subtitle">NYC reassessment checklists for students who need a retest.</p>
+							</div>
+						</div>
+						<div>
+							<button type="button" class="portal-btn portal-btn-primary instructor-form-new-btn" data-form-key="resit">New Resit Checklist</button>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Checklist</th>
+									<th>Student</th>
+									<th>Group</th>
+									<th>First Assessment</th>
+									<th>Retest Status</th>
+									<th>Status</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-resit-body">
+								<tr><td colspan="7" class="empty-state">Loading...</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="portal-section" id="assessor-checklist-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>AC</span>
+							<div>
+								<h3>Course Assessor Checklist</h3>
+								<p class="panel-subtitle">NUTC-P14-F01 course assessor checklists for your assigned student groups.</p>
+							</div>
+						</div>
+						<div>
+							<button type="button" class="portal-btn portal-btn-primary instructor-form-new-btn" data-form-key="assessor_checklist">New Course Assessor Checklist</button>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Checklist</th>
+									<th>Type</th>
+									<th>Student Group</th>
+									<th>Date</th>
+									<th>Status</th>
+									<th>Modified</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-assessor-checklist-body">
+								<tr><td colspan="7" class="empty-state">Loading...</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="portal-section" id="safety-briefing-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>SB</span>
+							<div>
+								<h3>Safety Briefing</h3>
+								<p class="panel-subtitle">Create and manage safety briefing forms for your student groups.</p>
+							</div>
+						</div>
+						<div>
+							<button type="button" class="portal-btn portal-btn-primary instructor-form-new-btn" data-form-key="safety_briefing">New Safety Briefing</button>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Briefing</th>
+									<th>Type</th>
+									<th>Student Group</th>
+									<th>Date</th>
+									<th>Status</th>
+									<th>Modified</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-safety-briefing-body">
+								<tr>
+									<td colspan="7" class="empty-state">Loading...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="portal-section" id="wms-pretest-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>WM</span>
+							<div>
+								<h3>WMS Pretest</h3>
+								<p class="panel-subtitle">English proficiency pre-tests (WMS pre-requisite) for candidates.</p>
+							</div>
+						</div>
+						<div>
+							<button type="button" class="portal-btn portal-btn-primary instructor-form-new-btn" data-form-key="wms_pretest">New WMS Pretest</button>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Test</th>
+									<th>Candidate</th>
+									<th>Group</th>
+									<th>Date</th>
+									<th>Result</th>
+									<th>Status</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-wms-pretest-body">
+								<tr><td colspan="7" class="empty-state">Loading...</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="portal-section" id="adsd-pretest-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>AD</span>
+							<div>
+								<h3>ADSD Pretest</h3>
+								<p class="panel-subtitle">ADSD theory pre-tests for your assigned students.</p>
+							</div>
+						</div>
+						<div>
+							<button type="button" class="portal-btn portal-btn-primary instructor-form-new-btn" data-form-key="adsd_pretest">New ADSD Pretest</button>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Test</th>
+									<th>Candidate</th>
+									<th>Group</th>
+									<th>Date</th>
+									<th>Result</th>
+									<th>Status</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-adsd-pretest-body">
+								<tr><td colspan="7" class="empty-state">Loading...</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
 		</div>
 	`).appendTo(page.body);
 
@@ -672,6 +854,13 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	var cardsOffset = 0;
 	var quizOffset = 0;
 	var resultOffset = 0;
+	var formSectionOffsets = {
+		resit: 0,
+		assessor_checklist: 0,
+		safety_briefing: 0,
+		wms_pretest: 0,
+		adsd_pretest: 0
+	};
 	var pageSize = 50;
 	var isAdnocInstructor = false;
 	var filterState = {
@@ -686,7 +875,9 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	load_quiz_status();
 	load_results();
 	load_bulk_assessments();
+	load_all_instructor_forms();
 	init_tabs();
+	init_instructor_form_actions();
 
 	function load_portal_data() {
 		frappe.call({
@@ -792,10 +983,12 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		cardsOffset = 0;
 		quizOffset = 0;
 		resultOffset = 0;
+		reset_form_section_offsets();
 		load_portal_data();
 		load_quiz_status();
 		load_results();
 		load_bulk_assessments();
+		load_all_instructor_forms();
 	}
 
 	function render_attendance(records, append) {
@@ -1433,6 +1626,293 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		});
 
 		bind_bulk_assessment_actions();
+	}
+
+	function reset_form_section_offsets() {
+		Object.keys(formSectionOffsets).forEach(function (key) {
+			formSectionOffsets[key] = 0;
+		});
+	}
+
+	function instructor_form_section_config() {
+		return {
+			resit: {
+				bodyId: "instructor-resit-body",
+				sectionId: "resit-section",
+				emptyMessage: "No resit checklists found.",
+				renderRow: render_resit_row
+			},
+			assessor_checklist: {
+				bodyId: "instructor-assessor-checklist-body",
+				sectionId: "assessor-checklist-section",
+				emptyMessage: "No course assessor checklists found for your student groups.",
+				renderRow: render_assessor_checklist_row
+			},
+			safety_briefing: {
+				bodyId: "instructor-safety-briefing-body",
+				sectionId: "safety-briefing-section",
+				emptyMessage: "No safety briefings found.",
+				renderRow: render_safety_briefing_row
+			},
+			wms_pretest: {
+				bodyId: "instructor-wms-pretest-body",
+				sectionId: "wms-pretest-section",
+				emptyMessage: "No WMS pretests found.",
+				renderRow: render_wms_pretest_row
+			},
+			adsd_pretest: {
+				bodyId: "instructor-adsd-pretest-body",
+				sectionId: "adsd-pretest-section",
+				emptyMessage: "No ADSD pretests found.",
+				renderRow: render_adsd_pretest_row
+			}
+		};
+	}
+
+	function init_instructor_form_actions() {
+		$(".instructor-form-new-btn").off("click").on("click", function () {
+			open_instructor_form($(this).data("form-key"));
+		});
+	}
+
+	function open_instructor_form(formKey) {
+		var routes = {
+			resit: { route: "Form", doctype: "NYC Reassessment Checklist" },
+			assessor_checklist: { route: "course-assessor-checklist" },
+			safety_briefing: { route: "safety-briefing-form" },
+			wms_pretest: { route: "Form", doctype: "English Proficiency Test" },
+			adsd_pretest: { route: "Form", doctype: "Pre Test ADSD" }
+		};
+		var target = routes[formKey];
+		if (!target) return;
+
+		frappe.route_options = {};
+		if (filterState.student_group) {
+			frappe.route_options.student_group = filterState.student_group;
+		}
+		if (filterState.student) {
+			frappe.route_options.student = filterState.student;
+		}
+
+		if (target.route === "Form") {
+			frappe.set_route("Form", target.doctype);
+			return;
+		}
+		frappe.set_route(target.route);
+	}
+
+	function load_all_instructor_forms() {
+		Object.keys(formSectionOffsets).forEach(function (formKey) {
+			load_instructor_form_section(formKey);
+		});
+	}
+
+	function load_instructor_form_section(formKey) {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_form_records",
+			args: {
+				form_key: formKey,
+				limit: pageSize,
+				offset: formSectionOffsets[formKey] || 0,
+				student_group: filterState.student_group,
+				student: filterState.student,
+				instructor: filterState.instructor
+			},
+			callback: function (r) {
+				var message = r.message || {};
+				render_instructor_form_section(
+					formKey,
+					message.records || [],
+					(formSectionOffsets[formKey] || 0) > 0
+				);
+			},
+			error: function () {
+				render_instructor_form_section(formKey, [], false);
+				frappe.msgprint("Unable to load instructor form records.");
+			}
+		});
+	}
+
+	function render_instructor_form_section(formKey, records, append) {
+		var config = instructor_form_section_config()[formKey];
+		if (!config) return;
+
+		var $body = $("#" + config.bodyId);
+		if (!append) {
+			$body.empty();
+		}
+
+		if (!records.length) {
+			if (!append) {
+				$body.append(`
+					<tr>
+						<td colspan="7" class="empty-state">${frappe.utils.escape_html(config.emptyMessage)}</td>
+					</tr>
+				`);
+			}
+			return;
+		}
+
+		records.forEach(function (row) {
+			$body.append(config.renderRow(row));
+		});
+
+		bind_instructor_form_load_more(formKey, records.length);
+	}
+
+	function bind_instructor_form_load_more(formKey, count) {
+		var config = instructor_form_section_config()[formKey];
+		if (!config) return;
+
+		var loadMoreId = formKey.replace(/_/g, "-") + "-load-more";
+		$("#" + loadMoreId).remove();
+		if (count < pageSize) return;
+
+		$("#" + config.sectionId + " .portal-panel").append(`
+			<div class="mt-2 text-center">
+				<button type="button" class="portal-btn portal-btn-ghost instructor-form-load-more" id="${loadMoreId}" data-form-key="${formKey}">Load more</button>
+			</div>
+		`);
+
+		$("#" + loadMoreId).off("click").on("click", function () {
+			formSectionOffsets[formKey] = (formSectionOffsets[formKey] || 0) + pageSize;
+			load_instructor_form_section(formKey);
+		});
+	}
+
+	function render_docstatus_pill(docstatus) {
+		var statusLabel = docstatus === 1 ? "Submitted" : "Draft";
+		var statusClass = docstatus === 1 ? "pass" : "pending";
+		return `<span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span>`;
+	}
+
+	function render_student_group_cell(student_group) {
+		if (!student_group) {
+			return `<span class="text-muted">-</span>`;
+		}
+		return `<a href="/app/student-group/${frappe.utils.escape_html(student_group)}">${frappe.utils.escape_html(student_group)}</a>`;
+	}
+
+	function render_student_cell(student, candidate_name) {
+		var studentLink = student
+			? `<a href="/app/student/${frappe.utils.escape_html(student)}">${frappe.utils.escape_html(student)}</a>`
+			: `<span class="text-muted">-</span>`;
+		var meta = candidate_name
+			? `<div class="data-meta">${frappe.utils.escape_html(candidate_name)}</div>`
+			: "";
+		return `<div class="data-title">${studentLink}</div>${meta}`;
+	}
+
+	function render_form_actions(primaryHref, erpHref) {
+		return `
+			<div class="quiz-actions">
+				<a class="portal-btn portal-btn-primary" href="${primaryHref}">Open</a>
+				<a class="portal-btn portal-btn-ghost" href="${erpHref}">ERP View</a>
+			</div>
+		`;
+	}
+
+	function render_resit_row(row) {
+		var docLink = `<a href="/app/nyc-reassessment-checklist/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`;
+		var dateLabel = row.first_assessment_date ? frappe.datetime.str_to_user(row.first_assessment_date) : "-";
+		var retestClass = row.retest_status === "Eligible" ? "pass" : row.retest_status === "Expired" ? "fail" : "pending";
+		return `
+			<tr>
+				<td><div class="data-title">${docLink}</div></td>
+				<td>${render_student_cell(row.student, row.candidate_name)}</td>
+				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
+				<td><span class="status-pill ${retestClass}">${frappe.utils.escape_html(row.retest_status || "-")}</span></td>
+				<td>${render_docstatus_pill(row.docstatus)}</td>
+				<td>${render_form_actions(
+					"/app/nyc-reassessment-checklist/" + frappe.utils.escape_html(row.name || ""),
+					"/app/nyc-reassessment-checklist/" + frappe.utils.escape_html(row.name || "")
+				)}</td>
+			</tr>
+		`;
+	}
+
+	function render_assessor_checklist_row(row) {
+		var docLink = `<a href="/app/course-assessor-checklist/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`;
+		var dateLabel = row.assessment_date ? frappe.datetime.str_to_user(row.assessment_date) : "-";
+		var modifiedLabel = row.modified ? frappe.datetime.str_to_user(row.modified) : "-";
+		var formCode = row.form_code ? `<div class="data-meta">${frappe.utils.escape_html(row.form_code)}</div>` : "";
+		return `
+			<tr>
+				<td><div class="data-title">${docLink}</div>${formCode}</td>
+				<td><div class="data-title">${frappe.utils.escape_html(row.checklist_type || "-")}</div></td>
+				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
+				<td>${render_docstatus_pill(row.docstatus)}</td>
+				<td><div class="data-title">${frappe.utils.escape_html(modifiedLabel)}</div></td>
+				<td>${render_form_actions(
+					"/app/course-assessor-checklist/" + frappe.utils.escape_html(row.name || ""),
+					"/app/assessor-checklist/" + frappe.utils.escape_html(row.name || "")
+				)}</td>
+			</tr>
+		`;
+	}
+
+	function render_safety_briefing_row(row) {
+		var briefingLink = `<a href="/app/safety-briefing-form/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`;
+		var dateLabel = row.briefing_date ? frappe.datetime.str_to_user(row.briefing_date) : "-";
+		var modifiedLabel = row.modified ? frappe.datetime.str_to_user(row.modified) : "-";
+		var formCode = row.form_code ? `<div class="data-meta">${frappe.utils.escape_html(row.form_code)}</div>` : "";
+		return `
+			<tr>
+				<td><div class="data-title">${briefingLink}</div>${formCode}</td>
+				<td><div class="data-title">${frappe.utils.escape_html(row.briefing_type || "-")}</div></td>
+				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
+				<td>${render_docstatus_pill(row.docstatus)}</td>
+				<td><div class="data-title">${frappe.utils.escape_html(modifiedLabel)}</div></td>
+				<td>${render_form_actions(
+					"/app/safety-briefing-form/" + frappe.utils.escape_html(row.name || ""),
+					"/app/safety-briefing/" + frappe.utils.escape_html(row.name || "")
+				)}</td>
+			</tr>
+		`;
+	}
+
+	function render_wms_pretest_row(row) {
+		var docLink = `<a href="/app/english-proficiency-test/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`;
+		var dateLabel = row.date_of_training ? frappe.datetime.str_to_user(row.date_of_training) : "-";
+		var resultClass = row.result === "Pass" ? "pass" : row.result === "Fail" ? "fail" : "pending";
+		return `
+			<tr>
+				<td><div class="data-title">${docLink}</div></td>
+				<td>${render_student_cell(row.student, row.candidate_name)}</td>
+				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
+				<td><span class="status-pill ${resultClass}">${frappe.utils.escape_html(row.result || "-")}</span></td>
+				<td>${render_docstatus_pill(row.docstatus)}</td>
+				<td>${render_form_actions(
+					"/app/english-proficiency-test/" + frappe.utils.escape_html(row.name || ""),
+					"/app/english-proficiency-test/" + frappe.utils.escape_html(row.name || "")
+				)}</td>
+			</tr>
+		`;
+	}
+
+	function render_adsd_pretest_row(row) {
+		var docLink = `<a href="/app/pre-test-adsd/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`;
+		var dateLabel = row.test_date ? frappe.datetime.str_to_user(row.test_date) : "-";
+		var resultClass = row.result === "Pass" ? "pass" : row.result === "Fail" ? "fail" : "pending";
+		var scoreMeta = row.score ? `<div class="data-meta">Score: ${frappe.utils.escape_html(row.score)}</div>` : "";
+		return `
+			<tr>
+				<td><div class="data-title">${docLink}</div>${scoreMeta}</td>
+				<td>${render_student_cell(row.student, row.candidate_name)}</td>
+				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
+				<td><span class="status-pill ${resultClass}">${frappe.utils.escape_html(row.result || "-")}</span></td>
+				<td>${render_docstatus_pill(row.docstatus)}</td>
+				<td>${render_form_actions(
+					"/app/pre-test-adsd/" + frappe.utils.escape_html(row.name || ""),
+					"/app/pre-test-adsd/" + frappe.utils.escape_html(row.name || "")
+				)}</td>
+			</tr>
+		`;
 	}
 
 	function bind_bulk_assessment_actions() {

@@ -4,6 +4,8 @@ frappe.ui.form.on("Assessor Checklist", {
 	},
 
 	refresh(frm) {
+		frm.add_custom_button(__("Document View"), () => open_course_assessor_checklist(frm));
+
 		frm.add_custom_button(__("Load Template"), () => {
 			if (!frm.doc.checklist_type) {
 				frappe.msgprint(__("Select a Checklist Type first"));
@@ -50,6 +52,21 @@ frappe.ui.form.on("Assessor Checklist", {
 		}
 	},
 });
+
+function open_course_assessor_checklist(frm) {
+	if (frm.is_new()) {
+		frappe.route_options = {};
+		if (frm.doc.checklist_type) {
+			frappe.route_options.checklist_type = frm.doc.checklist_type;
+		}
+		if (frm.doc.student_group) {
+			frappe.route_options.student_group = frm.doc.student_group;
+		}
+		frappe.set_route("course-assessor-checklist");
+		return;
+	}
+	frappe.set_route("course-assessor-checklist", frm.doc.name);
+}
 
 function is_unsaved_assessor_checklist(frm) {
 	return frm.is_new() || (frm.doc.name && frm.doc.name.startsWith("new-"));

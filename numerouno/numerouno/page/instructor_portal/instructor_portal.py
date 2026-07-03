@@ -386,6 +386,167 @@ def _resolve_student_group_names(user, roles, instructor_name=None):
     return _get_student_group_names_for_instructors(instructor_names)
 
 
+INSTRUCTOR_FORM_CONFIGS = {
+    "resit": {
+        "doctype": "NYC Reassessment Checklist",
+        "fields": [
+            "name",
+            "candidate_name",
+            "student",
+            "student_group",
+            "first_assessment_date",
+            "retest_status",
+            "retest_valid_until",
+            "docstatus",
+            "modified",
+        ],
+        "student_filter": True,
+    },
+    "assessor_checklist": {
+        "doctype": "Assessor Checklist",
+        "fields": [
+            "name",
+            "checklist_type",
+            "form_code",
+            "student_group",
+            "assessment_date",
+            "docstatus",
+            "modified",
+        ],
+        "student_filter": False,
+    },
+    "safety_briefing": {
+        "doctype": "Safety Briefing",
+        "fields": [
+            "name",
+            "briefing_type",
+            "form_code",
+            "student_group",
+            "briefing_date",
+            "docstatus",
+            "modified",
+        ],
+        "student_filter": False,
+    },
+    "wms_pretest": {
+        "doctype": "English Proficiency Test",
+        "fields": [
+            "name",
+            "candidate_name",
+            "student",
+            "student_group",
+            "date_of_training",
+            "result",
+            "docstatus",
+            "modified",
+        ],
+        "student_filter": True,
+    },
+    "adsd_pretest": {
+        "doctype": "Pre Test ADSD",
+        "fields": [
+            "name",
+            "candidate_name",
+            "student",
+            "student_group",
+            "test_date",
+            "result",
+            "score",
+            "docstatus",
+            "modified",
+        ],
+        "student_filter": True,
+    },
+}
+
+
+def _build_instructor_form_filters(user, roles, instructor=None, student_group=None, student=None, student_filter=False):
+    instructor = (instructor or "").strip()
+    student_group = (student_group or "").strip()
+    student = (student or "").strip()
+
+    student_group_names = _resolve_student_group_names(user, roles, instructor)
+    if student_group_names == []:
+        return None
+
+    filters = {"docstatus": ["in", [0, 1]]}
+
+    if student_group:
+        if student_group_names is None:
+            filters["student_group"] = student_group
+        elif student_group in student_group_names:
+            filters["student_group"] = student_group
+        else:
+            return None
+    elif student_group_names:
+        filters["student_group"] = ["in", student_group_names]
+
+    if student_filter and student:
+        filters["student"] = student
+
+    return filters
+
+
+def _get_instructor_form_records(
+    form_key,
+    limit=50,
+    offset=0,
+    student_group=None,
+    student=None,
+    instructor=None,
+):
+    config = INSTRUCTOR_FORM_CONFIGS.get(form_key)
+    if not config:
+        frappe.throw(_("Invalid instructor form key."))
+
+    limit = int(limit or 50)
+    offset = int(offset or 0)
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    filters = _build_instructor_form_filters(
+        user,
+        roles,
+        instructor=instructor,
+        student_group=student_group,
+        student=student,
+        student_filter=config.get("student_filter"),
+    )
+    if filters is None:
+        return {"records": [], "total": 0}
+
+    doctype = config["doctype"]
+    total = frappe.db.count(doctype, filters=filters)
+    records = frappe.get_all(
+        doctype,
+        filters=filters,
+        fields=config["fields"],
+        order_by="modified desc",
+        limit=limit,
+        start=offset,
+    )
+    return {"records": records, "total": total}
+
+
+@frappe.whitelist()
+def get_instructor_form_records(
+    form_key,
+    limit=50,
+    offset=0,
+    student_group=None,
+    student=None,
+    instructor=None,
+):
+    return _get_instructor_form_records(
+        form_key,
+        limit=limit,
+        offset=offset,
+        student_group=student_group,
+        student=student,
+        instructor=instructor,
+    )
+
+
 @frappe.whitelist()
 def get_instructor_portal_data(
     attendance_limit=50,
@@ -1071,6 +1232,22 @@ def submit_instructor_pass_fail_result(student_group, student, status):
     if skipped:
         return skipped[0]
     frappe.throw(_("No Assessment Result was created."))
+
+
+@frappe.whitelist()
+def get_instructor_safety_briefings(
+    limit=50,
+    offset=0,
+    student_group=None,
+    instructor=None,
+):
+    return _get_instructor_form_records(
+        "safety_briefing",
+        limit=limit,
+        offset=offset,
+        student_group=student_group,
+        instructor=instructor,
+    )
 
 
 @frappe.whitelist()
