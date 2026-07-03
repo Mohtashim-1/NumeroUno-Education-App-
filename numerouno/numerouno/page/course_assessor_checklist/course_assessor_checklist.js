@@ -301,48 +301,10 @@ class CourseAssessorChecklist {
 	}
 
 	init_signature_pads() {
-		this.$root.find(".cac-signature-canvas").each(function () {
-			const canvas = this;
+		this.$root.find(".cac-signature-canvas").each((_, canvas) => {
 			const $wrap = $(canvas).closest(".cac-signature-wrap");
 			const $hidden = $wrap.find(".cac-signature-value");
-			const ctx = canvas.getContext("2d");
-			let drawing = false;
-
-			function pointFromEvent(event) {
-				const rect = canvas.getBoundingClientRect();
-				const source = event.touches ? event.touches[0] : event;
-				return { x: source.clientX - rect.left, y: source.clientY - rect.top };
-			}
-
-			function save() {
-				$hidden.val(canvas.toDataURL("image/png"));
-				$wrap.find(".cac-sig-preview").remove();
-				$(canvas).addClass("has-signature");
-			}
-
-			ctx.lineWidth = 1.5;
-			ctx.lineCap = "round";
-			ctx.strokeStyle = "#000";
-
-			canvas.addEventListener("mousedown", (e) => {
-				drawing = true;
-				const p = pointFromEvent(e);
-				ctx.beginPath();
-				ctx.moveTo(p.x, p.y);
-			});
-			canvas.addEventListener("mousemove", (e) => {
-				if (!drawing) return;
-				const p = pointFromEvent(e);
-				ctx.lineTo(p.x, p.y);
-				ctx.stroke();
-				save();
-			});
-			canvas.addEventListener("mouseup", () => {
-				drawing = false;
-			});
-			canvas.addEventListener("mouseleave", () => {
-				drawing = false;
-			});
+			bind_cac_signature_canvas(canvas, $hidden, $wrap);
 		});
 
 		this.$root.find(".cac-sig-clear").on("click", function (e) {
@@ -537,4 +499,73 @@ class CourseAssessorChecklist {
 		if (this.doc?.name) frappe.set_route("Form", "Assessor Checklist", this.doc.name);
 		else frappe.set_route("Form", "Assessor Checklist", "new-assessor-checklist-1");
 	}
+}
+
+function bind_cac_signature_canvas(canvas, $hidden, $wrap) {
+	const ctx = canvas.getContext("2d");
+	let drawing = false;
+
+	function displayHeight() {
+		return parseInt(window.getComputedStyle(canvas).height, 10) || 28;
+	}
+
+	function resize() {
+		const ratio = window.devicePixelRatio || 1;
+		const rect = canvas.getBoundingClientRect();
+		const height = displayHeight();
+		canvas.width = Math.max(rect.width, 80) * ratio;
+		canvas.height = height * ratio;
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.scale(ratio, ratio);
+		ctx.lineWidth = 2;
+		ctx.lineCap = "round";
+		ctx.strokeStyle = "#000";
+	}
+
+	function pointFromEvent(event) {
+		const rect = canvas.getBoundingClientRect();
+		const source =
+			(event.touches && event.touches[0]) ||
+			(event.changedTouches && event.changedTouches[0]) ||
+			event;
+		return { x: source.clientX - rect.left, y: source.clientY - rect.top };
+	}
+
+	function save() {
+		$hidden.val(canvas.toDataURL("image/png"));
+		$wrap.find(".cac-sig-preview").remove();
+		$(canvas).addClass("has-signature");
+	}
+
+	function startDraw(event) {
+		if (event.cancelable) event.preventDefault();
+		drawing = true;
+		const p = pointFromEvent(event);
+		ctx.beginPath();
+		ctx.moveTo(p.x, p.y);
+	}
+
+	function draw(event) {
+		if (!drawing) return;
+		if (event.cancelable) event.preventDefault();
+		const p = pointFromEvent(event);
+		ctx.lineTo(p.x, p.y);
+		ctx.stroke();
+		save();
+	}
+
+	function endDraw(event) {
+		if (event.cancelable) event.preventDefault();
+		drawing = false;
+	}
+
+	resize();
+	canvas.addEventListener("mousedown", startDraw);
+	canvas.addEventListener("mousemove", draw);
+	canvas.addEventListener("mouseup", endDraw);
+	canvas.addEventListener("mouseleave", endDraw);
+	canvas.addEventListener("touchstart", startDraw, { passive: false });
+	canvas.addEventListener("touchmove", draw, { passive: false });
+	canvas.addEventListener("touchend", endDraw, { passive: false });
+	canvas.addEventListener("touchcancel", endDraw, { passive: false });
 }

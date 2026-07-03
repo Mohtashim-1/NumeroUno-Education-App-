@@ -7,7 +7,7 @@
 	{# ── Basic H2S: matches NUTC-P11-F02.00 Word layout ── #}
 	<div class="h2s-title-row">
 		<span class="h2s-title">SAFETY BRIEFING – BASIC H2S</span>
-		<span class="h2s-course-codes">9014 – ☐ &nbsp;&nbsp; 9014 – A ☐ &nbsp;&nbsp; 9014 – B ☐</span>
+		<span class="h2s-course-codes">9014 – {% if doc.variant_9014 %}☑{% else %}☐{% endif %} &nbsp;&nbsp; 9014 – A {% if doc.variant_9014_a %}☑{% else %}☐{% endif %} &nbsp;&nbsp; 9014 – B {% if doc.variant_9014_b %}☑{% else %}☐{% endif %}</span>
 	</div>
 
 	<table class="nutc-table nutc-attendees nutc-attendees-yellow">

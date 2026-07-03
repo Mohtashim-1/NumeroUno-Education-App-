@@ -1250,6 +1250,179 @@ def get_instructor_safety_briefings(
     )
 
 
+SAFETY_BRIEFING_TYPES = [
+    "Basic H2S",
+    "TBOSIET",
+    "TSbB",
+    "TFOET",
+    "THUET",
+    "BOSIET EBS",
+    "FOET EBS",
+    "HUET EBS",
+]
+
+SAFETY_BRIEFING_COURSE_HINTS = [
+    ("Basic H2S", ("BASIC H2S", "H2S", "OPITO H2S")),
+    ("TBOSIET", ("TBOSIET", "T BOSIET", "TROPICAL BOSIET")),
+    ("TSbB", ("TSBB", "T SBB", "TSBB")),
+    ("TFOET", ("TFOET", "T FOET", "TROPICAL FOET")),
+    ("THUET", ("THUET", "T HUET")),
+    ("BOSIET EBS", ("BOSIET EBS", "BOSIET")),
+    ("FOET EBS", ("FOET EBS", "FOET")),
+    ("HUET EBS", ("HUET EBS", "HUET")),
+]
+
+
+def _guess_briefing_type_for_course(course_name):
+    course_name = (course_name or "").strip().upper()
+    if not course_name:
+        return None
+    for briefing_type, keywords in SAFETY_BRIEFING_COURSE_HINTS:
+        if any(keyword in course_name for keyword in keywords):
+            return briefing_type
+    return None
+
+
+def _pick_group_briefing(briefings):
+    if not briefings:
+        return None
+    submitted = [row for row in briefings if row.docstatus == 1]
+    if submitted:
+        return submitted[0]
+    return briefings[0]
+
+
+@frappe.whitelist()
+def get_safety_briefing_group_status(student_group=None, instructor=None):
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+    student_group = (student_group or "").strip()
+    instructor = (instructor or "").strip()
+
+    student_group_names = _resolve_student_group_names(user, roles, instructor)
+    if student_group_names == []:
+        return {
+            "groups": [],
+            "summary": {"total": 0, "submitted": 0, "draft": 0, "pending": 0},
+            "briefing_types": SAFETY_BRIEFING_TYPES,
+        }
+
+    if student_group:
+        if student_group_names is None:
+            scoped_groups = [student_group]
+        elif student_group in student_group_names:
+            scoped_groups = [student_group]
+        else:
+            return {
+                "groups": [],
+                "summary": {"total": 0, "submitted": 0, "draft": 0, "pending": 0},
+                "briefing_types": SAFETY_BRIEFING_TYPES,
+            }
+    else:
+        scoped_groups = student_group_names
+
+    group_filters = {}
+    if scoped_groups is not None:
+        group_filters["name"] = ["in", scoped_groups]
+
+    groups = frappe.get_all(
+        "Student Group",
+        filters=group_filters,
+        fields=["name", "course"],
+        order_by="modified desc",
+        limit=300,
+    )
+    if not groups:
+        return {
+            "groups": [],
+            "summary": {"total": 0, "submitted": 0, "draft": 0, "pending": 0},
+            "briefing_types": SAFETY_BRIEFING_TYPES,
+        }
+
+    group_names = [row.name for row in groups]
+    briefing_rows = frappe.get_all(
+        "Safety Briefing",
+        filters={"student_group": ["in", group_names], "docstatus": ["<", 2]},
+        fields=[
+            "name",
+            "student_group",
+            "briefing_type",
+            "briefing_date",
+            "docstatus",
+            "modified",
+        ],
+        order_by="modified desc",
+    )
+
+    briefings_by_group = {}
+    for row in briefing_rows:
+        briefings_by_group.setdefault(row.student_group, []).append(row)
+
+    status_order = {"pending": 0, "draft": 1, "submitted": 2}
+    rows = []
+    summary = {"total": 0, "submitted": 0, "draft": 0, "pending": 0}
+
+    for group in groups:
+        expected_type = _guess_briefing_type_for_course(group.course)
+        briefing = _pick_group_briefing(briefings_by_group.get(group.name) or [])
+        if briefing:
+            status = "submitted" if briefing.docstatus == 1 else "draft"
+            summary[status] += 1
+        else:
+            status = "pending"
+            summary["pending"] += 1
+        summary["total"] += 1
+
+        rows.append(
+            {
+                "student_group": group.name,
+                "course": group.course,
+                "expected_briefing_type": expected_type,
+                "status": status,
+                "briefing_name": briefing.name if briefing else None,
+                "briefing_type": briefing.briefing_type if briefing else expected_type,
+                "briefing_date": briefing.briefing_date if briefing else None,
+                "docstatus": briefing.docstatus if briefing else None,
+                "modified": briefing.modified if briefing else None,
+            }
+        )
+
+    rows.sort(
+        key=lambda row: (
+            status_order.get(row["status"], 9),
+            row.get("student_group") or "",
+        )
+    )
+    return {"groups": rows, "summary": summary, "briefing_types": SAFETY_BRIEFING_TYPES}
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_instructor_student_groups(doctype, txt, searchfield, start, page_len, filters):
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+    student_group_names = _resolve_student_group_names(user, roles)
+
+    if student_group_names == []:
+        return []
+
+    name_filters = []
+    if student_group_names is not None:
+        name_filters.append(["name", "in", student_group_names])
+    if txt:
+        name_filters.append(["name", "like", f"%{txt}%"])
+
+    rows = frappe.get_all(
+        "Student Group",
+        filters=name_filters,
+        fields=["name"],
+        order_by="name desc",
+        start=start,
+        page_length=page_len,
+    )
+    return [[row.name] for row in rows]
+
+
 @frappe.whitelist()
 def download_adnoc_theory_assessment(assessment_result):
     assessment_result = (assessment_result or "").strip()

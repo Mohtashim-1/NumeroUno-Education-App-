@@ -170,6 +170,26 @@ class SafetyBriefingForm {
 		const d = this.doc;
 		const $doc = this.$root.find(".sbf-doc");
 
+		if (d.briefing_type === "Basic H2S") {
+			const $codes = $doc.find(".h2s-course-codes");
+			if ($codes.length) {
+				$codes.html(`
+					<label class="sbf-variant-check">
+						<input type="checkbox" class="sbf-variant-check-input" data-root="variant_9014" ${d.variant_9014 ? "checked" : ""}>
+						<span>9014 –</span>
+					</label>
+					<label class="sbf-variant-check">
+						<input type="checkbox" class="sbf-variant-check-input" data-root="variant_9014_a" ${d.variant_9014_a ? "checked" : ""}>
+						<span>9014 – A</span>
+					</label>
+					<label class="sbf-variant-check">
+						<input type="checkbox" class="sbf-variant-check-input" data-root="variant_9014_b" ${d.variant_9014_b ? "checked" : ""}>
+						<span>9014 – B</span>
+					</label>
+				`);
+			}
+		}
+
 		// Discussion Y/N
 		$doc.find(".nutc-discussion-h2s tr:not(.header-row)").each((idx, tr) => {
 			const row = d.discussion_points?.[idx];
@@ -324,57 +344,10 @@ class SafetyBriefingForm {
 	}
 
 	init_signature_pads() {
-		this.$root.find(".sbf-signature-canvas").each(function () {
-			const canvas = this;
+		this.$root.find(".sbf-signature-canvas").each((_, canvas) => {
 			const $wrap = $(canvas).closest(".sbf-signature-wrap");
 			const $hidden = $wrap.find(".sbf-signature-value");
-			const ctx = canvas.getContext("2d");
-			let drawing = false;
-
-			function resize() {
-				const ratio = window.devicePixelRatio || 1;
-				const rect = canvas.getBoundingClientRect();
-				canvas.width = Math.max(rect.width, 100) * ratio;
-				canvas.height = 28 * ratio;
-				ctx.setTransform(1, 0, 0, 1, 0, 0);
-				ctx.scale(ratio, ratio);
-				ctx.lineWidth = 1.5;
-				ctx.lineCap = "round";
-				ctx.strokeStyle = "#000";
-			}
-
-			function pointFromEvent(event) {
-				const rect = canvas.getBoundingClientRect();
-				const source = event.touches ? event.touches[0] : event;
-				return { x: source.clientX - rect.left, y: source.clientY - rect.top };
-			}
-
-			function save() {
-				$hidden.val(canvas.toDataURL("image/png"));
-				$wrap.find(".sbf-sig-preview").remove();
-				$(canvas).addClass("has-signature");
-			}
-
-			resize();
-			canvas.addEventListener("mousedown", (e) => {
-				drawing = true;
-				const p = pointFromEvent(e);
-				ctx.beginPath();
-				ctx.moveTo(p.x, p.y);
-			});
-			canvas.addEventListener("mousemove", (e) => {
-				if (!drawing) return;
-				const p = pointFromEvent(e);
-				ctx.lineTo(p.x, p.y);
-				ctx.stroke();
-				save();
-			});
-			canvas.addEventListener("mouseup", () => {
-				drawing = false;
-			});
-			canvas.addEventListener("mouseleave", () => {
-				drawing = false;
-			});
+			bind_signature_canvas(canvas, $hidden, $wrap);
 		});
 
 		this.$root.find(".sbf-sig-clear").on("click", function (e) {
@@ -417,11 +390,16 @@ class SafetyBriefingForm {
 			}
 		});
 
-		this.$root.find(".sbf-yn-check, .sbf-module-check").each(function () {
+		this.$root.find(".sbf-yn-check, .sbf-module-check, .sbf-variant-check-input").each(function () {
 			const $el = $(this);
 			const table = $el.data("table");
 			const idx = cint($el.data("idx"));
 			const field = $el.data("field");
+			const root = $el.data("root");
+			if (root) {
+				data[root] = $el.is(":checked") ? 1 : 0;
+				return;
+			}
 			if (data[table]?.[idx]) data[table][idx][field] = $el.is(":checked") ? 1 : 0;
 		});
 
@@ -608,4 +586,73 @@ class SafetyBriefingForm {
 		while (rows.length < 16) rows.push({});
 		return rows;
 	}
+}
+
+function bind_signature_canvas(canvas, $hidden, $wrap) {
+	const ctx = canvas.getContext("2d");
+	let drawing = false;
+
+	function displayHeight() {
+		return parseInt(window.getComputedStyle(canvas).height, 10) || 28;
+	}
+
+	function resize() {
+		const ratio = window.devicePixelRatio || 1;
+		const rect = canvas.getBoundingClientRect();
+		const height = displayHeight();
+		canvas.width = Math.max(rect.width, 80) * ratio;
+		canvas.height = height * ratio;
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.scale(ratio, ratio);
+		ctx.lineWidth = 2;
+		ctx.lineCap = "round";
+		ctx.strokeStyle = "#000";
+	}
+
+	function pointFromEvent(event) {
+		const rect = canvas.getBoundingClientRect();
+		const source =
+			(event.touches && event.touches[0]) ||
+			(event.changedTouches && event.changedTouches[0]) ||
+			event;
+		return { x: source.clientX - rect.left, y: source.clientY - rect.top };
+	}
+
+	function save() {
+		$hidden.val(canvas.toDataURL("image/png"));
+		$wrap.find(".sbf-sig-preview").remove();
+		$(canvas).addClass("has-signature");
+	}
+
+	function startDraw(event) {
+		if (event.cancelable) event.preventDefault();
+		drawing = true;
+		const p = pointFromEvent(event);
+		ctx.beginPath();
+		ctx.moveTo(p.x, p.y);
+	}
+
+	function draw(event) {
+		if (!drawing) return;
+		if (event.cancelable) event.preventDefault();
+		const p = pointFromEvent(event);
+		ctx.lineTo(p.x, p.y);
+		ctx.stroke();
+		save();
+	}
+
+	function endDraw(event) {
+		if (event.cancelable) event.preventDefault();
+		drawing = false;
+	}
+
+	resize();
+	canvas.addEventListener("mousedown", startDraw);
+	canvas.addEventListener("mousemove", draw);
+	canvas.addEventListener("mouseup", endDraw);
+	canvas.addEventListener("mouseleave", endDraw);
+	canvas.addEventListener("touchstart", startDraw, { passive: false });
+	canvas.addEventListener("touchmove", draw, { passive: false });
+	canvas.addEventListener("touchend", endDraw, { passive: false });
+	canvas.addEventListener("touchcancel", endDraw, { passive: false });
 }

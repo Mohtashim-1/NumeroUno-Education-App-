@@ -437,6 +437,45 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				padding: 18px 0;
 			}
 
+			.sb-summary-cards {
+				display: grid;
+				grid-template-columns: repeat(4, minmax(120px, 1fr));
+				gap: 12px;
+				margin: 0 0 16px;
+			}
+
+			.sb-summary-card {
+				background: var(--surface-muted);
+				border: 1px solid var(--line);
+				border-radius: 12px;
+				padding: 12px 14px;
+			}
+
+			.sb-summary-label {
+				display: block;
+				font-size: 11px;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: var(--muted);
+				margin-bottom: 6px;
+			}
+
+			.sb-summary-card strong {
+				font-size: 24px;
+				line-height: 1;
+				color: var(--ink);
+			}
+
+			.sb-summary-pending strong { color: #8a5a00; }
+			.sb-summary-draft strong { color: #9a5b00; }
+			.sb-summary-done strong { color: #1d5450; }
+
+			@media (max-width: 768px) {
+				.sb-summary-cards {
+					grid-template-columns: repeat(2, minmax(120px, 1fr));
+				}
+			}
+
 			@media (max-width: 768px) {
 				.instructor-portal {
 					padding: 18px;
@@ -748,23 +787,41 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 							<span>SB</span>
 							<div>
 								<h3>Safety Briefing</h3>
-								<p class="panel-subtitle">Create and manage safety briefing forms for your student groups.</p>
+								<p class="panel-subtitle">Student group checklist — see which briefings are done, draft, or still pending.</p>
 							</div>
 						</div>
 						<div>
-							<button type="button" class="portal-btn portal-btn-primary instructor-form-new-btn" data-form-key="safety_briefing">New Safety Briefing</button>
+							<button type="button" class="portal-btn portal-btn-primary" id="safety-briefing-new-btn">New Safety Briefing</button>
+						</div>
+					</div>
+					<div class="sb-summary-cards" id="safety-briefing-summary">
+						<div class="sb-summary-card">
+							<span class="sb-summary-label">Total Groups</span>
+							<strong id="sb-metric-total">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-pending">
+							<span class="sb-summary-label">Pending</span>
+							<strong id="sb-metric-pending">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-draft">
+							<span class="sb-summary-label">Draft</span>
+							<strong id="sb-metric-draft">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-done">
+							<span class="sb-summary-label">Submitted</span>
+							<strong id="sb-metric-submitted">0</strong>
 						</div>
 					</div>
 					<div class="table-responsive">
 						<table class="table">
 							<thead>
 								<tr>
-									<th>Briefing</th>
-									<th>Type</th>
 									<th>Student Group</th>
-									<th>Date</th>
+									<th>Course</th>
+									<th>Briefing Type</th>
 									<th>Status</th>
-									<th>Modified</th>
+									<th>Briefing</th>
+									<th>Date</th>
 									<th>Action</th>
 								</tr>
 							</thead>
@@ -863,6 +920,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	};
 	var pageSize = 50;
 	var isAdnocInstructor = false;
+	var safetyBriefingTypes = [];
 	var filterState = {
 		student_group: "",
 		student: "",
@@ -876,8 +934,10 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	load_results();
 	load_bulk_assessments();
 	load_all_instructor_forms();
+	load_safety_briefing_groups();
 	init_tabs();
 	init_instructor_form_actions();
+	init_safety_briefing_actions();
 
 	function load_portal_data() {
 		frappe.call({
@@ -989,6 +1049,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		load_results();
 		load_bulk_assessments();
 		load_all_instructor_forms();
+		load_safety_briefing_groups();
 	}
 
 	function render_attendance(records, append) {
@@ -1651,8 +1712,8 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			safety_briefing: {
 				bodyId: "instructor-safety-briefing-body",
 				sectionId: "safety-briefing-section",
-				emptyMessage: "No safety briefings found.",
-				renderRow: render_safety_briefing_row
+				emptyMessage: "No student groups found for safety briefing tracking.",
+				renderRow: render_safety_briefing_group_row
 			},
 			wms_pretest: {
 				bodyId: "instructor-wms-pretest-body",
@@ -1703,6 +1764,9 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 
 	function load_all_instructor_forms() {
 		Object.keys(formSectionOffsets).forEach(function (formKey) {
+			if (formKey === "safety_briefing") {
+				return;
+			}
 			load_instructor_form_section(formKey);
 		});
 	}
@@ -1851,6 +1915,222 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				)}</td>
 			</tr>
 		`;
+	}
+
+	function init_safety_briefing_actions() {
+		$("#safety-briefing-new-btn").off("click").on("click", function () {
+			open_safety_briefing_dialog();
+		});
+	}
+
+	function load_safety_briefing_groups() {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_safety_briefing_group_status",
+			args: {
+				student_group: filterState.student_group,
+				instructor: filterState.instructor
+			},
+			callback: function (r) {
+				var message = r.message || {};
+				safetyBriefingTypes = message.briefing_types || [];
+				render_safety_briefing_summary(message.summary || {});
+				render_safety_briefing_groups(message.groups || []);
+			},
+			error: function () {
+				render_safety_briefing_summary({});
+				render_safety_briefing_groups([]);
+				frappe.msgprint("Unable to load safety briefing group status.");
+			}
+		});
+	}
+
+	function render_safety_briefing_summary(summary) {
+		$("#sb-metric-total").text(summary.total || 0);
+		$("#sb-metric-pending").text(summary.pending || 0);
+		$("#sb-metric-draft").text(summary.draft || 0);
+		$("#sb-metric-submitted").text(summary.submitted || 0);
+	}
+
+	function render_safety_briefing_groups(rows) {
+		var $body = $("#instructor-safety-briefing-body");
+		$body.empty();
+		if (!rows.length) {
+			$body.append(`
+				<tr>
+					<td colspan="7" class="empty-state">No student groups found for your filters.</td>
+				</tr>
+			`);
+			return;
+		}
+		rows.forEach(function (row) {
+			$body.append(render_safety_briefing_group_row(row));
+		});
+		bind_safety_briefing_group_actions();
+	}
+
+	function render_safety_briefing_group_row(row) {
+		var status = row.status || "pending";
+		var statusLabel = status === "submitted" ? "Submitted" : status === "draft" ? "Draft" : "Pending";
+		var statusClass = status === "submitted" ? "pass" : status === "draft" ? "pending" : "fail";
+		var briefingType = row.briefing_type || row.expected_briefing_type || "-";
+		var dateLabel = row.briefing_date ? frappe.datetime.str_to_user(row.briefing_date) : "-";
+		var briefingCell = row.briefing_name
+			? `<a href="/app/safety-briefing-form/${frappe.utils.escape_html(row.briefing_name)}">${frappe.utils.escape_html(row.briefing_name)}</a>`
+			: `<span class="data-meta">Not started</span>`;
+		var actionCell = render_safety_briefing_action(row);
+
+		return `
+			<tr>
+				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(row.course || "-")}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(briefingType)}</div></td>
+				<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
+				<td>${briefingCell}</td>
+				<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
+				<td>${actionCell}</td>
+			</tr>
+		`;
+	}
+
+	function render_safety_briefing_action(row) {
+		if (row.briefing_name) {
+			var label = row.status === "submitted" ? "View" : "Continue";
+			return `
+				<div class="quiz-actions">
+					<button type="button" class="portal-btn portal-btn-primary safety-briefing-open-btn"
+						data-docname="${frappe.utils.escape_html(row.briefing_name)}">${label}</button>
+					${row.status === "submitted" ? "" : `<button type="button" class="portal-btn portal-btn-ghost safety-briefing-new-for-group-btn"
+						data-student-group="${frappe.utils.escape_html(row.student_group || "")}"
+						data-briefing-type="${frappe.utils.escape_html(row.expected_briefing_type || row.briefing_type || "")}">New</button>`}
+				</div>
+			`;
+		}
+		return `
+			<button type="button" class="portal-btn portal-btn-primary safety-briefing-new-for-group-btn"
+				data-student-group="${frappe.utils.escape_html(row.student_group || "")}"
+				data-briefing-type="${frappe.utils.escape_html(row.expected_briefing_type || "")}">
+				Start Briefing
+			</button>
+		`;
+	}
+
+	function bind_safety_briefing_group_actions() {
+		$(".safety-briefing-open-btn").off("click").on("click", function () {
+			var docname = $(this).data("docname");
+			if (docname) {
+				frappe.set_route("safety-briefing-form", docname);
+			}
+		});
+		$(".safety-briefing-new-for-group-btn").off("click").on("click", function () {
+			open_safety_briefing_dialog({
+				student_group: $(this).data("student-group"),
+				briefing_type: $(this).data("briefing-type")
+			});
+		});
+	}
+
+	function open_safety_briefing_dialog(defaults) {
+		defaults = defaults || {};
+		var briefingOptions = (safetyBriefingTypes.length ? safetyBriefingTypes : [
+			"Basic H2S", "TBOSIET", "TSbB", "TFOET", "THUET", "BOSIET EBS", "FOET EBS", "HUET EBS"
+		]).join("\n");
+
+		var dialog = new frappe.ui.Dialog({
+			title: __("Create Safety Briefing"),
+			fields: [
+				{
+					fieldtype: "Link",
+					fieldname: "student_group",
+					label: __("Student Group"),
+					options: "Student Group",
+					default: defaults.student_group || filterState.student_group || "",
+					reqd: 1,
+					get_query: function () {
+						return {
+							query: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_student_groups"
+						};
+					}
+				},
+				{
+					fieldtype: "Select",
+					fieldname: "briefing_type",
+					label: __("Briefing Type"),
+					options: briefingOptions,
+					default: defaults.briefing_type || "",
+					reqd: 1
+				},
+				{
+					fieldtype: "HTML",
+					fieldname: "help_html",
+					options: `<p class="text-muted" style="margin:0;">${__(
+						"You will open the official briefing template to sign, tick checkboxes, and complete the form for this student group."
+					)}</p>`
+				}
+			],
+			primary_action_label: __("Open Briefing Form"),
+			primary_action: function (values) {
+				if (!values.briefing_type) {
+					frappe.msgprint(__("Select a Briefing Type"));
+					return;
+				}
+				dialog.hide();
+				frappe.route_options = {
+					student_group: values.student_group,
+					briefing_type: values.briefing_type
+				};
+				frappe.set_route("safety-briefing-form");
+			}
+		});
+
+		dialog.fields_dict.student_group.df.onchange = function () {
+			var group = dialog.get_value("student_group");
+			if (!group || dialog.get_value("briefing_type")) {
+				return;
+			}
+			frappe.db.get_value("Student Group", group, "course").then(function (r) {
+				var course = (r.message || {}).course || "";
+				var guessed = guess_briefing_type_for_course(course);
+				if (guessed) {
+					dialog.set_value("briefing_type", guessed);
+				}
+			});
+		};
+
+		if (defaults.student_group && !defaults.briefing_type) {
+			frappe.db.get_value("Student Group", defaults.student_group, "course").then(function (r) {
+				var guessed = guess_briefing_type_for_course((r.message || {}).course || "");
+				if (guessed) {
+					dialog.set_value("briefing_type", guessed);
+				}
+			});
+		}
+
+		dialog.show();
+	}
+
+	function guess_briefing_type_for_course(course) {
+		var courseUpper = (course || "").toUpperCase();
+		if (!courseUpper) return "";
+		var hints = [
+			["Basic H2S", ["BASIC H2S", "H2S", "OPITO H2S"]],
+			["TBOSIET", ["TBOSIET", "T BOSIET", "TROPICAL BOSIET"]],
+			["TSbB", ["TSBB", "T SBB"]],
+			["TFOET", ["TFOET", "T FOET", "TROPICAL FOET"]],
+			["THUET", ["THUET", "T HUET"]],
+			["BOSIET EBS", ["BOSIET EBS", "BOSIET"]],
+			["FOET EBS", ["FOET EBS", "FOET"]],
+			["HUET EBS", ["HUET EBS", "HUET"]]
+		];
+		for (var i = 0; i < hints.length; i++) {
+			var type = hints[i][0];
+			var keywords = hints[i][1];
+			for (var j = 0; j < keywords.length; j++) {
+				if (courseUpper.indexOf(keywords[j]) !== -1) {
+					return type;
+				}
+			}
+		}
+		return "";
 	}
 
 	function render_safety_briefing_row(row) {

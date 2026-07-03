@@ -123,9 +123,12 @@
 	width: 100%;
 	max-width: 100px;
 	height: 28px;
+	min-height: 28px;
 	border: 1px dashed #999;
 	background: #fffef8;
 	touch-action: none;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 .cac-signature-canvas.has-signature {
@@ -156,6 +159,18 @@
 	padding: 4px 6px;
 	font-size: 8pt;
 	background: #fffef8;
+}
+
+@media (max-width: 900px) {
+	.cac-signature-wrap {
+		min-height: 52px;
+	}
+
+	.cac-signature-canvas {
+		height: 48px;
+		min-height: 44px;
+		max-width: none;
+	}
 }
 
 @media print {
