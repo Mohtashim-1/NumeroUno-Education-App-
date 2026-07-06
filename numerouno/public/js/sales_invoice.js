@@ -70,5 +70,13 @@ frappe.ui.form.on('Sales Invoice', {
             	}
 		    })
         }
+
+		if (frm.fields_dict.custom_delivery_driver) {
+			frm.set_query("custom_delivery_driver", function () {
+				return {
+					query: "numerouno.numerouno.page.driver_invoice_portal.driver_invoice_portal.get_delivery_driver_users",
+				};
+			});
+		}
 	}
-}); 
+});

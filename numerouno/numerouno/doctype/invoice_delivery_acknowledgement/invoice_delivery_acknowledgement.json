@@ -1,0 +1,237 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-07-06 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "sales_invoice",
+  "customer",
+  "customer_name",
+  "column_break_inv",
+  "invoice_date",
+  "grand_total",
+  "currency",
+  "section_break_details",
+  "invoice_description",
+  "students_summary",
+  "section_break_ack",
+  "driver",
+  "receiver_name",
+  "receiving_date",
+  "contact_no",
+  "column_break_docs",
+  "has_certificates",
+  "has_cards",
+  "receiver_signature",
+  "remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "IDA-.YYYY.-",
+   "reqd": 1,
+   "default": "IDA-.YYYY.-"
+  },
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sales Invoice",
+   "options": "Sales Invoice",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "invoice_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Invoice Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "label": "Grand Total",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "invoice_description",
+   "fieldtype": "Small Text",
+   "label": "Invoice Items / Description",
+   "read_only": 1
+  },
+  {
+   "fieldname": "students_summary",
+   "fieldtype": "Small Text",
+   "label": "Students",
+   "read_only": 1
+  },
+  {
+   "fieldname": "driver",
+   "fieldtype": "Link",
+   "label": "Driver",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "receiver_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name of Receiver",
+   "reqd": 1
+  },
+  {
+   "fieldname": "receiving_date",
+   "fieldtype": "Date",
+   "default": "Today",
+   "label": "Date of Receiving",
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact_no",
+   "fieldtype": "Data",
+   "label": "Contact No."
+  },
+  {
+   "default": "0",
+   "fieldname": "has_certificates",
+   "fieldtype": "Check",
+   "label": "Certificates"
+  },
+  {
+   "default": "0",
+   "fieldname": "has_cards",
+   "fieldtype": "Check",
+   "label": "Cards"
+  },
+  {
+   "fieldname": "receiver_signature",
+   "fieldtype": "Signature",
+   "label": "Receiver Signature"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "section_break_details",
+   "fieldtype": "Section Break",
+   "label": "Invoice Details"
+  },
+  {
+   "fieldname": "section_break_ack",
+   "fieldtype": "Section Break",
+   "label": "Acknowledgement Details"
+  },
+  {
+   "fieldname": "column_break_inv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_docs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Invoice Delivery Acknowledgement",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-06 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "Invoice Delivery Acknowledgement",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Vehicle User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Delivery User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
