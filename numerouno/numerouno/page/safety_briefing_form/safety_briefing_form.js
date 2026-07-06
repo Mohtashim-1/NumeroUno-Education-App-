@@ -190,30 +190,41 @@ class SafetyBriefingForm {
 			}
 		}
 
-		// Discussion Y/N
+		// Discussion Y / N columns
 		$doc.find(".nutc-discussion-h2s tr:not(.header-row)").each((idx, tr) => {
 			const row = d.discussion_points?.[idx];
 			if (!row) return;
-			$(tr).find(".col-yn").html(this.yn_checkbox("discussion_points", idx, row.confirmed));
+			const boxes = this.yn_checkboxes("discussion_points", idx, row);
+			$(tr).find(".col-y").html(boxes.y);
+			$(tr).find(".col-n").html(boxes.n);
 		});
 		$doc.find(".nutc-discussion tr:not(:first-child)").each((idx, tr) => {
 			const row = d.discussion_points?.[idx];
 			if (!row) return;
-			$(tr).find(".col-yn").html(this.yn_checkbox("discussion_points", idx, row.confirmed));
+			const boxes = this.yn_checkboxes("discussion_points", idx, row);
+			$(tr).find(".col-y").html(boxes.y);
+			$(tr).find(".col-n").html(boxes.n);
 		});
 
-		// Practical Y/N
+		// Practical Y / N columns
 		if (d.practical_items?.length) {
-			const $h2sYn = $doc.find(".nutc-practical-h2s .col-yn[rowspan]").first();
-			if ($h2sYn.length) {
-				$h2sYn.html(this.yn_checkbox("practical_items", 0, d.practical_items[0].confirmed));
+			const $h2sY = $doc.find(".nutc-practical-h2s .col-y[rowspan]").first();
+			const $h2sN = $doc.find(".nutc-practical-h2s .col-n[rowspan]").first();
+			if ($h2sY.length && $h2sN.length) {
+				const boxes = this.yn_checkboxes("practical_items", 0, d.practical_items[0]);
+				$h2sY.html(boxes.y);
+				$h2sN.html(boxes.n);
 			}
-			$doc.find(".nutc-practical .col-yn[rowspan]").each((idx, cell) => {
+			$doc.find(".nutc-practical .col-y[rowspan]").each((idx, cell) => {
 				const row = d.practical_items?.[idx];
 				if (!row) return;
-				$(cell).html(this.yn_checkbox("practical_items", idx, row.confirmed));
+				const boxes = this.yn_checkboxes("practical_items", idx, row);
+				$(cell).html(boxes.y);
+				$(cell).siblings(".col-n[rowspan]").html(boxes.n);
 			});
 		}
+
+		this.bind_yn_exclusivity($doc);
 
 		// Attendees
 		const module_mode = d.attendee_signature_mode === "Module Columns";
@@ -301,8 +312,26 @@ class SafetyBriefingForm {
 		return (text || "").replace(/^\d+\.\s*/, "").trim();
 	}
 
-	yn_checkbox(table, idx, checked) {
-		return `<input type="checkbox" class="sbf-yn-check" data-table="${table}" data-idx="${idx}" data-field="confirmed" ${checked ? "checked" : ""}>`;
+	yn_checkboxes(table, idx, row) {
+		const yChecked = cint(row?.confirmed);
+		const nChecked = cint(row?.denied);
+		return {
+			y: `<input type="checkbox" class="sbf-yn-check sbf-yn-y" data-table="${table}" data-idx="${idx}" data-field="confirmed" ${yChecked ? "checked" : ""}>`,
+			n: `<input type="checkbox" class="sbf-yn-check sbf-yn-n" data-table="${table}" data-idx="${idx}" data-field="denied" ${nChecked ? "checked" : ""}>`,
+		};
+	}
+
+	bind_yn_exclusivity($doc) {
+		$doc.find(".sbf-yn-y").off("change.sbfYn").on("change.sbfYn", function () {
+			if (this.checked) {
+				$(this).closest("tr").find(".sbf-yn-n").prop("checked", false);
+			}
+		});
+		$doc.find(".sbf-yn-n").off("change.sbfYn").on("change.sbfYn", function () {
+			if (this.checked) {
+				$(this).closest("tr").find(".sbf-yn-y").prop("checked", false);
+			}
+		});
 	}
 
 	module_checkbox(table, idx, field, checked) {

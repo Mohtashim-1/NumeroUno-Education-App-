@@ -52,12 +52,14 @@
 				<div class="disc-title-line">DISCUSSION POINTS ON RISKS &amp; SAFETY PRECAUTIONS</div>
 				<div class="disc-sub-line">GENERAL INFORMATION DISCUSSED BY EVERY INSTRUCTOR</div>
 			</th>
-			<th class="col-yn">Y/N</th>
+			<th class="col-y">Y</th>
+			<th class="col-n">N</th>
 		</tr>
 		{% for row in doc.discussion_points %}
 		<tr>
 			<td colspan="2" class="discussion-text">{{ row.discussion_point }}</td>
-			<td class="col-yn">{% if row.confirmed %}✓{% endif %}</td>
+			<td class="col-y">{% if row.confirmed %}✓{% endif %}</td>
+			<td class="col-n">{% if row.denied %}✓{% endif %}</td>
 		</tr>
 		{% endfor %}
 	</table>
@@ -74,7 +76,8 @@
 		<tr class="header-row">
 			<th class="col-exercise-h2s">{{ item.sr_no or 9 }} PRACTICAL EXERCISE TO BE CONDUCTED</th>
 			<th class="col-risk-h2s">DISCUSSION POINTS</th>
-			<th class="col-yn">Y/N</th>
+			<th class="col-y">Y</th>
+			<th class="col-n">N</th>
 		</tr>
 		{% for r in range(row_count) %}
 		<tr>
@@ -86,7 +89,8 @@
 			{% endif %}
 			<td class="col-risk-h2s">{% if risks[r] is defined and risks[r].strip() %}{{ risks[r].strip() }}{% endif %}</td>
 			{% if r == 0 %}
-			<td class="col-yn" rowspan="{{ row_count }}">{% if item.confirmed %}✓{% endif %}</td>
+			<td class="col-y" rowspan="{{ row_count }}">{% if item.confirmed %}✓{% endif %}</td>
+			<td class="col-n" rowspan="{{ row_count }}">{% if item.denied %}✓{% endif %}</td>
 			{% endif %}
 		</tr>
 		{% endfor %}
@@ -212,13 +216,15 @@
 		<tr>
 			<th class="col-sr">Sr.<br>No</th>
 			<th class="col-discussion">DISCUSSION POINTS</th>
-			<th class="col-yn">Y/N</th>
+			<th class="col-y">Y</th>
+			<th class="col-n">N</th>
 		</tr>
 		{% for row in doc.discussion_points %}
 		<tr>
 			<td class="col-sr">{{ row.sr_no or loop.index }}</td>
 			<td class="col-discussion">{{ row.discussion_point }}</td>
-			<td class="col-yn">{% if row.confirmed %}✓{% endif %}</td>
+			<td class="col-y">{% if row.confirmed %}✓{% endif %}</td>
+			<td class="col-n">{% if row.denied %}✓{% endif %}</td>
 		</tr>
 		{% endfor %}
 	</table>
@@ -229,7 +235,8 @@
 			<th class="col-exercise">PRACTICAL EXERCISE TO BE CONDUCTED</th>
 			<th class="col-sr">Sr.<br>No</th>
 			<th class="col-risk">DISCUSSION POINTS<br><span class="sub-head">Exercise Risk and corresponding emergency responses</span></th>
-			<th class="col-yn">Y/N</th>
+			<th class="col-y">Y</th>
+			<th class="col-n">N</th>
 		</tr>
 		{% for item in doc.practical_items %}
 		{% set activities = (item.activity_detail or '').split('\n') %}
@@ -249,7 +256,8 @@
 			{% endif %}
 			<td class="col-risk">{% if risks[r] is defined and risks[r].strip() %}{{ risks[r].strip() }}{% endif %}</td>
 			{% if r == 0 %}
-			<td class="col-yn" rowspan="{{ row_count }}">{% if item.confirmed %}✓{% endif %}</td>
+			<td class="col-y" rowspan="{{ row_count }}">{% if item.confirmed %}✓{% endif %}</td>
+			<td class="col-n" rowspan="{{ row_count }}">{% if item.denied %}✓{% endif %}</td>
 			{% endif %}
 		</tr>
 		{% endfor %}

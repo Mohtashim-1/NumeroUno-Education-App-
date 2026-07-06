@@ -52,11 +52,11 @@ def _serialize_doc(doc):
 		"instructor_signature": doc.instructor_signature,
 		"instructor_date": doc.instructor_date,
 		"discussion_points": _serialize_child_rows(
-			doc.discussion_points, ("sr_no", "discussion_point", "confirmed")
+			doc.discussion_points, ("sr_no", "discussion_point", "confirmed", "denied")
 		),
 		"practical_items": _serialize_child_rows(
 			doc.practical_items,
-			("sr_no", "exercise_group", "activity_detail", "risk_points", "confirmed"),
+			("sr_no", "exercise_group", "activity_detail", "risk_points", "confirmed", "denied"),
 		),
 		"attendees": _serialize_child_rows(
 			doc.attendees,
@@ -119,6 +119,7 @@ def _apply_payload(doc, data):
 				"sr_no": row.get("sr_no"),
 				"discussion_point": row.get("discussion_point"),
 				"confirmed": cint(row.get("confirmed")),
+				"denied": cint(row.get("denied")),
 			},
 		)
 
@@ -132,6 +133,7 @@ def _apply_payload(doc, data):
 				"activity_detail": row.get("activity_detail"),
 				"risk_points": row.get("risk_points"),
 				"confirmed": cint(row.get("confirmed")),
+				"denied": cint(row.get("denied")),
 			},
 		)
 

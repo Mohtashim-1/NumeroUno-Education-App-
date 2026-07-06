@@ -1358,6 +1358,9 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 
 			var statusClass = statusLabel === "Pass" ? "pass" : statusLabel === "Fail" ? "fail" : "pending";
 			var dateLabel = row.activity_date ? frappe.datetime.str_to_user(row.activity_date) : "-";
+			var scoreMeta = row.percentage != null
+				? `<div class="data-meta">${row.percentage}%</div>`
+				: "";
 
 			$body.append(`
 				<tr>
@@ -1368,7 +1371,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					<td><div class="data-title">${groupLink}</div></td>
 					<td><div class="data-title">${quizLink}</div></td>
 					<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
-					<td><div class="data-title">${frappe.utils.escape_html(row.score || "-")}</div></td>
+					<td><div class="data-title">${frappe.utils.escape_html(row.score || "-")}</div>${scoreMeta}</td>
 					<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
 					<td>${actionCell}</td>
 				</tr>

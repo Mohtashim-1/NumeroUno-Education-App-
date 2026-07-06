@@ -48,7 +48,7 @@ def apply_template(doc, template, clear_existing=False):
 		for idx, point in enumerate(template["discussion_points"], start=1):
 			doc.append(
 				"discussion_points",
-				{"sr_no": idx, "discussion_point": point, "confirmed": 0},
+				{"sr_no": idx, "discussion_point": point, "confirmed": 0, "denied": 0},
 			)
 
 	if not doc.practical_items:
@@ -61,6 +61,7 @@ def apply_template(doc, template, clear_existing=False):
 					"activity_detail": item.get("activity_detail"),
 					"risk_points": item.get("risk_points"),
 					"confirmed": 0,
+					"denied": 0,
 				},
 			)
 
@@ -102,9 +103,9 @@ def load_template(briefing_type, docname=None, clear_existing=0):
 		"attendee_signature_mode": doc.attendee_signature_mode,
 		"signature_labels": doc.signature_labels,
 		"instructor_mode": doc.instructor_mode,
-		"discussion_points": [_child_row(row, "sr_no", "discussion_point", "confirmed") for row in doc.discussion_points],
+		"discussion_points": [_child_row(row, "sr_no", "discussion_point", "confirmed", "denied") for row in doc.discussion_points],
 		"practical_items": [
-			_child_row(row, "sr_no", "exercise_group", "activity_detail", "risk_points", "confirmed")
+			_child_row(row, "sr_no", "exercise_group", "activity_detail", "risk_points", "confirmed", "denied")
 			for row in doc.practical_items
 		],
 		"instructors": [_child_row(row, "instructor_name", "module") for row in doc.instructors],

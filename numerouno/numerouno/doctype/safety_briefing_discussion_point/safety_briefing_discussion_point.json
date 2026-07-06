@@ -5,7 +5,7 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
- "field_order": ["sr_no", "discussion_point", "confirmed"],
+ "field_order": ["sr_no", "discussion_point", "confirmed", "denied"],
  "fields": [
   {
    "fieldname": "sr_no",
@@ -25,7 +25,14 @@
    "fieldname": "confirmed",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Y/N"
+   "label": "Y"
+  },
+  {
+   "default": "0",
+   "fieldname": "denied",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "N"
   }
  ],
  "istable": 1,

@@ -62,14 +62,14 @@
 
 .nutc-logo-wrap {
 	width: 100%;
-	height: 42px;
+	height: 72px;
 	text-align: center;
-	margin: 0 0 4px;
+	margin: 0 0 8px;
 }
 
 .nutc-logo-bg {
-	width: 118px;
-	height: 36px;
+	width: 220px;
+	height: 64px;
 	margin: 0 auto;
 	background-image: url("https://erpnext.nutc.cloud/files/IMAGE_NUTC.png");
 	background-repeat: no-repeat;
@@ -148,7 +148,15 @@
 }
 
 .discussion-text {
-	width: 91%;
+	width: 88%;
+}
+
+.col-y,
+.col-n {
+	width: 3%;
+	text-align: center;
+	vertical-align: middle;
+	font-weight: 700;
 }
 
 .col-yn {

@@ -176,6 +176,7 @@ function apply_template_child_rows(frm, data) {
 			sr_no: row.sr_no,
 			discussion_point: row.discussion_point,
 			confirmed: row.confirmed ? 1 : 0,
+			denied: row.denied ? 1 : 0,
 		});
 	});
 
@@ -187,6 +188,7 @@ function apply_template_child_rows(frm, data) {
 			activity_detail: row.activity_detail,
 			risk_points: row.risk_points,
 			confirmed: row.confirmed ? 1 : 0,
+			denied: row.denied ? 1 : 0,
 		});
 	});
 

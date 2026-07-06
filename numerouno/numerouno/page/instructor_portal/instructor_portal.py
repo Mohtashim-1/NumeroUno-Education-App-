@@ -141,6 +141,25 @@ def _get_quiz_passing_score_map(quiz_names):
     return {row.name: float(row.passing_score or 75) for row in rows}
 
 
+def _get_quiz_distinct_question_count_map(quiz_names):
+    """Count unique Question links per quiz (duplicate Quiz Question rows count once)."""
+    if not quiz_names:
+        return {}
+
+    rows = frappe.get_all(
+        "Quiz Question",
+        filters={"parent": ["in", list(quiz_names)]},
+        fields=["parent", "question"],
+        ignore_permissions=True,
+    )
+    question_sets = {}
+    for row in rows:
+        if not row.question:
+            continue
+        question_sets.setdefault(row.parent, set()).add(row.question)
+    return {quiz: len(questions) for quiz, questions in question_sets.items()}
+
+
 def _get_group_course_map(group_names):
     if not group_names:
         return {}
@@ -191,41 +210,40 @@ def _get_activity_score_summary(activities):
     result_rows = frappe.get_all(
         "Quiz Result",
         filters={"parent": ["in", activity_names], "parenttype": "Quiz Activity"},
-        fields=["parent", "quiz_result"],
+        fields=["parent", "quiz_result", "question"],
         ignore_permissions=True,
     )
 
     summary = {}
     for row in result_rows:
-        data = summary.setdefault(row.parent, {"correct": 0, "answered": 0})
-        data["answered"] += 1
+        if not row.question:
+            continue
+        data = summary.setdefault(
+            row.parent,
+            {"correct_questions": set(), "answered_questions": set()},
+        )
+        data["answered_questions"].add(row.question)
         if (row.quiz_result or "").strip().lower() == "correct":
-            data["correct"] += 1
+            data["correct_questions"].add(row.question)
 
     passing_scores = _get_quiz_passing_score_map({row.quiz for row in activities if row.quiz})
     activity_quiz_map = {row.name: row.quiz for row in activities if row.name}
     quiz_names = {quiz for quiz in activity_quiz_map.values() if quiz}
-    quiz_question_counts = {}
-    for quiz_name in quiz_names:
-        quiz_question_counts[quiz_name] = frappe.db.count("Quiz Question", {"parent": quiz_name})
+    quiz_question_counts = _get_quiz_distinct_question_count_map(quiz_names)
 
     for activity_name, data in summary.items():
         quiz_name = activity_quiz_map.get(activity_name)
-        expected_total = quiz_question_counts.get(quiz_name) or data["answered"]
-        correct = data["correct"]
-        answered = data["answered"]
+        expected_total = quiz_question_counts.get(quiz_name) or len(data["answered_questions"])
+        correct = len(data["correct_questions"])
+        answered = len(data["answered_questions"])
         is_complete = answered >= expected_total
         percentage = (correct / expected_total * 100) if expected_total else 0
         passing_score = passing_scores.get(quiz_name, 75)
 
-        if is_complete:
-            data["score"] = f"{correct}/{expected_total}"
-            data["status"] = "Pass" if percentage >= passing_score else "Fail"
-        else:
-            # Incomplete attempt: show answered count so 105/109 is not read as 105/110.
-            data["score"] = f"{correct}/{answered}" if answered else f"0/{expected_total}"
-            data["status"] = "Fail"
-
+        data["correct"] = correct
+        data["answered"] = answered
+        data["score"] = f"{correct}/{expected_total}"
+        data["status"] = "Pass" if is_complete and percentage >= passing_score else "Fail"
         data["is_complete"] = is_complete
         data["expected_total"] = expected_total
         data["percentage"] = percentage
@@ -774,6 +792,7 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
             if summary:
                 activity.score = summary["score"]
                 activity.status = summary["status"]
+                activity.percentage = summary.get("percentage")
 
             key = (activity.student, activity.quiz)
             existing = activity_map.get(key)
@@ -807,6 +826,8 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
             row["status"] = activity.status
             row["activity_date"] = activity.activity_date or activity.creation
             row["assessment_result"] = getattr(activity, "assessment_result", None)
+            if getattr(activity, "percentage", None) is not None:
+                row["percentage"] = round(activity.percentage, 1)
         else:
             row["status"] = "Pending"
 
