@@ -372,6 +372,45 @@ def _sync_activity_score_fields(activities, score_summary):
         frappe.db.commit()
 
 
+def _course_requires_make_model(course):
+    if not course:
+        return False
+    if not frappe.get_meta("Course").has_field("custom_enable_make_and_model"):
+        return False
+    return bool(frappe.db.get_value("Course", course, "custom_enable_make_and_model"))
+
+
+def _can_instructor_edit_result(assessment_result, user, roles):
+    student_group = frappe.db.get_value("Assessment Result", assessment_result, "student_group")
+    if not student_group:
+        return False
+    if user == "Administrator" or "System Manager" in roles:
+        return True
+    student_group_names = _resolve_student_group_names(user, roles)
+    if student_group_names is None:
+        return True
+    return student_group in student_group_names
+
+
+def _attach_make_model_meta(records):
+    if not records:
+        return records
+
+    courses = {row.get("course") for row in records if row.get("course")}
+    course_flags = {course: _course_requires_make_model(course) for course in courses}
+
+    for row in records:
+        required = course_flags.get(row.get("course"), False)
+        make = (row.get("custom_make") or "").strip()
+        model = (row.get("custom_model") or "").strip()
+        row["make_model_required"] = required
+        row["make"] = make
+        row["model"] = model
+        row["make_model_pending"] = required and not (make and model)
+
+    return records
+
+
 def _resolve_student_group_names(user, roles, instructor_name=None):
     instructor_name = (instructor_name or "").strip()
     if user == "Administrator" or "System Manager" in roles:
@@ -402,6 +441,48 @@ def _resolve_student_group_names(user, roles, instructor_name=None):
         return None
 
     return _get_student_group_names_for_instructors(instructor_names)
+
+
+def _scope_student_group_names(student_group_names, student_group=None, course=None):
+    """Narrow instructor-scoped student groups by explicit student_group and/or course."""
+    student_group = (student_group or "").strip()
+    course = (course or "").strip()
+
+    if student_group_names == []:
+        return []
+
+    if student_group:
+        if student_group_names is not None and student_group not in student_group_names:
+            return []
+        if course:
+            group_course = frappe.db.get_value("Student Group", student_group, "course")
+            if group_course != course:
+                return []
+        return [student_group]
+
+    if course:
+        course_filters = {"course": course}
+        if student_group_names is None:
+            return frappe.get_all("Student Group", filters=course_filters, pluck="name") or []
+        return frappe.get_all(
+            "Student Group",
+            filters={"name": ["in", student_group_names], **course_filters},
+            pluck="name",
+        ) or []
+
+    return student_group_names
+
+
+def _apply_scoped_student_group_filter(filters, scoped_names):
+    if scoped_names == []:
+        return False
+    if scoped_names is None:
+        return True
+    if len(scoped_names) == 1:
+        filters["student_group"] = scoped_names[0]
+    else:
+        filters["student_group"] = ["in", scoped_names]
+    return True
 
 
 INSTRUCTOR_FORM_CONFIGS = {
@@ -478,26 +559,28 @@ INSTRUCTOR_FORM_CONFIGS = {
 }
 
 
-def _build_instructor_form_filters(user, roles, instructor=None, student_group=None, student=None, student_filter=False):
+def _build_instructor_form_filters(
+    user,
+    roles,
+    instructor=None,
+    student_group=None,
+    student=None,
+    course=None,
+    student_filter=False,
+):
     instructor = (instructor or "").strip()
     student_group = (student_group or "").strip()
     student = (student or "").strip()
+    course = (course or "").strip()
 
     student_group_names = _resolve_student_group_names(user, roles, instructor)
     if student_group_names == []:
         return None
 
+    scoped_names = _scope_student_group_names(student_group_names, student_group, course)
     filters = {"docstatus": ["in", [0, 1]]}
-
-    if student_group:
-        if student_group_names is None:
-            filters["student_group"] = student_group
-        elif student_group in student_group_names:
-            filters["student_group"] = student_group
-        else:
-            return None
-    elif student_group_names:
-        filters["student_group"] = ["in", student_group_names]
+    if not _apply_scoped_student_group_filter(filters, scoped_names):
+        return None
 
     if student_filter and student:
         filters["student"] = student
@@ -511,6 +594,7 @@ def _get_instructor_form_records(
     offset=0,
     student_group=None,
     student=None,
+    course=None,
     instructor=None,
 ):
     config = INSTRUCTOR_FORM_CONFIGS.get(form_key)
@@ -528,6 +612,7 @@ def _get_instructor_form_records(
         instructor=instructor,
         student_group=student_group,
         student=student,
+        course=course,
         student_filter=config.get("student_filter"),
     )
     if filters is None:
@@ -553,6 +638,7 @@ def get_instructor_form_records(
     offset=0,
     student_group=None,
     student=None,
+    course=None,
     instructor=None,
 ):
     return _get_instructor_form_records(
@@ -561,6 +647,7 @@ def get_instructor_form_records(
         offset=offset,
         student_group=student_group,
         student=student,
+        course=course,
         instructor=instructor,
     )
 
@@ -573,6 +660,7 @@ def get_instructor_portal_data(
     card_offset=0,
     student_group=None,
     student=None,
+    course=None,
     instructor=None,
 ):
     attendance_limit = int(attendance_limit or 50)
@@ -584,6 +672,7 @@ def get_instructor_portal_data(
 
     student_group = (student_group or "").strip()
     student = (student or "").strip()
+    course = (course or "").strip()
     instructor = (instructor or "").strip()
 
     student_group_names = _resolve_student_group_names(user, roles, instructor)
@@ -591,21 +680,13 @@ def get_instructor_portal_data(
     if student_group_names == []:
         return {"attendance": [], "cards": []}
 
+    scoped_names = _scope_student_group_names(student_group_names, student_group, course)
     attendance_filters = {"docstatus": ["in", [0, 1]]}
     card_filters = {"docstatus": ["in", [0, 1]]}
 
-    if student_group:
-        if student_group_names is None:
-            attendance_filters["student_group"] = student_group
-            card_filters["student_group"] = student_group
-        elif student_group in student_group_names:
-            attendance_filters["student_group"] = student_group
-            card_filters["student_group"] = student_group
-        else:
-            return {"attendance": [], "cards": []}
-    elif student_group_names:
-        attendance_filters["student_group"] = ["in", student_group_names]
-        card_filters["student_group"] = ["in", student_group_names]
+    if not _apply_scoped_student_group_filter(attendance_filters, scoped_names):
+        return {"attendance": [], "cards": []}
+    _apply_scoped_student_group_filter(card_filters, scoped_names)
 
     if student:
         attendance_filters["student"] = student
@@ -678,7 +759,9 @@ def get_instructor_portal_data(
 
 
 @frappe.whitelist()
-def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=None, instructor=None):
+def get_instructor_quiz_status(
+    limit=200, offset=0, student_group=None, student=None, course=None, instructor=None
+):
     limit = int(limit or 200)
     offset = int(offset or 0)
     user = frappe.session.user
@@ -686,35 +769,26 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
 
     student_group = (student_group or "").strip()
     student = (student or "").strip()
+    course = (course or "").strip()
     instructor = (instructor or "").strip()
 
     student_group_names = _resolve_student_group_names(user, roles, instructor)
     is_adnoc_instructor = _is_adnoc_instructor(user, roles, instructor)
+    empty_response = {
+        "records": [],
+        "total": 0,
+        "pending": 0,
+        "passed": 0,
+        "failed": 0,
+        "is_adnoc_instructor": is_adnoc_instructor,
+    }
 
     if student_group_names == []:
-        return {
-            "records": [],
-            "total": 0,
-            "pending": 0,
-            "passed": 0,
-            "failed": 0,
-            "is_adnoc_instructor": is_adnoc_instructor,
-        }
+        return empty_response
 
-    if student_group:
-        if student_group_names is None:
-            student_group_names = [student_group]
-        elif student_group in student_group_names:
-            student_group_names = [student_group]
-        else:
-            return {
-                "records": [],
-                "total": 0,
-                "pending": 0,
-                "passed": 0,
-                "failed": 0,
-                "is_adnoc_instructor": is_adnoc_instructor,
-            }
+    student_group_names = _scope_student_group_names(student_group_names, student_group, course)
+    if student_group_names == []:
+        return empty_response
 
     assignments = _get_mcqs_assignments(student_group_names)
     if not assignments:
@@ -859,7 +933,9 @@ def get_instructor_quiz_status(limit=200, offset=0, student_group=None, student=
 
 
 @frappe.whitelist()
-def get_instructor_results(limit=50, offset=0, student_group=None, student=None, instructor=None):
+def get_instructor_results(
+    limit=50, offset=0, student_group=None, student=None, course=None, instructor=None
+):
     limit = int(limit or 50)
     offset = int(offset or 0)
     user = frappe.session.user
@@ -867,39 +943,31 @@ def get_instructor_results(limit=50, offset=0, student_group=None, student=None,
 
     student_group = (student_group or "").strip()
     student = (student or "").strip()
+    course = (course or "").strip()
     instructor = (instructor or "").strip()
 
     student_group_names = _resolve_student_group_names(user, roles, instructor)
     is_adnoc_instructor = _is_adnoc_instructor(user, roles, instructor)
+    empty_response = {
+        "records": [],
+        "total": 0,
+        "limit": limit,
+        "offset": offset,
+        "is_adnoc_instructor": is_adnoc_instructor,
+    }
 
     if student_group_names == []:
-        return {
-            "records": [],
-            "total": 0,
-            "limit": limit,
-            "offset": offset,
-            "is_adnoc_instructor": is_adnoc_instructor,
-        }
+        return empty_response
 
+    scoped_names = _scope_student_group_names(student_group_names, student_group, course)
     filters = {"docstatus": ["<", 2]}
-    if student_group:
-        if student_group_names is None:
-            filters["student_group"] = student_group
-        elif student_group in student_group_names:
-            filters["student_group"] = student_group
-        else:
-            return {
-                "records": [],
-                "total": 0,
-                "limit": limit,
-                "offset": offset,
-                "is_adnoc_instructor": is_adnoc_instructor,
-            }
-    elif student_group_names:
-        filters["student_group"] = ["in", student_group_names]
+    if not _apply_scoped_student_group_filter(filters, scoped_names):
+        return empty_response
 
     if student:
         filters["student"] = student
+    if course:
+        filters["course"] = course
 
     total = frappe.db.count("Assessment Result", filters=filters)
     records = frappe.get_all(
@@ -912,6 +980,8 @@ def get_instructor_results(limit=50, offset=0, student_group=None, student=None,
             "student_name",
             "student_group",
             "course",
+            "custom_make",
+            "custom_model",
             "total_score",
             "maximum_score",
             "grade",
@@ -931,6 +1001,8 @@ def get_instructor_results(limit=50, offset=0, student_group=None, student=None,
         if not row.get("student_name"):
             row["student_name"] = student_name_map.get(row.student)
 
+    records = _attach_make_model_meta(records)
+
     return {
         "records": records,
         "total": total,
@@ -941,27 +1013,54 @@ def get_instructor_results(limit=50, offset=0, student_group=None, student=None,
 
 
 @frappe.whitelist()
-def get_instructor_bulk_assessments(student_group=None, student=None, instructor=None):
+def update_assessment_result_make_model(assessment_result, make, model):
+    assessment_result = (assessment_result or "").strip()
+    make = (make or "").strip()
+    model = (model or "").strip()
+    if not assessment_result:
+        frappe.throw(_("Assessment Result is required"))
+    if not make or not model:
+        frappe.throw(_("Make and Model are required"))
+
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+    if not _can_instructor_edit_result(assessment_result, user, roles):
+        frappe.throw(_("Not permitted to update this assessment result."), frappe.PermissionError)
+
+    course = frappe.db.get_value("Assessment Result", assessment_result, "course")
+    if not _course_requires_make_model(course):
+        frappe.throw(_("Make and Model are not enabled for this course."))
+
+    frappe.db.set_value(
+        "Assessment Result",
+        assessment_result,
+        {"custom_make": make, "custom_model": model},
+        update_modified=True,
+    )
+    return {
+        "assessment_result": assessment_result,
+        "make": make,
+        "model": model,
+    }
+
+
+@frappe.whitelist()
+def get_instructor_bulk_assessments(student_group=None, student=None, course=None, instructor=None):
     user = frappe.session.user
     roles = frappe.get_roles(user)
 
     student_group = (student_group or "").strip()
     student = (student or "").strip()
+    course = (course or "").strip()
     instructor = (instructor or "").strip()
 
     student_group_names = _resolve_student_group_names(user, roles, instructor)
     if student_group_names == []:
         return {"records": []}
 
-    if student_group:
-        if student_group_names is None:
-            group_names = [student_group]
-        elif student_group in student_group_names:
-            group_names = [student_group]
-        else:
-            return {"records": []}
-    else:
-        group_names = student_group_names
+    group_names = _scope_student_group_names(student_group_names, student_group, course)
+    if group_names == []:
+        return {"records": []}
 
     group_filters = {}
     if group_names:
@@ -1260,6 +1359,7 @@ def get_instructor_safety_briefings(
     limit=50,
     offset=0,
     student_group=None,
+    course=None,
     instructor=None,
 ):
     return _get_instructor_form_records(
@@ -1267,6 +1367,7 @@ def get_instructor_safety_briefings(
         limit=limit,
         offset=offset,
         student_group=student_group,
+        course=course,
         instructor=instructor,
     )
 
@@ -1314,33 +1415,25 @@ def _pick_group_briefing(briefings):
 
 
 @frappe.whitelist()
-def get_safety_briefing_group_status(student_group=None, instructor=None):
+def get_safety_briefing_group_status(student_group=None, course=None, instructor=None):
     user = frappe.session.user
     roles = frappe.get_roles(user)
     student_group = (student_group or "").strip()
+    course = (course or "").strip()
     instructor = (instructor or "").strip()
+    empty_response = {
+        "groups": [],
+        "summary": {"total": 0, "submitted": 0, "draft": 0, "pending": 0},
+        "briefing_types": SAFETY_BRIEFING_TYPES,
+    }
 
     student_group_names = _resolve_student_group_names(user, roles, instructor)
     if student_group_names == []:
-        return {
-            "groups": [],
-            "summary": {"total": 0, "submitted": 0, "draft": 0, "pending": 0},
-            "briefing_types": SAFETY_BRIEFING_TYPES,
-        }
+        return empty_response
 
-    if student_group:
-        if student_group_names is None:
-            scoped_groups = [student_group]
-        elif student_group in student_group_names:
-            scoped_groups = [student_group]
-        else:
-            return {
-                "groups": [],
-                "summary": {"total": 0, "submitted": 0, "draft": 0, "pending": 0},
-                "briefing_types": SAFETY_BRIEFING_TYPES,
-            }
-    else:
-        scoped_groups = student_group_names
+    scoped_groups = _scope_student_group_names(student_group_names, student_group, course)
+    if scoped_groups == []:
+        return empty_response
 
     group_filters = {}
     if scoped_groups is not None:
@@ -1423,6 +1516,7 @@ def get_instructor_student_groups(doctype, txt, searchfield, start, page_len, fi
     user = frappe.session.user
     roles = frappe.get_roles(user)
     student_group_names = _resolve_student_group_names(user, roles)
+    course = ((filters or {}).get("course") or "").strip()
 
     if student_group_names == []:
         return []
@@ -1430,6 +1524,8 @@ def get_instructor_student_groups(doctype, txt, searchfield, start, page_len, fi
     name_filters = []
     if student_group_names is not None:
         name_filters.append(["name", "in", student_group_names])
+    if course:
+        name_filters.append(["course", "=", course])
     if txt:
         name_filters.append(["name", "like", f"%{txt}%"])
 
@@ -1442,6 +1538,45 @@ def get_instructor_student_groups(doctype, txt, searchfield, start, page_len, fi
         page_length=page_len,
     )
     return [[row.name] for row in rows]
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_instructor_courses(doctype, txt, searchfield, start, page_len, filters):
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+    student_group_names = _resolve_student_group_names(user, roles)
+
+    if student_group_names == []:
+        return []
+
+    group_filters = []
+    if student_group_names is not None:
+        group_filters.append(["name", "in", student_group_names])
+
+    groups = frappe.get_all(
+        "Student Group",
+        filters=group_filters,
+        fields=["course"],
+        distinct=True,
+    )
+    course_names = sorted({group.course for group in groups if group.course})
+    if not course_names:
+        return []
+
+    course_filters = [["name", "in", course_names]]
+    if txt:
+        course_filters.append(["name", "like", f"%{txt}%"])
+
+    rows = frappe.get_all(
+        "Course",
+        filters=course_filters,
+        fields=["name", "course_name"],
+        order_by="course_name asc",
+        start=start,
+        page_length=page_len,
+    )
+    return [[row.name, row.course_name] for row in rows]
 
 
 @frappe.whitelist()

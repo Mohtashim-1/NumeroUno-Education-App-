@@ -512,6 +512,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 
 			<div class="portal-filters">
 				<div id="filter-instructor"></div>
+				<div id="filter-course"></div>
 				<div id="filter-student-group"></div>
 				<div id="filter-student"></div>
 				<div class="filter-actions">
@@ -661,6 +662,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 									<th>Assessment Plan</th>
 									<th>Score</th>
 									<th>Grade</th>
+									<th>Make / Model</th>
 									<th>Status</th>
 									<th>Modified</th>
 									<th>Action</th>
@@ -668,7 +670,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 							</thead>
 							<tbody id="instructor-result-body">
 								<tr>
-									<td colspan="9" class="empty-state">Loading...</td>
+									<td colspan="10" class="empty-state">Loading...</td>
 								</tr>
 							</tbody>
 						</table>
@@ -922,9 +924,10 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	var isAdnocInstructor = false;
 	var safetyBriefingTypes = [];
 	var filterState = {
+		instructor: "",
+		course: "",
 		student_group: "",
-		student: "",
-		instructor: ""
+		student: ""
 	};
 	var filterControls = {};
 
@@ -949,6 +952,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				card_offset: cardsOffset,
 				student_group: filterState.student_group,
 				student: filterState.student,
+				course: filterState.course,
 				instructor: filterState.instructor
 			},
 			callback: function (r) {
@@ -991,11 +995,31 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			options: "Instructor",
 			parent: $("#filter-instructor")
 		});
+		filterControls.course = make_filter_control({
+			label: "Course",
+			fieldname: "course",
+			options: "Course",
+			parent: $("#filter-course"),
+			get_query: function () {
+				return {
+					query: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_courses"
+				};
+			}
+		});
 		filterControls.student_group = make_filter_control({
 			label: "Student Group",
 			fieldname: "student_group",
 			options: "Student Group",
-			parent: $("#filter-student-group")
+			parent: $("#filter-student-group"),
+			get_query: function () {
+				var query = {
+					query: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_student_groups"
+				};
+				if (filterControls.course && filterControls.course.get_value()) {
+					query.filters = { course: filterControls.course.get_value() };
+				}
+				return query;
+			}
 		});
 		filterControls.student = make_filter_control({
 			label: "Student Name",
@@ -1015,13 +1039,17 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	}
 
 	function make_filter_control(config) {
+		var df = {
+			label: config.label,
+			fieldname: config.fieldname,
+			fieldtype: "Link",
+			options: config.options
+		};
+		if (config.get_query) {
+			df.get_query = config.get_query;
+		}
 		var control = frappe.ui.form.make_control({
-			df: {
-				label: config.label,
-				fieldname: config.fieldname,
-				fieldtype: "Link",
-				options: config.options
-			},
+			df: df,
 			parent: config.parent,
 			render_input: true
 		});
@@ -1036,6 +1064,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	function apply_filters() {
 		filterState = {
 			instructor: (filterControls.instructor && filterControls.instructor.get_value()) || "",
+			course: (filterControls.course && filterControls.course.get_value()) || "",
 			student_group: (filterControls.student_group && filterControls.student_group.get_value()) || "",
 			student: (filterControls.student && filterControls.student.get_value()) || ""
 		};
@@ -1234,6 +1263,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				offset: quizOffset,
 				student_group: filterState.student_group,
 				student: filterState.student,
+				course: filterState.course,
 				instructor: filterState.instructor
 			},
 			callback: function (r) {
@@ -1494,6 +1524,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				offset: resultOffset,
 				student_group: filterState.student_group,
 				student: filterState.student,
+				course: filterState.course,
 				instructor: filterState.instructor
 			},
 			callback: function (r) {
@@ -1518,7 +1549,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			if (!append) {
 				$body.append(`
 					<tr>
-						<td colspan="9" class="empty-state">No assessment results found.</td>
+						<td colspan="10" class="empty-state">No assessment results found.</td>
 					</tr>
 				`);
 			}
@@ -1559,6 +1590,36 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				`);
 			}
 
+			var makeModelCell = `<span class="data-meta">-</span>`;
+			if (row.make_model_required) {
+				if (row.make_model_pending) {
+					makeModelCell = `<span class="status-pill pending">Pending</span>`;
+					actionLinks.push(`
+						<button type="button"
+							class="portal-btn portal-btn-primary add-make-model-btn"
+							data-assessment-result="${frappe.utils.escape_html(row.name || "")}"
+							data-make="${frappe.utils.escape_html(row.make || "")}"
+							data-model="${frappe.utils.escape_html(row.model || "")}">
+							Add Make & Model
+						</button>
+					`);
+				} else {
+					makeModelCell = `
+						<div class="data-title">${frappe.utils.escape_html(row.make || "")}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.model || "")}</div>
+					`;
+					actionLinks.push(`
+						<button type="button"
+							class="portal-btn portal-btn-ghost add-make-model-btn"
+							data-assessment-result="${frappe.utils.escape_html(row.name || "")}"
+							data-make="${frappe.utils.escape_html(row.make || "")}"
+							data-model="${frappe.utils.escape_html(row.model || "")}">
+							Edit Make & Model
+						</button>
+					`);
+				}
+			}
+
 			$body.append(`
 				<tr>
 					<td><div class="data-title">${resultLink}</div></td>
@@ -1570,6 +1631,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					<td><div class="data-title">${planLink}</div></td>
 					<td><div class="data-title">${frappe.utils.escape_html(scoreLabel)}</div></td>
 					<td><div class="data-title">${frappe.utils.escape_html(row.grade || "-")}</div></td>
+					<td>${makeModelCell}</td>
 					<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
 					<td><div class="data-title">${frappe.utils.escape_html(modifiedLabel)}</div></td>
 					<td><div class="quiz-actions">${actionLinks.join("")}</div></td>
@@ -1577,7 +1639,62 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			`);
 		});
 
+		bind_make_model_buttons();
 		bind_result_load_more(records.length);
+	}
+
+	function bind_make_model_buttons() {
+		$(".add-make-model-btn").off("click").on("click", function () {
+			var $button = $(this);
+			show_make_model_dialog({
+				name: $button.data("assessment-result"),
+				make: $button.data("make") || "",
+				model: $button.data("model") || "",
+			});
+		});
+	}
+
+	function show_make_model_dialog(row) {
+		var dialog = new frappe.ui.Dialog({
+			title: __("Add Make & Model"),
+			fields: [
+				{
+					fieldname: "make",
+					fieldtype: "Data",
+					label: __("Make"),
+					reqd: 1,
+					default: row.make || "",
+				},
+				{
+					fieldname: "model",
+					fieldtype: "Data",
+					label: __("Model"),
+					reqd: 1,
+					default: row.model || "",
+				},
+			],
+			primary_action_label: __("Save"),
+			primary_action: function (values) {
+				frappe.call({
+					method: "numerouno.numerouno.page.instructor_portal.instructor_portal.update_assessment_result_make_model",
+					args: {
+						assessment_result: row.name,
+						make: values.make,
+						model: values.model,
+					},
+					freeze: true,
+					freeze_message: __("Saving make and model..."),
+					callback: function (r) {
+						if (r.exc) return;
+						dialog.hide();
+						frappe.show_alert({ message: __("Make & Model saved"), indicator: "green" });
+						resultOffset = 0;
+						load_results();
+					},
+				});
+			},
+		});
+		dialog.show();
 	}
 
 	function format_result_score(row) {
@@ -1614,6 +1731,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			args: {
 				student_group: filterState.student_group,
 				student: filterState.student,
+				course: filterState.course,
 				instructor: filterState.instructor
 			},
 			callback: function (r) {
@@ -1754,6 +1872,9 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		if (filterState.student_group) {
 			frappe.route_options.student_group = filterState.student_group;
 		}
+		if (filterState.course) {
+			frappe.route_options.course = filterState.course;
+		}
 		if (filterState.student) {
 			frappe.route_options.student = filterState.student;
 		}
@@ -1783,6 +1904,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				offset: formSectionOffsets[formKey] || 0,
 				student_group: filterState.student_group,
 				student: filterState.student,
+				course: filterState.course,
 				instructor: filterState.instructor
 			},
 			callback: function (r) {
@@ -1931,6 +2053,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_safety_briefing_group_status",
 			args: {
 				student_group: filterState.student_group,
+				course: filterState.course,
 				instructor: filterState.instructor
 			},
 			callback: function (r) {
