@@ -8,9 +8,6 @@ class InvoiceDeliveryAcknowledgement(Document):
 		if self.sales_invoice and frappe.db.get_value("Sales Invoice", self.sales_invoice, "docstatus") != 1:
 			frappe.throw("Only submitted Sales Invoices can be acknowledged.")
 
-		if not self.has_certificates and not self.has_cards:
-			frappe.throw("Select at least one document type: Certificates or Cards.")
-
 	def on_submit(self):
 		self._sync_sales_invoice(link_only=False)
 

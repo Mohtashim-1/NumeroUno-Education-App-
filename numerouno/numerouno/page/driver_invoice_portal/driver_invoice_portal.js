@@ -127,8 +127,8 @@ class DriverInvoicePortal {
 									<span>${__("Contact No.")}</span>
 									<input type="tel" id="dip-contact-no" class="dip-input" autocomplete="tel">
 								</label>
-								<label class="dip-field dip-field-full dip-field-signature">
-									<span>${__("Receiver Signature")} *</span>
+								<div class="dip-field dip-field-full dip-field-signature">
+									<span class="dip-field-label">${__("Receiver Signature")} *</span>
 									<div class="dip-signature-wrap">
 										<canvas id="dip-signature-canvas" class="dip-signature-canvas"></canvas>
 										<div class="dip-signature-actions">
@@ -136,7 +136,7 @@ class DriverInvoicePortal {
 											<button type="button" class="dip-btn dip-btn-ghost dip-btn-small" id="dip-clear-sign" disabled>${__("Clear")}</button>
 										</div>
 									</div>
-								</label>
+								</div>
 								<label class="dip-field dip-field-full">
 									<span>${__("Remarks")}</span>
 									<textarea id="dip-remarks" class="dip-input dip-textarea" rows="2"></textarea>
@@ -270,7 +270,10 @@ class DriverInvoicePortal {
 			.dip-field { display: block; margin-bottom: 0; }
 			.dip-form-fields-grid { display: grid; gap: 12px; margin-top: 12px; }
 			.dip-field-full { grid-column: 1 / -1; }
-			.dip-field > span { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--dip-muted); }
+			.dip-field > span, .dip-field-label {
+				display: block; margin-bottom: 6px; font-size: 12px; font-weight: 700;
+				text-transform: uppercase; letter-spacing: .06em; color: var(--dip-muted);
+			}
 			.dip-input, .dip-textarea {
 				width: 100%; border: 1px solid var(--dip-line); border-radius: 12px; padding: 12px 14px;
 				font-size: 16px; background: #fff;
@@ -280,6 +283,7 @@ class DriverInvoicePortal {
 				width: 100%; height: 130px; display: block;
 				border: 2px dashed var(--dip-line); border-radius: 12px; background: #fbfeff;
 				touch-action: none; cursor: crosshair;
+				user-select: none;
 			}
 			.dip-signature-actions {
 				display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -363,7 +367,22 @@ class DriverInvoicePortal {
 			self.load_active_tab();
 		});
 		this.wrapper.find("#dip-back").on("click", () => this.show_list());
-		this.wrapper.find("#dip-clear-sign").on("click", () => this.set_signature(""));
+		this._clear_sign_pointer_id = null;
+		this.wrapper.find("#dip-clear-sign").on("pointerdown", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			if ($(e.currentTarget).prop("disabled")) return;
+			this._clear_sign_pointer_id = e.pointerId;
+		});
+		this.wrapper.find("#dip-clear-sign").on("pointerup", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			if (e.pointerId !== this._clear_sign_pointer_id) return;
+			this._clear_sign_pointer_id = null;
+			if ($(e.currentTarget).prop("disabled")) return;
+			dip_log("clear button pressed");
+			this.set_signature("");
+		});
 		this.wrapper.find("#dip-submit").on("click", () => this.submit_acknowledgement());
 		this.pending_rows = [];
 		this.pending_offset = 0;
@@ -524,32 +543,49 @@ class DriverInvoicePortal {
 		this.$list.attr("hidden", true);
 		this.wrapper.find(".dip-tabs, .dip-toolbar, #dip-list-footer").attr("hidden", true);
 		this.$form.removeAttr("hidden");
-		this.init_signature_pad();
+		this._signature_init_token = (this._signature_init_token || 0) + 1;
+		const token = this._signature_init_token;
+		requestAnimationFrame(() => {
+			if (token !== this._signature_init_token) return;
+			this.init_signature_pad();
+		});
 	}
 
 	init_signature_pad() {
+		dip_log("init_signature_pad", {
+			has_teardown: !!this.signature_teardown,
+			has_saved_data: !!this.signature_data,
+		});
 		if (this.signature_teardown) {
+			dip_log("init_signature_pad destroy previous pad");
 			this.signature_teardown.destroy();
 			this.signature_teardown = null;
 		}
 		const canvas = this.wrapper.find("#dip-signature-canvas")[0];
-		if (!canvas) return;
-		this.signature_teardown = bind_signature_canvas(canvas, () => this.sync_signature_from_canvas());
+		if (!canvas) {
+			dip_log("init_signature_pad missing canvas");
+			return;
+		}
+		if (!canvas.clientWidth) {
+			dip_log("init_signature_pad waiting for layout", { clientWidth: canvas.clientWidth });
+			requestAnimationFrame(() => this.init_signature_pad());
+			return;
+		}
+		this.signature_teardown = bind_signature_canvas(canvas, {
+			onInk: () => {
+				setTimeout(() => this.wrapper.find("#dip-clear-sign").prop("disabled", false), 0);
+			},
+			onStrokeEnd: (dataUrl) => {
+				this.signature_data = dataUrl;
+				dip_log("stroke saved", { bytes: dataUrl.length, hasInk: this.signature_teardown?.hasInk() });
+			},
+		});
 		if (this.signature_data) {
+			dip_log("init_signature_pad restore saved signature");
 			this.signature_teardown.load(this.signature_data);
 			this.wrapper.find("#dip-clear-sign").prop("disabled", false);
 		}
-	}
-
-	sync_signature_from_canvas() {
-		const canvas = this.wrapper.find("#dip-signature-canvas")[0];
-		if (!canvas || is_canvas_blank(canvas)) {
-			this.signature_data = "";
-			this.wrapper.find("#dip-clear-sign").prop("disabled", true);
-			return;
-		}
-		this.signature_data = canvas.toDataURL("image/png");
-		this.wrapper.find("#dip-clear-sign").prop("disabled", false);
+		dip_log("init_signature_pad ready", { size: this.signature_teardown.getSize() });
 	}
 
 	show_list() {
@@ -566,70 +602,168 @@ class DriverInvoicePortal {
 	}
 
 	set_signature(dataUrl) {
+		dip_log("set_signature", { has_data: !!dataUrl, bytes: dataUrl ? dataUrl.length : 0 });
 		this.signature_data = dataUrl || "";
 		if (this.signature_teardown) {
 			if (this.signature_data) {
 				this.signature_teardown.load(this.signature_data);
 			} else {
-				this.signature_teardown.clear();
+				this.signature_teardown.clear("set_signature");
 			}
 		}
 		this.wrapper.find("#dip-clear-sign").prop("disabled", !this.signature_data);
 	}
 
+	capture_submission_context() {
+		const info = {
+			user_agent: navigator.userAgent || "",
+			platform: navigator.platform || "",
+			language: navigator.language || "",
+			screen: `${window.screen?.width || 0}x${window.screen?.height || 0}`,
+			viewport: `${window.innerWidth}x${window.innerHeight}`,
+			timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+			captured_at: new Date().toISOString(),
+		};
+
+		return new Promise((resolve) => {
+			if (!navigator.geolocation) {
+				info.location_error = "Geolocation not supported";
+				resolve({
+					client_device_info: JSON.stringify(info),
+				});
+				return;
+			}
+
+			navigator.geolocation.getCurrentPosition(
+				(pos) => {
+					resolve({
+						submission_latitude: pos.coords.latitude,
+						submission_longitude: pos.coords.longitude,
+						submission_location_accuracy: pos.coords.accuracy,
+						client_device_info: JSON.stringify({
+							...info,
+							altitude: pos.coords.altitude,
+							heading: pos.coords.heading,
+							speed: pos.coords.speed,
+						}),
+					});
+				},
+				(err) => {
+					info.location_error = err.message || __("Location permission denied");
+					resolve({ client_device_info: JSON.stringify(info) });
+				},
+				{ enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+			);
+		});
+	}
+
 	submit_acknowledgement() {
 		if (!this.selected_invoice) return;
-		this.sync_signature_from_canvas();
-		if (!this.signature_data) {
+		const hasInk = this.signature_teardown?.hasInk();
+		dip_log("submit", { hasInk, savedBytes: this.signature_data?.length || 0 });
+		if (this.signature_teardown?.hasInk()) {
+			this.signature_data = this.signature_teardown.toDataURL();
+		} else if (!this.signature_data) {
 			frappe.msgprint(__("Please draw the receiver signature first."));
 			return;
 		}
-		const payload = {
-			sales_invoice: this.selected_invoice,
-			receiver_name: this.wrapper.find("#dip-receiver-name").val(),
-			receiving_date: this.wrapper.find("#dip-receiving-date").val(),
-			contact_no: this.wrapper.find("#dip-contact-no").val(),
-			has_certificates: this.wrapper.find("#dip-has-certificates").is(":checked") ? 1 : 0,
-			has_cards: this.wrapper.find("#dip-has-cards").is(":checked") ? 1 : 0,
-			receiver_signature: this.signature_data,
-			remarks: this.wrapper.find("#dip-remarks").val(),
-			submit: 1,
-		};
 
-		frappe.call({
-			method: "numerouno.numerouno.page.driver_invoice_portal.driver_invoice_portal.save_acknowledgement",
-			args: { data: payload },
-			freeze: true,
-			callback: (r) => {
-				if (r.exc) return;
-				frappe.show_alert({ message: __("Acknowledgement submitted"), indicator: "green" });
-				this.show_list();
-				this.load_kpis();
-				this.load_active_tab();
-			},
+		this.capture_submission_context().then((capture) => {
+			const payload = {
+				sales_invoice: this.selected_invoice,
+				receiver_name: this.wrapper.find("#dip-receiver-name").val(),
+				receiving_date: this.wrapper.find("#dip-receiving-date").val(),
+				contact_no: this.wrapper.find("#dip-contact-no").val(),
+				has_certificates: this.wrapper.find("#dip-has-certificates").is(":checked") ? 1 : 0,
+				has_cards: this.wrapper.find("#dip-has-cards").is(":checked") ? 1 : 0,
+				receiver_signature: this.signature_data,
+				remarks: this.wrapper.find("#dip-remarks").val(),
+				submit: 1,
+				...capture,
+			};
+
+			frappe.call({
+				method: "numerouno.numerouno.page.driver_invoice_portal.driver_invoice_portal.save_acknowledgement",
+				args: { data: payload },
+				freeze: true,
+				callback: (r) => {
+					if (r.exc) return;
+					frappe.show_alert({ message: __("Acknowledgement submitted"), indicator: "green" });
+					this.show_list();
+					this.load_kpis();
+					this.load_active_tab();
+				},
+			});
 		});
 	}
 }
 
-function is_canvas_blank(canvas) {
-	const ctx = canvas.getContext("2d");
-	const pixels = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
-	return !pixels.some((color) => color !== 0);
+function dip_log(...args) {
+	console.log("[DIP]", ...args);
 }
 
-function bind_signature_canvas(canvas, onChange) {
-	const ctx = canvas.getContext("2d");
-	let drawing = false;
+function bind_signature_canvas(canvas, callbacks) {
+	const onInk = callbacks?.onInk;
+	const onStrokeEnd = callbacks?.onStrokeEnd;
 	const ratio = window.devicePixelRatio || 1;
-	const displayWidth = canvas.clientWidth || canvas.offsetWidth || 320;
-	const displayHeight = canvas.clientHeight || 130;
-	canvas.width = displayWidth * ratio;
-	canvas.height = displayHeight * ratio;
-	ctx.scale(ratio, ratio);
-	ctx.lineWidth = 2.5;
-	ctx.lineCap = "round";
-	ctx.lineJoin = "round";
-	ctx.strokeStyle = "#111";
+	let displayWidth = 0;
+	let displayHeight = 0;
+	let drawing = false;
+	let moved = false;
+	let hasInk = false;
+	let initialized = false;
+	let ignoreMouseUntil = 0;
+	let resizeTimer = null;
+	const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+	function applyStrokeStyle() {
+		ctx.lineWidth = 2.5;
+		ctx.lineCap = "round";
+		ctx.lineJoin = "round";
+		ctx.strokeStyle = "#111";
+		ctx.fillStyle = "#111";
+	}
+
+	function ensureSize(reason) {
+		const width = Math.round(canvas.clientWidth || canvas.offsetWidth);
+		const height = Math.round(canvas.clientHeight || 130);
+		if (!width) {
+			dip_log("ensureSize skipped", reason, { width, height });
+			return false;
+		}
+		if (initialized && width === displayWidth && height === displayHeight) {
+			return true;
+		}
+
+		let snapshot = null;
+		if (hasInk && displayWidth > 0) {
+			snapshot = canvas.toDataURL("image/png");
+			dip_log("ensureSize snapshot", reason, { from: [displayWidth, displayHeight], to: [width, height] });
+		}
+
+		displayWidth = width;
+		displayHeight = height;
+		canvas.width = width * ratio;
+		canvas.height = height * ratio;
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.scale(ratio, ratio);
+		applyStrokeStyle();
+		initialized = true;
+		dip_log("ensureSize applied", reason, { displayWidth, displayHeight, ratio });
+
+		if (snapshot) {
+			const img = new Image();
+			img.onload = function () {
+				ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
+				dip_log("ensureSize snapshot restored", reason);
+			};
+			img.onerror = function () {
+				dip_log("ensureSize snapshot restore failed", reason);
+			};
+			img.src = snapshot;
+		}
+		return true;
+	}
 
 	function pointFromEvent(event) {
 		const rect = canvas.getBoundingClientRect();
@@ -637,54 +771,113 @@ function bind_signature_canvas(canvas, onChange) {
 		return { x: source.clientX - rect.left, y: source.clientY - rect.top };
 	}
 
-	function finishStroke() {
-		drawing = false;
-		if (onChange) onChange();
+	function persistStroke(eventType) {
+		if (!hasInk) return;
+		const dataUrl = canvas.toDataURL("image/png");
+		dip_log("persistStroke", eventType, { bytes: dataUrl.length, hasInk });
+		if (onStrokeEnd) onStrokeEnd(dataUrl);
+		if (onInk) onInk();
+	}
+
+	function shouldIgnoreMouse(event) {
+		if (!event.type.startsWith("mouse")) return false;
+		if (Date.now() < ignoreMouseUntil) {
+			dip_log("ignore synthetic mouse", event.type);
+			return true;
+		}
+		return false;
 	}
 
 	function startDraw(event) {
+		if (!initialized) {
+			dip_log("startDraw before init", event.type);
+			return;
+		}
+		if (shouldIgnoreMouse(event)) return;
+		if (event.type.startsWith("touch")) {
+			ignoreMouseUntil = Date.now() + 700;
+		}
 		if (event.cancelable) event.preventDefault();
+		event.stopPropagation();
 		drawing = true;
+		moved = false;
 		const p = pointFromEvent(event);
 		ctx.beginPath();
 		ctx.moveTo(p.x, p.y);
+		dip_log("startDraw", event.type, p);
 	}
 
 	function draw(event) {
-		if (!drawing) return;
+		if (!drawing || shouldIgnoreMouse(event)) return;
 		if (event.cancelable) event.preventDefault();
+		moved = true;
 		const p = pointFromEvent(event);
 		ctx.lineTo(p.x, p.y);
 		ctx.stroke();
+		hasInk = true;
 	}
 
 	function endDraw(event) {
-		if (!drawing) return;
+		if (!drawing || shouldIgnoreMouse(event)) return;
 		if (event.cancelable) event.preventDefault();
-		finishStroke();
+		event.stopPropagation();
+		drawing = false;
+		if (!moved) {
+			const p = pointFromEvent(event);
+			ctx.beginPath();
+			ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2);
+			ctx.fill();
+			hasInk = true;
+		}
+		dip_log("endDraw", event.type, { moved, hasInk });
+		persistStroke(event.type);
 	}
 
 	const handlers = [
-		["mousedown", startDraw], ["mousemove", draw], ["mouseup", endDraw], ["mouseleave", endDraw],
+		["mousedown", startDraw], ["mousemove", draw], ["mouseup", endDraw],
 		["touchstart", startDraw, { passive: false }], ["touchmove", draw, { passive: false }],
 		["touchend", endDraw, { passive: false }], ["touchcancel", endDraw, { passive: false }],
 	];
 	handlers.forEach(([name, fn, opts]) => canvas.addEventListener(name, fn, opts || false));
 
+	const resizeObserver = new ResizeObserver(() => {
+		clearTimeout(resizeTimer);
+		resizeTimer = setTimeout(() => {
+			requestAnimationFrame(() => ensureSize("resize"));
+		}, 120);
+	});
+	resizeObserver.observe(canvas);
+
+	ensureSize("init");
+
 	return {
-		clear() {
+		hasInk: () => hasInk,
+		getSize: () => ({ displayWidth, displayHeight, initialized }),
+		toDataURL: () => canvas.toDataURL("image/png"),
+		clear(reason = "manual") {
+			dip_log("clear", reason, { hadInk: hasInk });
 			ctx.clearRect(0, 0, displayWidth, displayHeight);
-			if (onChange) onChange();
+			hasInk = false;
 		},
 		load(dataUrl) {
+			if (!initialized) ensureSize("load");
 			const img = new Image();
 			img.onload = function () {
 				ctx.clearRect(0, 0, displayWidth, displayHeight);
 				ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
-				if (onChange) onChange();
+				hasInk = true;
+				dip_log("load complete", { bytes: dataUrl.length });
+			};
+			img.onerror = function () {
+				dip_log("load failed", { bytes: dataUrl.length });
 			};
 			img.src = dataUrl;
 		},
-		destroy() { handlers.forEach(([name, fn, opts]) => canvas.removeEventListener(name, fn, opts || false)); },
+		destroy() {
+			dip_log("destroy pad");
+			resizeObserver.disconnect();
+			clearTimeout(resizeTimer);
+			handlers.forEach(([name, fn, opts]) => canvas.removeEventListener(name, fn, opts || false));
+		},
 	};
 }

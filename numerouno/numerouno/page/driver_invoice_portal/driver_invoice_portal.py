@@ -304,6 +304,14 @@ def save_acknowledgement(data):
 	doc.has_cards = cint(data.get("has_cards"))
 	doc.receiver_signature = data.get("receiver_signature") or ""
 	doc.remarks = (data.get("remarks") or "").strip()
+	if data.get("submission_latitude") is not None:
+		doc.submission_latitude = data.get("submission_latitude")
+	if data.get("submission_longitude") is not None:
+		doc.submission_longitude = data.get("submission_longitude")
+	if data.get("submission_location_accuracy") is not None:
+		doc.submission_location_accuracy = data.get("submission_location_accuracy")
+	if data.get("client_device_info"):
+		doc.client_device_info = data.get("client_device_info")
 
 	if not doc.receiver_name:
 		frappe.throw("Receiver name is required")

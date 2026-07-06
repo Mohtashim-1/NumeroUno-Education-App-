@@ -27,6 +27,11 @@
   "has_cards",
   "receiver_signature",
   "remarks",
+  "section_break_capture",
+  "submission_latitude",
+  "submission_longitude",
+  "submission_location_accuracy",
+  "client_device_info",
   "amended_from"
  ],
  "fields": [
@@ -141,6 +146,38 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_capture",
+   "fieldtype": "Section Break",
+   "label": "Submission Capture"
+  },
+  {
+   "fieldname": "submission_latitude",
+   "fieldtype": "Float",
+   "label": "Latitude",
+   "precision": "8",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submission_longitude",
+   "fieldtype": "Float",
+   "label": "Longitude",
+   "precision": "8",
+   "read_only": 1
+  },
+  {
+   "fieldname": "submission_location_accuracy",
+   "fieldtype": "Float",
+   "label": "Location Accuracy (m)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_device_info",
+   "fieldtype": "Small Text",
+   "label": "Client / Device Info",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_details",
