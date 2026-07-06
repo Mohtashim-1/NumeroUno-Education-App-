@@ -13,6 +13,8 @@ class DriverInvoicePortal {
 		this.view = "list";
 		this.selected_invoice = null;
 		this.signature_data = "";
+		this.selected_invoices = new Set();
+		this.delivery_queue = [];
 		this.inject_pwa_meta();
 		this.render();
 		this.bind_events();
@@ -39,16 +41,46 @@ class DriverInvoicePortal {
 					this.wrapper.find("#dip-metric-assigned-wrap, #dip-metric-unassigned-wrap").hide();
 					this.wrapper.find("#dip-driver-banner").html(`
 						<strong>${__("Driver")}:</strong> ${frappe.utils.escape_html(k.driver_name || k.user)}
-						<div class="dip-banner-note">${__("Showing invoices assigned to you.")}</div>
+						<div class="dip-banner-note">${__("Select invoices and tap Deliver Selected.")}</div>
 					`).show();
+					this.wrapper.find("#dip-bulk-deliver").removeAttr("hidden");
+					this.wrapper.find("#dip-assign-controls").attr("hidden", true);
 				} else {
 					this.wrapper.find("#dip-driver-banner").hide();
 					this.wrapper.find("#dip-metric-assigned-wrap").show();
 					this.wrapper.find("#dip-metric-assigned").text(k.assigned_pending || 0);
 					this.wrapper.find("#dip-metric-unassigned").text(k.unassigned_pending || 0);
+					if (k.can_assign_driver) {
+						this.wrapper.find("#dip-assign-controls").removeAttr("hidden");
+						this.setup_driver_picker();
+					} else {
+						this.wrapper.find("#dip-assign-controls").attr("hidden", true);
+					}
+					this.wrapper.find("#dip-bulk-deliver").removeAttr("hidden");
 				}
+				this.update_bulk_bar();
 			},
 		});
+	}
+
+	setup_driver_picker() {
+		if (this.driver_control) return;
+		this.driver_control = frappe.ui.form.make_control({
+			parent: this.wrapper.find("#dip-driver-picker")[0],
+			df: {
+				fieldtype: "Link",
+				options: "User",
+				label: __("Delivery Driver"),
+				placeholder: __("Choose driver"),
+				get_query() {
+					return {
+						query: "numerouno.numerouno.page.driver_invoice_portal.driver_invoice_portal.get_delivery_driver_users",
+					};
+				},
+			},
+			render_input: true,
+		});
+		this.driver_control.refresh();
 	}
 
 	inject_pwa_meta() {
@@ -74,7 +106,7 @@ class DriverInvoicePortal {
 				<div class="dip-hero">
 					<div class="dip-hero-copy">
 						<h1>${__("Invoice Delivery")}</h1>
-						<p>${__("Accounts assigns a driver on the Sales Invoice. The driver acknowledges delivery here on mobile or desktop.")}</p>
+						<p>${__("Select invoices below, assign a delivery driver, then the driver acknowledges delivery here.")}</p>
 						<div class="dip-driver-banner" id="dip-driver-banner" hidden></div>
 					</div>
 					<div class="dip-metrics">
@@ -94,6 +126,24 @@ class DriverInvoicePortal {
 				<div class="dip-tabs">
 					<button type="button" class="dip-tab active" data-tab="pending">${__("Pending")}</button>
 					<button type="button" class="dip-tab" data-tab="completed">${__("Completed")}</button>
+				</div>
+
+				<div class="dip-bulk-bar" id="dip-bulk-bar">
+					<div class="dip-bulk-left">
+						<label class="dip-bulk-select-all">
+							<input type="checkbox" id="dip-select-all">
+							<span>${__("Select all on page")}</span>
+						</label>
+						<span class="dip-bulk-count" id="dip-selected-count">${__("Select invoices below")}</span>
+					</div>
+					<div class="dip-assign-controls" id="dip-assign-controls" hidden>
+						<div class="dip-driver-picker-wrap" id="dip-driver-picker"></div>
+						<button type="button" class="dip-btn dip-btn-primary dip-btn-small" id="dip-assign-selected">${__("Assign Driver")}</button>
+						<button type="button" class="dip-btn dip-btn-ghost dip-btn-small" id="dip-clear-driver">${__("Clear Driver")}</button>
+					</div>
+					<div class="dip-bulk-actions">
+						<button type="button" class="dip-btn dip-btn-primary dip-btn-small" id="dip-bulk-deliver" hidden>${__("Deliver Selected")}</button>
+					</div>
 				</div>
 
 				<div id="dip-list-view" class="dip-list"></div>
@@ -229,7 +279,33 @@ class DriverInvoicePortal {
 			.dip-card {
 				background: var(--dip-card); border: 1px solid var(--dip-line); border-radius: 16px;
 				padding: 14px 16px; box-shadow: 0 10px 24px rgba(18,49,61,.06); cursor: pointer;
+				display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start;
 			}
+			.dip-card-select { display: flex; padding-top: 2px; }
+			.dip-card-select input { width: 18px; height: 18px; cursor: pointer; }
+			.dip-card-completed { grid-template-columns: 1fr; }
+			.dip-bulk-bar {
+				display: none;
+				align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+				background: var(--dip-card); border: 1px solid var(--dip-line); border-radius: 14px;
+				padding: 12px 14px; margin-bottom: 10px;
+			}
+			.dip-bulk-bar.is-visible { display: flex; }
+			.dip-bulk-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+			.dip-assign-controls {
+				display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; flex: 1;
+				justify-content: flex-end;
+			}
+			.dip-driver-picker-wrap { min-width: 220px; max-width: 280px; }
+			.dip-driver-picker-wrap .frappe-control { margin-bottom: 0; }
+			.dip-card-assign {
+				margin-top: 8px;
+			}
+			.dip-bulk-select-all {
+				display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; margin: 0;
+			}
+			.dip-bulk-count { color: var(--dip-muted); font-size: 13px; font-weight: 600; }
+			.dip-bulk-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
 			.dip-card-top { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
 			.dip-card h4 { margin: 0 0 4px; font-size: 16px; }
 			.dip-card p { margin: 0; color: var(--dip-muted); font-size: 13px; line-height: 1.45; }
@@ -364,6 +440,7 @@ class DriverInvoicePortal {
 			$(this).addClass("active");
 			self.active_tab = $(this).data("tab");
 			self.wrapper.find(".dip-toolbar").toggle(self.active_tab !== "completed");
+			self.clear_selection();
 			self.load_active_tab();
 		});
 		this.wrapper.find("#dip-back").on("click", () => this.show_list());
@@ -390,6 +467,139 @@ class DriverInvoicePortal {
 		this.wrapper.find("#dip-load-more").on("click", () => {
 			this.load_pending(this.wrapper.find("#dip-search").val(), true);
 		});
+		this.wrapper.find("#dip-select-all").on("change", (e) => {
+			const checked = e.currentTarget.checked;
+			this.$list.find(".dip-select-invoice").each((_, el) => {
+				const invoice = $(el).data("invoice");
+				$(el).prop("checked", checked);
+				if (checked) this.selected_invoices.add(invoice);
+				else this.selected_invoices.delete(invoice);
+			});
+			this.update_bulk_bar();
+		});
+		this.wrapper.find("#dip-bulk-deliver").on("click", () => this.start_bulk_delivery());
+		this.wrapper.find("#dip-assign-selected").on("click", () => this.assign_selected_driver());
+		this.wrapper.find("#dip-clear-driver").on("click", () => this.clear_selected_driver());
+	}
+
+	get_selected_invoices() {
+		return Array.from(this.selected_invoices);
+	}
+
+	update_bulk_bar() {
+		const count = this.selected_invoices.size;
+		const onPending = this.active_tab === "pending" && this.view === "list";
+		this.wrapper.find("#dip-bulk-bar").toggleClass("is-visible", onPending);
+		this.wrapper.find("#dip-selected-count").text(
+			count
+				? __("Selected: {0}", [count])
+				: this.portal_meta?.can_assign_driver
+					? __("Tick invoices, choose driver above, then Assign Driver")
+					: __("Tick invoices, then Deliver Selected")
+		);
+		const pageCount = this.$list.find(".dip-select-invoice").length;
+		const checkedCount = this.$list.find(".dip-select-invoice:checked").length;
+		this.wrapper.find("#dip-select-all").prop("checked", pageCount > 0 && checkedCount === pageCount);
+	}
+
+	assign_selected_driver() {
+		const invoices = this.get_selected_invoices();
+		if (!invoices.length) {
+			frappe.msgprint(__("Select at least one invoice using the checkboxes."));
+			return;
+		}
+		const driver = this.driver_control?.get_value();
+		if (!driver) {
+			dip_show_assign_driver_dialog(invoices, () => this.after_assign_refresh());
+			return;
+		}
+		frappe.call({
+			method: "numerouno.numerouno.page.driver_invoice_portal.driver_invoice_portal.bulk_assign_delivery_driver",
+			args: { sales_invoices: invoices, driver },
+			freeze: true,
+			callback: (r) => {
+				if (r.exc) return;
+				const msg = r.message || {};
+				frappe.show_alert({
+					message: __("Assigned {0} invoice(s) to {1}", [msg.updated || 0, msg.driver_name || driver]),
+					indicator: "green",
+				});
+				this.after_assign_refresh();
+			},
+		});
+	}
+
+	assign_single_invoice(invoice) {
+		const driver = this.driver_control?.get_value();
+		if (driver) {
+			frappe.call({
+				method: "numerouno.numerouno.page.driver_invoice_portal.driver_invoice_portal.bulk_assign_delivery_driver",
+				args: { sales_invoices: [invoice], driver },
+				freeze: true,
+				callback: (r) => {
+					if (r.exc) return;
+					const msg = r.message || {};
+					frappe.show_alert({
+						message: __("Assigned {0} to {1}", [invoice, msg.driver_name || driver]),
+						indicator: "green",
+					});
+					this.after_assign_refresh();
+				},
+			});
+			return;
+		}
+		dip_show_assign_driver_dialog([invoice], () => this.after_assign_refresh());
+	}
+
+	clear_selected_driver() {
+		const invoices = this.get_selected_invoices();
+		if (!invoices.length) {
+			frappe.msgprint(__("Select at least one invoice using the checkboxes."));
+			return;
+		}
+		frappe.confirm(
+			__("Clear delivery driver from {0} selected invoice(s)?", [invoices.length]),
+			() => {
+				frappe.call({
+					method: "numerouno.numerouno.page.driver_invoice_portal.driver_invoice_portal.bulk_clear_delivery_driver",
+					args: { sales_invoices: invoices },
+					freeze: true,
+					callback: (r) => {
+						if (r.exc) return;
+						frappe.show_alert({
+							message: __("Cleared driver on {0} invoice(s)", [r.message?.updated || 0]),
+							indicator: "green",
+						});
+						this.after_assign_refresh();
+					},
+				});
+			}
+		);
+	}
+
+	after_assign_refresh() {
+		this.clear_selection();
+		this.load_kpis();
+		this.load_pending(this.wrapper.find("#dip-search").val());
+	}
+
+	clear_selection() {
+		this.selected_invoices.clear();
+		this.update_bulk_bar();
+	}
+
+	bulk_assign_driver() {
+		this.assign_selected_driver();
+	}
+
+	start_bulk_delivery() {
+		const invoices = this.get_selected_invoices();
+		if (!invoices.length) {
+			frappe.msgprint(__("Select at least one invoice."));
+			return;
+		}
+		this.delivery_queue = [...invoices];
+		this.open_invoice(this.delivery_queue[0]);
 	}
 
 	load_pending(search, append) {
@@ -451,6 +661,7 @@ class DriverInvoicePortal {
 						: __("No pending invoices found.");
 			this.$list.html(`<div class="dip-empty">${emptyMsg}</div>`);
 			this.wrapper.find("#dip-list-footer").attr("hidden", true);
+			this.update_bulk_bar();
 			return;
 		}
 
@@ -458,7 +669,7 @@ class DriverInvoicePortal {
 			if (mode === "completed") {
 				const docs = [row.has_certificates ? __("Certificates") : "", row.has_cards ? __("Cards") : ""].filter(Boolean).join(", ");
 				return `
-					<div class="dip-card" data-ack="${frappe.utils.escape_html(row.name)}">
+					<div class="dip-card dip-card-completed" data-ack="${frappe.utils.escape_html(row.name)}">
 						<div class="dip-card-top">
 							<div>
 								<h4>${frappe.utils.escape_html(row.sales_invoice)}</h4>
@@ -475,14 +686,22 @@ class DriverInvoicePortal {
 			const driverMeta = row.delivery_driver_name
 				? `<p>${__("Driver")}: ${frappe.utils.escape_html(row.delivery_driver_name)}</p>`
 				: `<p>${__("Driver")}: ${__("Not assigned")}</p>`;
+			const checked = this.selected_invoices.has(row.name) ? "checked" : "";
+			const assignBtn = this.portal_meta?.can_assign_driver
+				? `<button type="button" class="dip-btn dip-btn-ghost dip-btn-small dip-card-assign" data-invoice="${frappe.utils.escape_html(row.name)}">${__("Assign Driver")}</button>`
+				: "";
 			return `
 				<div class="dip-card" data-invoice="${frappe.utils.escape_html(row.name)}">
+					<label class="dip-card-select" onclick="event.stopPropagation()">
+						<input type="checkbox" class="dip-select-invoice" data-invoice="${frappe.utils.escape_html(row.name)}" ${checked}>
+					</label>
 					<div class="dip-card-top">
 						<div>
 							<h4>${frappe.utils.escape_html(row.name)}</h4>
 							<p>${frappe.utils.escape_html(row.customer_name || row.customer || "")}</p>
 							<p>${frappe.datetime.str_to_user(row.posting_date)} · ${format_currency(row.grand_total, row.currency)}</p>
 							${driverMeta}
+							${assignBtn}
 						</div>
 						<span class="dip-pill ${pillClass}">${frappe.utils.escape_html(status)}</span>
 					</div>
@@ -490,9 +709,24 @@ class DriverInvoicePortal {
 		}).join("");
 
 		this.$list.html(html);
+		this.update_bulk_bar();
+
+		this.$list.find(".dip-select-invoice").on("change", (e) => {
+			e.stopPropagation();
+			const invoice = $(e.currentTarget).data("invoice");
+			if (e.currentTarget.checked) this.selected_invoices.add(invoice);
+			else this.selected_invoices.delete(invoice);
+			this.update_bulk_bar();
+		});
 
 		this.$list.find("[data-invoice]").on("click", (e) => {
+			if ($(e.target).closest(".dip-card-select, .dip-card-assign").length) return;
 			this.open_invoice($(e.currentTarget).data("invoice"));
+		});
+		this.$list.find(".dip-card-assign").on("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.assign_single_invoice($(e.currentTarget).data("invoice"));
 		});
 		this.$list.find("[data-ack]").on("click", (e) => {
 			frappe.set_route("Form", "Invoice Delivery Acknowledgement", $(e.currentTarget).data("ack"));
@@ -541,7 +775,7 @@ class DriverInvoicePortal {
 	show_form() {
 		this.view = "form";
 		this.$list.attr("hidden", true);
-		this.wrapper.find(".dip-tabs, .dip-toolbar, #dip-list-footer").attr("hidden", true);
+		this.wrapper.find(".dip-tabs, .dip-toolbar, #dip-list-footer, #dip-bulk-bar").attr("hidden", true);
 		this.$form.removeAttr("hidden");
 		this._signature_init_token = (this._signature_init_token || 0) + 1;
 		const token = this._signature_init_token;
@@ -597,7 +831,9 @@ class DriverInvoicePortal {
 		}
 		this.$form.attr("hidden", true);
 		this.wrapper.find(".dip-tabs, .dip-toolbar, #dip-list-footer").removeAttr("hidden");
+		this.wrapper.find("#dip-bulk-bar").removeAttr("hidden");
 		this.$list.removeAttr("hidden");
+		this.update_bulk_bar();
 		if (this.active_tab === "pending") this.update_pending_footer();
 	}
 
@@ -689,6 +925,18 @@ class DriverInvoicePortal {
 				callback: (r) => {
 					if (r.exc) return;
 					frappe.show_alert({ message: __("Acknowledgement submitted"), indicator: "green" });
+					const current = this.selected_invoice;
+					this.delivery_queue = (this.delivery_queue || []).filter((name) => name !== current);
+					if (this.delivery_queue.length) {
+						frappe.show_alert({
+							message: __("Opening next delivery ({0} remaining)", [this.delivery_queue.length]),
+							indicator: "blue",
+						});
+						this.load_kpis();
+						this.open_invoice(this.delivery_queue[0]);
+						return;
+					}
+					this.clear_selection();
 					this.show_list();
 					this.load_kpis();
 					this.load_active_tab();
@@ -696,6 +944,44 @@ class DriverInvoicePortal {
 			});
 		});
 	}
+}
+
+function dip_show_assign_driver_dialog(sales_invoices, ondone) {
+	const dialog = new frappe.ui.Dialog({
+		title: __("Assign to Driver"),
+		fields: [
+			{
+				fieldname: "driver",
+				fieldtype: "Link",
+				options: "User",
+				label: __("Delivery Driver"),
+				reqd: 1,
+				get_query() {
+					return {
+						query: "numerouno.numerouno.page.driver_invoice_portal.driver_invoice_portal.get_delivery_driver_users",
+					};
+				},
+			},
+		],
+		primary_action_label: __("Assign"),
+		primary_action(values) {
+			frappe.call({
+				method: "numerouno.numerouno.page.driver_invoice_portal.driver_invoice_portal.bulk_assign_delivery_driver",
+				args: { sales_invoices, driver: values.driver },
+				freeze: true,
+				callback(r) {
+					if (r.exc) return;
+					const msg = r.message || {};
+					let text = __("Assigned {0} invoice(s) to {1}", [msg.updated || 0, msg.driver_name || values.driver]);
+					if (msg.skipped?.length) text += ` (${msg.skipped.length} skipped)`;
+					frappe.show_alert({ message: text, indicator: "green" });
+					dialog.hide();
+					if (ondone) ondone();
+				},
+			});
+		},
+	});
+	dialog.show();
 }
 
 function dip_log(...args) {

@@ -48,6 +48,95 @@ def _unack_sql(alias="si"):
 	return f" AND {alias}.docstatus = 1"
 
 
+def _ensure_assign_access():
+	frappe.only_for(OVERSEER_ROLES)
+
+
+def _validate_delivery_driver(driver):
+	driver = (driver or "").strip()
+	if not driver:
+		frappe.throw("Delivery Driver is required")
+	if not frappe.db.exists("User", driver):
+		frappe.throw("Invalid driver user")
+	roles = frappe.get_roles(driver)
+	if not set(roles).intersection({"Vehicle User", "Delivery User"}):
+		frappe.throw("Selected user is not a delivery driver")
+	return driver
+
+
+def _parse_invoice_names(sales_invoices):
+	invoices = frappe.parse_json(sales_invoices) if isinstance(sales_invoices, str) else sales_invoices
+	if not invoices:
+		frappe.throw("Select at least one Sales Invoice")
+	if not isinstance(invoices, (list, tuple)):
+		frappe.throw("Invalid invoice list")
+	return list(dict.fromkeys(invoices))
+
+
+@frappe.whitelist()
+def bulk_assign_delivery_driver(sales_invoices, driver):
+	_ensure_assign_access()
+	if not _has_delivery_driver_field():
+		frappe.throw("Delivery Driver field is not configured on Sales Invoice.")
+
+	driver = _validate_delivery_driver(driver)
+	invoices = _parse_invoice_names(sales_invoices)
+
+	updated = []
+	skipped = []
+	for invoice in invoices:
+		si = frappe.db.get_value(
+			"Sales Invoice",
+			invoice,
+			["name", "docstatus", "custom_delivery_acknowledged"],
+			as_dict=True,
+		)
+		if not si or si.docstatus != 1:
+			skipped.append({"invoice": invoice, "reason": "Not a submitted invoice"})
+			continue
+		if si.get("custom_delivery_acknowledged"):
+			skipped.append({"invoice": invoice, "reason": "Already acknowledged"})
+			continue
+		frappe.db.set_value("Sales Invoice", invoice, "custom_delivery_driver", driver, update_modified=True)
+		updated.append(invoice)
+
+	return {
+		"updated": len(updated),
+		"updated_invoices": updated,
+		"skipped": skipped,
+		"driver": driver,
+		"driver_name": frappe.utils.get_fullname(driver),
+	}
+
+
+@frappe.whitelist()
+def bulk_clear_delivery_driver(sales_invoices):
+	_ensure_assign_access()
+	if not _has_delivery_driver_field():
+		frappe.throw("Delivery Driver field is not configured on Sales Invoice.")
+
+	invoices = _parse_invoice_names(sales_invoices)
+	updated = []
+	skipped = []
+	for invoice in invoices:
+		si = frappe.db.get_value(
+			"Sales Invoice",
+			invoice,
+			["name", "docstatus", "custom_delivery_acknowledged"],
+			as_dict=True,
+		)
+		if not si or si.docstatus != 1:
+			skipped.append({"invoice": invoice, "reason": "Not a submitted invoice"})
+			continue
+		if si.get("custom_delivery_acknowledged"):
+			skipped.append({"invoice": invoice, "reason": "Already acknowledged"})
+			continue
+		frappe.db.set_value("Sales Invoice", invoice, "custom_delivery_driver", "", update_modified=True)
+		updated.append(invoice)
+
+	return {"updated": len(updated), "updated_invoices": updated, "skipped": skipped}
+
+
 @frappe.whitelist()
 def get_delivery_driver_users(doctype, txt, searchfield, start, page_len, filters):
 	delivered_roles = ("Vehicle User", "Delivery User")
@@ -119,6 +208,7 @@ def get_portal_kpis():
 		"assigned_pending": assigned_pending,
 		"unassigned_pending": unassigned_pending,
 		"driver_only": driver_only,
+		"can_assign_driver": not driver_only and _has_delivery_driver_field(),
 		"driver_name": frappe.utils.get_fullname(frappe.session.user),
 		"user": frappe.session.user,
 	}

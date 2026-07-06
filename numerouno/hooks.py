@@ -73,6 +73,7 @@ doctype_list_js = {
     "Assessment Result": "public/js/assessment_result_list.js",
     "Safety Briefing": "public/js/safety_briefing_list.js",
     "Assessor Checklist": "public/js/assessor_checklist_list.js",
+    "Sales Invoice": "public/js/sales_invoice_list.js",
 }
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
