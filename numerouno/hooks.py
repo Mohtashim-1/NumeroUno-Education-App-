@@ -148,12 +148,14 @@ jinja = {
 
 permission_query_conditions = {
     "Instructor": "numerouno.numerouno.permissions.get_instructor_permission_query_conditions",
-    "Overtime Request": "numerouno.numerouno.doctype.overtime_request.overtime_request.get_permission_query_conditions"
+    "Overtime Request": "numerouno.numerouno.doctype.overtime_request.overtime_request.get_permission_query_conditions",
+    "Attendance Staff": "numerouno.numerouno.permissions.get_attendance_staff_permission_query_conditions",
 }
 
 has_permission = {
     "Instructor": "numerouno.numerouno.permissions.has_instructor_permission",
-    "Overtime Request": "numerouno.numerouno.doctype.overtime_request.overtime_request.has_permission"
+    "Overtime Request": "numerouno.numerouno.doctype.overtime_request.overtime_request.has_permission",
+    "Attendance Staff": "numerouno.numerouno.permissions.has_attendance_staff_permission",
 }
 
 # DocType Class
@@ -213,7 +215,10 @@ doc_events = {
         "before_cancel": "numerouno.numerouno.utils.quotation_workflow.require_cancellation_reason"
     },
     "Assessment Result": {
-        "validate": "numerouno.numerouno.utils.assessment_result_validation.validate_assessment_eligibility",
+        "validate": [
+            "numerouno.numerouno.utils.assessment_result_validation.validate_assessment_eligibility",
+            "numerouno.numerouno.doctype.assessment_result.assessment_result.ensure_certificate_validity_date",
+        ],
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_assessment_pending",
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_assessment_creation",
         "on_submit": "numerouno.numerouno.unified_assessment_system.trigger_assessment_result_events",
@@ -243,7 +248,8 @@ doc_events = {
         "after_insert": [
             "numerouno.numerouno.doctype.student.student.send_lms_welcome_email_to_user",
             "numerouno.numerouno.utils.user_roles.assign_vehicle_user_role",
-        ]
+        ],
+        "on_update": "numerouno.numerouno.doctype.attendance_staff.attendance_staff.sync_attendance_staff_from_user",
     },
     "Quiz Activity": {
         "validate": "numerouno.numerouno.doctype.quiz_activity.quiz_activity_validation.validate_quiz_activity_eligibility",

@@ -62,7 +62,8 @@
    "fieldname": "traineraccessor_name",
    "fieldtype": "Link",
    "label": "Trainer/Accessor Name",
-   "options": "Instructor"
+   "link_filters": "[[\"Attendance Staff\",\"staff_roles\",\"like\",\"%instructor%\"]]",
+   "options": "Attendance Staff"
   },
   {
    "fieldname": "column_break_ypqb",
@@ -82,7 +83,7 @@
    "fieldname": "technician_name",
    "fieldtype": "Link",
    "label": "Technician Name",
-   "options": "Employee"
+   "options": "Attendance Staff"
   },
   {
    "fieldname": "column_break_xpqr",
@@ -126,7 +127,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-04 13:28:18.612560",
+ "modified": "2026-07-07 11:33:39.729647",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "OPITO Practical Training",

@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_to_date
+from frappe.utils import add_to_date, cstr, flt
 
 class AssessmentResult(Document):
 	def validate(self):
@@ -20,6 +20,38 @@ class AssessmentResult(Document):
 				days=-1,
 				as_string=True
 			)
+
+
+def ensure_certificate_validity_date(doc, method=None):
+	"""Set certificate validity date when missing.
+
+	Uses validity_period as months. Legacy values like ``0.6`` are normalized to ``6``.
+	"""
+	if not getattr(doc, "course_start_date", None):
+		return
+
+	raw_validity = cstr(getattr(doc, "validity_period", "") or "").strip()
+	validity_months = 12
+	if raw_validity:
+		if raw_validity.startswith("0.") and raw_validity[2:].isdigit():
+			validity_months = int(raw_validity[2:])
+		else:
+			parsed = int(flt(raw_validity))
+			if parsed > 0:
+				validity_months = parsed
+
+	# Keep stored value normalized for future consistency.
+	doc.validity_period = str(validity_months)
+
+	if getattr(doc, "certificate_validity_date", None):
+		return
+
+	doc.certificate_validity_date = add_to_date(
+		doc.course_start_date,
+		months=validity_months,
+		days=-1,
+		as_string=True,
+	)
 	
 	def on_update(self):
 		# Only run OCR for image certificates; PDFs should upload without OCR.

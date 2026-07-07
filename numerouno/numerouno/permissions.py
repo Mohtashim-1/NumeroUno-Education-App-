@@ -36,3 +36,14 @@ def has_instructor_permission(doc, user=None, permission_type=None):
         return False
 
     return bool(getattr(doc, "custom_is_adnoc_instructor", 0))
+
+
+def get_attendance_staff_permission_query_conditions(user=None):
+    # Keep Attendance Staff globally visible to any role that already has
+    # DocType read/select permission through role permissions.
+    return None
+
+
+def has_attendance_staff_permission(doc, user=None, permission_type=None):
+    # Defer to standard role-based DocType permissions.
+    return None
