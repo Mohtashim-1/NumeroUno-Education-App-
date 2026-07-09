@@ -1,6 +1,18 @@
+const dip_sales_invoice_base_settings = frappe.listview_settings["Sales Invoice"] || {};
+const dip_sales_invoice_base_add_fields = Array.isArray(dip_sales_invoice_base_settings.add_fields)
+	? dip_sales_invoice_base_settings.add_fields
+	: [];
+
 frappe.listview_settings["Sales Invoice"] = {
-	add_fields: ["custom_delivery_driver", "custom_delivery_acknowledged"],
+	...dip_sales_invoice_base_settings,
+	add_fields: Array.from(
+		new Set([...dip_sales_invoice_base_add_fields, "custom_delivery_driver", "custom_delivery_acknowledged"])
+	),
 	onload(listview) {
+		if (typeof dip_sales_invoice_base_settings.onload === "function") {
+			dip_sales_invoice_base_settings.onload(listview);
+		}
+
 		listview.page.add_action_item(__("Assign to Driver"), () => {
 			const names = listview.get_checked_items(true);
 			if (!names.length) {

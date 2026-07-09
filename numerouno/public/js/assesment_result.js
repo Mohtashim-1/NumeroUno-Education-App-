@@ -30,6 +30,14 @@ frappe.ui.form.on('Assessment Result', {
 		} else {
 			console.log('No OCR data to show');
 		}
+
+		const isAdminUser = frappe.session && frappe.session.user === "Administrator";
+		const canManageValidity = isAdminUser || frappe.user.has_role("System Manager");
+		if (canManageValidity) {
+			frm.add_custom_button(__('Update Validity / Expiry'), function() {
+				show_validity_dialog(frm);
+			}, __('Actions'));
+		}
 	},
 	
 	onload: function(frm) {
@@ -162,6 +170,55 @@ function show_ocr_data(frm) {
 		ocr_field.$wrapper.find('.ocr-data-display').remove(); // Remove existing display
 		ocr_field.$wrapper.append(ocr_html);
 	}
+}
+
+function show_validity_dialog(frm) {
+	const dialog = new frappe.ui.Dialog({
+		title: __('Update Validity / Expiry'),
+		fields: [
+			{
+				fieldname: 'validity_period',
+				label: __('Validity Period'),
+				fieldtype: 'Data',
+				default: frm.doc.validity_period || '',
+				description: __('Use 2 for 2 years, 0.6 for 6 months')
+			},
+			{
+				fieldname: 'use_logic',
+				label: __('Calculate Expiry Using Logic'),
+				fieldtype: 'Check',
+				default: 1
+			},
+			{
+				fieldname: 'certificate_validity_date',
+				label: __('Manual Expiry Date'),
+				fieldtype: 'Date',
+				default: frm.doc.certificate_validity_date || '',
+				depends_on: 'eval:doc.use_logic==0'
+			}
+		],
+		primary_action_label: __('Update'),
+		primary_action(values) {
+			frappe.call({
+				method: 'numerouno.numerouno.doctype.assessment_result.assessment_result.admin_update_validity_and_expiry',
+				args: {
+					assessment_result: frm.doc.name,
+					validity_period: values.validity_period,
+					certificate_validity_date: values.certificate_validity_date,
+					use_logic: values.use_logic ? 1 : 0
+				},
+				freeze: true,
+				freeze_message: __('Updating validity...'),
+				callback: function(r) {
+					if (r.exc) return;
+					dialog.hide();
+					frappe.show_alert({ message: __('Validity updated'), indicator: 'green' });
+					frm.reload_doc();
+				}
+			});
+		}
+	});
+	dialog.show();
 }
 
 // Debug function that can be called from browser console

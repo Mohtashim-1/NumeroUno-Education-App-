@@ -25,7 +25,9 @@ class AssessmentResult(Document):
 def ensure_certificate_validity_date(doc, method=None):
 	"""Set certificate validity date when missing.
 
-	Uses validity_period as months. Legacy values like ``0.6`` are normalized to ``6``.
+	Interpretation rules:
+	- ``2`` means 2 years
+	- ``0.6`` means 6 months
 	"""
 	if not getattr(doc, "course_start_date", None):
 		return
@@ -38,10 +40,7 @@ def ensure_certificate_validity_date(doc, method=None):
 		else:
 			parsed = int(flt(raw_validity))
 			if parsed > 0:
-				validity_months = parsed
-
-	# Keep stored value normalized for future consistency.
-	doc.validity_period = str(validity_months)
+				validity_months = parsed * 12
 
 	if getattr(doc, "certificate_validity_date", None):
 		return
@@ -52,6 +51,76 @@ def ensure_certificate_validity_date(doc, method=None):
 		days=-1,
 		as_string=True,
 	)
+
+
+def _resolve_validity_months(raw_validity):
+	raw_validity = cstr(raw_validity or "").strip()
+	if not raw_validity:
+		return 12
+
+	if raw_validity.startswith("0.") and raw_validity[2:].isdigit():
+		return int(raw_validity[2:])
+
+	parsed = int(flt(raw_validity))
+	return parsed * 12 if parsed > 0 else 12
+
+
+@frappe.whitelist()
+def admin_update_validity_and_expiry(
+	assessment_result,
+	validity_period=None,
+	certificate_validity_date=None,
+	use_logic=1,
+):
+	user = frappe.session.user
+	roles = set(frappe.get_roles(user))
+	if user != "Administrator" and "System Manager" not in roles:
+		frappe.throw(_("Only Administrator or System Manager can change validity settings."), frappe.PermissionError)
+
+	name = cstr(assessment_result or "").strip()
+	if not name:
+		frappe.throw(_("Assessment Result is required."))
+
+	doc = frappe.get_doc("Assessment Result", name)
+	updates = {}
+
+	if validity_period is not None and cstr(validity_period).strip():
+		updates["validity_period"] = cstr(validity_period).strip()
+
+	use_logic = int(flt(use_logic or 0))
+	if use_logic:
+		if not doc.course_start_date:
+			frappe.throw(_("Course Start Date is required to calculate expiry date."))
+
+		period_for_calc = updates.get("validity_period", doc.validity_period)
+		validity_months = _resolve_validity_months(period_for_calc)
+		updates["certificate_validity_date"] = add_to_date(
+			doc.course_start_date,
+			months=validity_months,
+			days=-1,
+			as_string=True,
+		)
+	else:
+		manual_expiry = cstr(certificate_validity_date or "").strip()
+		if not manual_expiry:
+			frappe.throw(_("Please provide Expiry Date when logic mode is disabled."))
+		updates["certificate_validity_date"] = manual_expiry
+
+	if not updates:
+		return {
+			"name": doc.name,
+			"validity_period": doc.validity_period,
+			"certificate_validity_date": doc.certificate_validity_date,
+		}
+
+	frappe.db.set_value("Assessment Result", doc.name, updates, update_modified=True)
+	frappe.db.commit()
+
+	return {
+		"name": doc.name,
+		"validity_period": updates.get("validity_period", doc.validity_period),
+		"certificate_validity_date": updates.get("certificate_validity_date", doc.certificate_validity_date),
+	}
 	
 	def on_update(self):
 		# Only run OCR for image certificates; PDFs should upload without OCR.
