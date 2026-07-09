@@ -79,6 +79,27 @@ def _serialize_doc(doc):
 	}
 
 
+def _normalize_tbosiet_layout(doc):
+	"""Backfill TBOSIET OIS-04 grouping for older saved checklists."""
+	if (doc.checklist_type or "") != "TBOSIET":
+		return
+
+	module_codes = {row.module_code for row in (doc.module_groups or []) if row.module_code}
+	if "OIS - 04" not in module_codes:
+		doc.append(
+			"module_groups",
+			{
+				"module_code": "OIS - 04",
+				"module_title": "Fire Fighting and Self Rescue",
+			},
+		)
+
+	for row in doc.outcomes or []:
+		outcome_code = (row.outcome_code or "").strip()
+		if outcome_code.startswith("4.") or outcome_code == "5.1":
+			row.module_group = "OIS - 04"
+
+
 def _apply_payload(doc, data):
 	for field in (
 		"naming_series",
@@ -163,11 +184,13 @@ def get_form_data(docname=None, checklist_type=None, student_group=None):
 
 	if docname:
 		doc = frappe.get_doc("Assessor Checklist", docname)
+		_normalize_tbosiet_layout(doc)
 	elif checklist_type:
 		doc = frappe.new_doc("Assessor Checklist")
 		doc.checklist_type = checklist_type
 		template = get_template_for_checklist_type(checklist_type)
 		apply_template(doc, template)
+		_normalize_tbosiet_layout(doc)
 		doc.assessment_date = today()
 		if student_group:
 			doc.student_group = student_group

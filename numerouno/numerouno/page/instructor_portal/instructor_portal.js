@@ -662,7 +662,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 									<th>Assessment Plan</th>
 									<th>Score</th>
 									<th>Grade</th>
-									<th>Make / Model</th>
+									<th>Make / Model / Capacity</th>
 									<th>Status</th>
 									<th>Modified</th>
 									<th>Action</th>
@@ -1599,22 +1599,25 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 							class="portal-btn portal-btn-primary add-make-model-btn"
 							data-assessment-result="${frappe.utils.escape_html(row.name || "")}"
 							data-make="${frappe.utils.escape_html(row.make || "")}"
-							data-model="${frappe.utils.escape_html(row.model || "")}">
-							Add Make & Model
+							data-model="${frappe.utils.escape_html(row.model || "")}"
+							data-capacity="${frappe.utils.escape_html(row.capacity || "")}">
+							Add Make, Model & Capacity
 						</button>
 					`);
 				} else {
 					makeModelCell = `
 						<div class="data-title">${frappe.utils.escape_html(row.make || "")}</div>
 						<div class="data-meta">${frappe.utils.escape_html(row.model || "")}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.capacity || "")}</div>
 					`;
 					actionLinks.push(`
 						<button type="button"
 							class="portal-btn portal-btn-ghost add-make-model-btn"
 							data-assessment-result="${frappe.utils.escape_html(row.name || "")}"
 							data-make="${frappe.utils.escape_html(row.make || "")}"
-							data-model="${frappe.utils.escape_html(row.model || "")}">
-							Edit Make & Model
+							data-model="${frappe.utils.escape_html(row.model || "")}"
+							data-capacity="${frappe.utils.escape_html(row.capacity || "")}">
+							Edit Make, Model & Capacity
 						</button>
 					`);
 				}
@@ -1650,13 +1653,14 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				name: $button.data("assessment-result"),
 				make: $button.data("make") || "",
 				model: $button.data("model") || "",
+				capacity: $button.data("capacity") || "",
 			});
 		});
 	}
 
 	function show_make_model_dialog(row) {
 		var dialog = new frappe.ui.Dialog({
-			title: __("Add Make & Model"),
+			title: __("Add Make, Model & Capacity"),
 			fields: [
 				{
 					fieldname: "make",
@@ -1672,6 +1676,13 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 					reqd: 1,
 					default: row.model || "",
 				},
+				{
+					fieldname: "capacity",
+					fieldtype: "Data",
+					label: __("Capacity"),
+					reqd: 1,
+					default: row.capacity || "",
+				},
 			],
 			primary_action_label: __("Save"),
 			primary_action: function (values) {
@@ -1681,13 +1692,14 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 						assessment_result: row.name,
 						make: values.make,
 						model: values.model,
+						capacity: values.capacity,
 					},
 					freeze: true,
-					freeze_message: __("Saving make and model..."),
+					freeze_message: __("Saving make, model and capacity..."),
 					callback: function (r) {
 						if (r.exc) return;
 						dialog.hide();
-						frappe.show_alert({ message: __("Make & Model saved"), indicator: "green" });
+						frappe.show_alert({ message: __("Make, Model & Capacity saved"), indicator: "green" });
 						resultOffset = 0;
 						load_results();
 					},

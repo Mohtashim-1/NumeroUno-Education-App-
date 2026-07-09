@@ -403,10 +403,12 @@ def _attach_make_model_meta(records):
         required = course_flags.get(row.get("course"), False)
         make = (row.get("custom_make") or "").strip()
         model = (row.get("custom_model") or "").strip()
+        capacity = (row.get("custom_capacity") or "").strip()
         row["make_model_required"] = required
         row["make"] = make
         row["model"] = model
-        row["make_model_pending"] = required and not (make and model)
+        row["capacity"] = capacity
+        row["make_model_pending"] = required and not (make and model and capacity)
 
     return records
 
@@ -982,6 +984,7 @@ def get_instructor_results(
             "course",
             "custom_make",
             "custom_model",
+            "custom_capacity",
             "total_score",
             "maximum_score",
             "grade",
@@ -1013,14 +1016,15 @@ def get_instructor_results(
 
 
 @frappe.whitelist()
-def update_assessment_result_make_model(assessment_result, make, model):
+def update_assessment_result_make_model(assessment_result, make, model, capacity=None):
     assessment_result = (assessment_result or "").strip()
     make = (make or "").strip()
     model = (model or "").strip()
+    capacity = (capacity or "").strip()
     if not assessment_result:
         frappe.throw(_("Assessment Result is required"))
-    if not make or not model:
-        frappe.throw(_("Make and Model are required"))
+    if not make or not model or not capacity:
+        frappe.throw(_("Make, Model and Capacity are required"))
 
     user = frappe.session.user
     roles = frappe.get_roles(user)
@@ -1034,13 +1038,14 @@ def update_assessment_result_make_model(assessment_result, make, model):
     frappe.db.set_value(
         "Assessment Result",
         assessment_result,
-        {"custom_make": make, "custom_model": model},
+        {"custom_make": make, "custom_model": model, "custom_capacity": capacity},
         update_modified=True,
     )
     return {
         "assessment_result": assessment_result,
         "make": make,
         "model": model,
+        "capacity": capacity,
     }
 
 
