@@ -204,6 +204,12 @@
 	flex-wrap: wrap;
 }
 
+.cac-toolbar-actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
 .cac-toolbar-note {
 	font-size: 12px;
 	color: #5f6b7a;
@@ -218,6 +224,9 @@
 	border-radius: 14px;
 	padding: 14px 16px;
 	box-shadow: 0 6px 18px rgba(15, 28, 45, 0.04);
+	position: sticky;
+	top: 0;
+	z-index: 20;
 }
 
 .cac-header-fields {
@@ -280,24 +289,53 @@
 	width: 100%;
 }
 
-.cac-doc-wrap {
+.cac-entry-toolbar {
 	display: flex;
-	justify-content: center;
-	padding: 8px 12px 24px;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid #eef1f5;
+}
+
+.cac-entry-hint {
+	font-size: 12px;
+	color: var(--cac-muted);
+}
+
+.cac-entry-hint kbd {
+	display: inline-block;
+	min-width: 18px;
+	padding: 1px 5px;
+	border: 1px solid #d5dbe3;
+	border-radius: 4px;
+	background: #f7f9fc;
+	font-size: 11px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	text-align: center;
+}
+
+.cac-doc-wrap {
+	display: block;
+	padding: 8px 4px 24px;
 	overflow-x: auto;
+	max-width: 100%;
 }
 
 .cac-doc {
-	width: 297mm;
+	width: max-content;
+	min-width: 100%;
 	min-height: 210mm;
 	background: #fff;
 	box-shadow: 0 8px 28px rgba(15, 28, 45, 0.12);
-	padding: 8mm 10mm;
+	padding: 10mm 8mm;
 	font-family: Arial, Helvetica, sans-serif;
-	font-size: 8pt;
+	font-size: 9pt;
 	color: #000;
 	box-sizing: border-box;
-	line-height: 1.15;
+	line-height: 1.2;
+	border-radius: 10px;
 }
 
 .cac-doc * {
@@ -306,7 +344,7 @@
 
 .cac-doc .acl-form {
 	font-family: Arial, Helvetica, sans-serif;
-	font-size: 8pt;
+	font-size: 9pt;
 	color: #000;
 }
 
@@ -314,8 +352,9 @@
 .cac-doc .acl-assessors,
 .cac-doc .acl-modules {
 	width: 100%;
-	border-collapse: collapse;
-	margin-bottom: 8px;
+	border-collapse: separate;
+	border-spacing: 0;
+	margin-bottom: 10px;
 }
 
 .cac-doc .acl-grid th,
@@ -323,64 +362,189 @@
 .cac-doc .acl-assessors th,
 .cac-doc .acl-assessors td,
 .cac-doc .acl-modules th {
-	border: 1px solid #000;
-	padding: 2px 3px;
-	vertical-align: top;
+	border: 1px solid #9aa4b2;
+	padding: 3px 4px;
+	vertical-align: middle;
 }
 
 .cac-doc .acl-grid-head th {
-	background: #e6e6e6;
+	background: #e8eef5;
 	font-weight: 700;
 	text-align: center;
-	font-size: 7pt;
+	font-size: 8pt;
+	position: sticky;
+	top: 0;
+	z-index: 5;
 }
 
-.cac-cell-input,
-.cac-result-select {
+.cac-doc .cac-entry-grid .col-no,
+.cac-doc .cac-entry-grid .col-name {
+	position: sticky;
+	background: #fff;
+	z-index: 4;
+}
+
+.cac-doc .cac-entry-grid .col-no {
+	left: 0;
+	min-width: 34px;
+	text-align: center;
+}
+
+.cac-doc .cac-entry-grid .col-name {
+	left: 34px;
+	min-width: 150px;
+	max-width: 190px;
+}
+
+.cac-doc .cac-entry-grid .acl-grid-head .col-no,
+.cac-doc .cac-entry-grid .acl-grid-head .col-name {
+	z-index: 6;
+	background: #e8eef5;
+}
+
+.cac-doc .cac-entry-grid tr:hover td {
+	background: #f8fbff;
+}
+
+.cac-doc .cac-entry-grid tr:hover .col-no,
+.cac-doc .cac-entry-grid tr:hover .col-name {
+	background: #f8fbff;
+}
+
+.cac-col-fill {
+	display: inline-block;
+	margin-top: 3px;
+	border: 1px solid #b7c4d4;
+	background: #fff;
+	border-radius: 4px;
+	font-size: 9px;
+	font-weight: 700;
+	padding: 0 4px;
+	line-height: 16px;
+	cursor: pointer;
+	color: #0f7a3c;
+}
+
+.cac-col-fill:hover {
+	background: #e8f7ee;
+}
+
+.cac-cell-input {
 	width: 100%;
 	border: 1px solid #c5cdd6;
-	border-radius: 2px;
-	padding: 1px 2px;
-	font-size: 7pt;
+	border-radius: 4px;
+	padding: 3px 4px;
+	font-size: 8pt;
 	background: #fffef8;
+	min-height: 26px;
+}
+
+.cac-mark-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-width: 34px;
+	min-height: 30px;
+	border: 1px solid #c5cdd6;
+	border-radius: 6px;
+	background: #f8fafc;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1;
+	cursor: pointer;
+	color: #94a3b8;
+	padding: 0;
+}
+
+.cac-mark-btn:hover {
+	border-color: #0f6cbd;
+	box-shadow: 0 0 0 2px rgba(15, 108, 189, 0.12);
+}
+
+.cac-mark-btn:focus {
+	outline: none;
+	border-color: #0f6cbd;
+	box-shadow: 0 0 0 3px rgba(15, 108, 189, 0.28);
+	transform: scale(1.04);
+}
+
+.cac-mark-btn.is-c {
+	background: #e8f7ee;
+	border-color: #4caf74;
+	color: #0f7a3c;
+}
+
+.cac-mark-btn.is-nyc {
+	background: #fdecec;
+	border-color: #e06b63;
+	color: #b42318;
+}
+
+.cac-mark-btn.is-empty {
+	background: #f8fafc;
+	color: #94a3b8;
+}
+
+.cac-mark-btn:disabled {
+	opacity: 0.7;
+	cursor: default;
+	transform: none;
+}
+
+.cac-doc .acl-assessors td:nth-child(5) {
+	min-width: 300px;
+	width: 300px;
+	vertical-align: middle;
 }
 
 .cac-signature-wrap {
 	position: relative;
-	min-height: 30px;
+	min-height: 110px;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 6px;
+	padding: 4px 2px;
 }
 
 .cac-signature-canvas {
 	display: block;
 	width: 100%;
-	max-width: 100px;
-	height: 28px;
-	min-height: 28px;
-	border: 1px dashed #999;
+	max-width: 280px;
+	height: 90px;
+	min-height: 90px;
+	border: 1px dashed #7b8794;
+	border-radius: 8px;
 	background: #fffef8;
 	touch-action: none;
 	-webkit-user-select: none;
 	user-select: none;
+	cursor: crosshair;
 }
 
 .cac-signature-canvas.has-signature {
 	border-style: solid;
+	border-color: #0f6cbd;
 }
 
 .cac-sig-preview {
-	max-height: 24px;
-	max-width: 80px;
+	max-height: 48px;
+	max-width: 180px;
 	display: block;
 	margin-bottom: 2px;
+	opacity: 0.85;
 }
 
 .cac-signature-actions {
-	margin-top: 2px;
+	margin-top: 0;
 }
 
-.cac-signature-actions button {
-	font-size: 9px;
-	padding: 0 4px;
+.cac-signature-actions button,
+.cac-signature-actions .cac-sig-clear {
+	font-size: 11px;
+	padding: 2px 10px;
+	min-height: 26px;
 }
 
 .cac-remarks-input {
@@ -399,13 +563,19 @@
 	}
 
 	.cac-signature-wrap {
-		min-height: 52px;
+		min-height: 140px;
 	}
 
 	.cac-signature-canvas {
-		height: 48px;
-		min-height: 44px;
+		height: 120px;
+		min-height: 120px;
 		max-width: none;
+	}
+
+	.cac-mark-btn {
+		min-width: 40px;
+		min-height: 36px;
+		font-size: 13px;
 	}
 }
 
@@ -413,7 +583,8 @@
 	.course-assessor-checklist-page .page-head,
 	.cac-toolbar-bar,
 	.cac-form-meta-panel,
-	.cac-portal {
+	.cac-portal,
+	.cac-col-fill {
 		display: none !important;
 	}
 
@@ -425,5 +596,13 @@
 		box-shadow: none;
 		width: 100%;
 		padding: 0;
+		border-radius: 0;
+	}
+
+	.cac-mark-btn {
+		border: none;
+		background: transparent;
+		min-height: auto;
+		color: #000;
 	}
 }

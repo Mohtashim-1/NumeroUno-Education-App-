@@ -358,9 +358,11 @@ class CourseAssessorChecklist {
 				<p class="cac-toolbar-note">
 					<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong>
 					${this.doc.form_code ? ` — ${frappe.utils.escape_html(this.doc.form_code)}` : ""}
-					<br>${__("Layout matches the official assessor checklist. Click Save to store changes.")}
+					<br>${__("Click a cell, then use C / N / Space. Arrow keys move between marks.")}
 				</p>
-				<button type="button" class="cac-btn cac-btn-ghost cac-back-list">${__("Back to List")}</button>
+				<div class="cac-toolbar-actions">
+					<button type="button" class="cac-btn cac-btn-ghost cac-back-list">${__("Back to List")}</button>
+				</div>
 			</div>
 			<div class="cac-form-meta-panel">
 				<div class="cac-header-fields">
@@ -373,6 +375,17 @@ class CourseAssessorChecklist {
 						<div class="cac-student-group-wrap"></div>
 					</div>
 				</div>
+				<div class="cac-entry-toolbar">
+					<button type="button" class="cac-btn cac-btn-primary cac-fill-c">${__("Fill empty with C")}</button>
+					<button type="button" class="cac-btn cac-btn-ghost cac-clear-marks">${__("Clear all marks")}</button>
+					<span class="cac-entry-hint">
+						${__("Keys")}: <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
+						&nbsp;·&nbsp; <kbd>C</kbd> Competent
+						&nbsp;·&nbsp; <kbd>N</kbd> NYC
+						&nbsp;·&nbsp; <kbd>Space</kbd> Clear
+						&nbsp;·&nbsp; <kbd>Enter</kbd> Next row
+					</span>
+				</div>
 			</div>
 			<div class="cac-doc-wrap">
 				<div class="cac-doc">${html}</div>
@@ -383,6 +396,8 @@ class CourseAssessorChecklist {
 			this.loading_key = null;
 			frappe.set_route("course-assessor-checklist-form");
 		});
+		this.$root.find(".cac-fill-c").on("click", () => this.bulk_set_marks("C", true));
+		this.$root.find(".cac-clear-marks").on("click", () => this.bulk_set_marks("", false));
 
 		const group_field = frappe.ui.form.make_control({
 			df: {
@@ -407,6 +422,7 @@ class CourseAssessorChecklist {
 
 		this.enhance_editable();
 		this.init_signature_pads();
+		this.bind_mark_keyboard();
 		this.apply_readonly_state();
 	}
 
@@ -414,6 +430,8 @@ class CourseAssessorChecklist {
 		const d = this.doc;
 		const $doc = this.$root.find(".cac-doc");
 		const outcome_count = (d.outcomes || []).length;
+
+		$doc.find(".acl-grid").addClass("cac-entry-grid");
 
 		if (d.checklist_type === "Basic H2S") {
 			$doc.find(".acl-variants").html(`
@@ -433,11 +451,21 @@ class CourseAssessorChecklist {
 			`);
 		}
 
-		$doc.find(".acl-grid tr").each((row_idx, tr) => {
-			if ($(tr).hasClass("acl-grid-head")) return;
+		$doc.find(".acl-grid tr").each((_, tr) => {
+			if ($(tr).hasClass("acl-grid-head")) {
+				$(tr).find(".col-outcome").each((col_idx, th) => {
+					const $th = $(th);
+					$th.attr("data-col", col_idx);
+					$th.append(
+						`<button type="button" class="cac-col-fill" data-col="${col_idx}" title="${__("Fill column with C")}">C↓</button>`
+					);
+				});
+				return;
+			}
 			const learner_idx = cint($(tr).find(".col-no").text().trim()) - 1;
 			if (learner_idx < 0 || learner_idx > 15) return;
 			const row = (d.learners || [])[learner_idx] || {};
+			$(tr).attr("data-row", learner_idx);
 
 			$(tr).find(".col-name").html(
 				this.text_input("learners", learner_idx, "learner_name", row.learner_name)
@@ -446,8 +474,18 @@ class CourseAssessorChecklist {
 			$(tr).find(".col-result").each((col_idx, cell) => {
 				const field = `result_${col_idx + 1}`;
 				if (col_idx + 1 > outcome_count) return;
-				$(cell).html(this.result_select("learners", learner_idx, field, row[field]));
+				$(cell)
+					.attr("data-row", learner_idx)
+					.attr("data-col", col_idx)
+					.html(this.result_mark("learners", learner_idx, field, row[field], col_idx));
 			});
+		});
+
+		$doc.find(".cac-col-fill").on("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const col = cint($(e.currentTarget).data("col"));
+			this.fill_column(col, "C");
 		});
 
 		let assessor_idx = -1;
@@ -486,18 +524,160 @@ class CourseAssessorChecklist {
 		}
 	}
 
-	text_input(table, idx, field, value) {
-		return `<input type="text" class="cac-cell-input" data-table="${table}" data-idx="${idx}" data-field="${field}" value="${frappe.utils.escape_html(value || "")}">`;
+	result_mark(table, idx, field, value, col_idx) {
+		const mark = value || "";
+		const label = mark || "·";
+		const state = mark === "C" ? "is-c" : mark === "NYC" ? "is-nyc" : "is-empty";
+		return `<button type="button"
+			class="cac-mark-btn ${state}"
+			data-table="${table}"
+			data-idx="${idx}"
+			data-field="${field}"
+			data-col="${col_idx}"
+			data-value="${frappe.utils.escape_html(mark)}"
+			tabindex="0"
+			title="${__("Click to cycle · → C → NYC")}"
+		>${label}</button>`;
 	}
 
 	result_select(table, idx, field, value) {
-		const options = ["", "C", "NYC"]
-			.map((opt) => {
-				const selected = (value || "") === opt ? " selected" : "";
-				return `<option value="${opt}"${selected}>${opt || "-"}</option>`;
-			})
-			.join("");
-		return `<select class="cac-result-select" data-table="${table}" data-idx="${idx}" data-field="${field}">${options}</select>`;
+		return this.result_mark(table, idx, field, value, cint(String(field).replace("result_", "")) - 1);
+	}
+
+	set_mark_btn($btn, value) {
+		const mark = value || "";
+		$btn.attr("data-value", mark);
+		$btn.text(mark || "·");
+		$btn.removeClass("is-c is-nyc is-empty");
+		$btn.addClass(mark === "C" ? "is-c" : mark === "NYC" ? "is-nyc" : "is-empty");
+	}
+
+	cycle_mark($btn) {
+		const current = $btn.attr("data-value") || "";
+		const next = current === "" ? "C" : current === "C" ? "NYC" : "";
+		this.set_mark_btn($btn, next);
+	}
+
+	bulk_set_marks(value, empty_only) {
+		if (cint(this.doc?.docstatus) === 1) return;
+		this.$root.find(".cac-mark-btn").each((_, el) => {
+			const $btn = $(el);
+			if (empty_only && ($btn.attr("data-value") || "")) return;
+			this.set_mark_btn($btn, value);
+		});
+		frappe.show_alert({
+			message: value ? __("Filled empty cells with {0}", [value]) : __("Cleared all marks"),
+			indicator: "green",
+		});
+	}
+
+	fill_column(col_idx, value) {
+		if (cint(this.doc?.docstatus) === 1) return;
+		this.$root.find(`.cac-mark-btn[data-col="${col_idx}"]`).each((_, el) => {
+			this.set_mark_btn($(el), value);
+		});
+		frappe.show_alert({ message: __("Column filled with {0}", [value]), indicator: "green" });
+	}
+
+	bind_mark_keyboard() {
+		const $root = this.$root;
+		$root.off("click.cacMark keydown.cacMark");
+
+		$root.on("click.cacMark", ".cac-mark-btn", (e) => {
+			e.preventDefault();
+			if (cint(this.doc?.docstatus) === 1) return;
+			const $btn = $(e.currentTarget);
+			this.cycle_mark($btn);
+			$btn.focus();
+		});
+
+		$root.on("keydown.cacMark", ".cac-mark-btn", (e) => {
+			if (cint(this.doc?.docstatus) === 1) return;
+			const $btn = $(e.currentTarget);
+			const key = e.key;
+
+			if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Tab"].includes(key)) {
+				e.preventDefault();
+				e.stopPropagation();
+				this.move_mark_focus($btn, key, e.shiftKey);
+				return;
+			}
+
+			const lower = key.toLowerCase();
+			if (lower === "c" || key === "1") {
+				e.preventDefault();
+				this.set_mark_btn($btn, "C");
+				this.move_mark_focus($btn, "ArrowRight");
+				return;
+			}
+			if (lower === "n" || key === "2") {
+				e.preventDefault();
+				this.set_mark_btn($btn, "NYC");
+				this.move_mark_focus($btn, "ArrowRight");
+				return;
+			}
+			if (key === " " || key === "Backspace" || key === "Delete" || key === "0") {
+				e.preventDefault();
+				this.set_mark_btn($btn, "");
+				return;
+			}
+		});
+
+		// Focus first empty/active mark for quick start
+		setTimeout(() => {
+			const $first =
+				$root.find(".cac-mark-btn.is-empty").first().length
+					? $root.find(".cac-mark-btn.is-empty").first()
+					: $root.find(".cac-mark-btn").first();
+			$first.trigger("focus");
+		}, 50);
+	}
+
+	move_mark_focus($btn, key, shiftKey = false) {
+		const row = cint($btn.data("idx"));
+		const col = cint($btn.data("col"));
+		let nextRow = row;
+		let nextCol = col;
+
+		if (key === "ArrowUp") nextRow -= 1;
+		else if (key === "ArrowDown" || key === "Enter") nextRow += 1;
+		else if (key === "ArrowLeft" || (key === "Tab" && shiftKey)) nextCol -= 1;
+		else if (key === "ArrowRight" || (key === "Tab" && !shiftKey)) nextCol += 1;
+
+		const $target = this.$root.find(
+			`.cac-mark-btn[data-idx="${nextRow}"][data-col="${nextCol}"]`
+		);
+		if ($target.length) {
+			$target.trigger("focus");
+			this.scroll_mark_into_view($target);
+			return;
+		}
+
+		// Wrap to next/prev row when moving horizontally off the edge
+		if (key === "ArrowRight" || (key === "Tab" && !shiftKey)) {
+			const $wrap = this.$root.find(`.cac-mark-btn[data-idx="${row + 1}"][data-col="0"]`);
+			if ($wrap.length) {
+				$wrap.trigger("focus");
+				this.scroll_mark_into_view($wrap);
+			}
+		} else if (key === "ArrowLeft" || (key === "Tab" && shiftKey)) {
+			const $prevRow = this.$root.find(`.cac-mark-btn[data-idx="${row - 1}"]`);
+			if ($prevRow.length) {
+				const $last = $prevRow.last();
+				$last.trigger("focus");
+				this.scroll_mark_into_view($last);
+			}
+		}
+	}
+
+	scroll_mark_into_view($btn) {
+		const el = $btn.get(0);
+		if (!el) return;
+		el.scrollIntoView({ block: "nearest", inline: "nearest" });
+	}
+
+	text_input(table, idx, field, value) {
+		return `<input type="text" class="cac-cell-input" data-table="${table}" data-idx="${idx}" data-field="${field}" value="${frappe.utils.escape_html(value || "")}">`;
 	}
 
 	date_input_table(table, idx, field, value) {
@@ -509,9 +689,11 @@ class CourseAssessorChecklist {
 		const img = value ? `<img src="${value}" class="sig-img cac-sig-preview" alt="">` : "";
 		return `<div class="cac-signature-wrap">
 			${img}
-			<canvas class="cac-signature-canvas ${value ? "has-signature" : ""}" id="${id}" width="120" height="28"></canvas>
+			<canvas class="cac-signature-canvas ${value ? "has-signature" : ""}" id="${id}" width="280" height="90"></canvas>
 			<input type="hidden" class="cac-signature-value" data-table="${table}" data-idx="${idx}" data-field="${field}" value="${value || ""}">
-			<div class="cac-signature-actions"><button type="button" class="cac-sig-clear" data-target="${id}">${__("Clear")}</button></div>
+			<div class="cac-signature-actions">
+				<button type="button" class="cac-btn cac-btn-ghost cac-sig-clear" data-target="${id}">${__("Clear")}</button>
+			</div>
 		</div>`;
 	}
 
@@ -538,7 +720,9 @@ class CourseAssessorChecklist {
 
 	apply_readonly_state() {
 		const submitted = cint(this.doc?.docstatus) === 1;
-		this.$root.find("input, select, textarea, canvas, button.cac-sig-clear").prop("disabled", submitted);
+		this.$root
+			.find("input, select, textarea, canvas, button.cac-sig-clear, button.cac-mark-btn, button.cac-col-fill, button.cac-fill-c, button.cac-clear-marks")
+			.prop("disabled", submitted);
 		if (this.student_group_field) {
 			this.student_group_field.df.read_only = submitted ? 1 : 0;
 			this.student_group_field.refresh();
@@ -549,6 +733,7 @@ class CourseAssessorChecklist {
 			this.$root.find(".cac-toolbar-note").html(
 				`<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong> — ${__("Submitted (read-only). Use Print for the official document.")}`
 			);
+			this.$root.find(".cac-entry-toolbar").hide();
 		} else {
 			this.page.set_primary_action(__("Save"), () => this.save());
 		}
@@ -573,12 +758,20 @@ class CourseAssessorChecklist {
 			data[$el.data("root")] = $el.is(":checked") ? 1 : 0;
 		});
 
-		this.$root.find(".cac-cell-input[data-table], .cac-result-select[data-table], .cac-date-input[data-table]").each(function () {
+		this.$root.find(".cac-cell-input[data-table], .cac-date-input[data-table]").each(function () {
 			const $el = $(this);
 			const table = $el.data("table");
 			const idx = cint($el.data("idx"));
 			const field = $el.data("field");
 			if (data[table]?.[idx]) data[table][idx][field] = $el.val();
+		});
+
+		this.$root.find(".cac-mark-btn[data-table]").each(function () {
+			const $el = $(this);
+			const table = $el.data("table");
+			const idx = cint($el.data("idx"));
+			const field = $el.data("field");
+			if (data[table]?.[idx]) data[table][idx][field] = $el.attr("data-value") || "";
 		});
 
 		this.$root.find(".cac-signature-value[data-table]").each(function () {
@@ -722,20 +915,21 @@ function bind_cac_signature_canvas(canvas, $hidden, $wrap) {
 	let drawing = false;
 
 	function displayHeight() {
-		return parseInt(window.getComputedStyle(canvas).height, 10) || 28;
+		return parseInt(window.getComputedStyle(canvas).height, 10) || 90;
 	}
 
 	function resize() {
 		const ratio = window.devicePixelRatio || 1;
 		const rect = canvas.getBoundingClientRect();
 		const height = displayHeight();
-		canvas.width = Math.max(rect.width, 80) * ratio;
+		canvas.width = Math.max(rect.width, 220) * ratio;
 		canvas.height = height * ratio;
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
 		ctx.scale(ratio, ratio);
-		ctx.lineWidth = 2;
+		ctx.lineWidth = 2.5;
 		ctx.lineCap = "round";
-		ctx.strokeStyle = "#000";
+		ctx.lineJoin = "round";
+		ctx.strokeStyle = "#111";
 	}
 
 	function pointFromEvent(event) {
