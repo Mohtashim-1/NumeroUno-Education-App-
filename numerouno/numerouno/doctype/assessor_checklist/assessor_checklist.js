@@ -62,10 +62,10 @@ function open_course_assessor_checklist(frm) {
 		if (frm.doc.student_group) {
 			frappe.route_options.student_group = frm.doc.student_group;
 		}
-		frappe.set_route("course-assessor-checklist");
+		frappe.set_route("course-assessor-checklist-form");
 		return;
 	}
-	frappe.set_route("course-assessor-checklist", frm.doc.name);
+	frappe.set_route("course-assessor-checklist-form", frm.doc.name);
 }
 
 function is_unsaved_assessor_checklist(frm) {

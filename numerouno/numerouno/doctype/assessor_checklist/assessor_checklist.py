@@ -179,7 +179,7 @@ def populate_learners_from_student_group(docname, student_group):
 				"row_no": row["row_no"],
 				"learner_name": row["learner_name"],
 				"module_group": row.get("module_group") or prev.get("module_group") or "",
-				**{f"result_{i}": prev.get(f"result_{i}") or "" for i in range(1, 21)},
+				**{f"result_{i}": prev.get(f"result_{i}") or "" for i in range(1, 41)},
 			},
 		)
 

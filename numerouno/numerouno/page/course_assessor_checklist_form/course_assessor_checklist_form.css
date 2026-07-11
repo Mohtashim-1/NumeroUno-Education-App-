@@ -1,0 +1,429 @@
+.course-assessor-checklist-page {
+	--cac-ink: #1f2933;
+	--cac-muted: #6b7280;
+	--cac-accent: #0f6cbd;
+	--cac-surface: #ffffff;
+	--cac-bg: #eef1f5;
+	background: var(--cac-bg);
+	padding: 12px 0 24px;
+	min-height: 70vh;
+}
+
+.cac-root {
+	padding: 0 16px 8px;
+}
+
+.cac-portal {
+	max-width: 1180px;
+	margin: 0 auto;
+}
+
+.cac-portal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 14px;
+	flex-wrap: wrap;
+}
+
+.cac-portal-header h3 {
+	margin: 0 0 4px;
+	font-size: 20px;
+	color: var(--cac-ink);
+}
+
+.cac-portal-header p {
+	margin: 0;
+	color: var(--cac-muted);
+	font-size: 13px;
+}
+
+.cac-btn {
+	border: 1px solid #d7dde5;
+	background: #fff;
+	color: var(--cac-ink);
+	border-radius: 999px;
+	padding: 8px 16px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.cac-btn:hover {
+	text-decoration: none;
+	color: var(--cac-ink);
+	background: #f7f9fc;
+}
+
+.cac-btn-primary {
+	background: var(--cac-accent);
+	border-color: var(--cac-accent);
+	color: #fff;
+}
+
+.cac-btn-primary:hover {
+	background: #0c5aa0;
+	border-color: #0c5aa0;
+	color: #fff;
+}
+
+.cac-btn-ghost {
+	background: #fff;
+}
+
+.cac-tabs {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin: 0 0 14px;
+}
+
+.cac-tab {
+	border: 1px solid #e3e6ea;
+	background: #fff;
+	color: var(--cac-ink);
+	border-radius: 999px;
+	padding: 7px 14px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.cac-tab.active {
+	background: var(--cac-accent);
+	border-color: var(--cac-accent);
+	color: #fff;
+}
+
+.cac-tab .cac-tab-count {
+	opacity: 0.8;
+	font-weight: 500;
+	margin-left: 4px;
+}
+
+.cac-panel {
+	background: var(--cac-surface);
+	border: 1px solid #e5e9ef;
+	border-radius: 16px;
+	box-shadow: 0 10px 28px rgba(15, 28, 45, 0.06);
+	overflow: hidden;
+}
+
+.cac-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+}
+
+.cac-table th,
+.cac-table td {
+	padding: 12px 14px;
+	border-bottom: 1px solid #eef1f5;
+	text-align: left;
+	vertical-align: middle;
+	font-size: 13px;
+}
+
+.cac-table th {
+	background: #f7f9fc;
+	color: var(--cac-muted);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	font-weight: 700;
+}
+
+.cac-table tr:last-child td {
+	border-bottom: none;
+}
+
+.cac-empty {
+	text-align: center;
+	color: var(--cac-muted);
+	padding: 36px 16px !important;
+}
+
+.cac-data-title {
+	font-weight: 600;
+	color: var(--cac-ink);
+}
+
+.cac-data-meta {
+	font-size: 12px;
+	color: var(--cac-muted);
+	margin-top: 2px;
+}
+
+.cac-row-actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.cac-status {
+	display: inline-flex;
+	align-items: center;
+	border-radius: 999px;
+	padding: 3px 10px;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.cac-status-draft {
+	background: #fff4e5;
+	color: #9a5b00;
+}
+
+.cac-status-submitted {
+	background: #e8f7ee;
+	color: #0f7a3c;
+}
+
+.cac-status-cancelled {
+	background: #fdecec;
+	color: #b42318;
+}
+
+.cac-load-more-wrap {
+	padding: 12px 14px 16px;
+	text-align: center;
+}
+
+.cac-toolbar-bar {
+	max-width: 1180px;
+	margin: 0 auto 12px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.cac-toolbar-note {
+	font-size: 12px;
+	color: #5f6b7a;
+	margin: 0;
+}
+
+.cac-form-meta-panel {
+	max-width: 1180px;
+	margin: 0 auto 12px;
+	background: #fff;
+	border: 1px solid #e5e9ef;
+	border-radius: 14px;
+	padding: 14px 16px;
+	box-shadow: 0 6px 18px rgba(15, 28, 45, 0.04);
+}
+
+.cac-header-fields {
+	display: grid;
+	grid-template-columns: 220px minmax(240px, 360px);
+	gap: 16px 24px;
+	align-items: start;
+}
+
+.cac-header-fields .cac-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	min-width: 0;
+}
+
+.cac-header-fields .cac-field-label {
+	margin: 0;
+	padding: 0;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--cac-muted);
+	line-height: 1.2;
+}
+
+.cac-header-fields .frappe-control,
+.cac-header-fields .frappe-control .form-group {
+	margin-bottom: 0 !important;
+}
+
+.cac-header-fields .clearfix,
+.cac-header-fields .help-box,
+.cac-header-fields .control-label {
+	display: none !important;
+}
+
+.cac-date-input,
+.cac-header-fields input.input-with-feedback,
+.cac-header-fields .control-input input {
+	border: 1px solid #cfd6de !important;
+	border-radius: 10px !important;
+	padding: 6px 10px !important;
+	font-size: 13px !important;
+	background: #fff !important;
+	height: 34px !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	box-shadow: none !important;
+}
+
+.cac-student-group-wrap {
+	width: 100%;
+}
+
+.cac-student-group-wrap .control-input-wrapper,
+.cac-student-group-wrap .control-input {
+	width: 100%;
+}
+
+.cac-doc-wrap {
+	display: flex;
+	justify-content: center;
+	padding: 8px 12px 24px;
+	overflow-x: auto;
+}
+
+.cac-doc {
+	width: 297mm;
+	min-height: 210mm;
+	background: #fff;
+	box-shadow: 0 8px 28px rgba(15, 28, 45, 0.12);
+	padding: 8mm 10mm;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	color: #000;
+	box-sizing: border-box;
+	line-height: 1.15;
+}
+
+.cac-doc * {
+	box-sizing: border-box;
+}
+
+.cac-doc .acl-form {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	color: #000;
+}
+
+.cac-doc .acl-grid,
+.cac-doc .acl-assessors,
+.cac-doc .acl-modules {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 8px;
+}
+
+.cac-doc .acl-grid th,
+.cac-doc .acl-grid td,
+.cac-doc .acl-assessors th,
+.cac-doc .acl-assessors td,
+.cac-doc .acl-modules th {
+	border: 1px solid #000;
+	padding: 2px 3px;
+	vertical-align: top;
+}
+
+.cac-doc .acl-grid-head th {
+	background: #e6e6e6;
+	font-weight: 700;
+	text-align: center;
+	font-size: 7pt;
+}
+
+.cac-cell-input,
+.cac-result-select {
+	width: 100%;
+	border: 1px solid #c5cdd6;
+	border-radius: 2px;
+	padding: 1px 2px;
+	font-size: 7pt;
+	background: #fffef8;
+}
+
+.cac-signature-wrap {
+	position: relative;
+	min-height: 30px;
+}
+
+.cac-signature-canvas {
+	display: block;
+	width: 100%;
+	max-width: 100px;
+	height: 28px;
+	min-height: 28px;
+	border: 1px dashed #999;
+	background: #fffef8;
+	touch-action: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.cac-signature-canvas.has-signature {
+	border-style: solid;
+}
+
+.cac-sig-preview {
+	max-height: 24px;
+	max-width: 80px;
+	display: block;
+	margin-bottom: 2px;
+}
+
+.cac-signature-actions {
+	margin-top: 2px;
+}
+
+.cac-signature-actions button {
+	font-size: 9px;
+	padding: 0 4px;
+}
+
+.cac-remarks-input {
+	width: 100%;
+	min-height: 48px;
+	border: 1px solid #c5cdd6;
+	border-radius: 4px;
+	padding: 4px 6px;
+	font-size: 8pt;
+	background: #fffef8;
+}
+
+@media (max-width: 900px) {
+	.cac-header-fields {
+		grid-template-columns: 1fr;
+	}
+
+	.cac-signature-wrap {
+		min-height: 52px;
+	}
+
+	.cac-signature-canvas {
+		height: 48px;
+		min-height: 44px;
+		max-width: none;
+	}
+}
+
+@media print {
+	.course-assessor-checklist-page .page-head,
+	.cac-toolbar-bar,
+	.cac-form-meta-panel,
+	.cac-portal {
+		display: none !important;
+	}
+
+	.cac-doc-wrap {
+		padding: 0;
+	}
+
+	.cac-doc {
+		box-shadow: none;
+		width: 100%;
+		padding: 0;
+	}
+}

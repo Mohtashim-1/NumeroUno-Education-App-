@@ -4,12 +4,12 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2026-07-03 00:00:00.000000",
+ "modified": "2026-07-11 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Numerouno",
- "name": "course-assessor-checklist",
+ "name": "course-assessor-checklist-form",
  "owner": "Administrator",
- "page_name": "course-assessor-checklist",
+ "page_name": "course-assessor-checklist-form",
  "roles": [
   {
    "role": "System Manager"

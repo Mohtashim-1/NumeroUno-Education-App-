@@ -28,7 +28,27 @@
   "result_17",
   "result_18",
   "result_19",
-  "result_20"
+  "result_20",
+  "result_21",
+  "result_22",
+  "result_23",
+  "result_24",
+  "result_25",
+  "result_26",
+  "result_27",
+  "result_28",
+  "result_29",
+  "result_30",
+  "result_31",
+  "result_32",
+  "result_33",
+  "result_34",
+  "result_35",
+  "result_36",
+  "result_37",
+  "result_38",
+  "result_39",
+  "result_40"
  ],
  "fields": [
   {
@@ -185,6 +205,146 @@
    "fieldname": "result_20",
    "fieldtype": "Select",
    "label": "Result 20",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_21",
+   "fieldtype": "Select",
+   "label": "Result 21",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_22",
+   "fieldtype": "Select",
+   "label": "Result 22",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_23",
+   "fieldtype": "Select",
+   "label": "Result 23",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_24",
+   "fieldtype": "Select",
+   "label": "Result 24",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_25",
+   "fieldtype": "Select",
+   "label": "Result 25",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_26",
+   "fieldtype": "Select",
+   "label": "Result 26",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_27",
+   "fieldtype": "Select",
+   "label": "Result 27",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_28",
+   "fieldtype": "Select",
+   "label": "Result 28",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_29",
+   "fieldtype": "Select",
+   "label": "Result 29",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_30",
+   "fieldtype": "Select",
+   "label": "Result 30",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_31",
+   "fieldtype": "Select",
+   "label": "Result 31",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_32",
+   "fieldtype": "Select",
+   "label": "Result 32",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_33",
+   "fieldtype": "Select",
+   "label": "Result 33",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_34",
+   "fieldtype": "Select",
+   "label": "Result 34",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_35",
+   "fieldtype": "Select",
+   "label": "Result 35",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_36",
+   "fieldtype": "Select",
+   "label": "Result 36",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_37",
+   "fieldtype": "Select",
+   "label": "Result 37",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_38",
+   "fieldtype": "Select",
+   "label": "Result 38",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_39",
+   "fieldtype": "Select",
+   "label": "Result 39",
+   "options": "\nC\nNYC",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "result_40",
+   "fieldtype": "Select",
+   "label": "Result 40",
    "options": "\nC\nNYC",
    "in_list_view": 0
   }

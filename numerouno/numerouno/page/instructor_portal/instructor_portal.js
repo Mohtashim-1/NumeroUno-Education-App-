@@ -1870,10 +1870,22 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	}
 
 	function open_instructor_form(formKey) {
+		if (formKey === "assessor_checklist") {
+			open_assessor_checklist_dialog({
+				student_group: filterState.student_group || "",
+				course: filterState.course || ""
+			});
+			return;
+		}
+		if (formKey === "safety_briefing") {
+			open_safety_briefing_dialog({
+				student_group: filterState.student_group || ""
+			});
+			return;
+		}
+
 		var routes = {
 			resit: { route: "Form", doctype: "NYC Reassessment Checklist" },
-			assessor_checklist: { route: "course-assessor-checklist" },
-			safety_briefing: { route: "safety-briefing-form" },
 			wms_pretest: { route: "Form", doctype: "English Proficiency Test" },
 			adsd_pretest: { route: "Form", doctype: "Pre Test ADSD" }
 		};
@@ -1896,6 +1908,106 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			return;
 		}
 		frappe.set_route(target.route);
+	}
+
+	function open_assessor_checklist_dialog(defaults) {
+		defaults = defaults || {};
+		var typeOptions = [
+			"Basic H2S", "BOSIET EBS", "TBOSIET", "FOET EBS", "T FOET",
+			"HUET EBS", "THUET", "Gas Monitor", "AGT", "TSbB Initial", "TSbB Further"
+		].join("\n");
+		var guessed = guess_assessor_checklist_type_for_course(defaults.course || filterState.course || "");
+
+		var dialog = new frappe.ui.Dialog({
+			title: __("Create Course Assessor Checklist"),
+			fields: [
+				{
+					fieldtype: "Select",
+					fieldname: "checklist_type",
+					label: __("Checklist Type / Course"),
+					options: typeOptions,
+					default: defaults.checklist_type || guessed || "TBOSIET",
+					reqd: 1
+				},
+				{
+					fieldtype: "Link",
+					fieldname: "student_group",
+					label: __("Student Group"),
+					options: "Student Group",
+					default: defaults.student_group || filterState.student_group || "",
+					get_query: function () {
+						return {
+							query: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_student_groups"
+						};
+					}
+				},
+				{
+					fieldtype: "HTML",
+					fieldname: "help_html",
+					options: `<p class="text-muted" style="margin:0;">${__(
+						"Opens the official NUTC-P14-F01 Word-style checklist for this course type."
+					)}</p>`
+				}
+			],
+			primary_action_label: __("Open Form"),
+			primary_action: function (values) {
+				if (!values.checklist_type) {
+					frappe.msgprint(__("Select a Checklist Type"));
+					return;
+				}
+				dialog.hide();
+				frappe.route_options = {
+					checklist_type: values.checklist_type,
+					student_group: values.student_group || null
+				};
+				frappe.set_route("course-assessor-checklist-form");
+			}
+		});
+
+		dialog.fields_dict.student_group.df.onchange = function () {
+			var group = dialog.get_value("student_group");
+			if (!group || dialog.get_value("checklist_type")) {
+				return;
+			}
+			frappe.db.get_value("Student Group", group, "course").then(function (r) {
+				var course = (r.message || {}).course || "";
+				var next = guess_assessor_checklist_type_for_course(course);
+				if (next) {
+					dialog.set_value("checklist_type", next);
+				}
+			});
+		};
+
+		dialog.show();
+	}
+
+	function guess_assessor_checklist_type_for_course(course) {
+		var courseUpper = (course || "").toUpperCase();
+		if (!courseUpper) return "";
+		var hints = [
+			["Basic H2S", ["BASIC H2S", "H2S", "OPITO H2S"]],
+			["TBOSIET", ["TBOSIET", "T BOSIET", "TROPICAL BOSIET"]],
+			["TSbB Initial", ["TSBB INITIAL", "T SBB INITIAL"]],
+			["TSbB Further", ["TSBB FURTHER", "T SBB FURTHER"]],
+			["TSbB Initial", ["TSBB", "T SBB"]],
+			["T FOET", ["TFOET", "T FOET", "TROPICAL FOET"]],
+			["THUET", ["THUET", "T HUET"]],
+			["BOSIET EBS", ["BOSIET EBS", "BOSIET"]],
+			["FOET EBS", ["FOET EBS", "FOET"]],
+			["HUET EBS", ["HUET EBS", "HUET"]],
+			["Gas Monitor", ["GAS MONITOR"]],
+			["AGT", ["AGT", "AUTHORISED GAS"]]
+		];
+		for (var i = 0; i < hints.length; i++) {
+			var type = hints[i][0];
+			var keywords = hints[i][1];
+			for (var j = 0; j < keywords.length; j++) {
+				if (courseUpper.indexOf(keywords[j]) !== -1) {
+					return type;
+				}
+			}
+		}
+		return "";
 	}
 
 	function load_all_instructor_forms() {
@@ -2034,7 +2146,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	}
 
 	function render_assessor_checklist_row(row) {
-		var docLink = `<a href="/app/course-assessor-checklist/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`;
+		var docLink = `<a href="/app/course-assessor-checklist-form/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`;
 		var dateLabel = row.assessment_date ? frappe.datetime.str_to_user(row.assessment_date) : "-";
 		var modifiedLabel = row.modified ? frappe.datetime.str_to_user(row.modified) : "-";
 		var formCode = row.form_code ? `<div class="data-meta">${frappe.utils.escape_html(row.form_code)}</div>` : "";
@@ -2047,7 +2159,7 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 				<td>${render_docstatus_pill(row.docstatus)}</td>
 				<td><div class="data-title">${frappe.utils.escape_html(modifiedLabel)}</div></td>
 				<td>${render_form_actions(
-					"/app/course-assessor-checklist/" + frappe.utils.escape_html(row.name || ""),
+					"/app/course-assessor-checklist-form/" + frappe.utils.escape_html(row.name || ""),
 					"/app/assessor-checklist/" + frappe.utils.escape_html(row.name || "")
 				)}</td>
 			</tr>

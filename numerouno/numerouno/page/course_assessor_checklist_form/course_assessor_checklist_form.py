@@ -22,7 +22,7 @@ CHECKLIST_TYPES = [
 	"TSbB Further",
 ]
 
-LEARNER_RESULT_FIELDS = tuple(f"result_{idx}" for idx in range(1, 21))
+LEARNER_RESULT_FIELDS = tuple(f"result_{idx}" for idx in range(1, 41))
 
 
 def _serialize_child_rows(rows, fields):
@@ -79,25 +79,112 @@ def _serialize_doc(doc):
 	}
 
 
-def _normalize_tbosiet_layout(doc):
-	"""Backfill TBOSIET OIS-04 grouping for older saved checklists."""
-	if (doc.checklist_type or "") != "TBOSIET":
-		return
+def _tbosiet_outcome_key(outcome_code, module_group, has_fire_lo1):
+	"""Normalize keys for older TBOSIET docs that mis-tagged sea-survival columns as OIS-04."""
+	code = (outcome_code or "").strip()
+	module = (module_group or "").strip()
+	if (
+		not has_fire_lo1
+		and module == "OIS - 04"
+		and (code.startswith("4.") or code.startswith("5."))
+	):
+		module = "OIS - 03"
+	return (module, code)
 
-	module_codes = {row.module_code for row in (doc.module_groups or []) if row.module_code}
-	if "OIS - 04" not in module_codes:
+
+def _normalize_tbosiet_layout(doc):
+	"""Sync TBOSIET modules/outcomes to the official Excel layout (NUTC-P14-F01.02).
+
+	Returns True when the document layout was updated.
+	"""
+	if (doc.checklist_type or "") != "TBOSIET":
+		return False
+
+	template = get_template_for_checklist_type("TBOSIET")
+	expected_outcomes = template.get("outcomes") or []
+	expected_modules = template.get("module_groups") or []
+
+	current = [
+		{
+			"outcome_code": (row.outcome_code or "").strip(),
+			"assessment_method": (row.assessment_method or "").strip(),
+			"module_group": (row.module_group or "").strip(),
+		}
+		for row in (doc.outcomes or [])
+	]
+	expected = [
+		{
+			"outcome_code": (row.get("outcome_code") or "").strip(),
+			"assessment_method": (row.get("assessment_method") or "").strip(),
+			"module_group": (row.get("module_group") or "").strip(),
+		}
+		for row in expected_outcomes
+	]
+	modules_ok = [
+		{"module_code": (row.module_code or "").strip(), "module_title": (row.module_title or "").strip()}
+		for row in (doc.module_groups or [])
+	] == [
+		{
+			"module_code": (row.get("module_code") or "").strip(),
+			"module_title": (row.get("module_title") or "").strip(),
+		}
+		for row in expected_modules
+	]
+	if current == expected and modules_ok:
+		return False
+
+	has_fire_lo1 = any(
+		(row.outcome_code or "").strip() == "1" and (row.module_group or "").strip() == "OIS - 04"
+		for row in (doc.outcomes or [])
+	)
+
+	# Preserve learner marks keyed by corrected (module, outcome_code).
+	saved_by_key = {}
+	for idx, row in enumerate(doc.outcomes or [], start=1):
+		key = _tbosiet_outcome_key(row.outcome_code, row.module_group, has_fire_lo1)
+		if key not in saved_by_key:
+			saved_by_key[key] = idx
+
+	learner_marks = []
+	for learner in doc.learners or []:
+		marks = {}
+		for key, old_idx in saved_by_key.items():
+			marks[key] = learner.get(f"result_{old_idx}") or ""
+		learner_marks.append(marks)
+
+	doc.module_groups = []
+	for row in expected_modules:
 		doc.append(
 			"module_groups",
 			{
-				"module_code": "OIS - 04",
-				"module_title": "Fire Fighting and Self Rescue",
+				"module_code": row.get("module_code"),
+				"module_title": row.get("module_title"),
 			},
 		)
 
-	for row in doc.outcomes or []:
-		outcome_code = (row.outcome_code or "").strip()
-		if outcome_code.startswith("4.") or outcome_code == "5.1":
-			row.module_group = "OIS - 04"
+	doc.outcomes = []
+	for row in expected_outcomes:
+		doc.append(
+			"outcomes",
+			{
+				"outcome_code": row.get("outcome_code"),
+				"assessment_method": row.get("assessment_method"),
+				"module_group": row.get("module_group"),
+			},
+		)
+
+	for learner, marks in zip(doc.learners or [], learner_marks):
+		for field in LEARNER_RESULT_FIELDS:
+			learner.set(field, "")
+		for new_idx, outcome in enumerate(doc.outcomes, start=1):
+			key = (
+				(outcome.module_group or "").strip(),
+				(outcome.outcome_code or "").strip(),
+			)
+			if key in marks:
+				learner.set(f"result_{new_idx}", marks[key])
+
+	return True
 
 
 def _apply_payload(doc, data):
@@ -184,7 +271,8 @@ def get_form_data(docname=None, checklist_type=None, student_group=None):
 
 	if docname:
 		doc = frappe.get_doc("Assessor Checklist", docname)
-		_normalize_tbosiet_layout(doc)
+		if _normalize_tbosiet_layout(doc) and cint(doc.docstatus) == 0:
+			doc.save(ignore_permissions=True)
 	elif checklist_type:
 		doc = frappe.new_doc("Assessor Checklist")
 		doc.checklist_type = checklist_type
@@ -217,6 +305,7 @@ def save_form_data(data):
 		doc = frappe.new_doc("Assessor Checklist")
 
 	_apply_payload(doc, data)
+	_normalize_tbosiet_layout(doc)
 	doc.save()
 	return _serialize_doc(doc)
 

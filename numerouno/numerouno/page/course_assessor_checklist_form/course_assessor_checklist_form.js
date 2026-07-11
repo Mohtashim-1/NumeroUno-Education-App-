@@ -1,4 +1,4 @@
-frappe.pages["course-assessor-checklist"].on_page_load = function (wrapper) {
+frappe.pages["course-assessor-checklist-form"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
 		title: __("Course Assessor Checklist"),
@@ -9,9 +9,23 @@ frappe.pages["course-assessor-checklist"].on_page_load = function (wrapper) {
 	wrapper.course_assessor_checklist = new CourseAssessorChecklist(page);
 };
 
-frappe.pages["course-assessor-checklist"].on_page_show = function (wrapper) {
+frappe.pages["course-assessor-checklist-form"].on_page_show = function (wrapper) {
 	wrapper.course_assessor_checklist?.resolve_route_and_load();
 };
+
+const CAC_CHECKLIST_TYPES = [
+	"Basic H2S",
+	"BOSIET EBS",
+	"TBOSIET",
+	"FOET EBS",
+	"T FOET",
+	"HUET EBS",
+	"THUET",
+	"Gas Monitor",
+	"AGT",
+	"TSbB Initial",
+	"TSbB Further",
+];
 
 class CourseAssessorChecklist {
 	constructor(page) {
@@ -19,6 +33,10 @@ class CourseAssessorChecklist {
 		this.doc = null;
 		this.saving = false;
 		this.loading_key = null;
+		this.active_tab = "All";
+		this.list_offset = 0;
+		this.list_page_size = 50;
+		this.type_counts = {};
 
 		this.$root = $('<div class="cac-root"></div>').appendTo(this.page.main);
 		this.make_actions();
@@ -26,19 +44,40 @@ class CourseAssessorChecklist {
 	}
 
 	make_actions() {
+		this.page.clear_inner_toolbar();
+		this.page.set_primary_action(__("New Checklist"), () => this.open_create_dialog());
+		this.page.add_inner_button(__("Refresh List"), () => this.show_list(), __("Actions"));
+	}
+
+	make_form_actions() {
+		this.page.clear_inner_toolbar();
 		this.page.set_primary_action(__("Save"), () => this.save());
+		this.page.add_inner_button(__("Back to List"), () => {
+			this.loading_key = null;
+			frappe.set_route("course-assessor-checklist-form");
+		});
 		this.page.add_inner_button(__("Print"), () => this.print_doc(), __("Actions"));
 		this.page.add_inner_button(__("Submit"), () => this.submit_doc(), __("Actions"));
 		this.page.add_inner_button(__("Populate Learners"), () => this.populate_learners(), __("Actions"));
 		this.page.add_inner_button(__("ERP Form"), () => this.open_erp_form(), __("Actions"));
-		this.page.add_inner_button(__("New"), () => this.show_picker(), __("Actions"));
+		this.page.add_inner_button(__("New"), () => this.open_create_dialog(), __("Actions"));
 	}
 
 	resolve_route_and_load() {
 		const route = frappe.get_route() || [];
 		const docname = (route[1] || frappe.route_options?.name || frappe.utils.get_query_params().name || "").trim();
-		const checklist_type = (frappe.route_options?.checklist_type || frappe.utils.get_query_params().checklist_type || "").trim();
-		const student_group = frappe.route_options?.student_group || frappe.utils.get_query_params().student_group || null;
+		const checklist_type = (
+			frappe.route_options?.checklist_type || frappe.utils.get_query_params().checklist_type || ""
+		).trim();
+		const student_group =
+			frappe.route_options?.student_group || frappe.utils.get_query_params().student_group || null;
+
+		// Consume one-shot route options so Back to List does not reopen a new form.
+		if (frappe.route_options) {
+			delete frappe.route_options.checklist_type;
+			delete frappe.route_options.student_group;
+			delete frappe.route_options.name;
+		}
 
 		const load_key = docname || `new:${checklist_type}:${student_group || ""}`;
 		if (this.loading_key === load_key && this.doc && (docname ? this.doc.name === docname : !this.doc.name)) {
@@ -56,79 +95,241 @@ class CourseAssessorChecklist {
 			return;
 		}
 
-		this.show_picker();
+		this.show_list();
 	}
 
-	show_picker() {
+	show_list(append = false) {
 		this.doc = null;
-		this.loading_key = "picker";
-		const types = [
-			"Basic H2S",
-			"BOSIET EBS",
-			"TBOSIET",
-			"FOET EBS",
-			"T FOET",
-			"HUET EBS",
-			"THUET",
-			"Gas Monitor",
-			"AGT",
-			"TSbB Initial",
-			"TSbB Further",
-		];
+		this.loading_key = "list";
+		this.make_actions();
+		this.page.set_title(__("Course Assessor Checklist"));
 
-		const options = types
-			.map((t) => `<option value="${frappe.utils.escape_html(t)}">${frappe.utils.escape_html(t)}</option>`)
-			.join("");
+		if (!append) {
+			this.list_offset = 0;
+			this.$root.html(`
+				<div class="cac-portal">
+					<div class="cac-portal-header">
+						<div>
+							<h3>${__("Course Assessor Checklist")}</h3>
+							<p>${__("NUTC-P14-F01 series — browse by course type, then open or create a checklist.")}</p>
+						</div>
+						<button type="button" class="cac-btn cac-btn-primary cac-new-btn">${__("New Checklist")}</button>
+					</div>
+					<div class="cac-tabs"></div>
+					<div class="cac-panel">
+						<table class="cac-table">
+							<thead>
+								<tr>
+									<th>${__("Checklist")}</th>
+									<th>${__("Type")}</th>
+									<th>${__("Student Group")}</th>
+									<th>${__("Date")}</th>
+									<th>${__("Status")}</th>
+									<th>${__("Modified")}</th>
+									<th>${__("Action")}</th>
+								</tr>
+							</thead>
+							<tbody class="cac-list-body">
+								<tr><td colspan="7" class="cac-empty">${__("Loading...")}</td></tr>
+							</tbody>
+						</table>
+						<div class="cac-load-more-wrap" hidden>
+							<button type="button" class="cac-btn cac-btn-ghost cac-load-more">${__("Load more")}</button>
+						</div>
+					</div>
+				</div>
+			`);
+			this.$root.find(".cac-new-btn").on("click", () => this.open_create_dialog());
+			this.$root.find(".cac-load-more").on("click", () => {
+				this.list_offset += this.list_page_size;
+				this.show_list(true);
+			});
+		}
 
-		this.$root.html(`
-			<div class="cac-picker">
-				<h4>${__("Create Course Assessor Checklist")}</h4>
-				<p class="text-muted">${__("Select the checklist type matching your Word form (NUTC-P14-F01 series).")}</p>
-				<div class="form-group">
-					<label class="control-label">${__("Checklist Type")}</label>
-					<select class="form-control cac-new-type">${options}</select>
-				</div>
-				<div class="form-group cac-group-field-wrap">
-					<label class="control-label">${__("Student Group")} (${__("optional")})</label>
-				</div>
-				<div class="cac-picker-actions">
-					<button class="btn btn-primary btn-sm cac-open-new">${__("Open Form")}</button>
-				</div>
-			</div>
-		`);
-
-		const group_field = frappe.ui.form.make_control({
-			df: {
-				fieldtype: "Link",
-				options: "Student Group",
-				fieldname: "student_group",
-				label: __("Student Group"),
+		frappe.call({
+			method:
+				"numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.get_checklist_list",
+			args: {
+				checklist_type: this.active_tab === "All" ? null : this.active_tab,
+				limit: this.list_page_size,
+				offset: this.list_offset,
 			},
-			parent: this.$root.find(".cac-group-field-wrap"),
-			render_input: true,
+			callback: (r) => {
+				if (r.exc) return;
+				const msg = r.message || {};
+				this.type_counts = msg.type_counts || {};
+				this.render_tabs(msg.checklist_types || CAC_CHECKLIST_TYPES, msg.total || 0);
+				this.render_list_rows(msg.records || [], append);
+				this.$root.find(".cac-load-more-wrap").toggle(!!msg.has_more);
+			},
+			error: () => {
+				this.render_list_rows([], false);
+			},
 		});
-		group_field.make();
-		group_field.refresh();
-		this.picker_group_field = group_field;
+	}
 
-		this.$root.find(".cac-open-new").on("click", () => {
-			const checklist_type = this.$root.find(".cac-new-type").val();
-			const student_group = this.picker_group_field.get_value();
-			if (!checklist_type) {
-				frappe.msgprint(__("Select a Checklist Type"));
-				return;
-			}
-			this.loading_key = null;
-			this.fetch_form({ checklist_type, student_group: student_group || null });
+	render_tabs(types, total) {
+		const tabs = ["All", ...types];
+		const html = tabs
+			.map((tab) => {
+				const count = tab === "All" ? total : this.type_counts[tab] || 0;
+				const active = tab === this.active_tab ? "active" : "";
+				return `<button type="button" class="cac-tab ${active}" data-tab="${frappe.utils.escape_html(tab)}">
+					${frappe.utils.escape_html(tab)}
+					<span class="cac-tab-count">(${count})</span>
+				</button>`;
+			})
+			.join("");
+		this.$root.find(".cac-tabs").html(html);
+		this.$root.find(".cac-tab").on("click", (e) => {
+			const tab = $(e.currentTarget).data("tab");
+			if (!tab || tab === this.active_tab) return;
+			this.active_tab = tab;
+			this.show_list(false);
 		});
+	}
+
+	render_list_rows(records, append) {
+		const $body = this.$root.find(".cac-list-body");
+		if (!append) $body.empty();
+
+		if (!records.length && !append) {
+			$body.html(`
+				<tr>
+					<td colspan="7" class="cac-empty">
+						${__("No checklists found for this course type.")}
+						<br><br>
+						<button type="button" class="cac-btn cac-btn-primary cac-empty-new">${__("Create New")}</button>
+					</td>
+				</tr>
+			`);
+			$body.find(".cac-empty-new").on("click", () =>
+				this.open_create_dialog({
+					checklist_type: this.active_tab !== "All" ? this.active_tab : "",
+				})
+			);
+			return;
+		}
+
+		records.forEach((row) => $body.append(this.render_list_row(row)));
+		$body.find(".cac-open-btn").off("click").on("click", (e) => {
+			e.preventDefault();
+			const name = $(e.currentTarget).data("name");
+			if (name) {
+				this.loading_key = null;
+				frappe.set_route("course-assessor-checklist-form", name);
+			}
+		});
+	}
+
+	render_list_row(row) {
+		const dateLabel = row.assessment_date ? frappe.datetime.str_to_user(row.assessment_date) : "-";
+		const modifiedLabel = row.modified ? frappe.datetime.str_to_user(row.modified) : "-";
+		const formCode = row.form_code
+			? `<div class="cac-data-meta">${frappe.utils.escape_html(row.form_code)}</div>`
+			: "";
+		const status = this.status_pill(row.docstatus);
+		return `
+			<tr>
+				<td>
+					<div class="cac-data-title">
+						<a href="#" class="cac-open-btn" data-name="${frappe.utils.escape_html(row.name || "")}">
+							${frappe.utils.escape_html(row.name || "-")}
+						</a>
+					</div>
+					${formCode}
+				</td>
+				<td><div class="cac-data-title">${frappe.utils.escape_html(row.checklist_type || "-")}</div></td>
+				<td><div class="cac-data-title">${frappe.utils.escape_html(row.student_group || "-")}</div></td>
+				<td><div class="cac-data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
+				<td>${status}</td>
+				<td><div class="cac-data-title">${frappe.utils.escape_html(modifiedLabel)}</div></td>
+				<td>
+					<div class="cac-row-actions">
+						<a href="#" class="cac-btn cac-btn-primary cac-open-btn" data-name="${frappe.utils.escape_html(row.name || "")}">${__("Open")}</a>
+						<a class="cac-btn cac-btn-ghost" href="/app/assessor-checklist/${frappe.utils.escape_html(row.name || "")}">${__("ERP View")}</a>
+					</div>
+				</td>
+			</tr>
+		`;
+	}
+
+	status_pill(docstatus) {
+		const ds = cint(docstatus);
+		if (ds === 1) return `<span class="cac-status cac-status-submitted">${__("Submitted")}</span>`;
+		if (ds === 2) return `<span class="cac-status cac-status-cancelled">${__("Cancelled")}</span>`;
+		return `<span class="cac-status cac-status-draft">${__("Draft")}</span>`;
+	}
+
+	open_create_dialog(defaults = {}) {
+		const defaultType =
+			defaults.checklist_type || (this.active_tab !== "All" ? this.active_tab : "TBOSIET");
+		const dialog = new frappe.ui.Dialog({
+			title: __("Create Course Assessor Checklist"),
+			fields: [
+				{
+					fieldtype: "Select",
+					fieldname: "checklist_type",
+					label: __("Checklist Type / Course"),
+					options: CAC_CHECKLIST_TYPES.join("\n"),
+					default: defaultType,
+					reqd: 1,
+				},
+				{
+					fieldtype: "Link",
+					fieldname: "student_group",
+					label: __("Student Group"),
+					options: "Student Group",
+					default: defaults.student_group || "",
+				},
+				{
+					fieldtype: "HTML",
+					fieldname: "help_html",
+					options: `<p class="text-muted" style="margin:0;">${__(
+						"Opens the official NUTC-P14-F01 Word-style checklist for this course type."
+					)}</p>`,
+				},
+			],
+			primary_action_label: __("Open Form"),
+			primary_action: (values) => {
+				if (!values.checklist_type) {
+					frappe.msgprint(__("Select a Checklist Type"));
+					return;
+				}
+				dialog.hide();
+				this.loading_key = null;
+				frappe.route_options = {
+					checklist_type: values.checklist_type,
+					student_group: values.student_group || null,
+				};
+				// Clear route docname if any, then load new form
+				if ((frappe.get_route() || [])[1]) {
+					frappe.set_route("course-assessor-checklist-form");
+					setTimeout(() => {
+						this.fetch_form({
+							checklist_type: values.checklist_type,
+							student_group: values.student_group || null,
+						});
+					}, 50);
+				} else {
+					this.fetch_form({
+						checklist_type: values.checklist_type,
+						student_group: values.student_group || null,
+					});
+				}
+			},
+		});
+		dialog.show();
 	}
 
 	fetch_form(args) {
 		const load_key = args.docname || `new:${args.checklist_type || ""}:${args.student_group || ""}`;
 		this.loading_key = load_key;
+		this.make_form_actions();
 
 		frappe.call({
-			method: "numerouno.numerouno.page.course_assessor_checklist.course_assessor_checklist_api.get_form_html",
+			method:
+				"numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.get_form_html",
 			args,
 			freeze: true,
 			callback: (r) => {
@@ -153,18 +354,24 @@ class CourseAssessorChecklist {
 		if (!this.doc) return;
 
 		this.$root.html(`
-			<p class="cac-toolbar-note">
-				<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong>
-				${this.doc.form_code ? ` — ${frappe.utils.escape_html(this.doc.form_code)}` : ""}
-				<br>${__("Layout matches the official assessor checklist. Click Save to store changes.")}
-			</p>
-			<div class="cac-header-fields">
-				<div class="form-group">
-					<label class="control-label">${__("Assessment Date")}</label>
-					<input type="date" class="cac-date-input cac-root-field" data-root="assessment_date" value="${this.doc.assessment_date || ""}">
-				</div>
-				<div class="form-group cac-student-group-wrap">
-					<label class="control-label">${__("Student Group")}</label>
+			<div class="cac-toolbar-bar">
+				<p class="cac-toolbar-note">
+					<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong>
+					${this.doc.form_code ? ` — ${frappe.utils.escape_html(this.doc.form_code)}` : ""}
+					<br>${__("Layout matches the official assessor checklist. Click Save to store changes.")}
+				</p>
+				<button type="button" class="cac-btn cac-btn-ghost cac-back-list">${__("Back to List")}</button>
+			</div>
+			<div class="cac-form-meta-panel">
+				<div class="cac-header-fields">
+					<div class="cac-field cac-field-date">
+						<label class="cac-field-label">${__("Assessment Date")}</label>
+						<input type="date" class="cac-date-input cac-root-field" data-root="assessment_date" value="${this.doc.assessment_date || ""}">
+					</div>
+					<div class="cac-field cac-field-group">
+						<label class="cac-field-label">${__("Student Group")}</label>
+						<div class="cac-student-group-wrap"></div>
+					</div>
 				</div>
 			</div>
 			<div class="cac-doc-wrap">
@@ -172,22 +379,30 @@ class CourseAssessorChecklist {
 			</div>
 		`);
 
+		this.$root.find(".cac-back-list").on("click", () => {
+			this.loading_key = null;
+			frappe.set_route("course-assessor-checklist-form");
+		});
+
 		const group_field = frappe.ui.form.make_control({
 			df: {
 				fieldtype: "Link",
 				options: "Student Group",
 				fieldname: "student_group",
 				label: __("Student Group"),
+				only_input: 1,
 				change: () => {
 					this.doc.student_group = group_field.get_value();
 				},
 			},
 			parent: this.$root.find(".cac-student-group-wrap"),
 			render_input: true,
+			only_input: true,
 		});
 		group_field.make();
 		group_field.set_value(this.doc.student_group || "");
 		group_field.refresh();
+		this.$root.find(".cac-student-group-wrap .clearfix, .cac-student-group-wrap .control-label").remove();
 		this.student_group_field = group_field;
 
 		this.enhance_editable();
@@ -327,13 +542,14 @@ class CourseAssessorChecklist {
 		if (this.student_group_field) {
 			this.student_group_field.df.read_only = submitted ? 1 : 0;
 			this.student_group_field.refresh();
+			this.$root.find(".cac-student-group-wrap .clearfix, .cac-student-group-wrap .control-label").remove();
 		}
 		if (submitted) {
 			this.page.clear_primary_action();
 			this.$root.find(".cac-toolbar-note").html(
 				`<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong> — ${__("Submitted (read-only). Use Print for the official document.")}`
 			);
-		} else if (!this.page.btn_primary?.length) {
+		} else {
 			this.page.set_primary_action(__("Save"), () => this.save());
 		}
 	}
@@ -390,7 +606,7 @@ class CourseAssessorChecklist {
 
 		this.saving = true;
 		frappe.call({
-			method: "numerouno.numerouno.page.course_assessor_checklist.course_assessor_checklist_api.save_form",
+			method: "numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.save_form",
 			args: { data: this.collect_data() },
 			freeze: true,
 			callback: (r) => {
@@ -400,7 +616,7 @@ class CourseAssessorChecklist {
 				frappe.show_alert({ message: __("Saved"), indicator: "green" });
 				if (this.doc.name) {
 					this.loading_key = null;
-					frappe.set_route("course-assessor-checklist", this.doc.name);
+					frappe.set_route("course-assessor-checklist-form", this.doc.name);
 				} else {
 					this.fetch_form({
 						checklist_type: this.doc.checklist_type,
@@ -422,7 +638,7 @@ class CourseAssessorChecklist {
 		frappe.confirm(__("Submit this Course Assessor Checklist?"), () => {
 			this.save_and_then(() => {
 				frappe.call({
-					method: "numerouno.numerouno.page.course_assessor_checklist.course_assessor_checklist_api.submit",
+					method: "numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.submit",
 					args: { docname: this.doc.name },
 					freeze: true,
 					callback: (r) => {
@@ -442,7 +658,7 @@ class CourseAssessorChecklist {
 			return;
 		}
 		frappe.call({
-			method: "numerouno.numerouno.page.course_assessor_checklist.course_assessor_checklist_api.save_form",
+			method: "numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.save_form",
 			args: { data: this.collect_data() },
 			callback: (r) => {
 				if (r.exc) return;
@@ -472,7 +688,7 @@ class CourseAssessorChecklist {
 					: { checklist_type: this.doc.checklist_type, student_group };
 				if (this.doc.name) {
 					frappe.call({
-						method: "numerouno.numerouno.page.course_assessor_checklist.course_assessor_checklist_api.save_form",
+						method: "numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.save_form",
 						args: { data: { ...this.collect_data(), learners: this.doc.learners, student_group } },
 						callback: (save_r) => {
 							if (!save_r.exc) this.doc = save_r.message;
