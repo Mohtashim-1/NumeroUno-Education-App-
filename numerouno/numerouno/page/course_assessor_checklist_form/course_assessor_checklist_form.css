@@ -378,7 +378,8 @@
 }
 
 .cac-doc .cac-entry-grid .col-no,
-.cac-doc .cac-entry-grid .col-name {
+.cac-doc .cac-entry-grid .col-name,
+.cac-doc .cac-entry-grid .col-ebs {
 	position: sticky;
 	background: #fff;
 	z-index: 4;
@@ -396,8 +397,16 @@
 	max-width: 190px;
 }
 
+.cac-doc .cac-entry-grid .col-ebs {
+	left: 184px;
+	min-width: 88px;
+	max-width: 110px;
+	text-align: center;
+}
+
 .cac-doc .cac-entry-grid .acl-grid-head .col-no,
-.cac-doc .cac-entry-grid .acl-grid-head .col-name {
+.cac-doc .cac-entry-grid .acl-grid-head .col-name,
+.cac-doc .cac-entry-grid .acl-grid-head .col-ebs {
 	z-index: 6;
 	background: #e8eef5;
 }
@@ -407,7 +416,8 @@
 }
 
 .cac-doc .cac-entry-grid tr:hover .col-no,
-.cac-doc .cac-entry-grid tr:hover .col-name {
+.cac-doc .cac-entry-grid tr:hover .col-name,
+.cac-doc .cac-entry-grid tr:hover .col-ebs {
 	background: #f8fbff;
 }
 

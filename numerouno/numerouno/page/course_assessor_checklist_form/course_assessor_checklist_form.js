@@ -470,6 +470,11 @@ class CourseAssessorChecklist {
 			$(tr).find(".col-name").html(
 				this.text_input("learners", learner_idx, "learner_name", row.learner_name)
 			);
+			if ($(tr).find(".col-ebs").length) {
+				$(tr).find(".col-ebs").html(
+					this.text_input("learners", learner_idx, "ebs_no", row.ebs_no)
+				);
+			}
 
 			$(tr).find(".col-result").each((col_idx, cell) => {
 				const field = `result_${col_idx + 1}`;

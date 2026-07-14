@@ -30,10 +30,14 @@
 	</table>
 	{% endif %}
 
+	{% set show_learner_ebs = doc.checklist_type in ['BOSIET EBS', 'FOET EBS', 'HUET EBS'] %}
 	<table class="acl-grid">
 		<tr class="acl-grid-head">
 			<th class="col-no">No.</th>
 			<th class="col-name">Learner Name</th>
+			{% if show_learner_ebs %}
+			<th class="col-ebs">EBS No.</th>
+			{% endif %}
 			{% for outcome in doc.outcomes %}
 			<th class="col-outcome">
 				<div>{{ outcome.outcome_code }}</div>
@@ -45,6 +49,9 @@
 		<tr>
 			<td class="col-no">{{ row.row_no or loop.index }}</td>
 			<td class="col-name">{{ row.learner_name or '' }}</td>
+			{% if show_learner_ebs %}
+			<td class="col-ebs">{{ row.ebs_no or '' }}</td>
+			{% endif %}
 			{% for oidx in range(1, (doc.outcomes|length) + 1) %}
 			<td class="col-result">{{ row['result_' ~ oidx] or '' }}</td>
 			{% endfor %}

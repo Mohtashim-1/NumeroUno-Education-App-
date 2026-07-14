@@ -115,6 +115,7 @@ function apply_learners_to_form(frm, learners) {
 		frm.add_child("learners", {
 			row_no: row.row_no,
 			learner_name: row.learner_name || "",
+			ebs_no: row.ebs_no || "",
 			module_group: row.module_group || "",
 		});
 	});

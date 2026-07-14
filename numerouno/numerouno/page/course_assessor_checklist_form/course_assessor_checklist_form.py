@@ -36,7 +36,7 @@ def _ensure_learner_rows(doc):
 
 def _serialize_doc(doc):
 	_ensure_learner_rows(doc)
-	learner_fields = ("row_no", "learner_name", "module_group", *LEARNER_RESULT_FIELDS)
+	learner_fields = ("row_no", "learner_name", "ebs_no", "module_group", *LEARNER_RESULT_FIELDS)
 	return {
 		"name": doc.name,
 		"docstatus": doc.docstatus,
@@ -278,6 +278,7 @@ def _apply_payload(doc, data):
 		learner_row = {
 			"row_no": row.get("row_no"),
 			"learner_name": row.get("learner_name"),
+			"ebs_no": row.get("ebs_no"),
 			"module_group": row.get("module_group"),
 		}
 		for field in LEARNER_RESULT_FIELDS:

@@ -8,6 +8,7 @@
  "field_order": [
   "row_no",
   "learner_name",
+  "ebs_no",
   "module_group",
   "result_1",
   "result_2",
@@ -62,6 +63,12 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Learner Name"
+  },
+  {
+   "fieldname": "ebs_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "EBS No."
   },
   {
    "fieldname": "module_group",

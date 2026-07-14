@@ -122,7 +122,9 @@ def load_template(checklist_type, docname=None, clear_existing=0):
 			_child_row(row, "sr_no", "module", "description", "assessor_name")
 			for row in doc.assessors
 		],
-		"learners": [_child_row(row, "row_no", "learner_name", "module_group") for row in doc.learners],
+		"learners": [
+			_child_row(row, "row_no", "learner_name", "ebs_no", "module_group") for row in doc.learners
+		],
 	}
 
 
@@ -178,6 +180,7 @@ def populate_learners_from_student_group(docname, student_group):
 			{
 				"row_no": row["row_no"],
 				"learner_name": row["learner_name"],
+				"ebs_no": prev.get("ebs_no") or "",
 				"module_group": row.get("module_group") or prev.get("module_group") or "",
 				**{f"result_{i}": prev.get(f"result_{i}") or "" for i in range(1, 41)},
 			},
