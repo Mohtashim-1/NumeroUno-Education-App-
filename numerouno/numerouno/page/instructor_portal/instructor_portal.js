@@ -5,6 +5,25 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 		single_column: true
 	});
 
+	try {
+	_instructor_portal_boot(page);
+	} catch (e) {
+		console.error('[Instructor Portal] failed to boot', e);
+		$(page.body).html(
+			`<div class="msgprint" style="padding:24px;">
+				<p><strong>Instructor Portal failed to load.</strong></p>
+				<pre style="white-space:pre-wrap;">${frappe.utils.escape_html((e && (e.stack || e.message)) || String(e))}</pre>
+			</div>`
+		);
+		frappe.msgprint({
+			title: __('Instructor Portal Error'),
+			indicator: 'red',
+			message: __('Check the browser console for details.')
+		});
+	}
+};
+
+function _instructor_portal_boot(page) {
 	var $body = $(`
 		<style>
 			@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Archivo:wght@400;600&display=swap");
@@ -932,15 +951,15 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 	var filterControls = {};
 
 	init_filters();
+	init_tabs();
+	init_instructor_form_actions();
+	init_safety_briefing_actions();
 	load_portal_data();
 	load_quiz_status();
 	load_results();
 	load_bulk_assessments();
 	load_all_instructor_forms();
 	load_safety_briefing_groups();
-	init_tabs();
-	init_instructor_form_actions();
-	init_safety_briefing_actions();
 
 	function load_portal_data() {
 		frappe.call({
@@ -2740,4 +2759,4 @@ frappe.pages['instructor-portal'].on_page_load = function(wrapper) {
 			submit_doc("Student Card", name, load_portal_data);
 		});
 	}
-}
+} // end _instructor_portal_boot
