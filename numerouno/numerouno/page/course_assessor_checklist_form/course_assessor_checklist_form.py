@@ -79,8 +79,8 @@ def _serialize_doc(doc):
 	}
 
 
-def _tbosiet_outcome_key(outcome_code, module_group, has_fire_lo1):
-	"""Normalize keys for older TBOSIET docs that mis-tagged sea-survival columns as OIS-04."""
+def _checklist_outcome_key(outcome_code, module_group, has_fire_lo1):
+	"""Normalize keys for older docs that mis-tagged sea-survival columns as OIS-04."""
 	code = (outcome_code or "").strip()
 	module = (module_group or "").strip()
 	if (
@@ -92,15 +92,16 @@ def _tbosiet_outcome_key(outcome_code, module_group, has_fire_lo1):
 	return (module, code)
 
 
-def _normalize_tbosiet_layout(doc):
-	"""Sync TBOSIET modules/outcomes to the official Excel layout (NUTC-P14-F01.02).
+def _normalize_checklist_layout(doc):
+	"""Sync TBOSIET / BOSIET EBS modules+outcomes to the official Excel layouts.
 
 	Returns True when the document layout was updated.
 	"""
-	if (doc.checklist_type or "") != "TBOSIET":
+	checklist_type = (doc.checklist_type or "").strip()
+	if checklist_type not in ("TBOSIET", "BOSIET EBS"):
 		return False
 
-	template = get_template_for_checklist_type("TBOSIET")
+	template = get_template_for_checklist_type(checklist_type)
 	expected_outcomes = template.get("outcomes") or []
 	expected_modules = template.get("module_groups") or []
 
@@ -141,7 +142,7 @@ def _normalize_tbosiet_layout(doc):
 	# Preserve learner marks keyed by corrected (module, outcome_code).
 	saved_by_key = {}
 	for idx, row in enumerate(doc.outcomes or [], start=1):
-		key = _tbosiet_outcome_key(row.outcome_code, row.module_group, has_fire_lo1)
+		key = _checklist_outcome_key(row.outcome_code, row.module_group, has_fire_lo1)
 		if key not in saved_by_key:
 			saved_by_key[key] = idx
 
@@ -173,6 +174,44 @@ def _normalize_tbosiet_layout(doc):
 			},
 		)
 
+	# Keep assessor rows aligned with template when missing OIS-04 rows.
+	expected_assessors = template.get("assessors") or []
+	if expected_assessors and len(doc.assessors or []) < len(expected_assessors):
+		existing = {
+			((row.module or "").strip(), (row.description or "").strip()): row
+			for row in (doc.assessors or [])
+		}
+		doc.assessors = []
+		for row in expected_assessors:
+			prev = existing.get(
+				((row.get("module") or "").strip(), (row.get("description") or "").strip()),
+				{},
+			)
+			doc.append(
+				"assessors",
+				{
+					"sr_no": row.get("sr_no"),
+					"module": row.get("module"),
+					"description": row.get("description"),
+					"assessor_name": getattr(prev, "assessor_name", None)
+					if not isinstance(prev, dict)
+					else prev.get("assessor_name"),
+					"signature": getattr(prev, "signature", None)
+					if not isinstance(prev, dict)
+					else prev.get("signature"),
+					"assessor_date": getattr(prev, "assessor_date", None)
+					if not isinstance(prev, dict)
+					else prev.get("assessor_date"),
+					"day": getattr(prev, "day", None) if not isinstance(prev, dict) else prev.get("day"),
+					"time_ampm": getattr(prev, "time_ampm", None)
+					if not isinstance(prev, dict)
+					else prev.get("time_ampm"),
+				},
+			)
+
+	if not (doc.footer_notes or "").strip() and template.get("footer_notes"):
+		doc.footer_notes = "\n".join(template.get("footer_notes") or [])
+
 	for learner, marks in zip(doc.learners or [], learner_marks):
 		for field in LEARNER_RESULT_FIELDS:
 			learner.set(field, "")
@@ -186,6 +225,10 @@ def _normalize_tbosiet_layout(doc):
 
 	return True
 
+
+def _normalize_tbosiet_layout(doc):
+	"""Backward-compatible alias."""
+	return _normalize_checklist_layout(doc)
 
 def _apply_payload(doc, data):
 	for field in (

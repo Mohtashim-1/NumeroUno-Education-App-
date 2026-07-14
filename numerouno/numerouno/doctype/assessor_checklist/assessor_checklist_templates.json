@@ -87,6 +87,11 @@
         "module_code": "OIS - 03",
         "module_title": "Sea Survival and First Aid",
         "col_start": 20
+      },
+      {
+        "module_code": "OIS - 04",
+        "module_title": "Fire fighting & Self Rescue",
+        "col_start": 31
       }
     ],
     "outcomes": [
@@ -184,6 +189,86 @@
         "outcome_code": "3.1",
         "assessment_method": "DO",
         "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "4.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "4.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "4.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "4.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "5.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "5.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "5.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "5.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 03"
+      },
+      {
+        "outcome_code": "1",
+        "assessment_method": "GD",
+        "module_group": "OIS - 04"
+      },
+      {
+        "outcome_code": "2",
+        "assessment_method": "GD",
+        "module_group": "OIS - 04"
+      },
+      {
+        "outcome_code": "3.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 04"
+      },
+      {
+        "outcome_code": "3.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 04"
+      },
+      {
+        "outcome_code": "4.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 04"
+      },
+      {
+        "outcome_code": "4.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 04"
+      },
+      {
+        "outcome_code": "4.3",
+        "assessment_method": "DO",
+        "module_group": "OIS - 04"
+      },
+      {
+        "outcome_code": "4.4",
+        "assessment_method": "DO",
+        "module_group": "OIS - 04"
       }
     ],
     "assessors": [
@@ -200,7 +285,7 @@
       {
         "sr_no": 3,
         "module": "OIS 02 (L03)",
-        "description": "HS&E  Practical"
+        "description": "HS&E Practical"
       },
       {
         "sr_no": 4,
@@ -225,15 +310,18 @@
       {
         "sr_no": 8,
         "module": "OIS 04 (L01 & L02)",
-        "description": "FF & SR\n Theory"
+        "description": "FF & SR Theory"
       },
       {
         "sr_no": 9,
         "module": "OIS 04 (L03 & L04)",
-        "description": "FF & SR\n Practical"
+        "description": "FF & SR Practical"
       }
     ],
-    "footer_notes": [],
+    "footer_notes": [
+      "Assessment Methods:(DO)-Direct Observation, (GD)- Group Discussion",
+      "Final Assessment Result: C-Competent , NYC-Not Yet Competent"
+    ],
     "unit_description": "UNIT OIS-01 Safety Induction, to successfully complete this unit,",
     "learner_rows": 16
   },
