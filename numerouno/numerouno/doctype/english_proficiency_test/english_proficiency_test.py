@@ -3,7 +3,7 @@ from pathlib import Path
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today
+from frappe.utils import cint, today
 
 
 class EnglishProficiencyTest(Document):
@@ -99,6 +99,113 @@ def populate_from_student_group(docname, student_group):
 	doc.student_group = student_group
 	doc.student = row.student
 	doc.candidate_name = row.student_name or row.student
-	doc.company_name = row.customer_name or frappe.db.get_value("Student", row.student, "custom_student_company_name") or ""
+	doc.company_name = (
+		row.customer_name
+		or frappe.db.get_value("Student", row.student, "custom_student_company_name")
+		or ""
+	)
 	doc.save()
 	return doc.name
+
+
+@frappe.whitelist(allow_guest=True)
+def get_wms_pretest_portal():
+	"""Public WMS pretest form template for guests (no login)."""
+	template = _load_template()
+	questions = []
+	for row in template.get("questions") or []:
+		questions.append(
+			{
+				"sr_no": row.get("sr_no"),
+				"question": row.get("question") or "",
+				"question_type": row.get("question_type") or "Single Choice",
+				"options": [opt for opt in (row.get("options") or []) if (opt or "").strip()],
+			}
+		)
+
+	return {
+		"form_title": template.get("form_title")
+		or "English Language Proficiency Assessment V01 '21 WMS Pre-Requisite",
+		"pass_percentage": template.get("pass_percentage") or 80,
+		"reading_title": template.get("reading_title") or "",
+		"reading_passage": (template.get("reading_passage") or "").replace("\n\n", "<br><br>"),
+		"date_of_training": today(),
+		"questions": questions,
+	}
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def submit_wms_pretest_portal(data=None):
+	"""Create an English Proficiency Test from the public WMS pretest portal."""
+	payload = frappe.parse_json(data) if isinstance(data, str) else (data or {})
+	if isinstance(payload, str):
+		payload = frappe.parse_json(payload) or {}
+
+	candidate_name = (payload.get("candidate_name") or "").strip()
+	company_name = (payload.get("company_name") or "").strip()
+	date_of_training = payload.get("date_of_training") or today()
+	answers = payload.get("answers") or {}
+
+	if not candidate_name:
+		frappe.throw("Candidate name is required.")
+	if not company_name:
+		frappe.throw("Company name is required.")
+
+	template = _load_template()
+	doc = frappe.new_doc("English Proficiency Test")
+	doc.form_title = (
+		template.get("form_title")
+		or "English Language Proficiency Assessment V01 '21 WMS Pre-Requisite"
+	)
+	doc.pass_percentage = template.get("pass_percentage") or 80
+	doc.reading_title = template.get("reading_title") or ""
+	doc.reading_passage = (template.get("reading_passage") or "").replace("\n\n", "<br><br>")
+	doc.date_of_training = date_of_training
+	doc.candidate_name = candidate_name
+	doc.company_name = company_name
+
+	answered = 0
+	for row in template.get("questions") or []:
+		sr_no = str(row.get("sr_no") or "")
+		selected = answers.get(sr_no)
+		if selected is None:
+			selected = answers.get(str(cint(sr_no)))
+		if isinstance(selected, list):
+			selected = " | ".join([str(v).strip() for v in selected if str(v).strip()])
+		else:
+			selected = str(selected or "").strip()
+		if selected:
+			answered += 1
+
+		options = row.get("options") or []
+		doc.append(
+			"questions",
+			{
+				"sr_no": row.get("sr_no"),
+				"question": row.get("question"),
+				"question_type": row.get("question_type") or "Single Choice",
+				"option_1": options[0] if len(options) > 0 else "",
+				"option_2": options[1] if len(options) > 1 else "",
+				"option_3": options[2] if len(options) > 2 else "",
+				"option_4": options[3] if len(options) > 3 else "",
+				"option_5": options[4] if len(options) > 4 else "",
+				"option_6": options[5] if len(options) > 5 else "",
+				"selected_answer": selected,
+			},
+		)
+
+	if answered < 1:
+		frappe.throw("Please answer at least one question before submitting.")
+
+	doc.flags.ignore_permissions = True
+	doc.insert(ignore_permissions=True)
+	frappe.db.commit()
+
+	return {
+		"name": doc.name,
+		"candidate_name": doc.candidate_name,
+		"company_name": doc.company_name,
+		"answered": answered,
+		"total_questions": len(doc.questions or []),
+		"message": "WMS Pretest submitted successfully.",
+	}

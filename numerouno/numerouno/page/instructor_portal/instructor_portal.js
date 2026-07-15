@@ -867,6 +867,7 @@ function _instructor_portal_boot(page) {
 							</div>
 						</div>
 						<div>
+							<a class="portal-btn portal-btn-ghost" href="/wms-pretest" target="_blank" rel="noopener">Open Guest Portal</a>
 							<button type="button" class="portal-btn portal-btn-primary instructor-form-new-btn" data-form-key="wms_pretest">New WMS Pretest</button>
 						</div>
 					</div>

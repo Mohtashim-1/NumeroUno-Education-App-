@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
+  <title>WMS Pretest — English Proficiency</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+    :root {
+      --bg: #eef4f7;
+      --panel: #ffffff;
+      --ink: #20313d;
+      --muted: #5f7380;
+      --line: #cfdde6;
+      --accent: #155e75;
+      --accent-hover: #0f4d60;
+      --success-bg: #e9f8ef;
+      --success-text: #17663a;
+      --danger: #b42318;
+      --shadow: 0 22px 50px rgba(18, 38, 52, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(183, 221, 235, 0.55), rgba(238, 244, 247, 0.95)),
+        radial-gradient(circle at top right, rgba(124, 179, 199, 0.28), transparent 34%);
+      padding: 28px 14px 48px;
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #173647 0%, #27546c 100%);
+      color: #fff;
+      border-radius: 24px 24px 0 0;
+      padding: 28px 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero .eyebrow {
+      display: inline-block;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(26px, 4.5vw, 38px);
+      line-height: 1.15;
+    }
+
+    .hero p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.84);
+      max-width: 720px;
+      line-height: 1.65;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: 0 0 24px 24px;
+      border: 1px solid var(--line);
+      border-top: none;
+      box-shadow: var(--shadow);
+      padding: 26px 28px 32px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font: inherit;
+      color: var(--ink);
+      background: #fbfcfd;
+    }
+
+    .field input:focus {
+      outline: none;
+      border-color: #7cb3c7;
+      box-shadow: 0 0 0 3px rgba(124, 179, 199, 0.25);
+      background: #fff;
+    }
+
+    .pass-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #e8f4f8;
+      color: #155e75;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .reading-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px 18px 8px;
+      background: #f8fbfc;
+      margin-bottom: 22px;
+    }
+
+    .reading-card h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .reading-passage {
+      color: var(--ink);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .reading-passage p { margin: 0 0 12px; }
+
+    .question-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+      background: #fff;
+    }
+
+    .question-card h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .q-type {
+      display: inline-block;
+      margin-left: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .options {
+      display: grid;
+      gap: 8px;
+    }
+
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      background: #fbfcfd;
+      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    .option:hover {
+      border-color: #9fc6d4;
+      background: #f3f9fb;
+    }
+
+    .option:has(input:checked) {
+      border-color: #7cb3c7;
+      background: #eef8fb;
+      box-shadow: 0 0 0 2px rgba(124, 179, 199, 0.2);
+    }
+
+    .option input {
+      margin-top: 3px;
+      accent-color: var(--accent);
+    }
+
+    .option span {
+      line-height: 1.4;
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .progress {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 22px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .alert {
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .alert.show { display: block; }
+    .alert-error {
+      background: #fdecec;
+      color: var(--danger);
+      border: 1px solid #f3c1bc;
+    }
+    .alert-success {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid #b7e4c7;
+    }
+
+    .loading, .success-panel {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--muted);
+    }
+
+    .success-panel h2 {
+      color: var(--success-text);
+      margin: 0 0 8px;
+    }
+
+    .success-panel .ref {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 12px 0;
+    }
+
+    @media (max-width: 760px) {
+      .meta-grid { grid-template-columns: 1fr; }
+      .hero, .panel { padding-left: 18px; padding-right: 18px; }
+      .actions { flex-direction: column; align-items: stretch; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="eyebrow">WMS Pre-Requisite · No login required</div>
+      <h1 id="form-title">WMS Pretest</h1>
+      <p>Read the passage carefully, then answer the questions below. Enter your name and company before submitting.</p>
+    </div>
+
+    <div class="panel">
+      <div id="alert" class="alert"></div>
+      <div id="app-loading" class="loading">Loading pretest…</div>
+      <div id="app-form" hidden>
+        <div class="pass-badge">Pass mark: <span id="pass-percentage">80</span>%</div>
+
+        <div class="meta-grid">
+          <div class="field">
+            <label for="candidate_name">Candidate Name *</label>
+            <input id="candidate_name" type="text" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="company_name">Company Name *</label>
+            <input id="company_name" type="text" autocomplete="organization" required />
+          </div>
+          <div class="field">
+            <label for="date_of_training">Date of Training</label>
+            <input id="date_of_training" type="date" />
+          </div>
+        </div>
+
+        <div class="reading-card">
+          <h2 id="reading-title"></h2>
+          <div class="reading-passage" id="reading-passage"></div>
+        </div>
+
+        <div id="questions"></div>
+
+        <div class="actions">
+          <div class="progress" id="progress">0 / 0 answered</div>
+          <button type="button" class="btn btn-primary" id="submit-btn">Submit Pretest</button>
+        </div>
+      </div>
+
+      <div id="app-success" class="success-panel" hidden>
+        <h2>Submitted successfully</h2>
+        <p>Thank you. Your WMS English Proficiency pretest has been recorded.</p>
+        <div class="ref">Reference: <span id="ref-name"></span></div>
+        <p>You can close this page now.</p>
+        <button type="button" class="btn btn-primary" id="another-btn" style="margin-top:12px;">Submit another</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
+      let formData = null;
+
+      function showAlert(message, type) {
+        const el = document.getElementById("alert");
+        el.className = "alert show " + (type === "success" ? "alert-success" : "alert-error");
+        el.textContent = message;
+      }
+
+      function clearAlert() {
+        const el = document.getElementById("alert");
+        el.className = "alert";
+        el.textContent = "";
+      }
+
+      function call(method, args, methodType) {
+        const type = (methodType || "POST").toUpperCase();
+        const params = new URLSearchParams();
+        Object.keys(args || {}).forEach((key) => {
+          const value = args[key];
+          params.append(key, typeof value === "object" ? JSON.stringify(value) : value);
+        });
+
+        const options = {
+          method: type,
+          headers: {
+            "X-Frappe-CSRF-Token": csrf,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          credentials: "same-origin",
+        };
+
+        let url = "/api/method/" + method;
+        if (type === "GET") {
+          const qs = params.toString();
+          if (qs) url += "?" + qs;
+        } else {
+          options.headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8";
+          options.body = params.toString();
+        }
+
+        return fetch(url, options).then(async (res) => {
+          const json = await res.json();
+          if (!res.ok || json.exc) {
+            let msg = json.message || json.exc || "Request failed";
+            try {
+              if (json._server_messages) {
+                const first = JSON.parse(json._server_messages)[0];
+                msg = JSON.parse(first).message || msg;
+              }
+            } catch (e) {}
+            throw new Error(String(msg).replace(/<[^>]+>/g, ""));
+          }
+          return json.message;
+        });
+      }
+
+      function renderQuestions(questions) {
+        const root = document.getElementById("questions");
+        root.innerHTML = "";
+        (questions || []).forEach((q) => {
+          const multi = (q.question_type || "").toLowerCase().includes("multiple");
+          const inputType = multi ? "checkbox" : "radio";
+          const name = "q_" + q.sr_no;
+          const optionsHtml = (q.options || [])
+            .map((opt, idx) => {
+              const id = name + "_" + idx;
+              return `<label class="option" for="${id}">
+                <input id="${id}" type="${inputType}" name="${name}" value="${escapeAttr(opt)}" data-sr="${q.sr_no}" data-multi="${multi ? 1 : 0}" />
+                <span>${escapeHtml(opt)}</span>
+              </label>`;
+            })
+            .join("");
+
+          const card = document.createElement("div");
+          card.className = "question-card";
+          card.innerHTML = `
+            <h3>${q.sr_no}. ${escapeHtml(q.question || "")}
+              <span class="q-type">${escapeHtml(q.question_type || "")}</span>
+            </h3>
+            <div class="options">${optionsHtml}</div>
+          `;
+          root.appendChild(card);
+        });
+
+        root.querySelectorAll("input").forEach((input) => {
+          input.addEventListener("change", updateProgress);
+        });
+        updateProgress();
+      }
+
+      function escapeHtml(str) {
+        return String(str || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function escapeAttr(str) {
+        return escapeHtml(str).replace(/'/g, "&#39;");
+      }
+
+      function collectAnswers() {
+        const answers = {};
+        document.querySelectorAll("#questions input:checked").forEach((input) => {
+          const sr = String(input.dataset.sr || "");
+          const multi = input.dataset.multi === "1";
+          if (multi) {
+            if (!answers[sr]) answers[sr] = [];
+            answers[sr].push(input.value);
+          } else {
+            answers[sr] = input.value;
+          }
+        });
+        return answers;
+      }
+
+      function updateProgress() {
+        const total = (formData?.questions || []).length;
+        const answered = Object.keys(collectAnswers()).length;
+        document.getElementById("progress").textContent = answered + " / " + total + " answered";
+      }
+
+      function loadForm() {
+        clearAlert();
+        document.getElementById("app-loading").hidden = false;
+        document.getElementById("app-form").hidden = true;
+        document.getElementById("app-success").hidden = true;
+
+        call(
+          "numerouno.numerouno.doctype.english_proficiency_test.english_proficiency_test.get_wms_pretest_portal",
+          {},
+          "GET"
+        )
+          .then((data) => {
+            formData = data || {};
+            document.getElementById("form-title").textContent = formData.form_title || "WMS Pretest";
+            document.getElementById("pass-percentage").textContent = formData.pass_percentage || 80;
+            document.getElementById("reading-title").textContent = formData.reading_title || "";
+            document.getElementById("reading-passage").innerHTML = formData.reading_passage || "";
+            document.getElementById("date_of_training").value = formData.date_of_training || "";
+            document.getElementById("candidate_name").value = "";
+            document.getElementById("company_name").value = "";
+            renderQuestions(formData.questions || []);
+            document.getElementById("app-loading").hidden = true;
+            document.getElementById("app-form").hidden = false;
+          })
+          .catch((err) => {
+            document.getElementById("app-loading").hidden = true;
+            showAlert(err.message || "Unable to load pretest.", "error");
+          });
+      }
+
+      document.getElementById("submit-btn").addEventListener("click", function () {
+        clearAlert();
+        const candidate_name = document.getElementById("candidate_name").value.trim();
+        const company_name = document.getElementById("company_name").value.trim();
+        const date_of_training = document.getElementById("date_of_training").value;
+        const answers = collectAnswers();
+
+        if (!candidate_name) {
+          showAlert("Please enter candidate name.", "error");
+          document.getElementById("candidate_name").focus();
+          return;
+        }
+        if (!company_name) {
+          showAlert("Please enter company name.", "error");
+          document.getElementById("company_name").focus();
+          return;
+        }
+        if (!Object.keys(answers).length) {
+          showAlert("Please answer at least one question.", "error");
+          return;
+        }
+
+        const btn = document.getElementById("submit-btn");
+        btn.disabled = true;
+        btn.textContent = "Submitting…";
+
+        call("numerouno.numerouno.doctype.english_proficiency_test.english_proficiency_test.submit_wms_pretest_portal", {
+          data: {
+            candidate_name,
+            company_name,
+            date_of_training,
+            answers,
+          },
+        })
+          .then((res) => {
+            document.getElementById("app-form").hidden = true;
+            document.getElementById("app-success").hidden = false;
+            document.getElementById("ref-name").textContent = res.name || "-";
+            showAlert(res.message || "Submitted successfully.", "success");
+          })
+          .catch((err) => {
+            showAlert(err.message || "Submit failed.", "error");
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.textContent = "Submit Pretest";
+          });
+      });
+
+      document.getElementById("another-btn").addEventListener("click", loadForm);
+      loadForm();
+    })();
+  </script>
+</body>
+</html>
