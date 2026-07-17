@@ -13,6 +13,7 @@ website_route_rules = [
     {"from_route": "/quiz-attempt", "to_route": "numerouno/quiz_attempt"},
     # Endpoint must match www/<path>.html — not www/numerouno/<path>.html
     {"from_route": "/public-forms", "to_route": "public_portal_forms"},
+    {"from_route": "/customer-portal", "to_route": "customer-portal"},
 ]
 
 # Website pages accessible to guests
@@ -165,6 +166,7 @@ has_permission = {
 override_doctype_class = {
     "Student Attendance": "numerouno.numerouno.doctype.student_attendance.student_attendance.StudentAttendance",
     "Email Template": "numerouno.numerouno.overrides.email_template.NumerounoEmailTemplate",
+    "Payment Request": "numerouno.numerouno.overrides.payment_request.PaymentRequest",
 }
 
 # Document Events
@@ -181,6 +183,13 @@ doc_events = {
     },
     "Asset Maintenance Log": {
         "on_submit": "numerouno.numerouno.asset_management.update_asset_performance_from_log"
+    },
+    "Customer": {
+        "on_update": "numerouno.numerouno.customer_portal_setup.on_customer_update",
+        "after_insert": "numerouno.numerouno.customer_portal_setup.on_customer_update",
+    },
+    "Sales Invoice": {
+        "on_submit": "numerouno.numerouno.customer_portal_setup.on_sales_invoice_submit",
     },
 	"Student Group": {
 		"before_save": "numerouno.numerouno.doctype.student_group.student_group.create_academic_term",
@@ -342,3 +351,5 @@ override_whitelisted_methods = {
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
+
+after_migrate = ["numerouno.numerouno.customer_portal_setup.after_migrate"]

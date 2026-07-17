@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token or frappe.session.csrf_token }}">
+  {% raw %}
+  <title>Customer Portal — NumeroUNO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    :root {
+      --ink: #0b1f2a;
+      --ink-soft: #1a3644;
+      --sand: #f3efe6;
+      --sand-2: #e7e0d2;
+      --paper: #faf8f3;
+      --coral: #e85d3b;
+      --coral-deep: #c44728;
+      --sea: #1f7a72;
+      --sea-soft: #d8efec;
+      --muted: #5d6f79;
+      --line: rgba(11, 31, 42, 0.12);
+      --ok: #1c7c4a;
+      --warn: #9a6700;
+      --danger: #b42318;
+      --shadow: 0 24px 60px rgba(11, 31, 42, 0.14);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Outfit", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 0% -10%, rgba(232, 93, 59, 0.16), transparent 60%),
+        radial-gradient(800px 380px at 100% 0%, rgba(31, 122, 114, 0.14), transparent 55%),
+        linear-gradient(180deg, var(--sand) 0%, var(--paper) 48%, #eef3f5 100%);
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    /* ── Login ── */
+    .login-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+    @media (max-width: 960px) {
+      .login-layout { grid-template-columns: 1fr; }
+      .login-visual { min-height: 280px; }
+    }
+
+    .login-visual {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(145deg, rgba(11,31,42,.55), rgba(31,122,114,.35)),
+        url("https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1600&q=80") center/cover;
+      color: #fff;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .login-visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(600px 300px at 20% 20%, rgba(232,93,59,.35), transparent 60%),
+        linear-gradient(180deg, transparent 30%, rgba(11,31,42,.78));
+    }
+    .login-visual > * { position: relative; z-index: 1; }
+    .brand-mark {
+      font-family: "Fraunces", serif;
+      font-size: clamp(42px, 6vw, 64px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 0.95;
+      margin: 0 0 14px;
+    }
+    .login-visual p {
+      max-width: 420px;
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.5;
+      color: rgba(255,255,255,.88);
+    }
+
+    .login-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 28px;
+      background: rgba(250,248,243,.72);
+      backdrop-filter: blur(10px);
+    }
+    .login-card {
+      width: min(420px, 100%);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 32px;
+    }
+    .login-card h1 {
+      font-family: "Fraunces", serif;
+      font-size: 30px;
+      margin: 0 0 8px;
+      letter-spacing: -0.02em;
+    }
+    .login-card .sub {
+      color: var(--muted);
+      margin: 0 0 28px;
+      line-height: 1.45;
+    }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .field input, .field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 14px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field input:focus, .field select:focus {
+      border-color: var(--sea);
+      box-shadow: 0 0 0 4px rgba(31,122,114,.12);
+      background: #fff;
+    }
+    .otp-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+    .otp-row input {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      padding: 12px 0;
+      letter-spacing: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 20px;
+      font-weight: 600;
+      transition: transform .12s, background .12s, box-shadow .12s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    .btn-primary {
+      background: var(--coral);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(232,93,59,.28);
+    }
+    .btn-primary:hover { background: var(--coral-deep); }
+    .btn-sea {
+      background: var(--sea);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(31,122,114,.25);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+    .btn-block { width: 100%; }
+    .btn-sm { padding: 9px 14px; font-size: 14px; }
+
+    .alert {
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .alert-error { background: #fdecea; color: var(--danger); }
+    .alert-ok { background: #e8f7ee; color: var(--ok); }
+    .alert-info { background: var(--sea-soft); color: var(--ink-soft); }
+
+    /* ── App chrome ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .topbar-brand {
+      font-family: "Fraunces", serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .topbar-brand span { color: var(--coral); }
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,.8);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 8px 8px 16px;
+    }
+    .user-chip strong { display: block; font-size: 14px; }
+    .user-chip small { color: var(--muted); font-size: 12px; }
+
+    .hero {
+      background: linear-gradient(135deg, var(--ink) 0%, #163948 55%, #1f7a72 120%);
+      color: #fff;
+      border-radius: 28px;
+      padding: 32px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 280px; height: 280px;
+      right: -60px; top: -80px;
+      border-radius: 50%;
+      background: rgba(232,93,59,.28);
+      filter: blur(10px);
+    }
+    .hero > * { position: relative; z-index: 1; }
+    .hero h2 {
+      font-family: "Fraunces", serif;
+      font-size: clamp(28px, 4vw, 40px);
+      margin: 0 0 8px;
+      letter-spacing: -0.03em;
+    }
+    .hero p { margin: 0; color: rgba(255,255,255,.78); max-width: 520px; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 24px;
+    }
+    @media (max-width: 720px) {
+      .metrics { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .user-chip { justify-content: space-between; }
+    }
+    .metric {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .metric .label {
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.65);
+      margin-bottom: 8px;
+    }
+    .metric .value {
+      font-family: "Fraunces", serif;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.7);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .chip.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .invoice-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .invoice-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr auto;
+      gap: 16px;
+      align-items: center;
+      transition: transform .12s, box-shadow .12s;
+    }
+    .invoice-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 36px rgba(11,31,42,.08);
+    }
+    @media (max-width: 800px) {
+      .invoice-card {
+        grid-template-columns: 1fr;
+      }
+    }
+    .inv-name {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .inv-meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .inv-amount {
+      font-family: "Fraunces", serif;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .inv-amount small {
+      display: block;
+      font-family: "Outfit", sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+    .status-paid { background: #e8f7ee; color: var(--ok); }
+    .status-unpaid, .status-overdue { background: #fdecea; color: var(--danger); }
+    .status-partly-paid { background: #fff4d6; color: var(--warn); }
+    .status-default { background: var(--sand-2); color: var(--ink-soft); }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .empty {
+      text-align: center;
+      padding: 56px 20px;
+      background: rgba(255,255,255,.65);
+      border: 1px dashed var(--line);
+      border-radius: 24px;
+      color: var(--muted);
+    }
+
+    /* Drawer */
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(11,31,42,.45);
+      backdrop-filter: blur(3px);
+      z-index: 40;
+    }
+    .drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(460px, 100%);
+      background: var(--paper);
+      z-index: 50;
+      box-shadow: -20px 0 50px rgba(11,31,42,.2);
+      display: flex;
+      flex-direction: column;
+      animation: slideIn .22s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(24px); opacity: .4; }
+      to { transform: none; opacity: 1; }
+    }
+    .drawer-head {
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+    }
+    .drawer-head h3 {
+      font-family: "Fraunces", serif;
+      margin: 0;
+      font-size: 26px;
+    }
+    .drawer-body {
+      padding: 22px 24px;
+      overflow: auto;
+      flex: 1;
+    }
+    .drawer-foot {
+      padding: 16px 24px 24px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+    .kv {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .kv div {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .kv .k {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .kv .v { font-weight: 600; }
+    .items {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .item-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .item-row:last-child { border-bottom: 0; }
+    .item-row .muted { color: var(--muted); font-size: 12px; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .fade-enter-active, .fade-leave-active { transition: opacity .18s; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+    /* ── In-portal Stripe checkout ── */
+    .pay-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .pay-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(11, 31, 42, 0.55);
+      backdrop-filter: blur(6px);
+    }
+    .pay-card {
+      position: relative;
+      z-index: 1;
+      width: min(440px, 100%);
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: slideIn .22s ease;
+    }
+    .pay-card-head {
+      background: linear-gradient(135deg, var(--ink) 0%, #163948 55%, #1f7a72 120%);
+      color: #fff;
+      padding: 22px 24px;
+    }
+    .pay-card-head h3 {
+      font-family: "Fraunces", serif;
+      margin: 0 0 6px;
+      font-size: 26px;
+      letter-spacing: -0.02em;
+    }
+    .pay-card-head p { margin: 0; opacity: .82; font-size: 14px; }
+    .pay-amount {
+      margin-top: 14px;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .pay-card-body { padding: 22px 24px 8px; }
+    .pay-card-foot {
+      padding: 8px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-box {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      transition: box-shadow .15s, border-color .15s;
+    }
+    .card-box.StripeElement--focus {
+      border-color: var(--sea);
+      box-shadow: 0 0 0 4px rgba(31,122,114,.12);
+    }
+    .pay-secure {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .pay-success {
+      text-align: center;
+      padding: 28px 24px 32px;
+    }
+    .pay-success .check {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--sea-soft);
+      color: var(--sea);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+  const { createApp, ref, computed, onMounted, nextTick } = Vue;
+  const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || "";
+  const API = "numerouno.numerouno.api.customer_portal";
+
+  async function call(method, args = {}, type = "POST") {
+    const params = new URLSearchParams();
+    Object.entries(args || {}).forEach(([k, v]) => {
+      if (v === undefined || v === null) return;
+      params.append(k, typeof v === "object" ? JSON.stringify(v) : v);
+    });
+    let url = "/api/method/" + method;
+    const options = {
+      method: type,
+      credentials: "same-origin",
+      headers: {
+        "X-Frappe-CSRF-Token": CSRF,
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    };
+    if (type === "GET") {
+      const qs = params.toString();
+      if (qs) url += "?" + qs;
+    } else {
+      options.headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8";
+      options.body = params.toString();
+    }
+    const res = await fetch(url, options);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.exc || data.exception) {
+      const msg =
+        data._server_messages
+          ? (JSON.parse(data._server_messages).map((m) => {
+              try { return JSON.parse(m).message; } catch { return m; }
+            }).join(" ") || data.message)
+          : (data.message || data.exception || "Request failed");
+      throw new Error(typeof msg === "string" ? msg.replace(/<[^>]+>/g, "") : "Request failed");
+    }
+    return data.message;
+  }
+
+  createApp({
+    setup() {
+      const bootLoading = ref(true);
+      const authenticated = ref(false);
+      const session = ref(null);
+      const step = ref("email"); // email | otp | customer
+      const email = ref("");
+      const otpDigits = ref(["", "", "", "", "", ""]);
+      const customerChoices = ref([]);
+      const customerSearch = ref("");
+      const selectedCustomer = ref("");
+      const customerListTruncated = ref(false);
+      const error = ref("");
+      const info = ref("");
+      const busy = ref(false);
+      const dashboard = ref(null);
+      const filter = ref("all");
+      const detail = ref(null);
+      const detailOpen = ref(false);
+      const paying = ref(false);
+      const otpInputs = ref([]);
+      const checkoutOpen = ref(false);
+      const checkout = ref(null);
+      const cardholderName = ref("");
+      const payError = ref("");
+      const paySuccess = ref(false);
+      const payBusy = ref(false);
+      let stripeCard = null;
+      let stripeInstance = null;
+
+      const otp = computed(() => otpDigits.value.join(""));
+
+      const filteredInvoices = computed(() => {
+        const rows = dashboard.value?.invoices || [];
+        if (filter.value === "unpaid") return rows.filter((r) => r.can_pay);
+        if (filter.value === "paid") return rows.filter((r) => r.status === "Paid");
+        if (filter.value === "orders") return [];
+        return rows;
+      });
+
+      const payableOrders = computed(() => {
+        return (dashboard.value?.orders || []).filter((o) => o.can_pay);
+      });
+
+      const payablePortalRequests = computed(() => {
+        return (dashboard.value?.portal_requests || []).filter((p) => p.can_pay);
+      });
+
+      const visiblePortalRequests = computed(() => {
+        const rows = dashboard.value?.portal_requests || [];
+        if (filter.value === "requests") return rows;
+        if (filter.value === "all") return rows;
+        if (filter.value === "paid") {
+          return rows.filter((p) => p.status === "Paid" || p.status === "Allocated");
+        }
+        // unpaid / orders: only open requests
+        if (filter.value === "unpaid") return rows.filter((p) => p.can_pay);
+        return [];
+      });
+
+      const showOrders = computed(() => filter.value === "orders" || filter.value === "all");
+      const showPortalRequests = computed(
+        () =>
+          filter.value === "requests" ||
+          filter.value === "all" ||
+          filter.value === "paid" ||
+          filter.value === "unpaid"
+      );
+      const showInvoices = computed(() => filter.value !== "orders" && filter.value !== "requests");
+
+      const filteredCustomerChoices = computed(() => {
+        const q = (customerSearch.value || "").trim().toLowerCase();
+        const rows = customerChoices.value || [];
+        if (!q) return rows;
+        return rows.filter((c) =>
+          `${c.customer_name || ""} ${c.name || ""}`.toLowerCase().includes(q)
+        );
+      });
+
+      function statusClass(status) {
+        const key = (status || "").toLowerCase().replace(/\s+/g, "-");
+        if (["paid"].includes(key)) return "status-paid";
+        if (["unpaid", "overdue"].includes(key)) return "status-unpaid";
+        if (["partly-paid"].includes(key)) return "status-partly-paid";
+        return "status-default";
+      }
+
+      async function bootstrap() {
+        try {
+          const s = await call(`${API}.get_portal_session`, {}, "GET");
+          if (s?.authenticated) {
+            session.value = s;
+            authenticated.value = true;
+            await loadDashboard();
+          }
+        } catch (e) {
+          /* stay on login */
+        } finally {
+          bootLoading.value = false;
+        }
+      }
+
+      async function sendOtp() {
+        error.value = "";
+        info.value = "";
+        busy.value = true;
+        try {
+          const res = await call(`${API}.request_login_otp`, { email: email.value });
+          if (!res || !res.sent) {
+            error.value =
+              res?.message ||
+              "No customer account is linked to this email. Use the email on your invoices.";
+            return;
+          }
+          info.value = res.message || "Code sent.";
+          if (res.dev_otp) {
+            info.value = `Use this code: ${res.dev_otp}`;
+            applyOtpCode(res.dev_otp);
+          } else {
+            otpDigits.value = ["", "", "", "", "", ""];
+            await nextTick();
+            otpInputs.value[0]?.focus();
+          }
+          step.value = "otp";
+          if (!res.dev_otp) {
+            await nextTick();
+            otpInputs.value[0]?.focus();
+          }
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      async function verifyOtp(customer = "") {
+        error.value = "";
+        busy.value = true;
+        try {
+          const res = await call(`${API}.verify_login_otp`, {
+            email: email.value,
+            otp: otp.value,
+            customer: customer || selectedCustomer.value || "",
+          });
+          if (res.needs_customer) {
+            customerChoices.value = res.customers || [];
+            customerListTruncated.value = !!res.truncated;
+            customerSearch.value = "";
+            selectedCustomer.value = "";
+            step.value = "customer";
+            info.value = res.truncated
+              ? `Multiple accounts share this email — showing ${customerChoices.value.length} with invoices. Search by company name.`
+              : "Multiple accounts share this email. Choose the correct company.";
+            return;
+          }
+          session.value = res.session;
+          authenticated.value = true;
+          await loadDashboard();
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      async function loadDashboard() {
+        busy.value = true;
+        error.value = "";
+        try {
+          dashboard.value = await call(`${API}.get_dashboard`, {}, "GET");
+        } catch (e) {
+          error.value = e.message;
+          if (/sign in/i.test(e.message)) {
+            authenticated.value = false;
+          }
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      async function openInvoice(name) {
+        busy.value = true;
+        try {
+          detail.value = await call(`${API}.get_invoice`, { name }, "GET");
+          detailOpen.value = true;
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      async function payInvoice(name) {
+        await startCheckout({ invoice: name });
+      }
+
+      async function payOrder(name) {
+        await startCheckout({ sales_order: name });
+      }
+
+      async function payPortalRequest(name) {
+        await startCheckout({ portal_payment_request: name });
+      }
+
+      async function startCheckout(args) {
+        paying.value = true;
+        error.value = "";
+        payError.value = "";
+        paySuccess.value = false;
+        try {
+          const res = await call(`${API}.create_stripe_payment`, args);
+          if (!res?.checkout?.publishable_key) {
+            throw new Error("Checkout is not ready. Check Stripe Settings.");
+          }
+          checkout.value = res.checkout;
+          cardholderName.value = session.value?.customer_name || "";
+          detailOpen.value = false;
+          checkoutOpen.value = true;
+          await nextTick();
+          mountStripeCard(res.checkout.publishable_key);
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          paying.value = false;
+        }
+      }
+
+      function mountStripeCard(publishableKey) {
+        destroyStripeCard();
+        if (!window.Stripe) {
+          payError.value = "Stripe.js failed to load. Refresh and try again.";
+          return;
+        }
+        stripeInstance = window.Stripe(publishableKey);
+        const elements = stripeInstance.elements();
+        stripeCard = elements.create("card", {
+          hidePostalCode: true,
+          style: {
+            base: {
+              color: "#0b1f2a",
+              fontFamily: 'Outfit, "Helvetica Neue", Helvetica, sans-serif',
+              fontSmoothing: "antialiased",
+              fontSize: "16px",
+              "::placeholder": { color: "#5d6f79" },
+            },
+            invalid: { color: "#b42318", iconColor: "#b42318" },
+          },
+        });
+        stripeCard.mount("#portal-card-element");
+        stripeCard.on("change", (event) => {
+          payError.value = event.error ? event.error.message : "";
+        });
+      }
+
+      function destroyStripeCard() {
+        try { stripeCard?.destroy(); } catch (_) {}
+        stripeCard = null;
+        stripeInstance = null;
+      }
+
+      function closeCheckout() {
+        if (payBusy.value) return;
+        checkoutOpen.value = false;
+        checkout.value = null;
+        payError.value = "";
+        paySuccess.value = false;
+        destroyStripeCard();
+      }
+
+      async function submitPortalPayment() {
+        if (!checkout.value || !stripeInstance || !stripeCard) return;
+        payBusy.value = true;
+        payError.value = "";
+        try {
+          const result = await stripeInstance.createToken(stripeCard, {
+            name: cardholderName.value || session.value?.customer_name || "",
+            email: session.value?.email || "",
+          });
+          if (result.error) {
+            payError.value = result.error.message;
+            return;
+          }
+          const res = await call(`${API}.complete_stripe_payment`, {
+            stripe_token_id: result.token.id,
+            payment_request: checkout.value.reference_docname,
+            reference_doctype: checkout.value.reference_doctype,
+            reference_docname: checkout.value.reference_docname,
+          });
+          if (res.status === "Completed" || res.ok) {
+            paySuccess.value = true;
+            destroyStripeCard();
+            await loadDashboard();
+            setTimeout(() => closeCheckout(), 1800);
+          } else {
+            payError.value = res.message || "Payment failed.";
+          }
+        } catch (e) {
+          payError.value = e.message;
+        } finally {
+          payBusy.value = false;
+        }
+      }
+
+      async function logout() {
+        await call(`${API}.logout_portal`, {});
+        authenticated.value = false;
+        session.value = null;
+        dashboard.value = null;
+        detailOpen.value = false;
+        step.value = "email";
+        otpDigits.value = ["", "", "", "", "", ""];
+      }
+
+      function applyOtpCode(code) {
+        const digits = String(code || "").replace(/\D/g, "").slice(0, 6).split("");
+        otpDigits.value = [0, 1, 2, 3, 4, 5].map((i) => digits[i] || "");
+        const focusIdx = Math.min(digits.length, 5);
+        nextTick(() => {
+          otpInputs.value[focusIdx]?.focus();
+          if (digits.length === 6) verifyOtp();
+        });
+      }
+
+      function onOtpInput(idx, event) {
+        const raw = (event.target.value || "").replace(/\D/g, "");
+        // Mobile autofill / paste into a single box may deliver the full code
+        if (raw.length > 1) {
+          applyOtpCode(raw);
+          return;
+        }
+        otpDigits.value[idx] = raw.slice(-1);
+        if (raw && idx < 5) otpInputs.value[idx + 1]?.focus();
+        if (otp.value.length === 6) verifyOtp();
+      }
+
+      function onOtpKeydown(idx, event) {
+        if (event.key === "Backspace" && !otpDigits.value[idx] && idx > 0) {
+          otpDigits.value[idx - 1] = "";
+          otpInputs.value[idx - 1]?.focus();
+        }
+      }
+
+      function onOtpPaste(event) {
+        event.preventDefault();
+        const text = event.clipboardData?.getData("text") || "";
+        applyOtpCode(text);
+      }
+
+      onMounted(bootstrap);
+
+      return {
+        bootLoading, authenticated, session, step, email, otpDigits, customerChoices,
+        selectedCustomer, error, info, busy, dashboard, filter, detail, detailOpen,
+        paying, otpInputs, filteredInvoices, filteredCustomerChoices,
+        payableOrders, payablePortalRequests, visiblePortalRequests,
+        showOrders, showPortalRequests, showInvoices,
+        checkoutOpen, checkout, cardholderName, payError, paySuccess, payBusy,
+        customerSearch, customerListTruncated, statusClass,
+        sendOtp, verifyOtp, loadDashboard, openInvoice, payInvoice, payOrder, payPortalRequest,
+        closeCheckout, submitPortalPayment, logout,
+        onOtpInput, onOtpKeydown, onOtpPaste,
+      };
+    },
+    template: `
+    <div v-if="bootLoading" class="shell" style="padding-top:80px;text-align:center;color:var(--muted)">Loading portal…</div>
+
+    <div v-else-if="!authenticated" class="login-layout">
+      <section class="login-visual">
+        <div class="brand-mark">Numero<br/>UNO</div>
+        <p>View your invoices, track outstanding balances, and pay securely online with Stripe.</p>
+      </section>
+      <section class="login-panel">
+        <div class="login-card">
+          <h1>Customer Portal</h1>
+          <p class="sub">Sign in with the email linked to your customer account.</p>
+
+          <div v-if="error" class="alert alert-error">{{ error }}</div>
+          <div v-if="info" class="alert alert-ok">{{ info }}</div>
+
+          <template v-if="step === 'email'">
+            <div class="field">
+              <label>Email</label>
+              <input v-model.trim="email" type="email" placeholder="you@company.com" @keyup.enter="sendOtp" />
+            </div>
+            <button class="btn btn-primary btn-block" :disabled="busy || !email" @click="sendOtp">
+              <span v-if="busy" class="spinner"></span>
+              <span>{{ busy ? 'Sending…' : 'Continue' }}</span>
+            </button>
+          </template>
+
+          <template v-else-if="step === 'otp'">
+            <div class="field">
+              <label>6-digit code</label>
+              <div class="otp-row">
+                <input
+                  v-for="(d, i) in otpDigits"
+                  :key="i"
+                  maxlength="6"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  :value="d"
+                  :ref="el => otpInputs[i] = el"
+                  @input="onOtpInput(i, $event)"
+                  @keydown="onOtpKeydown(i, $event)"
+                  @paste="onOtpPaste"
+                />
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" :disabled="busy || otpDigits.join('').length < 6" @click="verifyOtp()">
+              <span v-if="busy" class="spinner"></span>
+              <span>{{ busy ? 'Verifying…' : 'Sign in' }}</span>
+            </button>
+            <button class="btn btn-ghost btn-block" style="margin-top:10px" :disabled="busy" @click="sendOtp">Resend code</button>
+            <button class="btn btn-ghost btn-block" style="margin-top:10px" @click="step='email'; otpDigits=['','','','','','']; error=''; info=''">Use a different email</button>
+          </template>
+
+          <template v-else-if="step === 'customer'">
+            <div class="field">
+              <label>Search company</label>
+              <input v-model.trim="customerSearch" type="search" placeholder="Type company name…" />
+            </div>
+            <div class="field">
+              <label>Select account</label>
+              <select v-model="selectedCustomer" size="6" style="height:auto;min-height:160px;padding:8px">
+                <option disabled value="">Choose customer</option>
+                <option v-for="c in filteredCustomerChoices" :key="c.name" :value="c.name">
+                  {{ c.customer_name }} — {{ c.invoice_count || 0 }} invoices
+                </option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-block" :disabled="busy || !selectedCustomer" @click="verifyOtp(selectedCustomer)">
+              Continue
+            </button>
+          </template>
+        </div>
+      </section>
+    </div>
+
+    <div v-else class="shell">
+      <header class="topbar">
+        <div class="topbar-brand">Numero<span>UNO</span> Billing</div>
+        <div class="user-chip">
+          <div>
+            <strong>{{ session.customer_name }}</strong>
+            <small>{{ session.email }}</small>
+          </div>
+          <button class="btn btn-ghost btn-sm" @click="logout">Sign out</button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <h2>Welcome back, {{ (session.customer_name || '').split(' ')[0] }}</h2>
+        <p>Review open invoices and settle payments securely. Receipts update as soon as Stripe confirms.</p>
+        <div class="metrics" v-if="dashboard">
+          <div class="metric">
+            <div class="label">Outstanding</div>
+            <div class="value">{{ dashboard.metrics.outstanding_fmt }}</div>
+          </div>
+          <div class="metric">
+            <div class="label">Unpaid invoices</div>
+            <div class="value">{{ dashboard.metrics.unpaid_count }}</div>
+          </div>
+          <div class="metric">
+            <div class="label">Orders to pay</div>
+            <div class="value">{{ dashboard.metrics.order_payable_count || 0 }}</div>
+          </div>
+          <div class="metric">
+            <div class="label">Open requests</div>
+            <div class="value">{{ dashboard.metrics.portal_request_count || 0 }}</div>
+          </div>
+          <div class="metric">
+            <div class="label">Paid to date</div>
+            <div class="value">{{ dashboard.metrics.paid_fmt }}</div>
+          </div>
+        </div>
+      </section>
+
+      <div v-if="error" class="alert alert-error">{{ error }}</div>
+      <div v-if="dashboard && !dashboard.stripe_ready" class="alert alert-info">
+        Online Stripe payments are not configured yet. You can still view invoices — contact accounts to pay.
+      </div>
+
+      <div class="toolbar">
+        <div class="filters">
+          <button class="chip" :class="{active: filter==='all'}" @click="filter='all'">All</button>
+          <button class="chip" :class="{active: filter==='requests'}" @click="filter='requests'">Requests</button>
+          <button class="chip" :class="{active: filter==='orders'}" @click="filter='orders'">Orders</button>
+          <button class="chip" :class="{active: filter==='unpaid'}" @click="filter='unpaid'">Unpaid invoices</button>
+          <button class="chip" :class="{active: filter==='paid'}" @click="filter='paid'">Paid</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" :disabled="busy" @click="loadDashboard">Refresh</button>
+      </div>
+
+      <div v-if="showPortalRequests && visiblePortalRequests.length" class="invoice-grid" style="margin-bottom:20px">
+        <article v-for="req in visiblePortalRequests" :key="req.name" class="invoice-card">
+          <div>
+            <div class="inv-name">{{ req.name }}</div>
+            <div class="inv-meta">
+              Requested {{ req.posting_date_fmt }}
+              <span v-if="req.description"> · {{ req.description }}</span>
+              <span v-if="req.payment_entry"> · Receipt {{ req.payment_entry }}</span>
+            </div>
+            <div style="margin-top:8px">
+              <span class="status" :class="statusClass(req.status === 'Open' ? 'Unpaid' : 'Paid')">{{ req.status }}</span>
+            </div>
+          </div>
+          <div>
+            <div class="inv-amount">
+              {{ req.amount_fmt }}
+              <small>{{ req.can_pay ? 'Amount due' : 'Paid' }}</small>
+            </div>
+          </div>
+          <div class="actions">
+            <button
+              v-if="req.can_pay"
+              class="btn btn-sea btn-sm"
+              :disabled="paying || !(dashboard && dashboard.stripe_ready)"
+              @click="payPortalRequest(req.name)"
+            >
+              <span v-if="paying" class="spinner"></span>
+              <span>Pay with Stripe</span>
+            </button>
+            <span v-else class="inv-meta">Paid via Stripe</span>
+          </div>
+        </article>
+      </div>
+
+      <div v-if="showOrders && payableOrders.length" class="invoice-grid" style="margin-bottom:20px">
+        <article v-for="ord in payableOrders" :key="ord.name" class="invoice-card">
+          <div>
+            <div class="inv-name">{{ ord.name }}</div>
+            <div class="inv-meta">
+              Order {{ ord.transaction_date_fmt }}
+              <span> · Pay first — invoice created after Stripe</span>
+            </div>
+            <div style="margin-top:8px">
+              <span class="status status-unpaid">{{ ord.status }}</span>
+            </div>
+          </div>
+          <div>
+            <div class="inv-amount">
+              {{ ord.amount_due_fmt }}
+              <small>Amount due</small>
+            </div>
+          </div>
+          <div class="actions">
+            <button
+              class="btn btn-sea btn-sm"
+              :disabled="paying || !(dashboard && dashboard.stripe_ready)"
+              @click="payOrder(ord.name)"
+            >
+              <span v-if="paying" class="spinner"></span>
+              <span>Pay order with Stripe</span>
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div v-if="showInvoices && !filteredInvoices.length && !(showOrders && payableOrders.length)" class="empty">
+        No invoices in this view.
+      </div>
+
+      <div v-else-if="showInvoices && filteredInvoices.length" class="invoice-grid">
+        <article v-for="inv in filteredInvoices" :key="inv.name" class="invoice-card">
+          <div>
+            <div class="inv-name">{{ inv.name }}</div>
+            <div class="inv-meta">
+              Invoiced {{ inv.posting_date_fmt }}
+              <span v-if="inv.due_date_fmt"> · Due {{ inv.due_date_fmt }}</span>
+            </div>
+            <div style="margin-top:8px">
+              <span class="status" :class="statusClass(inv.status)">{{ inv.status }}</span>
+            </div>
+          </div>
+          <div>
+            <div class="inv-amount">
+              {{ inv.can_pay ? inv.outstanding_fmt : inv.grand_total_fmt }}
+              <small>{{ inv.can_pay ? 'Amount due' : 'Invoice total' }}</small>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-ghost btn-sm" @click="openInvoice(inv.name)">Details</button>
+            <button
+              v-if="inv.can_pay"
+              class="btn btn-sea btn-sm"
+              :disabled="paying || !(dashboard && dashboard.stripe_ready)"
+              @click="payInvoice(inv.name)"
+            >
+              <span v-if="paying" class="spinner"></span>
+              <span>Pay with Stripe</span>
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div v-if="detailOpen" class="drawer-backdrop" @click="detailOpen=false"></div>
+      <aside v-if="detailOpen && detail" class="drawer">
+        <div class="drawer-head">
+          <div>
+            <h3>{{ detail.name }}</h3>
+            <div class="inv-meta" style="margin-top:6px">{{ detail.status }} · {{ detail.posting_date_fmt }}</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" @click="detailOpen=false">Close</button>
+        </div>
+        <div class="drawer-body">
+          <div class="kv">
+            <div><div class="k">Total</div><div class="v">{{ detail.grand_total_fmt }}</div></div>
+            <div><div class="k">Outstanding</div><div class="v">{{ detail.outstanding_fmt }}</div></div>
+            <div><div class="k">Due date</div><div class="v">{{ detail.due_date_fmt || '—' }}</div></div>
+            <div><div class="k">Currency</div><div class="v">{{ detail.currency }}</div></div>
+          </div>
+          <div class="items">
+            <div v-for="(item, idx) in detail.items" :key="idx" class="item-row">
+              <div>
+                <div>{{ item.item_name || item.item_code }}</div>
+                <div class="muted">Qty {{ item.qty }} · Rate {{ item.rate }}</div>
+              </div>
+              <div>{{ item.amount_fmt }}</div>
+            </div>
+            <div v-if="!(detail.items || []).length" class="item-row">
+              <div class="muted">No line items</div>
+            </div>
+          </div>
+        </div>
+        <div class="drawer-foot" v-if="detail.can_pay">
+          <button
+            class="btn btn-sea btn-block"
+            :disabled="paying || !detail.stripe_ready"
+            @click="payInvoice(detail.name)"
+          >
+            <span v-if="paying" class="spinner"></span>
+            <span>Pay {{ detail.outstanding_fmt }} with Stripe</span>
+          </button>
+        </div>
+      </aside>
+
+      <div v-if="checkoutOpen" class="pay-modal">
+        <div class="pay-modal-backdrop" @click="closeCheckout"></div>
+        <div class="pay-card">
+          <div class="pay-card-head">
+            <h3>Secure checkout</h3>
+            <p>{{ checkout && checkout.description }}</p>
+            <div class="pay-amount" v-if="checkout">{{ checkout.amount_fmt }}</div>
+          </div>
+
+          <div v-if="paySuccess" class="pay-success">
+            <div class="check">✓</div>
+            <h3 style="font-family:Fraunces,serif;margin:0 0 8px">Payment received</h3>
+            <p style="color:var(--muted);margin:0">Updating your invoices…</p>
+          </div>
+
+          <template v-else>
+            <div class="pay-card-body">
+              <div v-if="payError" class="alert alert-error">{{ payError }}</div>
+              <div class="field">
+                <label>Cardholder name</label>
+                <input v-model.trim="cardholderName" type="text" autocomplete="cc-name" placeholder="Name on card" />
+              </div>
+              <div class="field">
+                <label>Card details</label>
+                <div id="portal-card-element" class="card-box"></div>
+              </div>
+              <div class="pay-secure">
+                <span>🔒</span>
+                <span>Encrypted by Stripe · Card details never touch our servers</span>
+              </div>
+            </div>
+            <div class="pay-card-foot">
+              <button class="btn btn-sea btn-block" :disabled="payBusy" @click="submitPortalPayment">
+                <span v-if="payBusy" class="spinner"></span>
+                <span>{{ payBusy ? 'Processing…' : ('Pay ' + (checkout ? checkout.amount_fmt : '')) }}</span>
+              </button>
+              <button class="btn btn-ghost btn-block" :disabled="payBusy" @click="closeCheckout">Cancel</button>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+    `,
+  }).mount("#app");
+  </script>
+  {% endraw %}
+</body>
+</html>
