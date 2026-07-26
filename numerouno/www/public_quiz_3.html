@@ -590,7 +590,7 @@
       submitting: "Submitting...",
       select_answer_before_continue: "Please select an answer before continuing.",
       please_answer_all: "Please answer all questions. {count} question(s) remaining.",
-      quiz_submit_success: "Quiz submitted successfully! Score: {score}/100 ({percentage}%) - {result}",
+      quiz_submit_success: "Quiz submitted successfully!",
       autosave_restored: "Your previous quiz progress was restored.",
       passed: "Passed",
       failed: "Failed",
@@ -2098,13 +2098,8 @@ async function reloadStudentGroups() {
             return;
           }
           clearAutosaveState(quizName, student, studentGroup);
-          showSuccess(
-            t("quiz_submit_success", {
-              score: result.score,
-              percentage: result.percentage.toFixed(1),
-              result: result.passed ? t("passed") : t("failed")
-            })
-          );
+          // Score / pass-fail intentionally hidden from students
+          showSuccess(t("quiz_submit_success"));
           if (!result.assessment_result_id) {
             const activityRef = result.activity_id ? ` Quiz Activity: ${result.activity_id}.` : "";
             const backendError = result.assessment_result_error ? ` Reason: ${result.assessment_result_error}` : "";
@@ -2166,13 +2161,17 @@ async function reloadStudentGroups() {
     const quizContent = document.getElementById("quizContent");
     if (!quizContent) return;
 
+    // Score / percentage / pass-fail hidden from students (still recorded in backend)
     quizContent.innerHTML = `
       <div class="text-center p-4 result-card">
         <i class="fas fa-clipboard-check fa-3x mb-3 text-success"></i>
         <h3>${t("quiz_submitted")}</h3>
+        <!--
         <p class="mb-2"><strong>${t("score")}:</strong> ${result.score}/100</p>
         <p class="mb-2"><strong>${t("percentage")}:</strong> ${result.percentage.toFixed(1)}%</p>
         <p class="mb-4"><strong>${t("status")}:</strong> ${result.passed ? t("passed") : t("failed")}</p>
+        -->
+        <p class="mb-4 text-muted">${t("quiz_submit_success")}</p>
         <button class="btn btn-secondary" onclick="goBackToQuizList()">
           <i class="fas fa-arrow-left me-2"></i>${t("back_to_quiz_list")}
         </button>

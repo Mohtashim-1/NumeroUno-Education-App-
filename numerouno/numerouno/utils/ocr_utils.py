@@ -761,6 +761,9 @@ def process_certificate_ocr(doctype, docname, field_name):
 		dict: Processing result
 	"""
 	print(f"DEBUG: process_certificate_ocr called with doctype={doctype}, docname={docname}, field_name={field_name}")
+
+	# Customers / read-only users must not mutate Assessment Result via OCR
+	frappe.has_permission(doctype, "write", doc=docname, throw=True)
 	
 	# Debug: List recent files
 	debug_files()
@@ -834,7 +837,7 @@ def process_certificate_ocr(doctype, docname, field_name):
 				doc.certificate_validity_date = extracted_data['expiry_date']
 				print(f"DEBUG: Set certificate_validity_date: {extracted_data['expiry_date']}")
 			
-			doc.save(ignore_permissions=True)
+			doc.save()
 			print("DEBUG: Document updated with OCR data and extracted fields")
 		else:
 			print("DEBUG: Document does not have ocr_extracted_text field")

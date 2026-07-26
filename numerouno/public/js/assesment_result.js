@@ -6,6 +6,21 @@ frappe.ui.form.on('Assessment Result', {
 		if (frm.doctype && typeof frm.doctype === "string") {
 			frm.doctype = frm.doctype.trim();
 		}
+
+		const isCustomerOnly =
+			frappe.user.has_role("Customer") &&
+			!frappe.user.has_role("System Manager") &&
+			!frappe.user.has_role("Academics User") &&
+			!frappe.user.has_role("Trainer") &&
+			frappe.session.user !== "Administrator";
+
+		if (isCustomerOnly) {
+			frm.disable_form();
+			frm.set_read_only();
+			frm.clear_custom_buttons();
+			return;
+		}
+
 		patch_certificate_upload(frm);
 		console.log('Assessment Result refresh called');
 		console.log('frm.doc.custom_certificate:', frm.doc.custom_certificate);
@@ -44,6 +59,20 @@ frappe.ui.form.on('Assessment Result', {
 		if (frm.doctype && typeof frm.doctype === "string") {
 			frm.doctype = frm.doctype.trim();
 		}
+
+		const isCustomerOnly =
+			frappe.user.has_role("Customer") &&
+			!frappe.user.has_role("System Manager") &&
+			!frappe.user.has_role("Academics User") &&
+			!frappe.user.has_role("Trainer") &&
+			frappe.session.user !== "Administrator";
+
+		if (isCustomerOnly) {
+			frm.disable_form();
+			frm.set_read_only();
+			return;
+		}
+
 		patch_certificate_upload(frm);
 		console.log('Assessment Result onload called');
 		console.log('frm.doc.custom_certificate:', frm.doc.custom_certificate);

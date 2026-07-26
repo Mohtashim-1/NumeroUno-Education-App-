@@ -47,3 +47,46 @@ def get_attendance_staff_permission_query_conditions(user=None):
 def has_attendance_staff_permission(doc, user=None, permission_type=None):
     # Defer to standard role-based DocType permissions.
     return None
+
+
+# Roles that may only view Assessment Result (never create/edit/submit/cancel)
+ASSESSMENT_RESULT_VIEW_ONLY_ROLES = frozenset({"Customer"})
+ASSESSMENT_RESULT_VIEW_PERM_TYPES = frozenset(
+    {"read", "select", "print", "email", "export", "report", "share"}
+)
+
+
+def has_assessment_result_permission(doc, user=None, permission_type=None):
+    """Customers can view Assessment Result only — no edits."""
+    user = user or frappe.session.user
+    if user in ("Administrator", "Guest"):
+        return None
+
+    roles = set(frappe.get_roles(user))
+    if "System Manager" in roles or "Academics User" in roles or "Trainer" in roles:
+        return None
+
+    if not (roles & ASSESSMENT_RESULT_VIEW_ONLY_ROLES):
+        return None
+
+    # Customer (and similar): allow view-type perms only
+    if not permission_type:
+        return True
+    if permission_type in ASSESSMENT_RESULT_VIEW_PERM_TYPES:
+        return True
+    return False
+
+
+def assert_assessment_result_not_customer_write(doc, method=None):
+    """Hard block save/update/cancel for Customer role even if UI or API bypasses checks."""
+    user = frappe.session.user
+    if user in ("Administrator",):
+        return
+    roles = set(frappe.get_roles(user))
+    if "System Manager" in roles or "Academics User" in roles or "Trainer" in roles:
+        return
+    if roles & ASSESSMENT_RESULT_VIEW_ONLY_ROLES:
+        frappe.throw(
+            "Customers can only view Assessment Result. Editing is not allowed.",
+            frappe.PermissionError,
+        )

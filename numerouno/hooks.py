@@ -157,6 +157,7 @@ has_permission = {
     "Instructor": "numerouno.numerouno.permissions.has_instructor_permission",
     "Overtime Request": "numerouno.numerouno.doctype.overtime_request.overtime_request.has_permission",
     "Attendance Staff": "numerouno.numerouno.permissions.has_attendance_staff_permission",
+    "Assessment Result": "numerouno.numerouno.permissions.has_assessment_result_permission",
 }
 
 # DocType Class
@@ -188,9 +189,6 @@ doc_events = {
         "on_update": "numerouno.numerouno.customer_portal_setup.on_customer_update",
         "after_insert": "numerouno.numerouno.customer_portal_setup.on_customer_update",
     },
-    "Sales Invoice": {
-        "on_submit": "numerouno.numerouno.customer_portal_setup.on_sales_invoice_submit",
-    },
 	"Student Group": {
 		"before_save": "numerouno.numerouno.doctype.student_group.student_group.create_academic_term",
         "validate": ["numerouno.numerouno.doctype.student_group.student_group.validate_course_location",
@@ -217,7 +215,10 @@ doc_events = {
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_sales_order_creation"
     },
     "Sales Invoice": {
-        "on_submit": "numerouno.numerouno.utils.student_invoice_sync.sync_student_group_student_from_sales_invoice",
+        "on_submit": [
+            "numerouno.numerouno.utils.student_invoice_sync.sync_student_group_student_from_sales_invoice",
+            "numerouno.numerouno.customer_portal_setup.on_sales_invoice_submit",
+        ],
         "on_cancel": "numerouno.numerouno.utils.student_invoice_sync.clear_student_group_student_on_invoice_cancel",
     },
     "Quotation": {
@@ -228,6 +229,10 @@ doc_events = {
             "numerouno.numerouno.utils.assessment_result_validation.validate_assessment_eligibility",
             "numerouno.numerouno.doctype.assessment_result.assessment_result.ensure_certificate_validity_date",
         ],
+        "before_save": "numerouno.numerouno.permissions.assert_assessment_result_not_customer_write",
+        "before_update_after_submit": "numerouno.numerouno.permissions.assert_assessment_result_not_customer_write",
+        "before_submit": "numerouno.numerouno.permissions.assert_assessment_result_not_customer_write",
+        "before_cancel": "numerouno.numerouno.permissions.assert_assessment_result_not_customer_write",
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_assessment_pending",
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_assessment_creation",
         "on_submit": "numerouno.numerouno.unified_assessment_system.trigger_assessment_result_events",

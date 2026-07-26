@@ -91,6 +91,40 @@ def _can_download_adnoc_theory_assessment(assessment_result, user, roles):
     return bool(user_instructors.intersection(adnoc_group_instructors))
 
 
+def _is_rospa_course(course):
+    return "rospa" in (course or "").strip().lower()
+
+
+def _is_failed_assessment_result(assessment_result):
+    """True when Assessment Result grade indicates fail (e.g. FAIL / NYC)."""
+    grade = (
+        frappe.db.get_value("Assessment Result", assessment_result, "grade") or ""
+    ).strip().upper()
+    if not grade:
+        return False
+    if grade in {"FAIL", "FAILED", "NYC", "NOT YET COMPETENT", "NOT-YET-COMPETENT"}:
+        return True
+    if "FAIL" in grade or grade.startswith("NYC"):
+        return True
+    return False
+
+
+def _is_failed_quiz_for_assessment_result(assessment_result):
+    """Fallback: mark failed if linked Quiz Activity score is below passing."""
+    activity_name = frappe.db.get_value(
+        "Quiz Activity",
+        {"custom_assesment_result": assessment_result},
+        "name",
+    )
+    if not activity_name:
+        # reverse link from Assessment Result if stored elsewhere is not required
+        return False
+
+    activity = frappe.get_doc("Quiz Activity", activity_name)
+    summary = _get_activity_score_summary([activity]).get(activity_name) or {}
+    return (summary.get("status") or activity.status or "").strip() == "Fail"
+
+
 def _get_student_name_map(student_ids):
     if not student_ids:
         return {}
@@ -1596,6 +1630,18 @@ def download_adnoc_theory_assessment(assessment_result):
     if not _can_download_adnoc_theory_assessment(assessment_result, user, roles):
         frappe.throw(
             _("Only System Managers or ADNOC instructors assigned to this student group can download this report."),
+            frappe.PermissionError,
+        )
+
+    course = frappe.db.get_value("Assessment Result", assessment_result, "course") or ""
+    is_failed = _is_failed_assessment_result(assessment_result) or _is_failed_quiz_for_assessment_result(
+        assessment_result
+    )
+    # Block theory download for failed candidates (ROSPA and general Fail/NYC)
+    if is_failed:
+        label = "ROSPA " if _is_rospa_course(course) else ""
+        frappe.throw(
+            _("Download Theory Assesment is not allowed for {0}failed candidates.").format(label),
             frappe.PermissionError,
         )
 
