@@ -1,0 +1,3854 @@
+{
+  "A": [
+    {
+      "number": 1,
+      "question": "Select the correct experience needed to drive a Light Vehicle for ADNOC",
+      "options": [
+        "Minimum experience of 2 years driving",
+        "Minimum experience of 1 year driving",
+        "Minimum experience of 6 months driving",
+        "Holding an LV license for 1 year"
+      ]
+    },
+    {
+      "number": 2,
+      "question": "Select the two (2) items to which ADNOC has a ZERO TOLERANCE policy",
+      "options": [
+        "Illicit drug use",
+        "Harsh acceleration or braking",
+        "Illegal parking",
+        "Use of alcohol"
+      ]
+    },
+    {
+      "number": 3,
+      "question": "Select the correct instructions for Driving Life-Saving Rules",
+      "options": [
+        "Wear a seatbelt",
+        "Observe speed limits and reduce speed for road conditions",
+        "Do not use phones or devices while driving",
+        "Fit for driving",
+        "Follow journey management requirements",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 4,
+      "question": "Select all the documents that you must carry in a company vehicle",
+      "options": [
+        "Safe Driving document",
+        "Vehicle registration documents",
+        "Security pass",
+        "Driving license",
+        "Emergency numbers",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 5,
+      "question": "What causes 60% of the MVC FATALITIES in Abu Dhabi",
+      "options": [
+        "Distraction",
+        "Not wearing seat belt",
+        "Pedestrians",
+        "Jumping red lights"
+      ]
+    },
+    {
+      "number": 6,
+      "question": "Select two (2) of the most common causes of Motor Vehicle Accidents in the UAE",
+      "options": [
+        "Fatigue",
+        "Heat",
+        "Over-speeding",
+        "Mechanical breakdown"
+      ]
+    },
+    {
+      "number": 7,
+      "question": "Select the correct answer for why stress can increase the risk of an accident",
+      "options": [
+        "Some stress is good for you",
+        "Lots of stress keeps you alert",
+        "Too much stress makes you slow to react"
+      ]
+    },
+    {
+      "number": 8,
+      "question": "Select the correct specifications for Light Vehicles",
+      "options": [
+        "No vehicle older than 5 years",
+        "First aid kit must be carried",
+        "Must have ABS brakes",
+        "Must be 4*NCAP rated",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 9,
+      "question": "Select the correct two (2) statements about use of private vehicles",
+      "options": [
+        "Private vehicles must meet ADNOC standards",
+        "You may not use private vehicles for company use",
+        "Private vehicles are not allowed in Operational areas",
+        "Private vehicles are allowed off-road"
+      ]
+    },
+    {
+      "number": 10,
+      "question": "Select the answer for why rollover is a higher risk if you enter a roundabout going too fast",
+      "options": [
+        "Another car may hit you",
+        "Turning the car at speed increases the risk",
+        "You may hit the curb"
+      ]
+    },
+    {
+      "number": 11,
+      "question": "You are at a red traffic light, it turns to green. Select the two (2) correct responses",
+      "options": [
+        "Go immediately",
+        "Go only if it is safe to do so",
+        "Watch carefully for other drivers who might jump the lights"
+      ]
+    },
+    {
+      "number": 12,
+      "question": "You are approaching traffic lights. It is a straight road and they have been green for some time. Select the correct response",
+      "options": [
+        "Check your rear view mirror and accelerate to make sure you cross",
+        "Check your rear view mirror and slow your speed so you are ready if they change",
+        "Stay alert and at a constant speed"
+      ]
+    },
+    {
+      "number": 13,
+      "question": "Select the one (1) correct answer for what to do when approaching a junction with a stop sign",
+      "options": [
+        "Slow down, if the way is clear continue onto the new road",
+        "Stop and check the way is clear before continuing",
+        "Stop and continue onto the new road"
+      ]
+    },
+    {
+      "number": 14,
+      "question": "Select the two (2) correct answers for what action to take when approaching a roundabout",
+      "options": [
+        "Get into the correct lane for your exit",
+        "Always pull into the slow lane",
+        "Slow down to minimize risk of rollover",
+        "Always stay on the outside of large trucks"
+      ]
+    },
+    {
+      "number": 15,
+      "question": "Select the inspection(s) that is the responsibility of you the driver",
+      "options": [
+        "Vehicle spot check",
+        "VAAI Acceptance & Assurance inspection",
+        "Daily/Pre-trip vehicle inspection",
+        "Vehicle site assurance test"
+      ]
+    },
+    {
+      "number": 16,
+      "question": "Select one (1) correct answer for an issue that good vehicle maintenance can prevent",
+      "options": [
+        "Cargo shift",
+        "Tire blowouts",
+        "Rollover"
+      ]
+    },
+    {
+      "number": 17,
+      "question": "Select the two (2) classes of defects for which you must check",
+      "options": [
+        "Class A",
+        "Class B",
+        "Class C",
+        "Class D"
+      ]
+    },
+    {
+      "number": 18,
+      "question": "Select the correct action to take if you find a class A defect",
+      "options": [
+        "The vehicle can be driven to a workshop for repair",
+        "The vehicle cannot be driven"
+      ]
+    },
+    {
+      "number": 19,
+      "question": "Select the two (2) defects that are classified as class B defects",
+      "options": [
+        "Seatbelt not working",
+        "Tire out of date",
+        "Hazard lights not working",
+        "A leak under the vehicle",
+        "Security pass missing",
+        "Horn not working"
+      ]
+    },
+    {
+      "number": 20,
+      "question": "Select the minimum depth of tread on your tires",
+      "options": [
+        "1mm",
+        "1.5mm",
+        "2.4mm",
+        "3.2mm"
+      ]
+    },
+    {
+      "number": 21,
+      "question": "Select the correct answer for your optimum seated position",
+      "options": [
+        "Shoulders resting against seat back, arms slightly bent with hands on steering wheel",
+        "Lean forward; arms slightly bent with hands on steering wheel",
+        "Shoulders resting against seat back, arms straight with hands on steering wheel"
+      ]
+    },
+    {
+      "number": 22,
+      "question": "Select the correct answer for overcoming car blind spots",
+      "options": [
+        "Move your mirrors in and out while driving",
+        "Ask your passenger to look for you",
+        "Move your head when you check your mirrors, not just your eyes"
+      ]
+    },
+    {
+      "number": 23,
+      "question": "Select two (2) statements that are IVMS VIOLATIONS",
+      "options": [
+        "Harsh braking or acceleration",
+        "Driving too long with no rest break",
+        "Night driving without permission",
+        "Over-speeding"
+      ]
+    },
+    {
+      "number": 24,
+      "question": "Select two (2) statements that are IVMS RISK EXPOSURES",
+      "options": [
+        "Harsh acceleration and braking",
+        "Not wearing a seatbelt",
+        "Driving three hours without a rest",
+        "Over-speeding"
+      ]
+    },
+    {
+      "number": 25,
+      "question": "Select the one (1) correct statement about the RAG report",
+      "options": [
+        "A red flag can result in a suspension",
+        "Amber flag qualifies you for a Safe Driver Award",
+        "There is no difference between a green and light green flag",
+        "Light green flag will be subject to a Consequence Assessment Committee Evaluation"
+      ]
+    },
+    {
+      "number": 26,
+      "question": "Select the correct reasons for creating a Journey Management Plan",
+      "options": [
+        "You can plan for known hazards",
+        "You can plan for road conditions",
+        "You can plan to avoid fatigue",
+        "You can make sure you have enough daylight",
+        "You can ensure you have enough fuel",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 27,
+      "question": "Select the things you must check as part of your journey management plan",
+      "options": [
+        "Weather reports",
+        "Traffic reports",
+        "Cell blackspots",
+        "Animal/pedestrian hazards",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 28,
+      "question": "Select the maximum time you can drive without taking a recommended break",
+      "options": [
+        "2 hours",
+        "3 hours",
+        "4 hours"
+      ]
+    },
+    {
+      "number": 29,
+      "question": "Select the maximum driving hours allowed within a 24 hour period including commuting",
+      "options": [
+        "5 hours",
+        "11 hours",
+        "20 hours"
+      ]
+    },
+    {
+      "number": 30,
+      "question": "Select the main risk from becoming fatigued when driving",
+      "options": [
+        "Risk of missing a turning",
+        "Risk of having microsleeps at the wheel",
+        "Risk of driving too fast",
+        "Risk of being late"
+      ]
+    },
+    {
+      "number": 31,
+      "question": "How far will your vehicle travel in 4 seconds at 80kph with no one at the wheel if you have a microsleep?",
+      "options": [
+        "22 meters",
+        "45 meters",
+        "90 meters",
+        "120 meters"
+      ]
+    },
+    {
+      "number": 32,
+      "question": "Select the time beyond which you cannot drive without permission in WINTER",
+      "options": [
+        "17:00",
+        "19:00",
+        "21:00"
+      ]
+    },
+    {
+      "number": 33,
+      "question": "Select the two (2) actions you must immediately take if you have an MVC",
+      "options": [
+        "Check that your passengers are safe",
+        "Write detailed incident notes",
+        "Make the area safe"
+      ]
+    },
+    {
+      "number": 34,
+      "question": "Select the one (1) correct answer for what to do if the MVC causes a fire",
+      "options": [
+        "Use your emergency fire extinguisher if you can do so safely",
+        "Leave fires to the emergency services even if a threat to others",
+        "Let others involved in the MVC deal with it"
+      ]
+    },
+    {
+      "number": 35,
+      "question": "Select the two (2) correct statements about cargo",
+      "options": [
+        "Loose objects are OK in the passenger areas",
+        "Cargo must be secured in the luggage area",
+        "Heavy items in a pickup must be over the back axle",
+        "Loose objects must be secured in the driver’s cab"
+      ]
+    },
+    {
+      "number": 36,
+      "question": "Select three (3) correct DRIVER responsibilities for passengers",
+      "options": [
+        "Check condition of seat belts",
+        "Can carry passengers on private business",
+        "Never carry cargo in passenger area",
+        "Check passengers are wearing seat belts"
+      ]
+    },
+    {
+      "number": 37,
+      "question": "Select the three (3) correct PASSENGER responsibilities",
+      "options": [
+        "Never distract the driver",
+        "Tell the driver if he is driving in an unsafe manner",
+        "Hold onto the door handle while vehicle is moving",
+        "Wear your seatbelt"
+      ]
+    },
+    {
+      "number": 38,
+      "question": "Select the correct definition of defensive driving",
+      "options": [
+        "Defensive driving is where you defend your place on the road",
+        "Defensive driving is when you go slower than all other road users",
+        "Defensive driving is where you anticipate poor driving in others and question yourself",
+        "Defensive driving is when you defend your place on the road"
+      ]
+    },
+    {
+      "number": 39,
+      "question": "Select the correct gap to leave between vehicles in normal conditions",
+      "options": [
+        "2 seconds",
+        "3 seconds",
+        "4 seconds",
+        "5 seconds"
+      ]
+    },
+    {
+      "number": 40,
+      "question": "Select the correct order of action zones for the ‘looking ahead’ technique",
+      "options": [
+        "Planning zone / Action zone / Seeing zone",
+        "Planning zone / Seeing zone / Action zone",
+        "Seeing zone / Planning zone / Action zone",
+        "Anticipate zone / Seeing zone / Action zone"
+      ]
+    },
+    {
+      "number": 41,
+      "question": "Select the one (1) question you should ask yourself when overtaking",
+      "options": [
+        "Can I flash the vehicle in front to alert them?",
+        "Is it necessary, safe and legal?",
+        "Can I go faster than the speed limit to overtake?",
+        "Is it OK to overtake with solid lines on my side of the road?"
+      ]
+    },
+    {
+      "number": 42,
+      "question": "Select the one (1) correct purpose of creating a ‘safety bubble’ around your vehicle",
+      "options": [
+        "So that I can overtake safely",
+        "So I have an escape route if something happens",
+        "So I can change lane easily"
+      ]
+    },
+    {
+      "number": 43,
+      "question": "Select two (2) actions should I take near cyclists",
+      "options": [
+        "Honk a warning while passing",
+        "Give them more space",
+        "Examine the road surface to anticipate sudden movements"
+      ]
+    },
+    {
+      "number": 44,
+      "question": "Select the one (1) correct action for when you miss a turning on a roundabout",
+      "options": [
+        "Put on your hazard lights",
+        "If nothing else is on the road try to make the turn",
+        "Change indicators and go around again",
+        "Take the next exit and double back"
+      ]
+    },
+    {
+      "number": 45,
+      "question": "Select the correct way to park in a parking bay",
+      "options": [
+        "Reverse in",
+        "Front in"
+      ]
+    },
+    {
+      "number": 46,
+      "question": "Select the correct minimum visibility distance for driving",
+      "options": [
+        "50m",
+        "80m",
+        "100m"
+      ]
+    },
+    {
+      "number": 47,
+      "question": "Select the three (3) main factors that affect aquaplaning / hydroplaning",
+      "options": [
+        "Vehicle speed",
+        "Type of road surface",
+        "Depth of tire tread",
+        "Amount of water on the road"
+      ]
+    },
+    {
+      "number": 48,
+      "question": "Select the two (2) correct statements about driving into a sandstorm",
+      "options": [
+        "Turn on hazard lights",
+        "Pull vehicle off the road to safe parking area",
+        "Park with your windscreen facing the wind",
+        "Keep driving slowly"
+      ]
+    },
+    {
+      "number": 49,
+      "question": "Select the correct statement for driving within operational areas",
+      "options": [
+        "Obey all traffic signs",
+        "Drive at a speed that you think is appropriate",
+        "There is a speed limit of 10kph in all areas"
+      ]
+    },
+    {
+      "number": 50,
+      "question": "Select the correct answer for why your type of vehicle engine is important in operational areas",
+      "options": [
+        "There may be restricted height areas",
+        "There may be explosive gases",
+        "You may be driving in soft sand"
+      ]
+    },
+    {
+      "number": 51,
+      "question": "Select the vehicle requirement that only applies to Zone A",
+      "options": [
+        "Fitted with a diesel engine",
+        "Fitted with ATEX Approved Spark Arrestor",
+        "Fitted with ATEX Approved Automatic Air Intake Shutoff Valve – ASOV",
+        "Electrical generators, control boxes, lighting system earthed and bonded to main engine frame"
+      ]
+    },
+    {
+      "number": 52,
+      "question": "Select the operational areas where there are no vehicle restraints",
+      "options": [
+        "Zone A",
+        "Zone B",
+        "Zone C"
+      ]
+    },
+    {
+      "number": 53,
+      "question": "Select the correct instructions for Driving Life-Saving Rules",
+      "options": [
+        "Wear a seatbelt",
+        "Observe speed limits and reduce speed for road conditions",
+        "Do not use phones or devices while driving",
+        "Fit for driving",
+        "Follow journey management requirements",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 54,
+      "question": "If you work for a contractor, can ADNOC suspend your contractor’s work if you have an MVC?",
+      "options": [
+        "Yes",
+        "No"
+      ]
+    },
+    {
+      "number": 55,
+      "question": "Select the correct definition for off-road driving",
+      "options": [
+        "Driving on rough road surfaces",
+        "Driving in desert sand",
+        "Driving on any road other than ‘black top’ roads",
+        "Driving on mountain roads"
+      ]
+    },
+    {
+      "number": 56,
+      "question": "Select the correct requirement to drive a Light Vehicle in off-road and desert for ADNOC",
+      "options": [
+        "Minimum experience of 2 years driving and off-road and desert training",
+        "Minimum experience of 1-year driving",
+        "Minimum experience of 6 months driving",
+        "Minimum experience of 1 year driving and off-road and desert training"
+      ]
+    },
+    {
+      "number": 57,
+      "question": "Select three (3) correct additional vehicle requirements for off-road",
+      "options": [
+        "3M flag pole",
+        "Tinted windows",
+        "Solid cargo space partition",
+        "Rollover protection",
+        "Sun awning"
+      ]
+    },
+    {
+      "number": 58,
+      "question": "Select the correct answer for why you need a wooden plank in the desert emergency kit",
+      "options": [
+        "To lie on if you need to get under the car",
+        "As a platform for the wheel jack",
+        "To stick under a tire if you get stuck"
+      ]
+    },
+    {
+      "number": 59,
+      "question": "Select the correct answer for the amount of water you must carry for desert driving",
+      "options": [
+        "10 x 5L pouches",
+        "5 x 5L pouches",
+        "5 x 10L pouches"
+      ]
+    },
+    {
+      "number": 60,
+      "question": "Select the correct reason for why you carry a 3m flag pole",
+      "options": [
+        "As a lightning conductor",
+        "So that other vehicles can see you behind a hill",
+        "For better cell reception"
+      ]
+    },
+    {
+      "number": 61,
+      "question": "Select the correct answer for why the emergency kit carries a mirror",
+      "options": [
+        "For checking under the car if you get stuck",
+        "For using the sun to signal in an emergency"
+      ]
+    },
+    {
+      "number": 62,
+      "question": "Are you allowed to use a privately owned 4x4 vehicle which meets ADNOC standards off- road or in desert?",
+      "options": [
+        "Yes",
+        "No"
+      ]
+    },
+    {
+      "number": 63,
+      "question": "Select the correct answer for why 4x4 transmission is necessary for off-road or desert surfaces",
+      "options": [
+        "It sends power to all four wheels",
+        "It makes the rear wheels turn together",
+        "It stops one tire spinning more than another"
+      ]
+    },
+    {
+      "number": 64,
+      "question": "Select the correct description for limited slip differential",
+      "options": [
+        "It allows all wheels to move independently",
+        "It helps prevent one wheel spinning much faster than another",
+        "It sends power to all 4 wheels"
+      ]
+    },
+    {
+      "number": 65,
+      "question": "Select the two (2) classes of defects for which you must check",
+      "options": [
+        "Class A",
+        "Class B",
+        "Class C",
+        "Class D"
+      ]
+    },
+    {
+      "number": 66,
+      "question": "Select the correct action to take if you find a class A defect",
+      "options": [
+        "The vehicle can be driven to a workshop for repair",
+        "The vehicle cannot be driven"
+      ]
+    },
+    {
+      "number": 67,
+      "question": "Select the two (2) defects that are classified as class B defects",
+      "options": [
+        "Seatbelt not working",
+        "Tire out of date",
+        "Hazard lights not working",
+        "A leak under the vehicle",
+        "Security pass missing",
+        "Horn not working"
+      ]
+    },
+    {
+      "number": 68,
+      "question": "Select two (2) qualities that are specifically important for an off-road or desert tire rather than a road tire",
+      "options": [
+        "Traction rating",
+        "Maximum load",
+        "Resistance to heat",
+        "Year of manufacture"
+      ]
+    },
+    {
+      "number": 69,
+      "question": "Select the two (2) correct answers for why it is important to lower tire pressure in sand",
+      "options": [
+        "Provides a larger surface area in contact with the sand",
+        "It helps the tire to cut through the sand",
+        "Stops the tire becoming worn",
+        "Stops the tire ‘digging in’ to the sand"
+      ]
+    },
+    {
+      "number": 70,
+      "question": "Select the recommended tire pressure for desert driving for a large 4x4 vehicle",
+      "options": [
+        "18psi",
+        "10psi",
+        "25psi",
+        "8psi"
+      ]
+    },
+    {
+      "number": 71,
+      "question": "Select the recommended tire pressure for emergency use in desert driving",
+      "options": [
+        "18psi",
+        "10psi",
+        "25psi",
+        "8psi"
+      ]
+    },
+    {
+      "number": 72,
+      "question": "Select the correct maximum speed that you can drive before you re-inflate your tires",
+      "options": [
+        "50kmh",
+        "30kmh",
+        "20kmh"
+      ]
+    },
+    {
+      "number": 73,
+      "question": "Select the correct two (2) answers for how IVMS is different in desert driving",
+      "options": [
+        "IVMS no longer works",
+        "IVMS does not record harsh acceleration and braking",
+        "IVMS may lose real time communication",
+        "IVMS will no longer record violations"
+      ]
+    },
+    {
+      "number": 74,
+      "question": "Select the maximum speed off-road for Light Vehicles above which IVMS will record a violation",
+      "options": [
+        "90kmh",
+        "80kmh",
+        "60kmh",
+        "50kmh"
+      ]
+    },
+    {
+      "number": 75,
+      "question": "Select the maximum speed off-road for Heavy Vehicles above which IVMS will record a violation",
+      "options": [
+        "90kmh",
+        "80kmh",
+        "60kmh",
+        "50kmh"
+      ]
+    },
+    {
+      "number": 76,
+      "question": "Select the two (2) statements that are correct for driving in a desert environment",
+      "options": [
+        "All desert driving must include an escort vehicle",
+        "Light Vehicles cannot use camel trap crossings",
+        "Never take shortcuts",
+        "4WD is not always necessary"
+      ]
+    },
+    {
+      "number": 77,
+      "question": "Select two (2) of the most common causes of Motor Vehicle Accidents in off-road or desert environments",
+      "options": [
+        "Fatigue",
+        "Heat",
+        "Choice of wrong vehicle or tire",
+        "Mechanical breakdown"
+      ]
+    },
+    {
+      "number": 78,
+      "question": "Select the two (2) statements that are correct for desert driving",
+      "options": [
+        "Travel in the early morning as the sand is firmer",
+        "Travel midday as the sand is firmer",
+        "Avoid traveling early morning as the sand is softer",
+        "Avoid traveling midday as hazards are harder to see"
+      ]
+    },
+    {
+      "number": 79,
+      "question": "Select the three (3) correct reasons why traveling at night is more dangerous off-road",
+      "options": [
+        "Uneven ground is more difficult to see",
+        "The temperature is too high",
+        "There are no light sources",
+        "There is no clear road to follow"
+      ]
+    },
+    {
+      "number": 80,
+      "question": "Select three (3) important route planning considerations for off-road and desert driving",
+      "options": [
+        "Identifying how the route is marked",
+        "Predicting traffic congestion",
+        "Ensuring enough fuel",
+        "Ensuring an alternative means of communication"
+      ]
+    },
+    {
+      "number": 81,
+      "question": "Select the main reason for why you should ensure a means of communication when desert driving",
+      "options": [
+        "So you can update the destination on ETA",
+        "So you can call for help in an emergency",
+        "So that IVMS keeps working"
+      ]
+    },
+    {
+      "number": 82,
+      "question": "Select the main reason why you should check for terrain changes in route",
+      "options": [
+        "To check how uncomfortable it may be for passengers",
+        "To make sure that the vehicle is correctly equipped",
+        "To look for good stopping places"
+      ]
+    },
+    {
+      "number": 83,
+      "question": "Select the time beyond which you cannot drive without permission in WINTER",
+      "options": [
+        "17:00",
+        "19:00",
+        "21:00"
+      ]
+    },
+    {
+      "number": 84,
+      "question": "Select the two (2) actions you should consider if your route has bad weather forecast",
+      "options": [
+        "Change of start time",
+        "Pack wet weather gear",
+        "Change the wiper blades",
+        "Change of route"
+      ]
+    },
+    {
+      "number": 85,
+      "question": "Select the two (2) conditions for which this statement is true: ‘Pull over and stop somewhere safe if you cannot see for more than 100m’",
+      "options": [
+        "Rain",
+        "Dunes",
+        "Fog",
+        "A wadi"
+      ]
+    },
+    {
+      "number": 86,
+      "question": "Select the statement which is correct for driving in a sandstorm",
+      "options": [
+        "Turn on hazards and park with windscreen facing storm",
+        "Turn off air conditioning and park with rear of vehicle facing storm",
+        "Keep driving until you cannot see the car in front"
+      ]
+    },
+    {
+      "number": 87,
+      "question": "Select the correct reason(s) for why you should avoid high speeds on Gatch roads",
+      "options": [
+        "It causes more tire wear",
+        "It can create bigger dust clouds",
+        "It makes spotting rocks and holes more difficult",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 88,
+      "question": "Select how many seconds you should stay behind a dust cloud when following a vehicle",
+      "options": [
+        "8 seconds",
+        "4 seconds",
+        "3 seconds"
+      ]
+    },
+    {
+      "number": 89,
+      "question": "Select the correct answer for how-to drive-in mud after rain",
+      "options": [
+        "Follow any existing wheel ruts",
+        "Drive around ruts in unused areas",
+        "Drive in and out of the ruts"
+      ]
+    },
+    {
+      "number": 90,
+      "question": "Select what you should do if you are unsure of the depth of mud or water",
+      "options": [
+        "Start by driving into it slowly",
+        "Accelerate fast into it",
+        "Get out of the vehicle and inspect it"
+      ]
+    },
+    {
+      "number": 91,
+      "question": "Select the correct answer for when 4x4 LOW gear should be used",
+      "options": [
+        "Gatch roads",
+        "Flat hard sand",
+        "Steep and slippery inclines"
+      ]
+    },
+    {
+      "number": 92,
+      "question": "Select the correct answer for when you should turn off 4 wheel drive",
+      "options": [
+        "When you rejoin a blacktop road",
+        "On a Gatch road",
+        "During heavy rain"
+      ]
+    },
+    {
+      "number": 93,
+      "question": "Select the action you should take in fog if visibility drops below 100m",
+      "options": [
+        "Turn on high beams and hazard lights",
+        "Pull over and stop, put on hazard lights",
+        "Turn on fog lights"
+      ]
+    },
+    {
+      "number": 94,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "Gradually apply more power as you ascend",
+        "Apply most power at the base of the dune",
+        "Apply most power at the top of the dune"
+      ]
+    },
+    {
+      "number": 95,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "If you cannot make the top, turn around on the slope",
+        "If you lose traction, accelerate harder",
+        "If you have to retreat, reverse back down the slope"
+      ]
+    },
+    {
+      "number": 96,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "If you are slipping, wiggle wheel back and forth",
+        "If you are slipping accelerate harder",
+        "If you are slipping, turn around on the slope"
+      ]
+    },
+    {
+      "number": 97,
+      "question": "Select the correct answer for what you should do when nearing the top of a dune",
+      "options": [
+        "Stop right at the top so others can see you",
+        "Ease off the accelerator and go slowly over the top",
+        "Turn through 90 degrees to drive along the crest"
+      ]
+    },
+    {
+      "number": 98,
+      "question": "Select the correct answer for descending a dune",
+      "options": [
+        "Freewheel on the way down",
+        "Brake hard repeatedly",
+        "Always stay in low gear"
+      ]
+    },
+    {
+      "number": 99,
+      "question": "Select the correct action for if the back of the vehicle ‘fishtails’ when descending a dune",
+      "options": [
+        "Slowly accelerate",
+        "Brake hard",
+        "Turn against the direction of fishtail"
+      ]
+    },
+    {
+      "number": 100,
+      "question": "Select the statement that is correct for driving sideways on a hill or dune",
+      "options": [
+        "Accelerate if driving sideways on a hill or dune",
+        "Avoid driving sideways on a hill or dune",
+        "Turn quickly if driving sideways on a hill or dune"
+      ]
+    }
+  ],
+  "B": [
+    {
+      "number": 1,
+      "question": "Select the correct experience needed to drive a Light Vehicle for ADNOC",
+      "options": [
+        "Minimum experience of 2 years driving",
+        "Minimum experience of 1 year driving",
+        "Minimum experience of 6 months driving",
+        "Holding an LV license for 1 year"
+      ]
+    },
+    {
+      "number": 2,
+      "question": "Select the two (2) items to which ADNOC has a ZERO TOLERANCE policy",
+      "options": [
+        "Illicit drug use",
+        "Harsh acceleration or braking",
+        "Illegal parking",
+        "Use of alcohol"
+      ]
+    },
+    {
+      "number": 3,
+      "question": "Select the correct instructions for Driving Life-Saving Rules",
+      "options": [
+        "Wear a seatbelt",
+        "Observe speed limits and reduce speed for road conditions",
+        "Do not use phones or devices while driving",
+        "Fit for driving",
+        "Follow journey management requirements",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 4,
+      "question": "Select all the documents that you must carry in a company vehicle",
+      "options": [
+        "Safe Driving document",
+        "Vehicle registration documents",
+        "Security pass",
+        "Driving license",
+        "Emergency numbers",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 5,
+      "question": "What causes 60% of the MVC FATALITIES in Abu Dhabi",
+      "options": [
+        "Distraction",
+        "Not wearing seat belt",
+        "Pedestrians",
+        "Jumping red lights"
+      ]
+    },
+    {
+      "number": 6,
+      "question": "Select two (2) of the most common causes of Motor Vehicle Accidents in the UAE",
+      "options": [
+        "Fatigue",
+        "Heat",
+        "Over-speeding",
+        "Mechanical breakdown"
+      ]
+    },
+    {
+      "number": 7,
+      "question": "Select the correct answer for why stress can increase the risk of an accident",
+      "options": [
+        "Some stress is good for you",
+        "Lots of stress keeps you alert",
+        "Too much stress makes you slow to react"
+      ]
+    },
+    {
+      "number": 8,
+      "question": "Select the correct specifications for Light Vehicles",
+      "options": [
+        "No vehicle older than 5 years",
+        "First aid kit must be carried",
+        "Must have ABS brakes",
+        "Must be 4*NCAP rated",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 9,
+      "question": "Select the correct two (2) statements about use of private vehicles",
+      "options": [
+        "Private vehicles must meet ADNOC standards",
+        "You may not use private vehicles for company use",
+        "Private vehicles are not allowed in Operational areas",
+        "Private vehicles are allowed off-road"
+      ]
+    },
+    {
+      "number": 10,
+      "question": "Select the answer for why rollover is a higher risk if you enter a roundabout going too fast",
+      "options": [
+        "Another car may hit you",
+        "Turning the car at speed increases the risk",
+        "You may hit the curb"
+      ]
+    },
+    {
+      "number": 11,
+      "question": "You are at a red traffic light, it turns to green. Select the two (2) correct responses",
+      "options": [
+        "Go immediately",
+        "Go only if it is safe to do so",
+        "Watch carefully for other drivers who might jump the lights"
+      ]
+    },
+    {
+      "number": 12,
+      "question": "You are approaching traffic lights. It is a straight road and they have been green for some time. Select the correct response",
+      "options": [
+        "Check your rear view mirror and accelerate to make sure you cross",
+        "Check your rear view mirror and slow your speed so you are ready if they change",
+        "Stay alert and at a constant speed"
+      ]
+    },
+    {
+      "number": 13,
+      "question": "Select the one (1) correct answer for what to do when approaching a junction with a stop sign",
+      "options": [
+        "Slow down, if the way is clear continue onto the new road",
+        "Stop and check the way is clear before continuing",
+        "Stop and continue onto the new road"
+      ]
+    },
+    {
+      "number": 14,
+      "question": "Select the two (2) correct answers for what action to take when approaching a roundabout",
+      "options": [
+        "Get into the correct lane for your exit",
+        "Always pull into the slow lane",
+        "Slow down to minimize risk of rollover",
+        "Always stay on the outside of large trucks"
+      ]
+    },
+    {
+      "number": 15,
+      "question": "Select the inspection(s) that is the responsibility of you the driver",
+      "options": [
+        "Vehicle spot check",
+        "VAAI Acceptance & Assurance inspection",
+        "Daily/Pre-trip vehicle inspection",
+        "Vehicle site assurance test"
+      ]
+    },
+    {
+      "number": 16,
+      "question": "Select one (1) correct answer for an issue that good vehicle maintenance can prevent",
+      "options": [
+        "Cargo shift",
+        "Tire blowouts",
+        "Rollover"
+      ]
+    },
+    {
+      "number": 17,
+      "question": "Select the two (2) classes of defects for which you must check",
+      "options": [
+        "Class A",
+        "Class B",
+        "Class C",
+        "Class D"
+      ]
+    },
+    {
+      "number": 18,
+      "question": "Select the correct action to take if you find a class A defect",
+      "options": [
+        "The vehicle can be driven to a workshop for repair",
+        "The vehicle cannot be driven"
+      ]
+    },
+    {
+      "number": 19,
+      "question": "Select the two (2) defects that are classified as class B defects",
+      "options": [
+        "Seatbelt not working",
+        "Tire out of date",
+        "Hazard lights not working",
+        "A leak under the vehicle",
+        "Security pass missing",
+        "Horn not working"
+      ]
+    },
+    {
+      "number": 20,
+      "question": "Select the minimum depth of tread on your tires",
+      "options": [
+        "1mm",
+        "1.5mm",
+        "2.4mm",
+        "3.2mm"
+      ]
+    },
+    {
+      "number": 21,
+      "question": "Select the correct answer for your optimum seated position",
+      "options": [
+        "Shoulders resting against seat back, arms slightly bent with hands on steering wheel",
+        "Lean forward; arms slightly bent with hands on steering wheel",
+        "Shoulders resting against seat back, arms straight with hands on steering wheel"
+      ]
+    },
+    {
+      "number": 22,
+      "question": "Select the correct answer for overcoming car blind spots",
+      "options": [
+        "Move your mirrors in and out while driving",
+        "Ask your passenger to look for you",
+        "Move your head when you check your mirrors, not just your eyes"
+      ]
+    },
+    {
+      "number": 23,
+      "question": "Select two (2) statements that are IVMS VIOLATIONS",
+      "options": [
+        "Harsh braking or acceleration",
+        "Driving too long with no rest break",
+        "Night driving without permission",
+        "Over-speeding"
+      ]
+    },
+    {
+      "number": 24,
+      "question": "Select two (2) statements that are IVMS RISK EXPOSURES",
+      "options": [
+        "Harsh acceleration and braking",
+        "Not wearing a seatbelt",
+        "Driving three hours without a rest",
+        "Over-speeding"
+      ]
+    },
+    {
+      "number": 25,
+      "question": "Select the one (1) correct statement about the RAG report",
+      "options": [
+        "A red flag can result in a suspension",
+        "Amber flag qualifies you for a Safe Driver Award",
+        "There is no difference between a green and light green flag",
+        "Light green flag will be subject to a Consequence Assessment Committee Evaluation"
+      ]
+    },
+    {
+      "number": 26,
+      "question": "Select the correct reasons for creating a Journey Management Plan",
+      "options": [
+        "You can plan for known hazards",
+        "You can plan for road conditions",
+        "You can plan to avoid fatigue",
+        "You can make sure you have enough daylight",
+        "You can ensure you have enough fuel",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 27,
+      "question": "Select the things you must check as part of your journey management plan",
+      "options": [
+        "Weather reports",
+        "Traffic reports",
+        "Cell blackspots",
+        "Animal/pedestrian hazards",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 28,
+      "question": "Select the maximum time you can drive without taking a recommended break",
+      "options": [
+        "2 hours",
+        "3 hours",
+        "4 hours"
+      ]
+    },
+    {
+      "number": 29,
+      "question": "Select the maximum driving hours allowed within a 24 hour period including commuting",
+      "options": [
+        "5 hours",
+        "11 hours",
+        "20 hours"
+      ]
+    },
+    {
+      "number": 30,
+      "question": "Select the main risk from becoming fatigued when driving",
+      "options": [
+        "Risk of missing a turning",
+        "Risk of having microsleeps at the wheel",
+        "Risk of driving too fast",
+        "Risk of being late"
+      ]
+    },
+    {
+      "number": 31,
+      "question": "How far will your vehicle travel in 4 seconds at 80kph with no one at the wheel if you have a microsleep?",
+      "options": [
+        "22 meters",
+        "45 meters",
+        "90 meters",
+        "120 meters"
+      ]
+    },
+    {
+      "number": 32,
+      "question": "Select the time beyond which you cannot drive without permission in WINTER",
+      "options": [
+        "17:00",
+        "19:00",
+        "21:00"
+      ]
+    },
+    {
+      "number": 33,
+      "question": "Select the two (2) actions you must immediately take if you have an MVC",
+      "options": [
+        "Check that your passengers are safe",
+        "Write detailed incident notes",
+        "Make the area safe"
+      ]
+    },
+    {
+      "number": 34,
+      "question": "Select the one (1) correct answer for what to do if the MVC causes a fire",
+      "options": [
+        "Use your emergency fire extinguisher if you can do so safely",
+        "Leave fires to the emergency services even if a threat to others",
+        "Let others involved in the MVC deal with it"
+      ]
+    },
+    {
+      "number": 35,
+      "question": "Select the two (2) correct statements about cargo",
+      "options": [
+        "Loose objects are OK in the passenger areas",
+        "Cargo must be secured in the luggage area",
+        "Heavy items in a pickup must be over the back axle",
+        "Loose objects must be secured in the driver’s cab"
+      ]
+    },
+    {
+      "number": 36,
+      "question": "Select three (3) correct DRIVER responsibilities for passengers",
+      "options": [
+        "Check condition of seat belts",
+        "Can carry passengers on private business",
+        "Never carry cargo in passenger area",
+        "Check passengers are wearing seat belts"
+      ]
+    },
+    {
+      "number": 37,
+      "question": "Select the three (3) correct PASSENGER responsibilities",
+      "options": [
+        "Never distract the driver",
+        "Tell the driver if he is driving in an unsafe manner",
+        "Hold onto the door handle while vehicle is moving",
+        "Wear your seatbelt"
+      ]
+    },
+    {
+      "number": 38,
+      "question": "Select the correct definition of defensive driving",
+      "options": [
+        "Defensive driving is where you defend your place on the road",
+        "Defensive driving is when you go slower than all other road users",
+        "Defensive driving is where you anticipate poor driving in others and question yourself",
+        "Defensive driving is when you defend your place on the road"
+      ]
+    },
+    {
+      "number": 39,
+      "question": "Select the correct gap to leave between vehicles in normal conditions",
+      "options": [
+        "2 seconds",
+        "3 seconds",
+        "4 seconds",
+        "5 seconds"
+      ]
+    },
+    {
+      "number": 40,
+      "question": "Select the correct order of action zones for the ‘looking ahead’ technique",
+      "options": [
+        "Planning zone / Action zone / Seeing zone",
+        "Planning zone / Seeing zone / Action zone",
+        "Seeing zone / Planning zone / Action zone",
+        "Anticipate zone / Seeing zone / Action zone"
+      ]
+    },
+    {
+      "number": 41,
+      "question": "Select the one (1) question you should ask yourself when overtaking",
+      "options": [
+        "Can I flash the vehicle in front to alert them?",
+        "Is it necessary, safe and legal?",
+        "Can I go faster than the speed limit to overtake?",
+        "Is it OK to overtake with solid lines on my side of the road?"
+      ]
+    },
+    {
+      "number": 42,
+      "question": "Select the one (1) correct purpose of creating a ‘safety bubble’ around your vehicle",
+      "options": [
+        "So that I can overtake safely",
+        "So I have an escape route if something happens",
+        "So I can change lane easily"
+      ]
+    },
+    {
+      "number": 43,
+      "question": "Select two (2) actions should I take near cyclists",
+      "options": [
+        "Honk a warning while passing",
+        "Give them more space",
+        "Examine the road surface to anticipate sudden movements"
+      ]
+    },
+    {
+      "number": 44,
+      "question": "Select the one (1) correct action for when you miss a turning on a roundabout",
+      "options": [
+        "Put on your hazard lights",
+        "If nothing else is on the road try to make the turn",
+        "Change indicators and go around again",
+        "Take the next exit and double back"
+      ]
+    },
+    {
+      "number": 45,
+      "question": "Select the correct way to park in a parking bay",
+      "options": [
+        "Reverse in",
+        "Front in"
+      ]
+    },
+    {
+      "number": 46,
+      "question": "Select the correct minimum visibility distance for driving",
+      "options": [
+        "50m",
+        "80m",
+        "100m"
+      ]
+    },
+    {
+      "number": 47,
+      "question": "Select the three (3) main factors that affect aquaplaning / hydroplaning",
+      "options": [
+        "Vehicle speed",
+        "Type of road surface",
+        "Depth of tire tread",
+        "Amount of water on the road"
+      ]
+    },
+    {
+      "number": 48,
+      "question": "Select the two (2) correct statements about driving into a sandstorm",
+      "options": [
+        "Turn on hazard lights",
+        "Pull vehicle off the road to safe parking area",
+        "Park with your windscreen facing the wind",
+        "Keep driving slowly"
+      ]
+    },
+    {
+      "number": 49,
+      "question": "Select the correct statement for driving within operational areas",
+      "options": [
+        "Obey all traffic signs",
+        "Drive at a speed that you think is appropriate",
+        "There is a speed limit of 10kph in all areas"
+      ]
+    },
+    {
+      "number": 50,
+      "question": "Select the correct answer for why your type of vehicle engine is important in operational areas",
+      "options": [
+        "There may be restricted height areas",
+        "There may be explosive gases",
+        "You may be driving in soft sand"
+      ]
+    },
+    {
+      "number": 51,
+      "question": "Select the vehicle requirement that only applies to Zone A",
+      "options": [
+        "Fitted with a diesel engine",
+        "Fitted with ATEX Approved Spark Arrestor",
+        "Fitted with ATEX Approved Automatic Air Intake Shutoff Valve – ASOV",
+        "Electrical generators, control boxes, lighting system earthed and bonded to main engine frame"
+      ]
+    },
+    {
+      "number": 52,
+      "question": "Select the operational areas where there are no vehicle restraints",
+      "options": [
+        "Zone A",
+        "Zone B",
+        "Zone C"
+      ]
+    },
+    {
+      "number": 53,
+      "question": "Select what you should do if you are unsure of the depth of mud or water",
+      "options": [
+        "Start by driving into it slowly",
+        "Accelerate fast into it",
+        "Get out of the vehicle and inspect it"
+      ]
+    },
+    {
+      "number": 54,
+      "question": "Select the correct answer for when 4x4 LOW gear should be used",
+      "options": [
+        "Gatch roads",
+        "Flat hard sand",
+        "Steep and slippery inclines"
+      ]
+    },
+    {
+      "number": 55,
+      "question": "Select the correct answer for when you should turn off 4 wheel drive",
+      "options": [
+        "When you rejoin a blacktop road",
+        "On a Gatch road",
+        "During heavy rain"
+      ]
+    },
+    {
+      "number": 56,
+      "question": "Select the action you should take in fog if visibility drops below 100m",
+      "options": [
+        "Turn on high beams and hazard lights",
+        "Pull over and stop, put on hazard lights",
+        "Turn on fog lights"
+      ]
+    },
+    {
+      "number": 57,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "Gradually apply more power as you ascend",
+        "Apply most power at the base of the dune",
+        "Apply most power at the top of the dune"
+      ]
+    },
+    {
+      "number": 58,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "If you cannot make the top, turn around on the slope",
+        "If you lose traction, accelerate harder",
+        "If you have to retreat, reverse back down the slope"
+      ]
+    },
+    {
+      "number": 59,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "If you are slipping, wiggle wheel back and forth",
+        "If you are slipping accelerate harder",
+        "If you are slipping, turn around on the slope"
+      ]
+    },
+    {
+      "number": 60,
+      "question": "Select the correct answer for what you should do when nearing the top of a dune",
+      "options": [
+        "Stop right at the top so others can see you",
+        "Ease off the accelerator and go slowly over the top",
+        "Turn through 90 degrees to drive along the crest"
+      ]
+    },
+    {
+      "number": 61,
+      "question": "Select the correct answer for descending a dune",
+      "options": [
+        "Freewheel on the way down",
+        "Brake hard repeatedly",
+        "Always stay in low gear"
+      ]
+    },
+    {
+      "number": 62,
+      "question": "Select the correct action for if the back of the vehicle ‘fishtails’ when descending a dune",
+      "options": [
+        "Slowly accelerate",
+        "Brake hard",
+        "Turn against the direction of fishtail"
+      ]
+    },
+    {
+      "number": 63,
+      "question": "Select the statement that is correct for driving sideways on a hill or dune",
+      "options": [
+        "Accelerate if driving sideways on a hill or dune",
+        "Avoid driving sideways on a hill or dune",
+        "Turn quickly if driving sideways on a hill or dune"
+      ]
+    },
+    {
+      "number": 64,
+      "question": "If you work for a contractor, can ADNOC suspend your contractor’s work if you have an MVC?",
+      "options": [
+        "Yes",
+        "No"
+      ]
+    },
+    {
+      "number": 65,
+      "question": "Select the correct instructions for Driving Life-Saving Rules",
+      "options": [
+        "Wear a seatbelt",
+        "Observe speed limits and reduce speed for road conditions",
+        "Do not use phones or devices while driving",
+        "Fit for driving",
+        "Follow journey management requirements",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 66,
+      "question": "Select the correct definition for off-road driving",
+      "options": [
+        "Driving on rough road surfaces",
+        "Driving in desert sand",
+        "Driving on any road other than ‘black top’ roads",
+        "Driving on mountain roads"
+      ]
+    },
+    {
+      "number": 67,
+      "question": "Select the correct requirement to drive a Light Vehicle in off-road and desert for ADNOC",
+      "options": [
+        "Minimum experience of 2 years driving and off-road and desert training",
+        "Minimum experience of 1-year driving",
+        "Minimum experience of 6 months driving",
+        "Minimum experience of 1 year driving and off-road and desert training"
+      ]
+    },
+    {
+      "number": 68,
+      "question": "Select three (3) correct additional vehicle requirements for off-road",
+      "options": [
+        "3M flag pole",
+        "Tinted windows",
+        "Solid cargo space partition",
+        "Rollover protection",
+        "Sun awning"
+      ]
+    },
+    {
+      "number": 69,
+      "question": "Select the correct answer for why you need a wooden plank in the desert emergency kit",
+      "options": [
+        "To lie on if you need to get under the car",
+        "As a platform for the wheel jack",
+        "To stick under a tire if you get stuck"
+      ]
+    },
+    {
+      "number": 70,
+      "question": "Select the correct answer for the amount of water you must carry for desert driving",
+      "options": [
+        "10 x 5L pouches",
+        "5 x 5L pouches",
+        "5 x 10L pouches"
+      ]
+    },
+    {
+      "number": 71,
+      "question": "Select the correct reason for why you carry a 3m flag pole",
+      "options": [
+        "As a lightning conductor",
+        "So that other vehicles can see you behind a hill",
+        "For better cell reception"
+      ]
+    },
+    {
+      "number": 72,
+      "question": "Select the correct answer for why the emergency kit carries a mirror",
+      "options": [
+        "For checking under the car if you get stuck",
+        "For using the sun to signal in an emergency"
+      ]
+    },
+    {
+      "number": 73,
+      "question": "Are you allowed to use a privately owned 4x4 vehicle which meets ADNOC standards off- road or in desert?",
+      "options": [
+        "Yes",
+        "No"
+      ]
+    },
+    {
+      "number": 74,
+      "question": "Select the correct answer for why 4x4 transmission is necessary for off-road or desert surfaces",
+      "options": [
+        "It sends power to all four wheels",
+        "It makes the rear wheels turn together",
+        "It stops one tire spinning more than another"
+      ]
+    },
+    {
+      "number": 75,
+      "question": "Select the correct description for limited slip differential",
+      "options": [
+        "It allows all wheels to move independently",
+        "It helps prevent one wheel spinning much faster than another",
+        "It sends power to all 4 wheels"
+      ]
+    },
+    {
+      "number": 76,
+      "question": "Select the two (2) classes of defects for which you must check",
+      "options": [
+        "Class A",
+        "Class B",
+        "Class C",
+        "Class D"
+      ]
+    },
+    {
+      "number": 77,
+      "question": "Select the correct action to take if you find a class A defect",
+      "options": [
+        "The vehicle can be driven to a workshop for repair",
+        "The vehicle cannot be driven"
+      ]
+    },
+    {
+      "number": 78,
+      "question": "Select the two (2) defects that are classified as class B defects",
+      "options": [
+        "Seatbelt not working",
+        "Tire out of date",
+        "Hazard lights not working",
+        "A leak under the vehicle",
+        "Security pass missing",
+        "Horn not working"
+      ]
+    },
+    {
+      "number": 79,
+      "question": "Select two (2) qualities that are specifically important for an off-road or desert tire rather than a road tire",
+      "options": [
+        "Traction rating",
+        "Maximum load",
+        "Resistance to heat",
+        "Year of manufacture"
+      ]
+    },
+    {
+      "number": 80,
+      "question": "Select the two (2) correct answers for why it is important to lower tire pressure in sand",
+      "options": [
+        "Provides a larger surface area in contact with the sand",
+        "It helps the tire to cut through the sand",
+        "Stops the tire becoming worn",
+        "Stops the tire ‘digging in’ to the sand"
+      ]
+    },
+    {
+      "number": 81,
+      "question": "Select the recommended tire pressure for desert driving for a large 4x4 vehicle",
+      "options": [
+        "18psi",
+        "10psi",
+        "25psi",
+        "8psi"
+      ]
+    },
+    {
+      "number": 82,
+      "question": "Select the recommended tire pressure for emergency use in desert driving",
+      "options": [
+        "18psi",
+        "10psi",
+        "25psi",
+        "8psi"
+      ]
+    },
+    {
+      "number": 83,
+      "question": "Select the correct maximum speed that you can drive before you re-inflate your tires",
+      "options": [
+        "50kmh",
+        "30kmh",
+        "20kmh"
+      ]
+    },
+    {
+      "number": 84,
+      "question": "Select the correct two (2) answers for how IVMS is different in desert driving",
+      "options": [
+        "IVMS no longer works",
+        "IVMS does not record harsh acceleration and braking",
+        "IVMS may lose real time communication",
+        "IVMS will no longer record violations"
+      ]
+    },
+    {
+      "number": 85,
+      "question": "Select the maximum speed off-road for Light Vehicles above which IVMS will record a violation",
+      "options": [
+        "90kmh",
+        "80kmh",
+        "60kmh",
+        "50kmh"
+      ]
+    },
+    {
+      "number": 86,
+      "question": "Select the maximum speed off-road for Heavy Vehicles above which IVMS will record a violation",
+      "options": [
+        "90kmh",
+        "80kmh",
+        "60kmh",
+        "50kmh"
+      ]
+    },
+    {
+      "number": 87,
+      "question": "Select the two (2) statements that are correct for driving in a desert environment",
+      "options": [
+        "All desert driving must include an escort vehicle",
+        "Light Vehicles cannot use camel trap crossings",
+        "Never take shortcuts",
+        "4WD is not always necessary"
+      ]
+    },
+    {
+      "number": 88,
+      "question": "Select two (2) of the most common causes of Motor Vehicle Accidents in off-road or desert environments",
+      "options": [
+        "Fatigue",
+        "Heat",
+        "Choice of wrong vehicle or tire",
+        "Mechanical breakdown"
+      ]
+    },
+    {
+      "number": 89,
+      "question": "Select the two (2) statements that are correct for desert driving",
+      "options": [
+        "Travel in the early morning as the sand is firmer",
+        "Travel midday as the sand is firmer",
+        "Avoid traveling early morning as the sand is softer",
+        "Avoid traveling midday as hazards are harder to see"
+      ]
+    },
+    {
+      "number": 90,
+      "question": "Select the three (3) correct reasons why traveling at night is more dangerous off-road",
+      "options": [
+        "Uneven ground is more difficult to see",
+        "The temperature is too high",
+        "There are no light sources",
+        "There is no clear road to follow"
+      ]
+    },
+    {
+      "number": 91,
+      "question": "Select three (3) important route planning considerations for off-road and desert driving",
+      "options": [
+        "Identifying how the route is marked",
+        "Predicting traffic congestion",
+        "Ensuring enough fuel",
+        "Ensuring an alternative means of communication"
+      ]
+    },
+    {
+      "number": 92,
+      "question": "Select the main reason for why you should ensure a means of communication when desert driving",
+      "options": [
+        "So you can update the destination on ETA",
+        "So you can call for help in an emergency",
+        "So that IVMS keeps working"
+      ]
+    },
+    {
+      "number": 93,
+      "question": "Select the main reason why you should check for terrain changes in route",
+      "options": [
+        "To check how uncomfortable it may be for passengers",
+        "To make sure that the vehicle is correctly equipped",
+        "To look for good stopping places"
+      ]
+    },
+    {
+      "number": 94,
+      "question": "Select the time beyond which you cannot drive without permission in WINTER",
+      "options": [
+        "17:00",
+        "19:00",
+        "21:00"
+      ]
+    },
+    {
+      "number": 95,
+      "question": "Select the two (2) actions you should consider if your route has bad weather forecast",
+      "options": [
+        "Change of start time",
+        "Pack wet weather gear",
+        "Change the wiper blades",
+        "Change of route"
+      ]
+    },
+    {
+      "number": 96,
+      "question": "Select the two (2) conditions for which this statement is true: ‘Pull over and stop somewhere safe if you cannot see for more than 100m’",
+      "options": [
+        "Rain",
+        "Dunes",
+        "Fog",
+        "A wadi"
+      ]
+    },
+    {
+      "number": 97,
+      "question": "Select the statement which is correct for driving in a sandstorm",
+      "options": [
+        "Turn on hazards and park with windscreen facing storm",
+        "Turn off air conditioning and park with rear of vehicle facing storm",
+        "Keep driving until you cannot see the car in front"
+      ]
+    },
+    {
+      "number": 98,
+      "question": "Select the correct reason(s) for why you should avoid high speeds on Gatch roads",
+      "options": [
+        "It causes more tire wear",
+        "It can create bigger dust clouds",
+        "It makes spotting rocks and holes more difficult",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 99,
+      "question": "Select how many seconds you should stay behind a dust cloud when following a vehicle",
+      "options": [
+        "8 seconds",
+        "4 seconds",
+        "3 seconds"
+      ]
+    },
+    {
+      "number": 100,
+      "question": "Select the correct action for if you become disoriented in a dust cloud",
+      "options": [
+        "Stop immediately",
+        "Slow down",
+        "Pull over to the side and stop"
+      ]
+    }
+  ],
+  "C": [
+    {
+      "number": 1,
+      "question": "Select the correct instructions for Driving Life-Saving Rules",
+      "options": [
+        "Wear a seatbelt",
+        "Observe speed limits and reduce speed for road conditions",
+        "Do not use phones or devices while driving",
+        "Fit for driving",
+        "Follow journey management requirements",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 2,
+      "question": "Select what you should do if you are unsure of the depth of mud or water",
+      "options": [
+        "Start by driving into it slowly",
+        "Accelerate fast into it",
+        "Get out of the vehicle and inspect it"
+      ]
+    },
+    {
+      "number": 3,
+      "question": "Select the correct answer for when 4x4 LOW gear should be used",
+      "options": [
+        "Gatch roads",
+        "Flat hard sand",
+        "Steep and slippery inclines"
+      ]
+    },
+    {
+      "number": 4,
+      "question": "Select the correct answer for when you should turn off 4 wheel drive",
+      "options": [
+        "When you rejoin a blacktop road",
+        "On a Gatch road",
+        "During heavy rain"
+      ]
+    },
+    {
+      "number": 5,
+      "question": "Select the action you should take in fog if visibility drops below 100m",
+      "options": [
+        "Turn on high beams and hazard lights",
+        "Pull over and stop, put on hazard lights",
+        "Turn on fog lights"
+      ]
+    },
+    {
+      "number": 6,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "Gradually apply more power as you ascend",
+        "Apply most power at the base of the dune",
+        "Apply most power at the top of the dune"
+      ]
+    },
+    {
+      "number": 7,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "If you cannot make the top, turn around on the slope",
+        "If you lose traction, accelerate harder",
+        "If you have to retreat, reverse back down the slope"
+      ]
+    },
+    {
+      "number": 8,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "If you are slipping, wiggle wheel back and forth",
+        "If you are slipping accelerate harder",
+        "If you are slipping, turn around on the slope"
+      ]
+    },
+    {
+      "number": 9,
+      "question": "Select the correct answer for what you should do when nearing the top of a dune",
+      "options": [
+        "Stop right at the top so others can see you",
+        "Ease off the accelerator and go slowly over the top",
+        "Turn through 90 degrees to drive along the crest"
+      ]
+    },
+    {
+      "number": 10,
+      "question": "Select the correct answer for descending a dune",
+      "options": [
+        "Freewheel on the way down",
+        "Brake hard repeatedly",
+        "Always stay in low gear"
+      ]
+    },
+    {
+      "number": 11,
+      "question": "Select the correct action for if the back of the vehicle ‘fishtails’ when descending a dune",
+      "options": [
+        "Slowly accelerate",
+        "Brake hard",
+        "Turn against the direction of fishtail"
+      ]
+    },
+    {
+      "number": 12,
+      "question": "Select the statement that is correct for driving sideways on a hill or dune",
+      "options": [
+        "Accelerate if driving sideways on a hill or dune",
+        "Avoid driving sideways on a hill or dune",
+        "Turn quickly if driving sideways on a hill or dune"
+      ]
+    },
+    {
+      "number": 13,
+      "question": "Select the correct definition for off-road driving",
+      "options": [
+        "Driving on rough road surfaces",
+        "Driving in desert sand",
+        "Driving on any road other than ‘black top’ roads",
+        "Driving on mountain roads"
+      ]
+    },
+    {
+      "number": 14,
+      "question": "Select the correct requirement to drive a Light Vehicle in off-road and desert for ADNOC",
+      "options": [
+        "Minimum experience of 2 years driving and off-road and desert training",
+        "Minimum experience of 1-year driving",
+        "Minimum experience of 6 months driving",
+        "Minimum experience of 1 year driving and off-road and desert training"
+      ]
+    },
+    {
+      "number": 15,
+      "question": "Select three (3) correct additional vehicle requirements for off-road",
+      "options": [
+        "3M flag pole",
+        "Tinted windows",
+        "Solid cargo space partition",
+        "Rollover protection",
+        "Sun awning"
+      ]
+    },
+    {
+      "number": 16,
+      "question": "Select the correct answer for why you need a wooden plank in the desert emergency kit",
+      "options": [
+        "To lie on if you need to get under the car",
+        "As a platform for the wheel jack",
+        "To stick under a tire if you get stuck"
+      ]
+    },
+    {
+      "number": 17,
+      "question": "Select the correct answer for the amount of water you must carry for desert driving",
+      "options": [
+        "10 x 5L pouches",
+        "5 x 5L pouches",
+        "5 x 10L pouches"
+      ]
+    },
+    {
+      "number": 18,
+      "question": "Select the correct reason for why you carry a 3m flag pole",
+      "options": [
+        "As a lightning conductor",
+        "So that other vehicles can see you behind a hill",
+        "For better cell reception"
+      ]
+    },
+    {
+      "number": 19,
+      "question": "Select the correct answer for why the emergency kit carries a mirror",
+      "options": [
+        "For checking under the car if you get stuck",
+        "For using the sun to signal in an emergency"
+      ]
+    },
+    {
+      "number": 20,
+      "question": "Are you allowed to use a privately owned 4x4 vehicle which meets ADNOC standards off- road or in desert?",
+      "options": [
+        "Yes",
+        "No"
+      ]
+    },
+    {
+      "number": 21,
+      "question": "Select the correct answer for why 4x4 transmission is necessary for off-road or desert surfaces",
+      "options": [
+        "It sends power to all four wheels",
+        "It makes the rear wheels turn together",
+        "It stops one tire spinning more than another"
+      ]
+    },
+    {
+      "number": 22,
+      "question": "Select the correct description for limited slip differential",
+      "options": [
+        "It allows all wheels to move independently",
+        "It helps prevent one wheel spinning much faster than another",
+        "It sends power to all 4 wheels"
+      ]
+    },
+    {
+      "number": 23,
+      "question": "Select the two (2) classes of defects for which you must check",
+      "options": [
+        "Class A",
+        "Class B",
+        "Class C",
+        "Class D"
+      ]
+    },
+    {
+      "number": 24,
+      "question": "Select the correct action to take if you find a class A defect",
+      "options": [
+        "The vehicle can be driven to a workshop for repair",
+        "The vehicle cannot be driven"
+      ]
+    },
+    {
+      "number": 25,
+      "question": "Select the two (2) defects that are classified as class B defects",
+      "options": [
+        "Seatbelt not working",
+        "Tire out of date",
+        "Hazard lights not working",
+        "A leak under the vehicle",
+        "Security pass missing",
+        "Horn not working"
+      ]
+    },
+    {
+      "number": 26,
+      "question": "Select two (2) qualities that are specifically important for an off-road or desert tire rather than a road tire",
+      "options": [
+        "Traction rating",
+        "Maximum load",
+        "Resistance to heat",
+        "Year of manufacture"
+      ]
+    },
+    {
+      "number": 27,
+      "question": "Select the two (2) correct answers for why it is important to lower tire pressure in sand",
+      "options": [
+        "Provides a larger surface area in contact with the sand",
+        "It helps the tire to cut through the sand",
+        "Stops the tire becoming worn",
+        "Stops the tire ‘digging in’ to the sand"
+      ]
+    },
+    {
+      "number": 28,
+      "question": "Select the recommended tire pressure for desert driving for a large 4x4 vehicle",
+      "options": [
+        "18psi",
+        "10psi",
+        "25psi",
+        "8psi"
+      ]
+    },
+    {
+      "number": 29,
+      "question": "Select the recommended tire pressure for emergency use in desert driving",
+      "options": [
+        "18psi",
+        "10psi",
+        "25psi",
+        "8psi"
+      ]
+    },
+    {
+      "number": 30,
+      "question": "Select the correct maximum speed that you can drive before you re-inflate your tires",
+      "options": [
+        "50kmh",
+        "30kmh",
+        "20kmh"
+      ]
+    },
+    {
+      "number": 31,
+      "question": "Select the correct two (2) answers for how IVMS is different in desert driving",
+      "options": [
+        "IVMS no longer works",
+        "IVMS does not record harsh acceleration and braking",
+        "IVMS may lose real time communication",
+        "IVMS will no longer record violations"
+      ]
+    },
+    {
+      "number": 32,
+      "question": "Select the maximum speed off-road for Light Vehicles above which IVMS will record a violation",
+      "options": [
+        "90kmh",
+        "80kmh",
+        "60kmh",
+        "50kmh"
+      ]
+    },
+    {
+      "number": 33,
+      "question": "Select the maximum speed off-road for Heavy Vehicles above which IVMS will record a violation",
+      "options": [
+        "90kmh",
+        "80kmh",
+        "60kmh",
+        "50kmh"
+      ]
+    },
+    {
+      "number": 34,
+      "question": "Select the two (2) statements that are correct for driving in a desert environment",
+      "options": [
+        "All desert driving must include an escort vehicle",
+        "Light Vehicles cannot use camel trap crossings",
+        "Never take shortcuts",
+        "4WD is not always necessary"
+      ]
+    },
+    {
+      "number": 35,
+      "question": "Select two (2) of the most common causes of Motor Vehicle Accidents in off-road or desert environments",
+      "options": [
+        "Fatigue",
+        "Heat",
+        "Choice of wrong vehicle or tire",
+        "Mechanical breakdown"
+      ]
+    },
+    {
+      "number": 36,
+      "question": "Select the two (2) statements that are correct for desert driving",
+      "options": [
+        "Travel in the early morning as the sand is firmer",
+        "Travel midday as the sand is firmer",
+        "Avoid traveling early morning as the sand is softer",
+        "Avoid traveling midday as hazards are harder to see"
+      ]
+    },
+    {
+      "number": 37,
+      "question": "Select the three (3) correct reasons why traveling at night is more dangerous off-road",
+      "options": [
+        "Uneven ground is more difficult to see",
+        "The temperature is too high",
+        "There are no light sources",
+        "There is no clear road to follow"
+      ]
+    },
+    {
+      "number": 38,
+      "question": "Select three (3) important route planning considerations for off-road and desert driving",
+      "options": [
+        "Identifying how the route is marked",
+        "Predicting traffic congestion",
+        "Ensuring enough fuel",
+        "Ensuring an alternative means of communication"
+      ]
+    },
+    {
+      "number": 39,
+      "question": "Select the main reason for why you should ensure a means of communication when desert driving",
+      "options": [
+        "So you can update the destination on ETA",
+        "So you can call for help in an emergency",
+        "So that IVMS keeps working"
+      ]
+    },
+    {
+      "number": 40,
+      "question": "Select the main reason why you should check for terrain changes in route",
+      "options": [
+        "To check how uncomfortable it may be for passengers",
+        "To make sure that the vehicle is correctly equipped",
+        "To look for good stopping places"
+      ]
+    },
+    {
+      "number": 41,
+      "question": "Select the time beyond which you cannot drive without permission in WINTER",
+      "options": [
+        "17:00",
+        "19:00",
+        "21:00"
+      ]
+    },
+    {
+      "number": 42,
+      "question": "Select the two (2) actions you should consider if your route has bad weather forecast",
+      "options": [
+        "Change of start time",
+        "Pack wet weather gear",
+        "Change the wiper blades",
+        "Change of route"
+      ]
+    },
+    {
+      "number": 43,
+      "question": "Select the two (2) conditions for which this statement is true: ‘Pull over and stop somewhere safe if you cannot see for more than 100m’",
+      "options": [
+        "Rain",
+        "Dunes",
+        "Fog",
+        "A wadi"
+      ]
+    },
+    {
+      "number": 44,
+      "question": "Select the statement which is correct for driving in a sandstorm",
+      "options": [
+        "Turn on hazards and park with windscreen facing storm",
+        "Turn off air conditioning and park with rear of vehicle facing storm",
+        "Keep driving until you cannot see the car in front"
+      ]
+    },
+    {
+      "number": 45,
+      "question": "Select the correct reason(s) for why you should avoid high speeds on Gatch roads",
+      "options": [
+        "It causes more tire wear",
+        "It can create bigger dust clouds",
+        "It makes spotting rocks and holes more difficult",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 46,
+      "question": "Select how many seconds you should stay behind a dust cloud when following a vehicle",
+      "options": [
+        "8 seconds",
+        "4 seconds",
+        "3 seconds"
+      ]
+    },
+    {
+      "number": 47,
+      "question": "Select the correct action for if you become disoriented in a dust cloud",
+      "options": [
+        "Stop immediately",
+        "Slow down",
+        "Pull over to the side and stop"
+      ]
+    },
+    {
+      "number": 48,
+      "question": "Select the correct answer for how-to drive-in mud after rain",
+      "options": [
+        "Follow any existing wheel ruts",
+        "Drive around ruts in unused areas",
+        "Drive in and out of the ruts"
+      ]
+    },
+    {
+      "number": 49,
+      "question": "If you work for a contractor, can ADNOC suspend your contractor’s work if you have an MVC?",
+      "options": [
+        "Yes",
+        "No"
+      ]
+    },
+    {
+      "number": 50,
+      "question": "Select the correct experience needed to drive a Light Vehicle for ADNOC",
+      "options": [
+        "Minimum experience of 2 years driving",
+        "Minimum experience of 1 year driving",
+        "Minimum experience of 6 months driving",
+        "Holding an LV license for 1 year"
+      ]
+    },
+    {
+      "number": 51,
+      "question": "Select the two (2) items to which ADNOC has a ZERO TOLERANCE policy",
+      "options": [
+        "Illicit drug use",
+        "Harsh acceleration or braking",
+        "Illegal parking",
+        "Use of alcohol"
+      ]
+    },
+    {
+      "number": 52,
+      "question": "Select the correct instructions for Driving Life-Saving Rules",
+      "options": [
+        "Wear a seatbelt",
+        "Observe speed limits and reduce speed for road conditions",
+        "Do not use phones or devices while driving",
+        "Fit for driving",
+        "Follow journey management requirements",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 53,
+      "question": "Select all the documents that you must carry in a company vehicle",
+      "options": [
+        "Safe Driving document",
+        "Vehicle registration documents",
+        "Security pass",
+        "Driving license",
+        "Emergency numbers",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 54,
+      "question": "What causes 60% of the MVC FATALITIES in Abu Dhabi",
+      "options": [
+        "Distraction",
+        "Not wearing seat belt",
+        "Pedestrians",
+        "Jumping red lights"
+      ]
+    },
+    {
+      "number": 55,
+      "question": "Select two (2) of the most common causes of Motor Vehicle Accidents in the UAE",
+      "options": [
+        "Fatigue",
+        "Heat",
+        "Over-speeding",
+        "Mechanical breakdown"
+      ]
+    },
+    {
+      "number": 56,
+      "question": "Select the correct answer for why stress can increase the risk of an accident",
+      "options": [
+        "Some stress is good for you",
+        "Lots of stress keeps you alert",
+        "Too much stress makes you slow to react"
+      ]
+    },
+    {
+      "number": 57,
+      "question": "Select the correct specifications for Light Vehicles",
+      "options": [
+        "No vehicle older than 5 years",
+        "First aid kit must be carried",
+        "Must have ABS brakes",
+        "Must be 4*NCAP rated",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 58,
+      "question": "Select the correct two (2) statements about use of private vehicles",
+      "options": [
+        "Private vehicles must meet ADNOC standards",
+        "You may not use private vehicles for company use",
+        "Private vehicles are not allowed in Operational areas",
+        "Private vehicles are allowed off-road"
+      ]
+    },
+    {
+      "number": 59,
+      "question": "Select the answer for why rollover is a higher risk if you enter a roundabout going too fast",
+      "options": [
+        "Another car may hit you",
+        "Turning the car at speed increases the risk",
+        "You may hit the curb"
+      ]
+    },
+    {
+      "number": 60,
+      "question": "You are at a red traffic light, it turns to green. Select the two (2) correct responses",
+      "options": [
+        "Go immediately",
+        "Go only if it is safe to do so",
+        "Watch carefully for other drivers who might jump the lights"
+      ]
+    },
+    {
+      "number": 61,
+      "question": "You are approaching traffic lights. It is a straight road and they have been green for some time. Select the correct response",
+      "options": [
+        "Check your rear view mirror and accelerate to make sure you cross",
+        "Check your rear view mirror and slow your speed so you are ready if they change",
+        "Stay alert and at a constant speed"
+      ]
+    },
+    {
+      "number": 62,
+      "question": "Select the one (1) correct answer for what to do when approaching a junction with a stop sign",
+      "options": [
+        "Slow down, if the way is clear continue onto the new road",
+        "Stop and check the way is clear before continuing",
+        "Stop and continue onto the new road"
+      ]
+    },
+    {
+      "number": 63,
+      "question": "Select the two (2) correct answers for what action to take when approaching a roundabout",
+      "options": [
+        "Get into the correct lane for your exit",
+        "Always pull into the slow lane",
+        "Slow down to minimize risk of rollover",
+        "Always stay on the outside of large trucks"
+      ]
+    },
+    {
+      "number": 64,
+      "question": "Select the inspection(s) that is the responsibility of you the driver",
+      "options": [
+        "Vehicle spot check",
+        "VAAI Acceptance & Assurance inspection",
+        "Daily/Pre-trip vehicle inspection",
+        "Vehicle site assurance test"
+      ]
+    },
+    {
+      "number": 65,
+      "question": "Select one (1) correct answer for an issue that good vehicle maintenance can prevent",
+      "options": [
+        "Cargo shift",
+        "Tire blowouts",
+        "Rollover"
+      ]
+    },
+    {
+      "number": 66,
+      "question": "Select the two (2) classes of defects for which you must check",
+      "options": [
+        "Class A",
+        "Class B",
+        "Class C",
+        "Class D"
+      ]
+    },
+    {
+      "number": 67,
+      "question": "Select the correct action to take if you find a class A defect",
+      "options": [
+        "The vehicle can be driven to a workshop for repair",
+        "The vehicle cannot be driven"
+      ]
+    },
+    {
+      "number": 68,
+      "question": "Select the two (2) defects that are classified as class B defects",
+      "options": [
+        "Seatbelt not working",
+        "Tire out of date",
+        "Hazard lights not working",
+        "A leak under the vehicle",
+        "Security pass missing",
+        "Horn not working"
+      ]
+    },
+    {
+      "number": 69,
+      "question": "Select the minimum depth of tread on your tires",
+      "options": [
+        "1mm",
+        "1.5mm",
+        "2.4mm",
+        "3.2mm"
+      ]
+    },
+    {
+      "number": 70,
+      "question": "Select the correct answer for your optimum seated position",
+      "options": [
+        "Shoulders resting against seat back, arms slightly bent with hands on steering wheel",
+        "Lean forward; arms slightly bent with hands on steering wheel",
+        "Shoulders resting against seat back, arms straight with hands on steering wheel"
+      ]
+    },
+    {
+      "number": 71,
+      "question": "Select the correct answer for overcoming car blind spots",
+      "options": [
+        "Move your mirrors in and out while driving",
+        "Ask your passenger to look for you",
+        "Move your head when you check your mirrors, not just your eyes"
+      ]
+    },
+    {
+      "number": 72,
+      "question": "Select two (2) statements that are IVMS VIOLATIONS",
+      "options": [
+        "Harsh braking or acceleration",
+        "Driving too long with no rest break",
+        "Night driving without permission",
+        "Over-speeding"
+      ]
+    },
+    {
+      "number": 73,
+      "question": "Select two (2) statements that are IVMS RISK EXPOSURES",
+      "options": [
+        "Harsh acceleration and braking",
+        "Not wearing a seatbelt",
+        "Driving three hours without a rest",
+        "Over-speeding"
+      ]
+    },
+    {
+      "number": 74,
+      "question": "Select the one (1) correct statement about the RAG report",
+      "options": [
+        "A red flag can result in a suspension",
+        "Amber flag qualifies you for a Safe Driver Award",
+        "There is no difference between a green and light green flag",
+        "Light green flag will be subject to a Consequence Assessment Committee Evaluation"
+      ]
+    },
+    {
+      "number": 75,
+      "question": "Select the correct reasons for creating a Journey Management Plan",
+      "options": [
+        "You can plan for known hazards",
+        "You can plan for road conditions",
+        "You can plan to avoid fatigue",
+        "You can make sure you have enough daylight",
+        "You can ensure you have enough fuel",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 76,
+      "question": "Select the things you must check as part of your journey management plan",
+      "options": [
+        "Weather reports",
+        "Traffic reports",
+        "Cell blackspots",
+        "Animal/pedestrian hazards",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 77,
+      "question": "Select the maximum time you can drive without taking a recommended break",
+      "options": [
+        "2 hours",
+        "3 hours",
+        "4 hours"
+      ]
+    },
+    {
+      "number": 78,
+      "question": "Select the maximum driving hours allowed within a 24 hour period including commuting",
+      "options": [
+        "5 hours",
+        "11 hours",
+        "20 hours"
+      ]
+    },
+    {
+      "number": 79,
+      "question": "Select the main risk from becoming fatigued when driving",
+      "options": [
+        "Risk of missing a turning",
+        "Risk of having microsleeps at the wheel",
+        "Risk of driving too fast",
+        "Risk of being late"
+      ]
+    },
+    {
+      "number": 80,
+      "question": "How far will your vehicle travel in 4 seconds at 80kph with no one at the wheel if you have a microsleep?",
+      "options": [
+        "22 meters",
+        "45 meters",
+        "90 meters",
+        "120 meters"
+      ]
+    },
+    {
+      "number": 81,
+      "question": "Select the time beyond which you cannot drive without permission in WINTER",
+      "options": [
+        "17:00",
+        "19:00",
+        "21:00"
+      ]
+    },
+    {
+      "number": 82,
+      "question": "Select the two (2) actions you must immediately take if you have an MVC",
+      "options": [
+        "Check that your passengers are safe",
+        "Write detailed incident notes",
+        "Make the area safe"
+      ]
+    },
+    {
+      "number": 83,
+      "question": "Select the one (1) correct answer for what to do if the MVC causes a fire",
+      "options": [
+        "Use your emergency fire extinguisher if you can do so safely",
+        "Leave fires to the emergency services even if a threat to others",
+        "Let others involved in the MVC deal with it"
+      ]
+    },
+    {
+      "number": 84,
+      "question": "Select the two (2) correct statements about cargo",
+      "options": [
+        "Loose objects are OK in the passenger areas",
+        "Cargo must be secured in the luggage area",
+        "Heavy items in a pickup must be over the back axle",
+        "Loose objects must be secured in the driver’s cab"
+      ]
+    },
+    {
+      "number": 85,
+      "question": "Select three (3) correct DRIVER responsibilities for passengers",
+      "options": [
+        "Check condition of seat belts",
+        "Can carry passengers on private business",
+        "Never carry cargo in passenger area",
+        "Check passengers are wearing seat belts"
+      ]
+    },
+    {
+      "number": 86,
+      "question": "Select the three (3) correct PASSENGER responsibilities",
+      "options": [
+        "Never distract the driver",
+        "Tell the driver if he is driving in an unsafe manner",
+        "Hold onto the door handle while vehicle is moving",
+        "Wear your seatbelt"
+      ]
+    },
+    {
+      "number": 87,
+      "question": "Select the correct definition of defensive driving",
+      "options": [
+        "Defensive driving is where you defend your place on the road",
+        "Defensive driving is when you go slower than all other road users",
+        "Defensive driving is where you anticipate poor driving in others and question yourself",
+        "Defensive driving is when you defend your place on the road"
+      ]
+    },
+    {
+      "number": 88,
+      "question": "Select the correct gap to leave between vehicles in normal conditions",
+      "options": [
+        "2 seconds",
+        "3 seconds",
+        "4 seconds",
+        "5 seconds"
+      ]
+    },
+    {
+      "number": 89,
+      "question": "Select the correct order of action zones for the ‘looking ahead’ technique",
+      "options": [
+        "Planning zone / Action zone / Seeing zone",
+        "Planning zone / Seeing zone / Action zone",
+        "Seeing zone / Planning zone / Action zone",
+        "Anticipate zone / Seeing zone / Action zone"
+      ]
+    },
+    {
+      "number": 90,
+      "question": "Select the one (1) question you should ask yourself when overtaking",
+      "options": [
+        "Can I flash the vehicle in front to alert them?",
+        "Is it necessary, safe and legal?",
+        "Can I go faster than the speed limit to overtake?",
+        "Is it OK to overtake with solid lines on my side of the road?"
+      ]
+    },
+    {
+      "number": 91,
+      "question": "Select the one (1) correct purpose of creating a ‘safety bubble’ around your vehicle",
+      "options": [
+        "So that I can overtake safely",
+        "So I have an escape route if something happens",
+        "So I can change lane easily"
+      ]
+    },
+    {
+      "number": 92,
+      "question": "Select two (2) actions should I take near cyclists",
+      "options": [
+        "Honk a warning while passing",
+        "Give them more space",
+        "Examine the road surface to anticipate sudden movements"
+      ]
+    },
+    {
+      "number": 93,
+      "question": "Select the one (1) correct action for when you miss a turning on a roundabout",
+      "options": [
+        "Put on your hazard lights",
+        "If nothing else is on the road try to make the turn",
+        "Change indicators and go around again",
+        "Take the next exit and double back"
+      ]
+    },
+    {
+      "number": 94,
+      "question": "Select the correct way to park in a parking bay",
+      "options": [
+        "Reverse in",
+        "Front in"
+      ]
+    },
+    {
+      "number": 95,
+      "question": "Select the correct minimum visibility distance for driving",
+      "options": [
+        "50m",
+        "80m",
+        "100m"
+      ]
+    },
+    {
+      "number": 96,
+      "question": "Select the three (3) main factors that affect aquaplaning / hydroplaning",
+      "options": [
+        "Vehicle speed",
+        "Type of road surface",
+        "Depth of tire tread",
+        "Amount of water on the road"
+      ]
+    },
+    {
+      "number": 97,
+      "question": "Select the two (2) correct statements about driving into a sandstorm",
+      "options": [
+        "Turn on hazard lights",
+        "Pull vehicle off the road to safe parking area",
+        "Park with your windscreen facing the wind",
+        "Keep driving slowly"
+      ]
+    },
+    {
+      "number": 98,
+      "question": "Select the correct statement for driving within operational areas",
+      "options": [
+        "Obey all traffic signs",
+        "Drive at a speed that you think is appropriate",
+        "There is a speed limit of 10kph in all areas"
+      ]
+    },
+    {
+      "number": 99,
+      "question": "Select the correct answer for why your type of vehicle engine is important in operational areas",
+      "options": [
+        "There may be restricted height areas",
+        "There may be explosive gases",
+        "You may be driving in soft sand"
+      ]
+    },
+    {
+      "number": 100,
+      "question": "Select the vehicle requirement that only applies to Zone A",
+      "options": [
+        "Fitted with a diesel engine",
+        "Fitted with ATEX Approved Spark Arrestor",
+        "Fitted with ATEX Approved Automatic Air Intake Shutoff Valve – ASOV",
+        "Electrical generators, control boxes, lighting system earthed and bonded to main engine frame"
+      ]
+    }
+  ],
+  "D": [
+    {
+      "number": 1,
+      "question": "Select the correct definition for off-road driving",
+      "options": [
+        "Driving on rough road surfaces",
+        "Driving in desert sand",
+        "Driving on any road other than ‘black top’ roads",
+        "Driving on mountain roads"
+      ]
+    },
+    {
+      "number": 2,
+      "question": "Select the correct requirement to drive a Light Vehicle in off-road and desert for ADNOC",
+      "options": [
+        "Minimum experience of 2 years driving and off-road and desert training",
+        "Minimum experience of 1-year driving",
+        "Minimum experience of 6 months driving",
+        "Minimum experience of 1 year driving and off-road and desert training"
+      ]
+    },
+    {
+      "number": 3,
+      "question": "Select three (3) correct additional vehicle requirements for off-road",
+      "options": [
+        "3M flag pole",
+        "Tinted windows",
+        "Solid cargo space partition",
+        "Rollover protection",
+        "Sun awning"
+      ]
+    },
+    {
+      "number": 4,
+      "question": "Select the correct answer for why you need a wooden plank in the desert emergency kit",
+      "options": [
+        "To lie on if you need to get under the car",
+        "As a platform for the wheel jack",
+        "To stick under a tire if you get stuck"
+      ]
+    },
+    {
+      "number": 5,
+      "question": "Select the correct answer for the amount of water you must carry for desert driving",
+      "options": [
+        "10 x 5L pouches",
+        "5 x 5L pouches",
+        "5 x 10L pouches"
+      ]
+    },
+    {
+      "number": 6,
+      "question": "Select the correct reason for why you carry a 3m flag pole",
+      "options": [
+        "As a lightning conductor",
+        "So that other vehicles can see you behind a hill",
+        "For better cell reception"
+      ]
+    },
+    {
+      "number": 7,
+      "question": "Select the correct answer for why the emergency kit carries a mirror",
+      "options": [
+        "For checking under the car if you get stuck",
+        "For using the sun to signal in an emergency"
+      ]
+    },
+    {
+      "number": 8,
+      "question": "Are you allowed to use a privately owned 4x4 vehicle which meets ADNOC standards off-road or in desert?",
+      "options": [
+        "Yes",
+        "No"
+      ]
+    },
+    {
+      "number": 9,
+      "question": "Select the correct answer for why 4x4 transmission is necessary for off-road or desert surfaces",
+      "options": [
+        "It sends power to all four wheels",
+        "It makes the rear wheels turn together",
+        "It stops one tire spinning more than another"
+      ]
+    },
+    {
+      "number": 10,
+      "question": "Select the correct description for limited slip differential",
+      "options": [
+        "It allows all wheels to move independently",
+        "It helps prevent one wheel spinning much faster than another",
+        "It sends power to all 4 wheels"
+      ]
+    },
+    {
+      "number": 11,
+      "question": "Select the two (2) classes of defects for which you must check",
+      "options": [
+        "Class A",
+        "Class B",
+        "Class C",
+        "Class D"
+      ]
+    },
+    {
+      "number": 12,
+      "question": "Select the correct action to take if you find a class A defect",
+      "options": [
+        "The vehicle can be driven to a workshop for repair",
+        "The vehicle cannot be driven"
+      ]
+    },
+    {
+      "number": 13,
+      "question": "Select the two (2) defects that are classified as class B defects",
+      "options": [
+        "Seatbelt not working",
+        "Tire out of date",
+        "Hazard lights not working",
+        "A leak under the vehicle",
+        "Security pass missing",
+        "Horn not working"
+      ]
+    },
+    {
+      "number": 14,
+      "question": "Select two (2) qualities that are specifically important for an off-road or desert tire rather than a road tire",
+      "options": [
+        "Traction rating",
+        "Maximum load",
+        "Resistance to heat",
+        "Year of manufacture"
+      ]
+    },
+    {
+      "number": 15,
+      "question": "Select the two (2) correct answers for why it is important to lower tire pressure in sand",
+      "options": [
+        "Provides a larger surface area in contact with the sand",
+        "It helps the tire to cut through the sand",
+        "Stops the tire becoming worn",
+        "Stops the tire ‘digging in’ to the sand"
+      ]
+    },
+    {
+      "number": 16,
+      "question": "Select the recommended tire pressure for desert driving for a large 4x4 vehicle",
+      "options": [
+        "18psi",
+        "10psi",
+        "25psi",
+        "8psi"
+      ]
+    },
+    {
+      "number": 17,
+      "question": "Select the recommended tire pressure for emergency use in desert driving",
+      "options": [
+        "18psi",
+        "10psi",
+        "25psi",
+        "8psi"
+      ]
+    },
+    {
+      "number": 18,
+      "question": "Select the correct maximum speed that you can drive before you re-inflate your tires",
+      "options": [
+        "50kmh",
+        "30kmh",
+        "20kmh"
+      ]
+    },
+    {
+      "number": 19,
+      "question": "Select the correct two (2) answers for how IVMS is different in desert driving",
+      "options": [
+        "IVMS no longer works",
+        "IVMS does not record harsh acceleration and braking",
+        "IVMS may lose real time communication",
+        "IVMS will no longer record violations"
+      ]
+    },
+    {
+      "number": 20,
+      "question": "Select the maximum speed off-road for Light Vehicles above which IVMS will record a violation",
+      "options": [
+        "90kmh",
+        "80kmh",
+        "60kmh",
+        "50kmh"
+      ]
+    },
+    {
+      "number": 21,
+      "question": "Select the maximum speed off-road for Heavy Vehicles above which IVMS will record a violation",
+      "options": [
+        "90kmh",
+        "80kmh",
+        "60kmh",
+        "50kmh"
+      ]
+    },
+    {
+      "number": 22,
+      "question": "Select the two (2) statements that are correct for driving in a desert environment",
+      "options": [
+        "All desert driving must include an escort vehicle",
+        "Light Vehicles cannot use camel trap crossings",
+        "Never take shortcuts",
+        "4WD is not always necessary"
+      ]
+    },
+    {
+      "number": 23,
+      "question": "Select two (2) of the most common causes of Motor Vehicle Accidents in off-road or desert environments",
+      "options": [
+        "Fatigue",
+        "Heat",
+        "Choice of wrong vehicle or tire",
+        "Mechanical breakdown"
+      ]
+    },
+    {
+      "number": 24,
+      "question": "Select the two (2) statements that are correct for desert driving",
+      "options": [
+        "Travel in the early morning as the sand is firmer",
+        "Travel midday as the sand is firmer",
+        "Avoid traveling early morning as the sand is softer",
+        "Avoid traveling midday as hazards are harder to see"
+      ]
+    },
+    {
+      "number": 25,
+      "question": "Select the three (3) correct reasons why traveling at night is more dangerous off-road",
+      "options": [
+        "Uneven ground is more difficult to see",
+        "The temperature is too high",
+        "There are no light sources",
+        "There is no clear road to follow"
+      ]
+    },
+    {
+      "number": 26,
+      "question": "Select three (3) important route planning considerations for off-road and desert driving",
+      "options": [
+        "Identifying how the route is marked",
+        "Predicting traffic congestion",
+        "Ensuring enough fuel",
+        "Ensuring an alternative means of communication"
+      ]
+    },
+    {
+      "number": 27,
+      "question": "Select the main reason for why you should ensure a means of communication when desert driving",
+      "options": [
+        "So you can update the destination on ETA",
+        "So you can call for help in an emergency",
+        "So that IVMS keeps working"
+      ]
+    },
+    {
+      "number": 28,
+      "question": "Select the main reason why you should check for terrain changes in route",
+      "options": [
+        "To check how uncomfortable it may be for passengers",
+        "To make sure that the vehicle is correctly equipped",
+        "To look for good stopping places"
+      ]
+    },
+    {
+      "number": 29,
+      "question": "Select the time beyond which you cannot drive without permission in WINTER",
+      "options": [
+        "17:00",
+        "19:00",
+        "21:00"
+      ]
+    },
+    {
+      "number": 30,
+      "question": "Select the two (2) actions you should consider if your route has bad weather forecast",
+      "options": [
+        "Change of start time",
+        "Pack wet weather gear",
+        "Change the wiper blades",
+        "Change of route"
+      ]
+    },
+    {
+      "number": 31,
+      "question": "Select the two (2) conditions for which this statement is true: ‘Pull over and stop somewhere safe if you cannot see for more than 100m’",
+      "options": [
+        "Rain",
+        "Dunes",
+        "Fog",
+        "A wadi"
+      ]
+    },
+    {
+      "number": 32,
+      "question": "Select the statement which is correct for driving in a sandstorm",
+      "options": [
+        "Turn on hazards and park with windscreen facing storm",
+        "Turn off air conditioning and park with rear of vehicle facing storm",
+        "Keep driving until you cannot see the car in front"
+      ]
+    },
+    {
+      "number": 33,
+      "question": "Select the correct reason(s) for why you should avoid high speeds on Gatch roads",
+      "options": [
+        "It causes more tire wear",
+        "It can create bigger dust clouds",
+        "It makes spotting rocks and holes more difficult",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 34,
+      "question": "Select how many seconds you should stay behind a dust cloud when following a vehicle",
+      "options": [
+        "8 seconds",
+        "4 seconds",
+        "3 seconds"
+      ]
+    },
+    {
+      "number": 35,
+      "question": "Select the correct answer for how-to drive-in mud after rain",
+      "options": [
+        "Follow any existing wheel ruts",
+        "Drive around ruts in unused areas",
+        "Drive in and out of the ruts"
+      ]
+    },
+    {
+      "number": 36,
+      "question": "Select what you should do if you are unsure of the depth of mud or water",
+      "options": [
+        "Start by driving into it slowly",
+        "Accelerate fast into it",
+        "Get out of the vehicle and inspect it"
+      ]
+    },
+    {
+      "number": 37,
+      "question": "Select the correct answer for when 4x4 LOW gear should be used",
+      "options": [
+        "Gatch roads",
+        "Flat hard sand",
+        "Steep and slippery inclines"
+      ]
+    },
+    {
+      "number": 38,
+      "question": "Select the correct answer for when you should turn off 4 wheel drive",
+      "options": [
+        "When you rejoin a blacktop road",
+        "On a Gatch road",
+        "During heavy rain"
+      ]
+    },
+    {
+      "number": 39,
+      "question": "Select the action you should take in fog if visibility drops below 100m",
+      "options": [
+        "Turn on high beams and hazard lights",
+        "Pull over and stop, put on hazard lights",
+        "Turn on fog lights"
+      ]
+    },
+    {
+      "number": 40,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "Gradually apply more power as you ascend",
+        "Apply most power at the base of the dune",
+        "Apply most power at the top of the dune"
+      ]
+    },
+    {
+      "number": 41,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "If you cannot make the top, turn around on the slope",
+        "If you lose traction, accelerate harder",
+        "If you have to retreat, reverse back down the slope"
+      ]
+    },
+    {
+      "number": 42,
+      "question": "Select the correct answer for driving up a dune incline",
+      "options": [
+        "If you are slipping, wiggle wheel back and forth",
+        "If you are slipping accelerate harder",
+        "If you are slipping, turn around on the slope"
+      ]
+    },
+    {
+      "number": 43,
+      "question": "Select the correct answer for what you should do when nearing the top of a dune",
+      "options": [
+        "Stop right at the top so others can see you",
+        "Ease off the accelerator and go slowly over the top",
+        "Turn through 90 degrees to drive along the crest"
+      ]
+    },
+    {
+      "number": 44,
+      "question": "Select the correct answer for descending a dune",
+      "options": [
+        "Freewheel on the way down",
+        "Brake hard repeatedly",
+        "Always stay in low gear"
+      ]
+    },
+    {
+      "number": 45,
+      "question": "Select the correct action for if the back of the vehicle ‘fishtails’ when descending a dune",
+      "options": [
+        "Slowly accelerate",
+        "Brake hard",
+        "Turn against the direction of fishtail"
+      ]
+    },
+    {
+      "number": 46,
+      "question": "Select the statement that is correct for driving sideways on a hill or dune",
+      "options": [
+        "Accelerate if driving sideways on a hill or dune",
+        "Avoid driving sideways on a hill or dune",
+        "Turn quickly if driving sideways on a hill or dune"
+      ]
+    },
+    {
+      "number": 47,
+      "question": "If you work for a contractor, can ADNOC suspend your contractor’s work if you have an MVC?",
+      "options": [
+        "Yes",
+        "No"
+      ]
+    },
+    {
+      "number": 48,
+      "question": "Select the correct instructions for Driving Life-Saving Rules",
+      "options": [
+        "Wear a seatbelt",
+        "Observe speed limits and reduce speed for road conditions",
+        "Do not use phones or devices while driving",
+        "Fit for driving",
+        "Follow journey management requirements",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 49,
+      "question": "Select the correct experience needed to drive a Light Vehicle for ADNOC",
+      "options": [
+        "Minimum experience of 2 years driving",
+        "Minimum experience of 1 year driving",
+        "Minimum experience of 6 months driving",
+        "Holding an LV license for 1 year"
+      ]
+    },
+    {
+      "number": 50,
+      "question": "Select the two (2) items to which ADNOC has a ZERO TOLERANCE policy",
+      "options": [
+        "Illicit drug use",
+        "Harsh acceleration or braking",
+        "Illegal parking",
+        "Use of alcohol"
+      ]
+    },
+    {
+      "number": 51,
+      "question": "Select the correct instructions for Driving Life-Saving Rules",
+      "options": [
+        "Wear a seatbelt",
+        "Observe speed limits and reduce speed for road conditions",
+        "Do not use phones or devices while driving",
+        "Fit for driving",
+        "Follow journey management requirements",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 52,
+      "question": "Select all the documents that you must carry in a company vehicle",
+      "options": [
+        "Safe Driving document",
+        "Vehicle registration documents",
+        "Security pass",
+        "Driving license",
+        "Emergency numbers",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 53,
+      "question": "What causes 60% of the MVC FATALITIES in Abu Dhabi",
+      "options": [
+        "Distraction",
+        "Not wearing seat belt",
+        "Pedestrians",
+        "Jumping red lights"
+      ]
+    },
+    {
+      "number": 54,
+      "question": "Select two (2) of the most common causes of Motor Vehicle Accidents in the UAE",
+      "options": [
+        "Fatigue",
+        "Heat",
+        "Over-speeding",
+        "Mechanical breakdown"
+      ]
+    },
+    {
+      "number": 55,
+      "question": "Select the correct answer for why stress can increase the risk of an accident",
+      "options": [
+        "Some stress is good for you",
+        "Lots of stress keeps you alert",
+        "Too much stress makes you slow to react"
+      ]
+    },
+    {
+      "number": 56,
+      "question": "Select the correct specifications for Light Vehicles",
+      "options": [
+        "No vehicle older than 5 years",
+        "First aid kit must be carried",
+        "Must have ABS brakes",
+        "Must be 4*NCAP rated",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 57,
+      "question": "Select the correct two (2) statements about use of private vehicles",
+      "options": [
+        "Private vehicles must meet ADNOC standards",
+        "You may not use private vehicles for company use",
+        "Private vehicles are not allowed in Operational areas",
+        "Private vehicles are allowed off-road"
+      ]
+    },
+    {
+      "number": 58,
+      "question": "Select the answer for why rollover is a higher risk if you enter a roundabout going too fast",
+      "options": [
+        "Another car may hit you",
+        "Turning the car at speed increases the risk",
+        "You may hit the curb"
+      ]
+    },
+    {
+      "number": 59,
+      "question": "You are at a red traffic light, it turns to green. Select the two (2) correct responses",
+      "options": [
+        "Go immediately",
+        "Go only if it is safe to do so",
+        "Watch carefully for other drivers who might jump the lights"
+      ]
+    },
+    {
+      "number": 60,
+      "question": "You are approaching traffic lights. It is a straight road and they have been green for some time. Select the correct response",
+      "options": [
+        "Check your rear view mirror and accelerate to make sure you cross",
+        "Check your rear view mirror and slow your speed so you are ready if they change",
+        "Stay alert and at a constant speed"
+      ]
+    },
+    {
+      "number": 61,
+      "question": "Select the one (1) correct answer for what to do when approaching a junction with a stop sign",
+      "options": [
+        "Slow down, if the way is clear continue onto the new road",
+        "Stop and check the way is clear before continuing",
+        "Stop and continue onto the new road"
+      ]
+    },
+    {
+      "number": 62,
+      "question": "Select the two (2) correct answers for what action to take when approaching a roundabout",
+      "options": [
+        "Get into the correct lane for your exit",
+        "Always pull into the slow lane",
+        "Slow down to minimize risk of rollover",
+        "Always stay on the outside of large trucks"
+      ]
+    },
+    {
+      "number": 63,
+      "question": "Select the inspection(s) that is the responsibility of you the driver",
+      "options": [
+        "Vehicle spot check",
+        "VAAI Acceptance & Assurance inspection",
+        "Daily/Pre-trip vehicle inspection",
+        "Vehicle site assurance test"
+      ]
+    },
+    {
+      "number": 64,
+      "question": "Select one (1) correct answer for an issue that good vehicle maintenance can prevent",
+      "options": [
+        "Cargo shift",
+        "Tire blowouts",
+        "Rollover"
+      ]
+    },
+    {
+      "number": 65,
+      "question": "Select the two (2) classes of defects for which you must check",
+      "options": [
+        "Class A",
+        "Class B",
+        "Class C",
+        "Class D"
+      ]
+    },
+    {
+      "number": 66,
+      "question": "Select the correct action to take if you find a class A defect",
+      "options": [
+        "The vehicle can be driven to a workshop for repair",
+        "The vehicle cannot be driven"
+      ]
+    },
+    {
+      "number": 67,
+      "question": "Select the two (2) defects that are classified as class B defects",
+      "options": [
+        "Seatbelt not working",
+        "Tire out of date",
+        "Hazard lights not working",
+        "A leak under the vehicle",
+        "Security pass missing",
+        "Horn not working"
+      ]
+    },
+    {
+      "number": 68,
+      "question": "Select the minimum depth of tread on your tires",
+      "options": [
+        "1mm",
+        "1.5mm",
+        "2.4mm",
+        "3.2mm"
+      ]
+    },
+    {
+      "number": 69,
+      "question": "Select the correct answer for your optimum seated position",
+      "options": [
+        "Shoulders resting against seat back, arms slightly bent with hands on steering wheel",
+        "Lean forward; arms slightly bent with hands on steering wheel",
+        "Shoulders resting against seat back, arms straight with hands on steering wheel"
+      ]
+    },
+    {
+      "number": 70,
+      "question": "Select the correct answer for overcoming car blind spots",
+      "options": [
+        "Move your mirrors in and out while driving",
+        "Ask your passenger to look for you",
+        "Move your head when you check your mirrors, not just your eyes"
+      ]
+    },
+    {
+      "number": 71,
+      "question": "Select two (2) statements that are IVMS VIOLATIONS",
+      "options": [
+        "Harsh braking or acceleration",
+        "Driving too long with no rest break",
+        "Night driving without permission",
+        "Over-speeding"
+      ]
+    },
+    {
+      "number": 72,
+      "question": "Select two (2) statements that are IVMS RISK EXPOSURES",
+      "options": [
+        "Harsh acceleration and braking",
+        "Not wearing a seatbelt",
+        "Driving three hours without a rest",
+        "Over-speeding"
+      ]
+    },
+    {
+      "number": 73,
+      "question": "Select the one (1) correct statement about the RAG report",
+      "options": [
+        "A red flag can result in a suspension",
+        "Amber flag qualifies you for a Safe Driver Award",
+        "There is no difference between a green and light green flag",
+        "Light green flag will be subject to a Consequence Assessment Committee Evaluation"
+      ]
+    },
+    {
+      "number": 74,
+      "question": "Select the correct reasons for creating a Journey Management Plan",
+      "options": [
+        "You can plan for known hazards",
+        "You can plan for road conditions",
+        "You can plan to avoid fatigue",
+        "You can make sure you have enough daylight",
+        "You can ensure you have enough fuel",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 75,
+      "question": "Select the things you must check as part of your journey management plan",
+      "options": [
+        "Weather reports",
+        "Traffic reports",
+        "Cell blackspots",
+        "Animal/pedestrian hazards",
+        "All of the above"
+      ]
+    },
+    {
+      "number": 76,
+      "question": "Select the maximum time you can drive without taking a recommended break",
+      "options": [
+        "2 hours",
+        "3 hours",
+        "4 hours"
+      ]
+    },
+    {
+      "number": 77,
+      "question": "Select the maximum driving hours allowed within a 24 hour period including commuting",
+      "options": [
+        "5 hours",
+        "11 hours",
+        "20 hours"
+      ]
+    },
+    {
+      "number": 78,
+      "question": "Select the main risk from becoming fatigued when driving",
+      "options": [
+        "Risk of missing a turning",
+        "Risk of having microsleeps at the wheel",
+        "Risk of driving too fast",
+        "Risk of being late"
+      ]
+    },
+    {
+      "number": 79,
+      "question": "How far will your vehicle travel in 4 seconds at 80kph with no one at the wheel if you have a microsleep?",
+      "options": [
+        "22 meters",
+        "45 meters",
+        "90 meters",
+        "120 meters"
+      ]
+    },
+    {
+      "number": 80,
+      "question": "Select the time beyond which you cannot drive without permission in WINTER",
+      "options": [
+        "17:00",
+        "19:00",
+        "21:00"
+      ]
+    },
+    {
+      "number": 81,
+      "question": "Select the two (2) actions you must immediately take if you have an MVC",
+      "options": [
+        "Check that your passengers are safe",
+        "Write detailed incident notes",
+        "Make the area safe"
+      ]
+    },
+    {
+      "number": 82,
+      "question": "Select the one (1) correct answer for what to do if the MVC causes a fire",
+      "options": [
+        "Use your emergency fire extinguisher if you can do so safely",
+        "Leave fires to the emergency services even if a threat to others",
+        "Let others involved in the MVC deal with it"
+      ]
+    },
+    {
+      "number": 83,
+      "question": "Select the two (2) correct statements about cargo",
+      "options": [
+        "Loose objects are OK in the passenger areas",
+        "Cargo must be secured in the luggage area",
+        "Heavy items in a pickup must be over the back axle",
+        "Loose objects must be secured in the driver’s cab"
+      ]
+    },
+    {
+      "number": 84,
+      "question": "Select three (3) correct DRIVER responsibilities for passengers",
+      "options": [
+        "Check condition of seat belts",
+        "Can carry passengers on private business",
+        "Never carry cargo in passenger area",
+        "Check passengers are wearing seat belts"
+      ]
+    },
+    {
+      "number": 85,
+      "question": "Select the three (3) correct PASSENGER responsibilities",
+      "options": [
+        "Never distract the driver",
+        "Tell the driver if he is driving in an unsafe manner",
+        "Hold onto the door handle while vehicle is moving",
+        "Wear your seatbelt"
+      ]
+    },
+    {
+      "number": 86,
+      "question": "Select the correct definition of defensive driving",
+      "options": [
+        "Defensive driving is where you defend your place on the road",
+        "Defensive driving is when you go slower than all other road users",
+        "Defensive driving is where you anticipate poor driving in others and question yourself",
+        "Defensive driving is when you defend your place on the road"
+      ]
+    },
+    {
+      "number": 87,
+      "question": "Select the correct gap to leave between vehicles in normal conditions",
+      "options": [
+        "2 seconds",
+        "3 seconds",
+        "4 seconds",
+        "5 seconds"
+      ]
+    },
+    {
+      "number": 88,
+      "question": "Select the correct order of action zones for the ‘looking ahead’ technique",
+      "options": [
+        "Planning zone / Action zone / Seeing zone",
+        "Planning zone / Seeing zone / Action zone",
+        "Seeing zone / Planning zone / Action zone",
+        "Anticipate zone / Seeing zone / Action zone"
+      ]
+    },
+    {
+      "number": 89,
+      "question": "Select the one (1) question you should ask yourself when overtaking",
+      "options": [
+        "Can I flash the vehicle in front to alert them?",
+        "Is it necessary, safe and legal?",
+        "Can I go faster than the speed limit to overtake?",
+        "Is it OK to overtake with solid lines on my side of the road?"
+      ]
+    },
+    {
+      "number": 90,
+      "question": "Select the one (1) correct purpose of creating a ‘safety bubble’ around your vehicle",
+      "options": [
+        "So that I can overtake safely",
+        "So I have an escape route if something happens",
+        "So I can change lane easily"
+      ]
+    },
+    {
+      "number": 91,
+      "question": "Select two (2) actions should I take near cyclists",
+      "options": [
+        "Honk a warning while passing",
+        "Give them more space",
+        "Examine the road surface to anticipate sudden movements"
+      ]
+    },
+    {
+      "number": 92,
+      "question": "Select the one (1) correct action for when you miss a turning on a roundabout",
+      "options": [
+        "Put on your hazard lights",
+        "If nothing else is on the road try to make the turn",
+        "Change indicators and go around again",
+        "Take the next exit and double back"
+      ]
+    },
+    {
+      "number": 93,
+      "question": "Select the correct way to park in a parking bay",
+      "options": [
+        "Reverse in",
+        "Front in"
+      ]
+    },
+    {
+      "number": 94,
+      "question": "Select the correct minimum visibility distance for driving",
+      "options": [
+        "50m",
+        "80m",
+        "100m"
+      ]
+    },
+    {
+      "number": 95,
+      "question": "Select the three (3) main factors that affect aquaplaning / hydroplaning",
+      "options": [
+        "Vehicle speed",
+        "Type of road surface",
+        "Depth of tire tread",
+        "Amount of water on the road"
+      ]
+    },
+    {
+      "number": 96,
+      "question": "Select the two (2) correct statements about driving into a sandstorm",
+      "options": [
+        "Turn on hazard lights",
+        "Pull vehicle off the road to safe parking area",
+        "Park with your windscreen facing the wind",
+        "Keep driving slowly"
+      ]
+    },
+    {
+      "number": 97,
+      "question": "Select the correct statement for driving within operational areas",
+      "options": [
+        "Obey all traffic signs",
+        "Drive at a speed that you think is appropriate",
+        "There is a speed limit of 10kph in all areas"
+      ]
+    },
+    {
+      "number": 98,
+      "question": "Select the correct answer for why your type of vehicle engine is important in operational areas",
+      "options": [
+        "There may be restricted height areas",
+        "There may be explosive gases",
+        "You may be driving in soft sand"
+      ]
+    },
+    {
+      "number": 99,
+      "question": "Select the vehicle requirement that only applies to Zone A",
+      "options": [
+        "Fitted with a diesel engine",
+        "Fitted with ATEX Approved Spark Arrestor",
+        "Fitted with ATEX Approved Automatic Air Intake Shutoff Valve – ASOV",
+        "Electrical generators, control boxes, lighting system earthed and bonded to main engine frame"
+      ]
+    },
+    {
+      "number": 100,
+      "question": "Select the operational areas where there are no vehicle restraints",
+      "options": [
+        "Zone A",
+        "Zone B",
+        "Zone C"
+      ]
+    }
+  ]
+}

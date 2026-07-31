@@ -175,23 +175,58 @@ def _get_quiz_passing_score_map(quiz_names):
     return {row.name: float(row.passing_score or 75) for row in rows}
 
 
-def _get_quiz_distinct_question_count_map(quiz_names):
-    """Count unique Question links per quiz (duplicate Quiz Question rows count once)."""
+def _get_quiz_question_link_map(quiz_names):
+    """Map quiz -> {question_name: question_creation} using question_link when available."""
     if not quiz_names:
         return {}
 
+    has_question_link = frappe.get_meta("Quiz Question").has_field("question_link")
+    fields = ["parent", "question_link", "question"] if has_question_link else ["parent", "question"]
     rows = frappe.get_all(
         "Quiz Question",
         filters={"parent": ["in", list(quiz_names)]},
-        fields=["parent", "question"],
+        fields=fields,
         ignore_permissions=True,
     )
-    question_sets = {}
+
+    question_ids = set()
+    quiz_questions = {}
     for row in rows:
-        if not row.question:
+        question_name = None
+        if has_question_link:
+            question_name = (row.get("question_link") or "").strip()
+        if not question_name:
+            # Legacy quizzes may store the Question name in `question`
+            candidate = (row.get("question") or "").strip()
+            if candidate.startswith("QUESTION-") or frappe.db.exists("Question", candidate):
+                question_name = candidate
+        if not question_name:
             continue
-        question_sets.setdefault(row.parent, set()).add(row.question)
-    return {quiz: len(questions) for quiz, questions in question_sets.items()}
+        quiz_questions.setdefault(row.parent, set()).add(question_name)
+        question_ids.add(question_name)
+
+    created_map = {}
+    if question_ids:
+        for row in frappe.get_all(
+            "Question",
+            filters={"name": ["in", list(question_ids)]},
+            fields=["name", "creation"],
+            ignore_permissions=True,
+        ):
+            created_map[row.name] = row.creation
+
+    return {
+        quiz: {question: created_map.get(question) for question in questions}
+        for quiz, questions in quiz_questions.items()
+    }
+
+
+def _get_quiz_distinct_question_count_map(quiz_names):
+    """Count unique Question links per quiz (duplicate Quiz Question rows count once)."""
+    return {
+        quiz: len(questions)
+        for quiz, questions in _get_quiz_question_link_map(quiz_names).items()
+    }
 
 
 def _get_group_course_map(group_names):
@@ -262,12 +297,39 @@ def _get_activity_score_summary(activities):
 
     passing_scores = _get_quiz_passing_score_map({row.quiz for row in activities if row.quiz})
     activity_quiz_map = {row.name: row.quiz for row in activities if row.name}
+    activity_date_map = {
+        row.name: (getattr(row, "creation", None) or getattr(row, "activity_date", None))
+        for row in activities
+        if row.name
+    }
     quiz_names = {quiz for quiz in activity_quiz_map.values() if quiz}
-    quiz_question_counts = _get_quiz_distinct_question_count_map(quiz_names)
+    quiz_question_maps = _get_quiz_question_link_map(quiz_names)
 
     for activity_name, data in summary.items():
         quiz_name = activity_quiz_map.get(activity_name)
-        expected_total = quiz_question_counts.get(quiz_name) or len(data["answered_questions"])
+        question_map = quiz_question_maps.get(quiz_name) or {}
+        activity_on = activity_date_map.get(activity_name)
+        if activity_on:
+            from frappe.utils import get_datetime
+
+            try:
+                activity_on = get_datetime(activity_on)
+            except Exception:
+                activity_on = None
+
+        # Ignore questions that were added to the bank after this attempt was taken.
+        if activity_on and question_map:
+            expected_questions = {
+                question
+                for question, created_on in question_map.items()
+                if not created_on or created_on <= activity_on
+            }
+        else:
+            expected_questions = set(question_map.keys())
+
+        # Always include answered questions so historical scores stay stable.
+        expected_questions |= set(data["answered_questions"])
+        expected_total = len(expected_questions) or len(data["answered_questions"])
         correct = len(data["correct_questions"])
         answered = len(data["answered_questions"])
         is_complete = answered >= expected_total
@@ -277,7 +339,9 @@ def _get_activity_score_summary(activities):
         data["correct"] = correct
         data["answered"] = answered
         data["score"] = f"{correct}/{expected_total}"
-        data["status"] = "Pass" if is_complete and percentage >= passing_score else "Fail"
+        # Unanswered questions already reduce percentage via expected_total.
+        # Do not force Fail just because newer questions were added later.
+        data["status"] = "Pass" if percentage >= passing_score else "Fail"
         data["is_complete"] = is_complete
         data["expected_total"] = expected_total
         data["percentage"] = percentage
