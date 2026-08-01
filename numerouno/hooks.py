@@ -14,6 +14,7 @@ website_route_rules = [
     # Endpoint must match www/<path>.html — not www/numerouno/<path>.html
     {"from_route": "/public-forms", "to_route": "public_portal_forms"},
     {"from_route": "/customer-portal", "to_route": "customer-portal"},
+    {"from_route": "/customer-code", "to_route": "customer-code"},
 ]
 
 # Website pages accessible to guests
@@ -186,6 +187,8 @@ doc_events = {
         "on_submit": "numerouno.numerouno.asset_management.update_asset_performance_from_log"
     },
     "Customer": {
+        "before_insert": "numerouno.numerouno.customer_code_setup.assign_customer_code",
+        "validate": "numerouno.numerouno.customer_code_setup.assign_customer_code",
         "on_update": "numerouno.numerouno.customer_portal_setup.on_customer_update",
         "after_insert": "numerouno.numerouno.customer_portal_setup.on_customer_update",
     },
