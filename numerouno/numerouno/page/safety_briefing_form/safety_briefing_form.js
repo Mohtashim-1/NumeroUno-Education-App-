@@ -26,9 +26,12 @@ class SafetyBriefingForm {
 	}
 
 	make_actions() {
+		this.page.clear_inner_toolbar();
 		this.page.set_primary_action(__("Save"), () => this.save());
 		this.page.add_inner_button(__("Print"), () => this.print_doc(), __("Actions"));
 		this.page.add_inner_button(__("Submit"), () => this.submit_doc(), __("Actions"));
+		this.page.add_inner_button(__("Cancel"), () => this.cancel_doc(), __("Actions"));
+		this.page.add_inner_button(__("Amend"), () => this.amend_doc(), __("Actions"));
 		this.page.add_inner_button(__("Populate Attendees"), () => this.populate_attendees(), __("Actions"));
 		this.page.add_inner_button(__("ERP Form"), () => this.open_erp_form(), __("Actions"));
 		this.page.add_inner_button(__("New"), () => this.show_picker(), __("Actions"));
@@ -388,13 +391,19 @@ class SafetyBriefingForm {
 	}
 
 	apply_readonly_state() {
-		const submitted = cint(this.doc?.docstatus) === 1;
-		this.$root.find("input, select, textarea, button.sbf-sig-open-btn, button.sbf-sig-clear").prop("disabled", submitted);
-		this.$root.find(".sbf-signature-box").toggleClass("sbf-signature-readonly", submitted);
-		if (submitted) {
+		const ds = cint(this.doc?.docstatus);
+		const locked = ds === 1 || ds === 2;
+		this.$root.find("input, select, textarea, button.sbf-sig-open-btn, button.sbf-sig-clear").prop("disabled", locked);
+		this.$root.find(".sbf-signature-box").toggleClass("sbf-signature-readonly", locked);
+		if (ds === 1) {
 			this.page.clear_primary_action();
 			this.$root.find(".sbf-toolbar-note").html(
-				`<strong>${frappe.utils.escape_html(this.doc.briefing_type || "")}</strong> — ${__("Submitted (read-only). Use Print for the official document.")}`
+				`<strong>${frappe.utils.escape_html(this.doc.briefing_type || "")}</strong> — ${__("Submitted (read-only). Cancel then Amend to edit signatures.")}`
+			);
+		} else if (ds === 2) {
+			this.page.clear_primary_action();
+			this.$root.find(".sbf-toolbar-note").html(
+				`<strong>${frappe.utils.escape_html(this.doc.briefing_type || "")}</strong> — ${__("Cancelled. Use Amend to create an editable copy.")}`
 			);
 		} else if (!this.page.btn_primary?.length) {
 			this.page.set_primary_action(__("Save"), () => this.save());
@@ -562,34 +571,87 @@ class SafetyBriefingForm {
 		this.fetch_attendees(this.doc.student_group);
 	}
 
-	fetch_attendees(student_group) {
-		frappe.call({
-			method: "numerouno.numerouno.doctype.safety_briefing.safety_briefing.get_attendees_for_student_group",
-			args: { student_group },
-			freeze: true,
-			callback: (r) => {
-				if (r.exc) return;
-				this.doc.attendees = r.message || [];
-				this.doc.student_group = student_group;
-				this.loading_key = null;
-				const args = this.doc.name
-					? { docname: this.doc.name }
-					: { briefing_type: this.doc.briefing_type, student_group };
-				if (this.doc.name) {
-					frappe.call({
-						method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.save_form",
-						args: { data: { ...this.collect_data(), attendees: this.doc.attendees, student_group } },
-						callback: (save_r) => {
-							if (!save_r.exc) this.doc = save_r.message;
-							this.fetch_form({ docname: this.doc.name });
-						},
-					});
-				} else {
-					this.fetch_form(args);
-				}
-				frappe.show_alert({ message: __("Attendees loaded"), indicator: "green" });
-			},
+	merge_attendees_preserving_signatures(incoming) {
+		const existing = this.doc.attendees || [];
+		const by_student = {};
+		const by_name = {};
+		existing.forEach((row) => {
+			const has =
+				(row.signed || "").trim() ||
+				row.sign_col_1 ||
+				row.sign_col_2 ||
+				row.sign_col_3 ||
+				row.sign_col_4 ||
+				row.sign_col_5;
+			if (!has) return;
+			const payload = {
+				signed: row.signed || "",
+				sign_col_1: row.sign_col_1 ? 1 : 0,
+				sign_col_2: row.sign_col_2 ? 1 : 0,
+				sign_col_3: row.sign_col_3 ? 1 : 0,
+				sign_col_4: row.sign_col_4 ? 1 : 0,
+				sign_col_5: row.sign_col_5 ? 1 : 0,
+			};
+			if (row.student) by_student[row.student] = payload;
+			const name = (row.learner_name || "").trim().toLowerCase();
+			if (name) by_name[name] = payload;
 		});
+		return (incoming || []).map((row) => {
+			const student = (row.student || "").trim();
+			const name = (row.learner_name || "").trim().toLowerCase();
+			const prev = (student && by_student[student]) || (name && by_name[name]) || {};
+			return { ...row, ...prev };
+		});
+	}
+
+	fetch_attendees(student_group) {
+		const run = () => {
+			frappe.call({
+				method: "numerouno.numerouno.doctype.safety_briefing.safety_briefing.get_attendees_for_student_group",
+				args: { student_group },
+				freeze: true,
+				callback: (r) => {
+					if (r.exc) return;
+					this.doc.attendees = this.merge_attendees_preserving_signatures(r.message || []);
+					this.doc.student_group = student_group;
+					this.loading_key = null;
+					const args = this.doc.name
+						? { docname: this.doc.name }
+						: { briefing_type: this.doc.briefing_type, student_group };
+					if (this.doc.name) {
+						frappe.call({
+							method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.save_form",
+							args: { data: { ...this.collect_data(), attendees: this.doc.attendees, student_group } },
+							callback: (save_r) => {
+								if (!save_r.exc) this.doc = save_r.message;
+								this.fetch_form({ docname: this.doc.name });
+							},
+						});
+					} else {
+						this.fetch_form(args);
+					}
+					frappe.show_alert({ message: __("Attendees loaded"), indicator: "green" });
+				},
+			});
+		};
+
+		const has_sigs = (this.doc.attendees || []).some(
+			(row) =>
+				(row.signed || "").trim() ||
+				row.sign_col_1 ||
+				row.sign_col_2 ||
+				row.sign_col_3 ||
+				row.sign_col_4 ||
+				row.sign_col_5
+		);
+		if (has_sigs) {
+			frappe.confirm(
+				__("Reload attendees from Student Group? Existing learner signatures will be kept where names match."),
+				run
+			);
+		} else {
+			run();
+		}
 	}
 
 	print_doc() {

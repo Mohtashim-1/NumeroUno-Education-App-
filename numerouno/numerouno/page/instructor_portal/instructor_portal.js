@@ -789,12 +789,11 @@ function _instructor_portal_boot(page) {
 									<th>Student Group</th>
 									<th>Date</th>
 									<th>Status</th>
-									<th>Modified</th>
 									<th>Action</th>
 								</tr>
 							</thead>
 							<tbody id="instructor-assessor-checklist-body">
-								<tr><td colspan="7" class="empty-state">Loading...</td></tr>
+								<tr><td colspan="6" class="empty-state">Loading...</td></tr>
 							</tbody>
 						</table>
 					</div>
@@ -2177,7 +2176,6 @@ function _instructor_portal_boot(page) {
 	function render_assessor_checklist_row(row) {
 		var docLink = `<a href="/app/course-assessor-checklist-form/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`;
 		var dateLabel = row.assessment_date ? frappe.datetime.str_to_user(row.assessment_date) : "-";
-		var modifiedLabel = row.modified ? frappe.datetime.str_to_user(row.modified) : "-";
 		var formCode = row.form_code ? `<div class="data-meta">${frappe.utils.escape_html(row.form_code)}</div>` : "";
 		return `
 			<tr>
@@ -2186,7 +2184,6 @@ function _instructor_portal_boot(page) {
 				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
 				<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
 				<td>${render_docstatus_pill(row.docstatus)}</td>
-				<td><div class="data-title">${frappe.utils.escape_html(modifiedLabel)}</div></td>
 				<td>${render_form_actions(
 					"/app/course-assessor-checklist-form/" + frappe.utils.escape_html(row.name || ""),
 					"/app/assessor-checklist/" + frappe.utils.escape_html(row.name || "")

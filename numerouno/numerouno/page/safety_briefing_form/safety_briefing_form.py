@@ -222,6 +222,25 @@ def submit_form(docname):
 	return {"name": doc.name, "docstatus": doc.docstatus}
 
 
+@frappe.whitelist()
+def cancel_form(docname):
+	doc = frappe.get_doc("Safety Briefing", docname)
+	if doc.docstatus == 1:
+		doc.cancel()
+	return {"name": doc.name, "docstatus": doc.docstatus}
+
+
+@frappe.whitelist()
+def amend_form(docname):
+	doc = frappe.get_doc("Safety Briefing", docname)
+	if doc.docstatus != 2:
+		frappe.throw("Only cancelled Safety Briefings can be amended")
+	amended = frappe.copy_doc(doc)
+	amended.amended_from = doc.name
+	amended.insert()
+	return _serialize_doc(amended)
+
+
 def _doc_for_template(data):
 	doc = frappe._dict(data)
 	for table in ("discussion_points", "practical_items", "attendees", "instructors"):

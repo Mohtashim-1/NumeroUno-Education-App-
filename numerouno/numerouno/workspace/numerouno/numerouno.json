@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"bmhPS3RFDV\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Third Party Certificate\",\"col\":3}},{\"id\":\"OkYnjFShG3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Invoice Portal\",\"col\":3}},{\"id\":\"JVu8-FJZCu\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"0v94hVUW0R\",\"type\":\"card\",\"data\":{\"card_name\":\"Certificate\",\"col\":4}},{\"id\":\"_11CpcxewH\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"xjcB_ZeKiM\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Card\",\"col\":4}},{\"id\":\"AkiVGf1eS-\",\"type\":\"card\",\"data\":{\"card_name\":\"Quiz\",\"col\":4}},{\"id\":\"_hPf2KbGF4\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule Assignment\",\"col\":4}},{\"id\":\"oJijfYyTt3\",\"type\":\"card\",\"data\":{\"card_name\":\"Driving Card\",\"col\":4}},{\"id\":\"iDJzUI8HbM\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Invoice\",\"col\":4}},{\"id\":\"CXIrjSD2za\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"bmhPS3RFDV\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Third Party Certificate\",\"col\":3}},{\"id\":\"OkYnjFShG3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Invoice Portal\",\"col\":3}},{\"id\":\"DC9AYDYjNC\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Lookup\",\"col\":3}},{\"id\":\"JVu8-FJZCu\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"0v94hVUW0R\",\"type\":\"card\",\"data\":{\"card_name\":\"Certificate\",\"col\":4}},{\"id\":\"_11CpcxewH\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"xjcB_ZeKiM\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Card\",\"col\":4}},{\"id\":\"AkiVGf1eS-\",\"type\":\"card\",\"data\":{\"card_name\":\"Quiz\",\"col\":4}},{\"id\":\"_hPf2KbGF4\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule Assignment\",\"col\":4}},{\"id\":\"oJijfYyTt3\",\"type\":\"card\",\"data\":{\"card_name\":\"Driving Card\",\"col\":4}},{\"id\":\"iDJzUI8HbM\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Invoice\",\"col\":4}},{\"id\":\"CXIrjSD2za\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
  "creation": "2025-04-30 01:03:10.313208",
  "custom_blocks": [],
  "docstatus": 0,
@@ -402,8 +402,8 @@
    "type": "Link"
   }
  ],
- "modified": "2026-07-17 14:28:50.530455",
- "modified_by": "Administrator",
+ "modified": "2026-08-03 10:54:55.363434",
+ "modified_by": "m.mashood@numerouno-me.com",
  "module": "Numerouno",
  "name": "NumeroUNO",
  "number_cards": [],
@@ -417,7 +417,7 @@
    "role": "System Manager"
   }
  ],
- "sequence_id": 1.1,
+ "sequence_id": 4.0,
  "shortcuts": [
   {
    "color": "Grey",
@@ -425,6 +425,13 @@
    "label": "Customer Invoice Portal",
    "type": "URL",
    "url": "https://erpnext.nutc.cloud/customer-portal"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Customer Lookup",
+   "link_to": "asset-management-portal",
+   "type": "Page"
   },
   {
    "color": "Grey",

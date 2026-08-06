@@ -111,8 +111,156 @@ def _serialize(row) -> dict:
 	}
 
 
+ROLE = "Customer Code Lookup"
+WORKSPACE = "Customer Code"
+
+# Staff who should use the lookup portal
+ACCESS_USERS = (
+	"tenorio.j@numerouno-me.com",  # Jeselle / Jessel
+	"a.sravon@numerouno-me.com",  # Afsana
+	"f.kaneez@numerouno-me.com",  # Fatima Kaneez
+	"s.arshad@numerouno-me.com",  # Syed / Seyad Arshad
+	"j.jeyakumar@numerouno-me.com",  # Jebisha
+	"m.soortee@numerouno-me.com",  # Mahmood
+	"j.carlo@numerouno-me.com",  # Jan Carlo
+	"kumar.v@numerouno-me.com",  # Vijay
+	"t.anwar@numerouno-me.com",  # Thanooja
+	"m.mashood@numerouno-me.com",  # Minhaj
+)
+
+
+def setup_access():
+	"""Create role + workspace, grant users, keep Selling shortcut."""
+	ensure_role()
+	ensure_customer_permission()
+	workspace = ensure_workspace()
+	selling = setup_workspace_link("Selling")
+	granted = grant_users(ACCESS_USERS)
+	frappe.clear_cache()
+	frappe.db.commit()
+	return {
+		"role": ROLE,
+		"workspace": workspace,
+		"selling": selling,
+		"granted": granted,
+		"url": PORTAL_PATH,
+	}
+
+
+def ensure_role():
+	if frappe.db.exists("Role", ROLE):
+		return
+	frappe.get_doc(
+		{
+			"doctype": "Role",
+			"role_name": ROLE,
+			"desk_access": 1,
+			"is_custom": 1,
+		}
+	).insert(ignore_permissions=True)
+
+
+def ensure_customer_permission():
+	"""Allow the role to read/select Customer for the lookup API."""
+	existing = frappe.db.exists(
+		"Custom DocPerm",
+		{"parent": "Customer", "role": ROLE, "permlevel": 0},
+	)
+	if existing:
+		doc = frappe.get_doc("Custom DocPerm", existing)
+		doc.read = 1
+		doc.select = 1
+		doc.save(ignore_permissions=True)
+		return
+
+	frappe.get_doc(
+		{
+			"doctype": "Custom DocPerm",
+			"parent": "Customer",
+			"parenttype": "DocType",
+			"parentfield": "permissions",
+			"role": ROLE,
+			"permlevel": 0,
+			"read": 1,
+			"select": 1,
+		}
+	).insert(ignore_permissions=True)
+
+
+def ensure_workspace():
+	content = [
+		{
+			"id": frappe.generate_hash(length=10),
+			"type": "header",
+			"data": {"text": f'<span class="h4">{PORTAL_LABEL}</span>', "col": 12},
+		},
+		{
+			"id": frappe.generate_hash(length=10),
+			"type": "shortcut",
+			"data": {"shortcut_name": PORTAL_LABEL, "col": 4},
+		},
+	]
+
+	if frappe.db.exists("Workspace", WORKSPACE):
+		workspace = frappe.get_doc("Workspace", WORKSPACE)
+	else:
+		workspace = frappe.new_doc("Workspace")
+		workspace.name = WORKSPACE
+		workspace.label = WORKSPACE
+		workspace.title = WORKSPACE
+		workspace.public = 1
+		workspace.icon = "id-card"
+		workspace.indicator_color = "cyan"
+
+	workspace.public = 1
+	workspace.is_hidden = 0
+	workspace.content = json.dumps(content)
+
+	# shortcut row
+	labels = {row.label for row in workspace.shortcuts}
+	if PORTAL_LABEL not in labels:
+		workspace.append(
+			"shortcuts",
+			{
+				"type": "URL",
+				"url": PORTAL_PATH,
+				"label": PORTAL_LABEL,
+				"color": "Teal",
+				"doc_view": "",
+			},
+		)
+
+	# restrict workspace to this role
+	workspace.set("roles", [])
+	workspace.append("roles", {"role": ROLE})
+
+	if workspace.is_new():
+		workspace.insert(ignore_permissions=True)
+	else:
+		workspace.save(ignore_permissions=True)
+	return WORKSPACE
+
+
+def grant_users(emails):
+	granted = []
+	missing = []
+	for email in emails:
+		if not frappe.db.exists("User", email):
+			missing.append(email)
+			continue
+		user = frappe.get_doc("User", email)
+		if not user.enabled:
+			user.enabled = 1
+		roles = {r.role for r in user.roles}
+		if ROLE not in roles:
+			user.append("roles", {"role": ROLE})
+			user.save(ignore_permissions=True)
+		granted.append({"email": email, "full_name": user.full_name})
+	return {"users": granted, "missing": missing}
+
+
 def setup_workspace_link(workspace_name: str = "Selling"):
-	"""Add a Selling workspace shortcut to the lookup portal."""
+	"""Add a workspace shortcut to the lookup portal."""
 	if not frappe.db.exists("Workspace", workspace_name):
 		workspace_name = "Forms"
 	if not frappe.db.exists("Workspace", workspace_name):
@@ -153,5 +301,4 @@ def setup_workspace_link(workspace_name: str = "Selling"):
 
 	if added:
 		workspace.save(ignore_permissions=True)
-		frappe.db.commit()
 	return {"workspace": workspace_name, "added": added, "url": PORTAL_PATH}

@@ -156,6 +156,55 @@ def get_attendees_for_student_group(student_group):
 	return get_students_for_group(student_group)
 
 
+def _attendee_signature_payload(row):
+	"""Keep learner signatures when attendees are reloaded from Student Group."""
+	return {
+		"signed": row.get("signed") or "",
+		"sign_col_1": frappe.utils.cint(row.get("sign_col_1")),
+		"sign_col_2": frappe.utils.cint(row.get("sign_col_2")),
+		"sign_col_3": frappe.utils.cint(row.get("sign_col_3")),
+		"sign_col_4": frappe.utils.cint(row.get("sign_col_4")),
+		"sign_col_5": frappe.utils.cint(row.get("sign_col_5")),
+	}
+
+
+def _index_existing_attendee_signatures(attendees):
+	by_student = {}
+	by_name = {}
+	for row in attendees or []:
+		payload = _attendee_signature_payload(row)
+		if not (
+			payload["signed"]
+			or payload["sign_col_1"]
+			or payload["sign_col_2"]
+			or payload["sign_col_3"]
+			or payload["sign_col_4"]
+			or payload["sign_col_5"]
+		):
+			continue
+		student = (row.get("student") or "").strip()
+		name = (row.get("learner_name") or "").strip().lower()
+		if student:
+			by_student[student] = payload
+		if name:
+			by_name[name] = payload
+	return by_student, by_name
+
+
+def _merge_attendee_with_existing(row, by_student, by_name):
+	merged = dict(row)
+	student = (row.get("student") or "").strip()
+	name = (row.get("learner_name") or "").strip().lower()
+	prev = None
+	if student and student in by_student:
+		prev = by_student[student]
+	elif name and name in by_name:
+		prev = by_name[name]
+	if prev:
+		merged.update(prev)
+	return merged
+
+
 @frappe.whitelist()
 def populate_attendees_from_student_group(docname, student_group):
 	docname = (docname or "").strip()
@@ -165,11 +214,12 @@ def populate_attendees_from_student_group(docname, student_group):
 		frappe.throw("Student Group is required")
 
 	doc = frappe.get_doc("Safety Briefing", docname)
+	by_student, by_name = _index_existing_attendee_signatures(doc.attendees)
 	doc.attendees = []
 
 	for row in get_students_for_group(student_group):
 		if row.get("learner_name") or row.get("student"):
-			doc.append("attendees", row)
+			doc.append("attendees", _merge_attendee_with_existing(row, by_student, by_name))
 		else:
 			doc.append("attendees", {})
 

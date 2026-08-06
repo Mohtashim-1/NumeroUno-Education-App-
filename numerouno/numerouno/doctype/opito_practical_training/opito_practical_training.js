@@ -23,6 +23,28 @@ function bind_opito_debug_handlers(frm) {
 	}
 }
 
+function apply_student_group_details(frm) {
+	if (!frm.doc.student_group) {
+		return;
+	}
+
+	frappe.call({
+		method:
+			"numerouno.numerouno.doctype.opito_practical_training.opito_practical_training.get_student_group_details",
+		args: { student_group: frm.doc.student_group },
+		callback(r) {
+			if (r.exc || !r.message) return;
+			const data = r.message;
+			if (data.course) {
+				frm.set_value("course", data.course);
+			}
+			if (data.total_learners != null) {
+				frm.set_value("total_no_of_learner", data.total_learners);
+			}
+		},
+	});
+}
+
 frappe.ui.form.on("OPITO Practical Training", {
 	onload(frm) {
 		console.log("[OPITO] onload", {
@@ -36,6 +58,17 @@ frappe.ui.form.on("OPITO Practical Training", {
 		if (frm.is_new()) {
 			if (frm.doc.traineraccessor_name) frm.set_value("traineraccessor_name", "");
 			if (frm.doc.technician_name) frm.set_value("technician_name", "");
+
+			if (frappe.route_options) {
+				if (frappe.route_options.student_group && !frm.doc.student_group) {
+					frm.set_value("student_group", frappe.route_options.student_group);
+				}
+				if (frappe.route_options.course && !frm.doc.course) {
+					frm.set_value("course", frappe.route_options.course);
+				}
+				delete frappe.route_options.student_group;
+				delete frappe.route_options.course;
+			}
 		}
 
 		frm.set_query("traineraccessor_name", () => ({
@@ -69,5 +102,11 @@ frappe.ui.form.on("OPITO Practical Training", {
 
 	refresh(frm) {
 		bind_opito_debug_handlers(frm);
+	},
+
+	student_group(frm) {
+		if (frm.doc.student_group) {
+			apply_student_group_details(frm);
+		}
 	},
 });

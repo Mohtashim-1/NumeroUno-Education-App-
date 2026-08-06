@@ -93,17 +93,18 @@ def _checklist_outcome_key(outcome_code, module_group, has_fire_lo1):
 
 
 def _normalize_checklist_layout(doc):
-	"""Sync TBOSIET / BOSIET EBS modules+outcomes to the official Excel layouts.
+	"""Sync official Excel layouts for supported assessor checklist types.
 
 	Returns True when the document layout was updated.
 	"""
 	checklist_type = (doc.checklist_type or "").strip()
-	if checklist_type not in ("TBOSIET", "BOSIET EBS"):
+	if checklist_type not in ("TBOSIET", "BOSIET EBS", "FOET EBS", "AGT", "Gas Monitor"):
 		return False
 
 	template = get_template_for_checklist_type(checklist_type)
 	expected_outcomes = template.get("outcomes") or []
 	expected_modules = template.get("module_groups") or []
+	expected_assessors = template.get("assessors") or []
 
 	current = [
 		{
@@ -131,7 +132,17 @@ def _normalize_checklist_layout(doc):
 		}
 		for row in expected_modules
 	]
-	if current == expected and modules_ok:
+	assessors_ok = [
+		{"module": (row.module or "").strip(), "description": (row.description or "").strip()}
+		for row in (doc.assessors or [])
+	] == [
+		{
+			"module": (row.get("module") or "").strip(),
+			"description": (row.get("description") or "").strip(),
+		}
+		for row in expected_assessors
+	]
+	if current == expected and modules_ok and assessors_ok:
 		return False
 
 	has_fire_lo1 = any(
@@ -174,16 +185,18 @@ def _normalize_checklist_layout(doc):
 			},
 		)
 
-	# Keep assessor rows aligned with template when missing OIS-04 rows.
-	expected_assessors = template.get("assessors") or []
-	if expected_assessors and len(doc.assessors or []) < len(expected_assessors):
-		existing = {
+	# Keep assessor rows aligned with template; preserve filled signature fields.
+	if expected_assessors:
+		existing_by_sr = {
+			cint(row.sr_no): row for row in (doc.assessors or []) if cint(getattr(row, "sr_no", 0))
+		}
+		existing_by_module = {
 			((row.module or "").strip(), (row.description or "").strip()): row
 			for row in (doc.assessors or [])
 		}
 		doc.assessors = []
 		for row in expected_assessors:
-			prev = existing.get(
+			prev = existing_by_sr.get(cint(row.get("sr_no"))) or existing_by_module.get(
 				((row.get("module") or "").strip(), (row.get("description") or "").strip()),
 				{},
 			)
@@ -209,8 +222,10 @@ def _normalize_checklist_layout(doc):
 				},
 			)
 
-	if not (doc.footer_notes or "").strip() and template.get("footer_notes"):
+	if template.get("footer_notes"):
 		doc.footer_notes = "\n".join(template.get("footer_notes") or [])
+	if template.get("unit_description"):
+		doc.unit_description = (template.get("unit_description") or "").replace("\n", "<br>")
 
 	for learner, marks in zip(doc.learners or [], learner_marks):
 		for field in LEARNER_RESULT_FIELDS:
@@ -360,6 +375,25 @@ def submit_form(docname):
 	if doc.docstatus == 0:
 		doc.submit()
 	return {"name": doc.name, "docstatus": doc.docstatus}
+
+
+@frappe.whitelist()
+def cancel_form(docname):
+	doc = frappe.get_doc("Assessor Checklist", docname)
+	if doc.docstatus == 1:
+		doc.cancel()
+	return {"name": doc.name, "docstatus": doc.docstatus}
+
+
+@frappe.whitelist()
+def amend_form(docname):
+	doc = frappe.get_doc("Assessor Checklist", docname)
+	if doc.docstatus != 2:
+		frappe.throw("Only cancelled Assessor Checklists can be amended")
+	amended = frappe.copy_doc(doc)
+	amended.amended_from = doc.name
+	amended.insert()
+	return _serialize_doc(amended)
 
 
 def _doc_for_template(data):

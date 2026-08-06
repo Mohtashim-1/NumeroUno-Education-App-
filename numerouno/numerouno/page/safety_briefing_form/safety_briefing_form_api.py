@@ -4,6 +4,8 @@ from numerouno.numerouno.page.safety_briefing_form.safety_briefing_form import (
 	get_form_data,
 	save_form_data,
 	submit_form,
+	cancel_form,
+	amend_form,
 )
 
 
@@ -36,3 +38,13 @@ def save_form(data):
 @frappe.whitelist()
 def submit(docname):
 	return submit_form(docname)
+
+
+@frappe.whitelist()
+def cancel(docname):
+	return cancel_form(docname)
+
+
+@frappe.whitelist()
+def amend(docname):
+	return amend_form(docname)

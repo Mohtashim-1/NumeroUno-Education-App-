@@ -377,29 +377,21 @@
       <img src="https://erp.nutc.cloud/files/nutclogo.jpg" alt="NUTC" />
       <div class="brand-mark">
         <div class="brand-name">NumeroUNO</div>
-        <div class="brand-sub">Customer Code Lookup</div>
       </div>
     </div>
 
     {% if is_guest %}
     <div class="hero">
-      <h1>Find any customer in seconds</h1>
-      <p>Look up a customer code from a name — or find the name from a code.</p>
+      <h1>Find customers</h1>
     </div>
     <div class="panel">
       <div class="login-card">
-        <div class="empty-icon">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        </div>
-        <h3>Sign in to continue</h3>
-        <p>This lookup is available to signed-in users with Customer access.</p>
         <a class="btn-primary" href="{{ login_url }}">Sign in</a>
       </div>
     </div>
     {% else %}
     <div class="hero">
-      <h1>Find any customer in seconds</h1>
-      <p>Type a company name or a code like <strong>1001</strong> — results update as you type.</p>
+      <h1>Find customers</h1>
     </div>
 
     <div class="panel">
@@ -419,14 +411,14 @@
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"
-          placeholder="Search by customer name or code…"
+          placeholder="Name or code"
           autofocus
         />
         <button type="button" class="search-clear" id="clearBtn" aria-label="Clear search">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <div class="hint" id="hint">Try a name like “Baker” or a code like “1001”.</div>
+      <div class="hint" id="hint"></div>
       <div class="results" id="results"></div>
     </div>
     {% endif %}
@@ -456,11 +448,7 @@
           mode = btn.dataset.mode;
           modeBtns.forEach((b) => b.classList.toggle("active", b === btn));
           input.placeholder =
-            mode === "code"
-              ? "Enter customer code…"
-              : mode === "name"
-                ? "Enter customer name…"
-                : "Search by customer name or code…";
+            mode === "code" ? "Code" : mode === "name" ? "Name" : "Name or code";
           runSearch();
           input.focus();
         });
@@ -493,11 +481,11 @@
 
         if (!query) {
           resultsEl.innerHTML = "";
-          hintEl.innerHTML = 'Try a name like “Baker” or a code like “1001”.';
+          hintEl.innerHTML = "";
           return;
         }
 
-        hintEl.innerHTML = `<span class="spinner"></span>Searching…`;
+        hintEl.innerHTML = `<span class="spinner"></span>`;
 
         try {
           const data = await call(API, { query, mode, limit: 12 });
@@ -505,29 +493,17 @@
           render(data.results || [], data.mode, query);
         } catch (err) {
           if (mySeq !== seq) return;
-          hintEl.textContent = err.message || "Search failed. Please try again.";
+          hintEl.textContent = "";
           resultsEl.innerHTML = "";
         }
       }
 
       function render(rows, usedMode, query) {
+        hintEl.textContent = "";
         if (!rows.length) {
-          resultsEl.innerHTML = `
-            <div class="empty">
-              <div class="empty-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </div>
-              <h3>No matches</h3>
-              <p>Nothing found for “${escapeHtml(query)}”. Check the spelling or try the other mode.</p>
-            </div>`;
-          hintEl.textContent = usedMode === "code" ? "Searched by code." : "Searched by name.";
+          resultsEl.innerHTML = "";
           return;
         }
-
-        hintEl.textContent =
-          rows.length === 1
-            ? `1 match · ${usedMode === "code" ? "by code" : "by name"}`
-            : `${rows.length} matches · ${usedMode === "code" ? "by code" : "by name"}`;
 
         resultsEl.innerHTML = rows
           .map((row, i) => {

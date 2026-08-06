@@ -685,28 +685,43 @@
         "outcome_code": "1.1",
         "assessment_method": "DO",
         "module_group": "OIS - 74"
+      },
+      {
+        "outcome_code": "1.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 74"
+      },
+      {
+        "outcome_code": "2.1",
+        "assessment_method": "DO",
+        "module_group": "OIS - 74"
+      },
+      {
+        "outcome_code": "2.2",
+        "assessment_method": "DO",
+        "module_group": "OIS - 74"
       }
     ],
     "assessors": [
       {
         "sr_no": 1,
         "module": "OIS 73(L01)",
-        "description": "OIS 73(L01)"
+        "description": "HS&E(T)"
       },
       {
         "sr_no": 2,
         "module": "OIS 73(L02)",
-        "description": "OIS 73(L02)"
+        "description": "HS&E(P)"
       },
       {
         "sr_no": 3,
-        "module": "OIS 74(L01 & L02)",
-        "description": "OIS 74(L01 & L02)"
+        "module": "OIS 75(L01 & L02)",
+        "description": "FA(T&P)"
       },
       {
         "sr_no": 4,
-        "module": "OIS 74\n(LO 1 &L02)",
-        "description": "OIS 74\n(LO 1 &L02)"
+        "module": "OIS 74(L01 & L02)",
+        "description": "FF(P)"
       }
     ],
     "footer_notes": [
@@ -714,7 +729,7 @@
       "Final Assessment Result: C-Competent , NYC- Not Yet Competent",
       "Description:HS&E:Helicopoter Safety & Escape, FF:Fire Fighting, FA: First Aid"
     ],
-    "unit_description": "",
+    "unit_description": "Unit Code OIS-73 Further Helicopter Safety and Escape - EBS, to successfully complete this unit,\nLearners must be able to understand:\n1. Helicopter Safety and Escape techniques (1.1- 1.6)\nLearners must be able to perform:\n2. Practical Helicopter Escape Techniques ( 2.1-2.12)\nUnit Code OIS-74 Further Firefighting and Self Rescue, to successfully complete this unit,\nLearners must be able to perform:\n1. Raising the alarm and operation of hand-held extinguishers (1.1-1.2)\n2. Self-Rescue Techniques (2.1-2.3)\nUnit Code OIS-75 Further Emergency First Aid, to successfully complete this unit,\nLearners must be able to understand:\n1. Emergency First Aid (1.1-1.9)\nLearners must be able to perform\n2. Immediate first aid techniques (2.1-2.4)",
     "learner_rows": 16
   },
   "T FOET": {
@@ -1144,9 +1159,17 @@
         "module_group": "OIS-105"
       }
     ],
-    "assessors": [],
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "OIS-105",
+        "description": "Assessor Name & Signature"
+      }
+    ],
     "footer_notes": [
-      "Final Assessment Result: C-Competent, NYC- Not Yet Competent"
+      "Assessment Methods:(OQ)-Oral Questioning, (DO)-Direct Observation, (WA)-Written Assessement",
+      "Final Assessment Result: C-Competent, NYC- Not Yet Competent",
+      "GM : Gas Monitor"
     ],
     "unit_description": "OIS-105 Gas Monitoring: 1. Providing Safety Watch duties (1.1-1.16)",
     "learner_rows": 16
@@ -1213,9 +1236,19 @@
         "module_group": "OIS-105"
       }
     ],
-    "assessors": [],
-    "footer_notes": [],
-    "unit_description": "OIS- 102 Authorized Gas Tester\nOIS-103 Testing for flammable gas in preparation for hot works\nOIS-104 Confined Space Testing\nOIS-105 Gas Monitoring",
+    "assessors": [
+      {
+        "sr_no": 1,
+        "module": "AGT",
+        "description": "Assessor"
+      }
+    ],
+    "footer_notes": [
+      "Assessment Methods:(OQ)-Oral Questioning, (DO)-Direct Observation, (WA)-Written Assessement",
+      "Final Assessment Result: C-Competent, NYC- Not Yet Competent",
+      "AGT Authorized Gas Tester"
+    ],
+    "unit_description": "OIS- 102 Authorized Gas Tester\n1.Relevant Legislative Controls(1.1-1.11)\n2.The principles and use of Atmosphere Measuing and Monitoring Equipment(2.1-2.10)\n3.Interpreting and Documenting Results(3.1-3.2)\nOIS-103 Testing for flammable gas in preparation for hot works\n1. Gas testing for hot work(1.1-1.14)\nOIS-104 Confined Space Testing\n1. Gas Testing in Confined Spaces(1.1-1.13)\nOIS-105 Gas Monitoring\n1. Providing Safety Watch Duties(1.1-1.16)",
     "learner_rows": 16
   },
   "TSbB Initial": {

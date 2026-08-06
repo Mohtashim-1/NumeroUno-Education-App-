@@ -58,6 +58,8 @@ class CourseAssessorChecklist {
 		});
 		this.page.add_inner_button(__("Print"), () => this.print_doc(), __("Actions"));
 		this.page.add_inner_button(__("Submit"), () => this.submit_doc(), __("Actions"));
+		this.page.add_inner_button(__("Cancel"), () => this.cancel_doc(), __("Actions"));
+		this.page.add_inner_button(__("Amend"), () => this.amend_doc(), __("Actions"));
 		this.page.add_inner_button(__("Populate Learners"), () => this.populate_learners(), __("Actions"));
 		this.page.add_inner_button(__("ERP Form"), () => this.open_erp_form(), __("Actions"));
 		this.page.add_inner_button(__("New"), () => this.open_create_dialog(), __("Actions"));
@@ -125,12 +127,11 @@ class CourseAssessorChecklist {
 									<th>${__("Student Group")}</th>
 									<th>${__("Date")}</th>
 									<th>${__("Status")}</th>
-									<th>${__("Modified")}</th>
 									<th>${__("Action")}</th>
 								</tr>
 							</thead>
 							<tbody class="cac-list-body">
-								<tr><td colspan="7" class="cac-empty">${__("Loading...")}</td></tr>
+								<tr><td colspan="6" class="cac-empty">${__("Loading...")}</td></tr>
 							</tbody>
 						</table>
 						<div class="cac-load-more-wrap" hidden>
@@ -196,7 +197,7 @@ class CourseAssessorChecklist {
 		if (!records.length && !append) {
 			$body.html(`
 				<tr>
-					<td colspan="7" class="cac-empty">
+					<td colspan="6" class="cac-empty">
 						${__("No checklists found for this course type.")}
 						<br><br>
 						<button type="button" class="cac-btn cac-btn-primary cac-empty-new">${__("Create New")}</button>
@@ -224,7 +225,6 @@ class CourseAssessorChecklist {
 
 	render_list_row(row) {
 		const dateLabel = row.assessment_date ? frappe.datetime.str_to_user(row.assessment_date) : "-";
-		const modifiedLabel = row.modified ? frappe.datetime.str_to_user(row.modified) : "-";
 		const formCode = row.form_code
 			? `<div class="cac-data-meta">${frappe.utils.escape_html(row.form_code)}</div>`
 			: "";
@@ -243,7 +243,6 @@ class CourseAssessorChecklist {
 				<td><div class="cac-data-title">${frappe.utils.escape_html(row.student_group || "-")}</div></td>
 				<td><div class="cac-data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
 				<td>${status}</td>
-				<td><div class="cac-data-title">${frappe.utils.escape_html(modifiedLabel)}</div></td>
 				<td>
 					<div class="cac-row-actions">
 						<a href="#" class="cac-btn cac-btn-primary cac-open-btn" data-name="${frappe.utils.escape_html(row.name || "")}">${__("Open")}</a>
@@ -724,7 +723,7 @@ class CourseAssessorChecklist {
 	}
 
 	apply_readonly_state() {
-		const submitted = cint(this.doc?.docstatus) === 1;
+		const submitted = cint(this.doc?.docstatus) === 1 || cint(this.doc?.docstatus) === 2;
 		this.$root
 			.find("input, select, textarea, canvas, button.cac-sig-clear, button.cac-mark-btn, button.cac-col-fill, button.cac-fill-c, button.cac-clear-marks")
 			.prop("disabled", submitted);
@@ -733,10 +732,17 @@ class CourseAssessorChecklist {
 			this.student_group_field.refresh();
 			this.$root.find(".cac-student-group-wrap .clearfix, .cac-student-group-wrap .control-label").remove();
 		}
-		if (submitted) {
+		const ds = cint(this.doc?.docstatus);
+		if (ds === 1) {
 			this.page.clear_primary_action();
 			this.$root.find(".cac-toolbar-note").html(
-				`<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong> — ${__("Submitted (read-only). Use Print for the official document.")}`
+				`<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong> — ${__("Submitted (read-only). Cancel then Amend to edit.")}`
+			);
+			this.$root.find(".cac-entry-toolbar").hide();
+		} else if (ds === 2) {
+			this.page.clear_primary_action();
+			this.$root.find(".cac-toolbar-note").html(
+				`<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong> — ${__("Cancelled. Use Amend to create an editable copy.")}`
 			);
 			this.$root.find(".cac-entry-toolbar").hide();
 		} else {

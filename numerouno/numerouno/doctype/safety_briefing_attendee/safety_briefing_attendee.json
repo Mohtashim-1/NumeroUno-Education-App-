@@ -39,32 +39,38 @@
    "fieldname": "signed",
    "fieldtype": "Signature",
    "in_list_view": 1,
-   "label": "Signed"
+   "label": "Learners Signature",
+   "depends_on": "eval:parent.attendee_signature_mode!='Module Columns'"
   },
   {
    "fieldname": "sign_col_1",
    "fieldtype": "Check",
-   "label": "Sign 1"
+   "label": "Sign 1",
+   "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   },
   {
    "fieldname": "sign_col_2",
    "fieldtype": "Check",
-   "label": "Sign 2"
+   "label": "Sign 2",
+   "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   },
   {
    "fieldname": "sign_col_3",
    "fieldtype": "Check",
-   "label": "Sign 3"
+   "label": "Sign 3",
+   "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   },
   {
    "fieldname": "sign_col_4",
    "fieldtype": "Check",
-   "label": "Sign 4"
+   "label": "Sign 4",
+   "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   },
   {
    "fieldname": "sign_col_5",
    "fieldtype": "Check",
-   "label": "Sign 5"
+   "label": "Sign 5",
+   "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   }
  ],
  "istable": 1,
@@ -74,5 +80,6 @@
  "permissions": [],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "modified": "2026-08-06 04:00:00.000000"
 }

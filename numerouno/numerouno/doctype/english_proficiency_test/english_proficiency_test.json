@@ -22,7 +22,8 @@
   "reading_title",
   "reading_passage",
   "section_break_questions",
-  "questions"
+  "questions",
+  "amended_from"
  ],
  "fields": [
   {
@@ -119,6 +120,15 @@
    "fieldtype": "Table",
    "label": "Questions",
    "options": "English Proficiency Question"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "English Proficiency Test",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
@@ -138,7 +148,9 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
-   "write": 1
+   "write": 1,
+   "cancel": 1,
+   "amend": 1
   },
   {
    "create": 1,
@@ -150,11 +162,14 @@
    "role": "Instructor",
    "share": 1,
    "submit": 1,
-   "write": 1
+   "write": 1,
+   "cancel": 1,
+   "amend": 1
   }
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1
+ "track_changes": 1,
+ "modified": "2026-08-06 04:00:00.000000"
 }

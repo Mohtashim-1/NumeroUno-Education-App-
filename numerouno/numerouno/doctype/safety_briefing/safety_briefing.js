@@ -26,7 +26,7 @@ frappe.ui.form.on("Safety Briefing", {
 
 		if (frm.doc.student_group) {
 			frm.add_custom_button(__("Populate Attendees from Student Group"), () => {
-				populate_attendees_from_student_group(frm);
+				maybe_populate_attendees_from_student_group(frm, {force_confirm: true});
 			}, __("Actions"));
 		}
 
@@ -35,8 +35,8 @@ frappe.ui.form.on("Safety Briefing", {
 
 	student_group(frm) {
 		if (frm.doc.student_group) {
-			populate_attendees_from_student_group(frm);
-		} else {
+			maybe_populate_attendees_from_student_group(frm);
+		} else if (!attendees_have_signatures(frm)) {
 			ensure_blank_attendee_rows(frm);
 		}
 	},
@@ -96,19 +96,95 @@ function populate_attendees_from_student_group(frm) {
 	});
 }
 
+function attendees_have_signatures(frm) {
+	return (frm.doc.attendees || []).some((row) => {
+		return (
+			(row.signed || "").trim() ||
+			row.sign_col_1 ||
+			row.sign_col_2 ||
+			row.sign_col_3 ||
+			row.sign_col_4 ||
+			row.sign_col_5
+		);
+	});
+}
+
+function index_existing_attendee_signatures(attendees) {
+	const by_student = {};
+	const by_name = {};
+	(attendees || []).forEach((row) => {
+		const payload = {
+			signed: row.signed || "",
+			sign_col_1: row.sign_col_1 ? 1 : 0,
+			sign_col_2: row.sign_col_2 ? 1 : 0,
+			sign_col_3: row.sign_col_3 ? 1 : 0,
+			sign_col_4: row.sign_col_4 ? 1 : 0,
+			sign_col_5: row.sign_col_5 ? 1 : 0,
+		};
+		if (
+			!(
+				payload.signed ||
+				payload.sign_col_1 ||
+				payload.sign_col_2 ||
+				payload.sign_col_3 ||
+				payload.sign_col_4 ||
+				payload.sign_col_5
+			)
+		) {
+			return;
+		}
+		if (row.student) by_student[row.student] = payload;
+		const name = (row.learner_name || "").trim().toLowerCase();
+		if (name) by_name[name] = payload;
+	});
+	return { by_student, by_name };
+}
+
+function merge_attendee_row(row, index) {
+	const student = (row.student || "").trim();
+	const name = (row.learner_name || "").trim().toLowerCase();
+	const prev =
+		(student && index.by_student[student]) ||
+		(name && index.by_name[name]) ||
+		{};
+	return {
+		learner_name: row.learner_name || "",
+		student: row.student || "",
+		company: row.company || "",
+		signed: prev.signed || row.signed || "",
+		sign_col_1: prev.sign_col_1 || row.sign_col_1 || 0,
+		sign_col_2: prev.sign_col_2 || row.sign_col_2 || 0,
+		sign_col_3: prev.sign_col_3 || row.sign_col_3 || 0,
+		sign_col_4: prev.sign_col_4 || row.sign_col_4 || 0,
+		sign_col_5: prev.sign_col_5 || row.sign_col_5 || 0,
+	};
+}
+
+function maybe_populate_attendees_from_student_group(frm, opts = {}) {
+	if (!frm.doc.student_group) return;
+	if (attendees_have_signatures(frm) || opts.force_confirm) {
+		if (attendees_have_signatures(frm)) {
+			frappe.confirm(
+				__("Reload attendees from Student Group? Existing learner signatures will be kept where names match."),
+				() => populate_attendees_from_student_group(frm)
+			);
+			return;
+		}
+	}
+	populate_attendees_from_student_group(frm);
+}
+
 function apply_attendees_to_form(frm, attendees) {
+	const index = index_existing_attendee_signatures(frm.doc.attendees || []);
 	frm.clear_table("attendees");
 	(attendees || []).forEach((row) => {
-		frm.add_child("attendees", {
-			learner_name: row.learner_name || "",
-			student: row.student || "",
-			company: row.company || "",
-		});
+		frm.add_child("attendees", merge_attendee_row(row, index));
 	});
 	while ((frm.doc.attendees || []).length < 16) {
 		frm.add_child("attendees", {});
 	}
 	frm.refresh_field("attendees");
+	toggle_attendee_signature_columns(frm);
 }
 
 function ensure_blank_attendee_rows(frm) {
@@ -244,3 +320,16 @@ function open_safety_briefing_document_view(frm) {
 
 	frappe.set_route("safety-briefing-form", frm.doc.name);
 }
+
+
+frappe.ui.form.on("Safety Briefing Attendee", {
+	signed(frm, cdt, cdn) {
+		// Keep parent dirty so child-table signature values are saved.
+		frm.dirty();
+	},
+	sign_col_1(frm) { frm.dirty(); },
+	sign_col_2(frm) { frm.dirty(); },
+	sign_col_3(frm) { frm.dirty(); },
+	sign_col_4(frm) { frm.dirty(); },
+	sign_col_5(frm) { frm.dirty(); },
+});

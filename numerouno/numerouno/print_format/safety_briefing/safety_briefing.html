@@ -15,7 +15,7 @@
 			<th class="col-sr">Sr#</th>
 			<th class="col-name">Learners Name</th>
 			<th class="col-company">Company</th>
-			<th class="col-signed">Signed</th>
+			<th class="col-signed">Learners Signature</th>
 		</tr>
 		{% for i in range(1, 17) %}
 		{% set row = doc.attendees[i - 1] if doc.attendees|length >= i else None %}
@@ -137,9 +137,9 @@
 			<th class="col-name" rowspan="2">Attendees Name</th>
 			<th class="col-company" rowspan="2">Company</th>
 			{% if sign_count > 1 %}
-			<th class="col-signed" colspan="{{ sign_count }}">Signed</th>
+			<th class="col-signed" colspan="{{ sign_count }}">Learners Signature</th>
 			{% else %}
-			<th class="col-signed" rowspan="2">Signed</th>
+			<th class="col-signed" rowspan="2">Learners Signature</th>
 			{% endif %}
 		</tr>
 		{% if sign_count > 1 %}
