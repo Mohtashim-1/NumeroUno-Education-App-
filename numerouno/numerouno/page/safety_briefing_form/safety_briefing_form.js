@@ -234,6 +234,7 @@ class SafetyBriefingForm {
 		const sign_count = module_mode
 			? (d.signature_labels || "").split(",").map((s) => s.trim()).filter(Boolean).length
 			: 1;
+		$doc.find(".nutc-attendees").toggleClass("module-signatures", sign_count > 1);
 
 		$doc.find(".nutc-attendees tr").each((idx, tr) => {
 			if ($(tr).find(".header-yellow").length) return;
@@ -250,7 +251,10 @@ class SafetyBriefingForm {
 					.find(".col-sign")
 					.each((j, cell) => {
 						const field = `sign_col_${j + 1}`;
-						$(cell).html(this.module_checkbox("attendees", attendee_idx, field, row[field]));
+						// Module columns (FF/FA/SS/HUET/LB) are learner signatures, not checkboxes.
+						const raw = row[field];
+						const value = raw && String(raw) !== "0" && String(raw) !== "1" ? raw : "";
+						$(cell).html(this.signature_cell("attendees", attendee_idx, field, value, { compact: true }));
 					});
 			} else {
 				$(tr).find(".col-signed").html(this.signature_cell("attendees", attendee_idx, "signed", row.signed));
@@ -350,15 +354,17 @@ class SafetyBriefingForm {
 	}
 
 	date_input(field, value) {
-		return `<input type="date" class="sbf-date-input" data-root="${field}" value="${value || ""}">`;
+		const display = format_sbf_date_display(value);
+		return `<input type="text" class="sbf-date-input" data-root="${field}" inputmode="numeric" placeholder="dd-mm-yyyy" value="${frappe.utils.escape_html(display)}">`;
 	}
 
-	signature_cell(table, idx, field, value) {
+	signature_cell(table, idx, field, value, opts = {}) {
 		return render_signature_field({
 			value: value,
 			table: table,
 			idx: idx,
 			field: field,
+			compact: !!(opts && opts.compact),
 		});
 	}
 
@@ -413,11 +419,23 @@ class SafetyBriefingForm {
 	collect_data() {
 		const data = frappe.utils.deep_clone(this.doc) || {};
 
+		const date_fields = [
+			"briefing_date",
+			"date_ff",
+			"date_fa",
+			"date_ss",
+			"date_lb",
+			"date_huet",
+			"date_huet_ebs",
+			"instructor_date",
+		];
 		this.$root.find("[data-root]").each(function () {
 			const $el = $(this);
 			const field = $el.data("root");
 			if ($el.hasClass("sbf-signature-value")) {
 				data[field] = $el.val();
+			} else if ($el.hasClass("sbf-date-input") || date_fields.includes(field)) {
+				data[field] = parse_sbf_date_value($el.val());
 			} else {
 				data[field] = $el.val();
 			}
@@ -576,22 +594,28 @@ class SafetyBriefingForm {
 		const by_student = {};
 		const by_name = {};
 		existing.forEach((row) => {
-			const has =
-				(row.signed || "").trim() ||
-				row.sign_col_1 ||
-				row.sign_col_2 ||
-				row.sign_col_3 ||
-				row.sign_col_4 ||
-				row.sign_col_5;
-			if (!has) return;
-			const payload = {
-				signed: row.signed || "",
-				sign_col_1: row.sign_col_1 ? 1 : 0,
-				sign_col_2: row.sign_col_2 ? 1 : 0,
-				sign_col_3: row.sign_col_3 ? 1 : 0,
-				sign_col_4: row.sign_col_4 ? 1 : 0,
-				sign_col_5: row.sign_col_5 ? 1 : 0,
+			const norm = (v) => {
+				const s = (v == null ? "" : String(v)).trim();
+				if (!s || s === "0") return "";
+				if (s === "1") return "1"; // legacy checkbox
+				return s;
 			};
+			const payload = {
+				signed: norm(row.signed),
+				sign_col_1: norm(row.sign_col_1),
+				sign_col_2: norm(row.sign_col_2),
+				sign_col_3: norm(row.sign_col_3),
+				sign_col_4: norm(row.sign_col_4),
+				sign_col_5: norm(row.sign_col_5),
+			};
+			const has =
+				payload.signed ||
+				payload.sign_col_1 ||
+				payload.sign_col_2 ||
+				payload.sign_col_3 ||
+				payload.sign_col_4 ||
+				payload.sign_col_5;
+			if (!has) return;
 			if (row.student) by_student[row.student] = payload;
 			const name = (row.learner_name || "").trim().toLowerCase();
 			if (name) by_name[name] = payload;
@@ -635,15 +659,13 @@ class SafetyBriefingForm {
 			});
 		};
 
-		const has_sigs = (this.doc.attendees || []).some(
-			(row) =>
-				(row.signed || "").trim() ||
-				row.sign_col_1 ||
-				row.sign_col_2 ||
-				row.sign_col_3 ||
-				row.sign_col_4 ||
-				row.sign_col_5
-		);
+		const has_sigs = (this.doc.attendees || []).some((row) => {
+			const vals = [row.signed, row.sign_col_1, row.sign_col_2, row.sign_col_3, row.sign_col_4, row.sign_col_5];
+			return vals.some((v) => {
+				const s = (v == null ? "" : String(v)).trim();
+				return s && s !== "0";
+			});
+		});
 		if (has_sigs) {
 			frappe.confirm(
 				__("Reload attendees from Student Group? Existing learner signatures will be kept where names match."),
@@ -663,6 +685,7 @@ class SafetyBriefingForm {
 	}
 
 	open_erp_form() {
+		frappe.route_options = { stay_on_erp_form: 1 };
 		if (this.doc?.name) frappe.set_route("Form", "Safety Briefing", this.doc.name);
 		else frappe.set_route("Form", "Safety Briefing", "new-safety-briefing-1");
 	}
@@ -674,26 +697,63 @@ class SafetyBriefingForm {
 	}
 }
 
+
+function format_sbf_date_display(value) {
+	if (!value) return "";
+	const raw = String(value).trim();
+	// already dd-mm-yyyy
+	if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) return raw;
+	// yyyy-mm-dd from backend
+	if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+		const [y, m, d] = raw.slice(0, 10).split("-");
+		return `${d}-${m}-${y}`;
+	}
+	try {
+		return frappe.datetime.str_to_user(raw);
+	} catch (e) {
+		return raw;
+	}
+}
+
+function parse_sbf_date_value(value) {
+	const raw = String(value || "").trim();
+	if (!raw) return null;
+	if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+	const m = raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+	if (m) {
+		const d = m[1].padStart(2, "0");
+		const mo = m[2].padStart(2, "0");
+		const y = m[3];
+		return `${y}-${mo}-${d}`;
+	}
+	return raw;
+}
+
 function render_signature_field(config) {
 	const value = config.value || "";
 	const hasSig = !!value;
+	const compact = !!config.compact;
 	const attrs = config.root
 		? `data-root="${frappe.utils.escape_html(config.root)}"`
 		: `data-table="${frappe.utils.escape_html(config.table)}" data-idx="${config.idx}" data-field="${frappe.utils.escape_html(config.field)}"`;
 	const preview = hasSig
 		? `<img src="${value}" class="sbf-sig-display" alt="${__("Signature")}">`
-		: `<span class="sbf-sig-placeholder-text">${__("Tap to sign")}</span>`;
+		: `<span class="sbf-sig-placeholder-text">${compact ? __("Sign") : __("Tap to sign")}</span>`;
+
+	const actions = compact
+		? `<button type="button" class="btn btn-default btn-xs sbf-sig-clear sbf-sig-clear-icon" title="${__("Clear")}" ${hasSig ? "" : "disabled"}>×</button>`
+		: `<div class="sbf-signature-actions">
+				<button type="button" class="btn btn-primary btn-xs sbf-sig-open-btn">${__("Sign")}</button>
+				<button type="button" class="btn btn-default btn-xs sbf-sig-clear" ${hasSig ? "" : "disabled"}>${__("Clear")}</button>
+			</div>`;
 
 	return `
-		<div class="sbf-signature-wrap">
+		<div class="sbf-signature-wrap ${compact ? "sbf-signature-compact" : ""}">
 			<div class="sbf-signature-box ${hasSig ? "has-signature" : ""}">
 				${preview}
 			</div>
 			<input type="hidden" class="sbf-signature-value" ${attrs} value="${frappe.utils.escape_html(value)}">
-			<div class="sbf-signature-actions">
-				<button type="button" class="btn btn-primary btn-xs sbf-sig-open-btn">${__("Sign")}</button>
-				<button type="button" class="btn btn-default btn-xs sbf-sig-clear" ${hasSig ? "" : "disabled"}>${__("Clear")}</button>
-			</div>
+			${actions}
 		</div>
 	`;
 }
@@ -702,11 +762,14 @@ function update_safety_briefing_signature_preview($wrap, dataUrl) {
 	const $hidden = $wrap.find(".sbf-signature-value");
 	const $box = $wrap.find(".sbf-signature-box");
 	$hidden.val(dataUrl || "");
+	const compact = $wrap.hasClass("sbf-signature-compact");
 	if (dataUrl) {
 		$box.addClass("has-signature").html(`<img src="${dataUrl}" class="sbf-sig-display" alt="${__("Signature")}">`);
 		$wrap.find(".sbf-sig-clear").prop("disabled", false);
 	} else {
-		$box.removeClass("has-signature").html(`<span class="sbf-sig-placeholder-text">${__("Tap to sign")}</span>`);
+		$box.removeClass("has-signature").html(
+			`<span class="sbf-sig-placeholder-text">${compact ? __("Sign") : __("Tap to sign")}</span>`
+		);
 		$wrap.find(".sbf-sig-clear").prop("disabled", true);
 	}
 }

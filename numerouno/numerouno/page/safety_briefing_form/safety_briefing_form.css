@@ -352,12 +352,14 @@
 }
 
 .sbf-date-input {
-	width: 90px;
+	width: 92px;
 	border: none;
-	border-bottom: 1px solid #999;
+	border-bottom: 1px dotted #666;
 	background: transparent;
 	font: inherit;
+	font-size: 10px;
 	padding: 0 2px;
+	color: #000;
 }
 
 .sbf-date-input:focus {
@@ -583,5 +585,103 @@
 	.form-tabs,
 	.page-actions {
 		display: none !important;
+	}
+}
+
+
+/* TBOSIET / module-column learner signatures must fit Word-form table cells */
+.nutc-attendees.nutc-attendees-yellow {
+	table-layout: fixed;
+	width: 100%;
+}
+
+.nutc-attendees .col-sign {
+	width: 7.5%;
+	max-width: 58px;
+	text-align: center;
+	padding: 1px !important;
+	overflow: hidden;
+	vertical-align: middle;
+}
+
+.nutc-attendees.module-signatures .col-name {
+	width: 26%;
+}
+
+.nutc-attendees.module-signatures .col-company {
+	width: 20%;
+}
+
+.sbf-signature-wrap.sbf-signature-compact {
+	position: relative;
+	display: block;
+	min-width: 0 !important;
+	width: 100%;
+	max-width: 54px;
+	margin: 0 auto;
+	padding: 0;
+	gap: 0;
+}
+
+.sbf-signature-compact .sbf-signature-box {
+	min-width: 0 !important;
+	width: 100%;
+	min-height: 26px !important;
+	height: 28px;
+	padding: 1px;
+	border-radius: 3px;
+	background: #fffdf8;
+	border: 1px solid #d8c7b0;
+}
+
+.sbf-signature-compact .sbf-signature-box.has-signature {
+	background: #fff;
+	border-style: solid;
+}
+
+.sbf-signature-compact .sbf-sig-placeholder-text {
+	font-size: 8px !important;
+	font-weight: 600;
+	color: #8a6a4d;
+	padding: 0;
+	line-height: 1;
+}
+
+.sbf-signature-compact .sbf-sig-display {
+	max-height: 24px !important;
+	max-width: 100%;
+}
+
+.sbf-signature-compact .sbf-sig-clear-icon {
+	position: absolute;
+	top: -5px;
+	right: -5px;
+	min-width: 16px !important;
+	width: 16px;
+	height: 16px;
+	padding: 0 !important;
+	line-height: 14px;
+	border-radius: 50%;
+	font-size: 11px !important;
+	font-weight: 700;
+	z-index: 2;
+}
+
+.sbf-signature-compact .sbf-sig-clear-icon:disabled {
+	display: none;
+}
+
+.nutc-attendees .col-sign .sbf-signature-wrap,
+.nutc-attendees .col-sign .sbf-signature-box {
+	min-width: 0 !important;
+}
+
+@media (max-width: 900px) {
+	.sbf-signature-compact .sbf-signature-box {
+		min-height: 30px !important;
+		height: 32px;
+	}
+	.sbf-signature-compact .sbf-sig-display {
+		max-height: 28px !important;
 	}
 }

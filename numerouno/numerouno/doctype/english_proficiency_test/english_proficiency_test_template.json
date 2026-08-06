@@ -13,7 +13,8 @@
         "2011",
         "2021"
       ],
-      "question_type": "Single Choice"
+      "question_type": "Single Choice",
+      "correct_answer": "2010"
     },
     {
       "sr_no": 2,
@@ -23,7 +24,8 @@
         "11 Injured and 17 Killed",
         "11 Killed and 17 Injured"
       ],
-      "question_type": "Single Choice"
+      "question_type": "Single Choice",
+      "correct_answer": "11 Killed and 17 Injured"
     },
     {
       "sr_no": 3,
@@ -34,7 +36,8 @@
         "Transocean",
         "Mexico"
       ],
-      "question_type": "Single Choice"
+      "question_type": "Single Choice",
+      "correct_answer": "Transocean"
     },
     {
       "sr_no": 4,
@@ -44,7 +47,8 @@
         "1 Year",
         "3 Months"
       ],
-      "question_type": "Single Choice"
+      "question_type": "Single Choice",
+      "correct_answer": "87 Days"
     },
     {
       "sr_no": 5,
@@ -57,7 +61,8 @@
         "Texas",
         "All of the Above"
       ],
-      "question_type": "Multiple Choice"
+      "question_type": "Multiple Choice",
+      "correct_answer": "All of the Above"
     },
     {
       "sr_no": 6,
@@ -66,7 +71,8 @@
         "True",
         "False"
       ],
-      "question_type": "True/False"
+      "question_type": "True/False",
+      "correct_answer": "True"
     },
     {
       "sr_no": 7,
@@ -75,7 +81,8 @@
         "Almost 8,000",
         "More than 8,000"
       ],
-      "question_type": "Single Choice"
+      "question_type": "Single Choice",
+      "correct_answer": "More than 8,000"
     },
     {
       "sr_no": 8,
@@ -84,7 +91,8 @@
         "More than $20M",
         "More than $20B"
       ],
-      "question_type": "Single Choice"
+      "question_type": "Single Choice",
+      "correct_answer": "More than $20B"
     },
     {
       "sr_no": 9,
@@ -94,7 +102,8 @@
         "Cameron International",
         "Transocean"
       ],
-      "question_type": "Single Choice"
+      "question_type": "Single Choice",
+      "correct_answer": "Cameron International"
     },
     {
       "sr_no": 10,
@@ -104,7 +113,8 @@
         "$20 Billion",
         "$247 Million"
       ],
-      "question_type": "Single Choice"
+      "question_type": "Single Choice",
+      "correct_answer": "$247 Million"
     }
   ]
 }

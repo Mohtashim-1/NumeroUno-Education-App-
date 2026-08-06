@@ -3,16 +3,113 @@ from pathlib import Path
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import cint, today
+from frappe.utils import cint, flt, today
 
 
 class EnglishProficiencyTest(Document):
-	pass
+	def validate(self):
+		ensure_question_correct_answers(self)
+		compute_score_and_result(self)
 
 
 def _load_template():
 	path = Path(__file__).parent / "english_proficiency_test_template.json"
 	return json.loads(path.read_text())
+
+
+def _template_correct_answer_map():
+	template = _load_template()
+	return {
+		str(cint(row.get("sr_no"))): (row.get("correct_answer") or "").strip()
+		for row in template.get("questions") or []
+		if row.get("sr_no") is not None
+	}
+
+
+def _normalize_answer(value):
+	text = (value or "").strip()
+	if not text:
+		return ""
+	return " ".join(text.lower().split())
+
+
+def _answer_tokens(value):
+	"""Split multi-select answers saved as 'A | B | C'."""
+	raw = (value or "").strip()
+	if not raw:
+		return set()
+	parts = [p.strip() for p in raw.split("|")]
+	return {_normalize_answer(p) for p in parts if p.strip()}
+
+
+def answer_is_correct(row, correct_map=None):
+	selected = (row.get("selected_answer") if hasattr(row, "get") else getattr(row, "selected_answer", None)) or ""
+	correct = (row.get("correct_answer") if hasattr(row, "get") else getattr(row, "correct_answer", None)) or ""
+	if not correct and correct_map is not None:
+		sr = str(cint(row.get("sr_no") if hasattr(row, "get") else getattr(row, "sr_no", 0)))
+		correct = correct_map.get(sr) or ""
+	if not selected or not correct:
+		return False
+
+	qtype = (row.get("question_type") if hasattr(row, "get") else getattr(row, "question_type", None)) or "Single Choice"
+	if qtype == "Multiple Choice":
+		selected_tokens = _answer_tokens(selected)
+		correct_tokens = _answer_tokens(correct)
+		# Exact option match OR selecting every individual option when key is "All of the Above"
+		if selected_tokens == correct_tokens:
+			return True
+		if _normalize_answer(correct) == _normalize_answer("All of the Above"):
+			options = []
+			for i in range(1, 7):
+				opt = row.get(f"option_{i}") if hasattr(row, "get") else getattr(row, f"option_{i}", None)
+				if opt and _normalize_answer(opt) != _normalize_answer("All of the Above"):
+					options.append(_normalize_answer(opt))
+			if options and selected_tokens == set(options):
+				return True
+		return False
+
+	return _normalize_answer(selected) == _normalize_answer(correct)
+
+
+def ensure_question_correct_answers(doc):
+	"""Backfill correct answers from the official template by question number."""
+	correct_map = _template_correct_answer_map()
+	for row in doc.questions or []:
+		if not (row.correct_answer or "").strip():
+			sr = str(cint(row.sr_no))
+			if correct_map.get(sr):
+				row.correct_answer = correct_map[sr]
+
+
+def compute_score_and_result(doc):
+	"""
+	10 questions x 1 mark each.
+	Pass when score percentage >= pass_percentage (default 80% => 8/10).
+	"""
+	rows = list(doc.questions or [])
+	total = len(rows)
+	if not total:
+		doc.score = ""
+		doc.result = ""
+		return {"correct": 0, "total": 0, "percentage": 0, "result": ""}
+
+	correct_map = _template_correct_answer_map()
+	correct = 0
+	for row in rows:
+		if answer_is_correct(row, correct_map=correct_map):
+			correct += 1
+
+	percentage = (correct / total) * 100.0
+	pass_mark = cint(doc.pass_percentage) or 80
+	doc.score = f"{correct}/{total}"
+	doc.result = "Pass" if percentage >= pass_mark else "Fail"
+	return {
+		"correct": correct,
+		"total": total,
+		"percentage": round(percentage, 2),
+		"result": doc.result,
+		"score": doc.score,
+	}
 
 
 def _serialize_questions(rows):
@@ -26,6 +123,8 @@ def _serialize_questions(rows):
 		"option_4",
 		"option_5",
 		"option_6",
+		"correct_answer",
+		"selected_answer",
 	)
 	return [{field: row.get(field) or "" for field in fields} for row in rows]
 
@@ -57,6 +156,7 @@ def load_default_template(docname=None):
 				"option_4": row["options"][3] if len(row["options"]) > 3 else "",
 				"option_5": row["options"][4] if len(row["options"]) > 4 else "",
 				"option_6": row["options"][5] if len(row["options"]) > 5 else "",
+				"correct_answer": row.get("correct_answer") or "",
 			},
 		)
 
@@ -190,6 +290,7 @@ def submit_wms_pretest_portal(data=None):
 				"option_4": options[3] if len(options) > 3 else "",
 				"option_5": options[4] if len(options) > 4 else "",
 				"option_6": options[5] if len(options) > 5 else "",
+				"correct_answer": row.get("correct_answer") or "",
 				"selected_answer": selected,
 			},
 		)
@@ -197,8 +298,10 @@ def submit_wms_pretest_portal(data=None):
 	if answered < 1:
 		frappe.throw("Please answer at least one question before submitting.")
 
+	# Score/result are computed in validate(); submit so it is not left as Draft.
 	doc.flags.ignore_permissions = True
 	doc.insert(ignore_permissions=True)
+	doc.submit()
 	frappe.db.commit()
 
 	return {
@@ -207,5 +310,9 @@ def submit_wms_pretest_portal(data=None):
 		"company_name": doc.company_name,
 		"answered": answered,
 		"total_questions": len(doc.questions or []),
+		"score": doc.score,
+		"result": doc.result,
+		"pass_percentage": doc.pass_percentage,
+		"docstatus": doc.docstatus,
 		"message": "WMS Pretest submitted successfully.",
 	}

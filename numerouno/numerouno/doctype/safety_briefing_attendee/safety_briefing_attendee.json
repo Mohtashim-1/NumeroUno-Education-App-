@@ -44,31 +44,31 @@
   },
   {
    "fieldname": "sign_col_1",
-   "fieldtype": "Check",
+   "fieldtype": "Signature",
    "label": "Sign 1",
    "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   },
   {
    "fieldname": "sign_col_2",
-   "fieldtype": "Check",
+   "fieldtype": "Signature",
    "label": "Sign 2",
    "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   },
   {
    "fieldname": "sign_col_3",
-   "fieldtype": "Check",
+   "fieldtype": "Signature",
    "label": "Sign 3",
    "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   },
   {
    "fieldname": "sign_col_4",
-   "fieldtype": "Check",
+   "fieldtype": "Signature",
    "label": "Sign 4",
    "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   },
   {
    "fieldname": "sign_col_5",
-   "fieldtype": "Check",
+   "fieldtype": "Signature",
    "label": "Sign 5",
    "depends_on": "eval:parent.attendee_signature_mode=='Module Columns'"
   }
@@ -81,5 +81,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "modified": "2026-08-06 04:00:00.000000"
+ "modified": "2026-08-06 15:50:00.000000"
 }

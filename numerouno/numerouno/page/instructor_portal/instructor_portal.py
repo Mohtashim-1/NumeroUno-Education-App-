@@ -632,14 +632,18 @@ INSTRUCTOR_FORM_CONFIGS = {
         "fields": [
             "name",
             "candidate_name",
+            "company_name",
             "student",
             "student_group",
             "date_of_training",
+            "score",
             "result",
             "docstatus",
             "modified",
         ],
         "student_filter": True,
+        # Guest portal submissions often have no student_group; still list them for instructors.
+        "include_ungrouped": True,
     },
     "adsd_pretest": {
         "doctype": "Pre Test ADSD",
@@ -688,6 +692,19 @@ def _build_instructor_form_filters(
     return filters
 
 
+def _count_with_or_filters(doctype, filters, or_filters):
+    """Count rows matching filters + or_filters."""
+    return len(
+        frappe.get_all(
+            doctype,
+            filters=filters,
+            or_filters=or_filters,
+            pluck="name",
+            limit_page_length=0,
+        )
+    )
+
+
 def _get_instructor_form_records(
     form_key,
     limit=50,
@@ -719,15 +736,38 @@ def _get_instructor_form_records(
         return {"records": [], "total": 0}
 
     doctype = config["doctype"]
-    total = frappe.db.count(doctype, filters=filters)
-    records = frappe.get_all(
-        doctype,
-        filters=filters,
-        fields=config["fields"],
-        order_by="modified desc",
-        limit=limit,
-        start=offset,
-    )
+    or_filters = None
+
+    # Guest WMS pretest drafts usually have no student_group. Include those so instructors
+    # can review score/result, unless the user explicitly filtered to one student group.
+    if (
+        config.get("include_ungrouped")
+        and not (student_group or "").strip()
+        and "student_group" in filters
+    ):
+        scoped = filters.pop("student_group")
+        or_filters = []
+        if isinstance(scoped, (list, tuple)) and len(scoped) == 2 and scoped[0] == "in":
+            or_filters.append(["student_group", "in", list(scoped[1] or [])])
+        else:
+            or_filters.append(["student_group", "=", scoped])
+        or_filters.append(["student_group", "is", "not set"])
+        or_filters.append(["student_group", "=", ""])
+
+    query_kwargs = {
+        "filters": filters,
+        "fields": config["fields"],
+        "order_by": "modified desc",
+        "limit": limit,
+        "start": offset,
+    }
+    if or_filters:
+        query_kwargs["or_filters"] = or_filters
+        total = _count_with_or_filters(doctype, filters, or_filters)
+    else:
+        total = frappe.db.count(doctype, filters=filters)
+
+    records = frappe.get_all(doctype, **query_kwargs)
     return {"records": records, "total": total}
 
 

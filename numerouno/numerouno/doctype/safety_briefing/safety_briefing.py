@@ -156,15 +156,24 @@ def get_attendees_for_student_group(student_group):
 	return get_students_for_group(student_group)
 
 
+def _normalize_attendee_sign(value):
+	if value is None:
+		return ""
+	text = str(value).strip()
+	if not text or text == "0":
+		return ""
+	return text
+
+
 def _attendee_signature_payload(row):
 	"""Keep learner signatures when attendees are reloaded from Student Group."""
 	return {
-		"signed": row.get("signed") or "",
-		"sign_col_1": frappe.utils.cint(row.get("sign_col_1")),
-		"sign_col_2": frappe.utils.cint(row.get("sign_col_2")),
-		"sign_col_3": frappe.utils.cint(row.get("sign_col_3")),
-		"sign_col_4": frappe.utils.cint(row.get("sign_col_4")),
-		"sign_col_5": frappe.utils.cint(row.get("sign_col_5")),
+		"signed": _normalize_attendee_sign(row.get("signed")),
+		"sign_col_1": _normalize_attendee_sign(row.get("sign_col_1")),
+		"sign_col_2": _normalize_attendee_sign(row.get("sign_col_2")),
+		"sign_col_3": _normalize_attendee_sign(row.get("sign_col_3")),
+		"sign_col_4": _normalize_attendee_sign(row.get("sign_col_4")),
+		"sign_col_5": _normalize_attendee_sign(row.get("sign_col_5")),
 	}
 
 

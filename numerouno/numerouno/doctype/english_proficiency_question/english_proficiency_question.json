@@ -15,6 +15,7 @@
   "option_4",
   "option_5",
   "option_6",
+  "correct_answer",
   "selected_answer"
  ],
  "fields": [
@@ -70,6 +71,12 @@
    "label": "Option 6"
   },
   {
+   "fieldname": "correct_answer",
+   "fieldtype": "Data",
+   "label": "Correct Answer",
+   "in_list_view": 0
+  },
+  {
    "fieldname": "selected_answer",
    "fieldtype": "Data",
    "label": "Selected Answer"
@@ -82,5 +89,6 @@
  "permissions": [],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "modified": "2026-08-06 16:05:00.000000"
 }

@@ -2434,13 +2434,26 @@ function _instructor_portal_boot(page) {
 		var docLink = `<a href="/app/english-proficiency-test/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`;
 		var dateLabel = row.date_of_training ? frappe.datetime.str_to_user(row.date_of_training) : "-";
 		var resultClass = row.result === "Pass" ? "pass" : row.result === "Fail" ? "fail" : "pending";
+		var scoreMeta = row.score ? `<div class="data-meta">${frappe.utils.escape_html(row.score)}</div>` : "";
+		var resultLabel = row.result || "-";
+		if (row.score && row.result) {
+			resultLabel = row.score + " " + row.result;
+		} else if (row.score && !row.result) {
+			resultLabel = row.score;
+		}
+		var companyMeta = row.company_name
+			? `<div class="data-meta">${frappe.utils.escape_html(row.company_name)}</div>`
+			: "";
+		var groupLabel = row.student_group
+			? render_student_group_cell(row.student_group)
+			: `<span class="data-meta">Guest portal</span>`;
 		return `
 			<tr>
-				<td><div class="data-title">${docLink}</div></td>
-				<td>${render_student_cell(row.student, row.candidate_name)}</td>
-				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${docLink}</div>${scoreMeta}</td>
+				<td>${render_student_cell(row.student, row.candidate_name)}${companyMeta}</td>
+				<td><div class="data-title">${groupLabel}</div></td>
 				<td><div class="data-title">${frappe.utils.escape_html(dateLabel)}</div></td>
-				<td><span class="status-pill ${resultClass}">${frappe.utils.escape_html(row.result || "-")}</span></td>
+				<td><span class="status-pill ${resultClass}">${frappe.utils.escape_html(resultLabel)}</span></td>
 				<td>${render_docstatus_pill(row.docstatus)}</td>
 				<td>${render_form_actions(
 					"/app/english-proficiency-test/" + frappe.utils.escape_html(row.name || ""),

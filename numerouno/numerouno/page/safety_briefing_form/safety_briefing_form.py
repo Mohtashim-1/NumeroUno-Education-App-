@@ -1,6 +1,16 @@
 import frappe
 from frappe.utils import cint, today
 
+
+def _attendee_sign_value(value):
+	"""Store module/learner signatures as data-URL strings (legacy checkbox 1 kept for print)."""
+	if value is None:
+		return ""
+	text = str(value).strip()
+	if not text or text == "0":
+		return ""
+	return text
+
 from numerouno.numerouno.doctype.safety_briefing.safety_briefing import (
 	apply_template,
 	get_students_for_group,
@@ -145,12 +155,12 @@ def _apply_payload(doc, data):
 				"learner_name": row.get("learner_name"),
 				"student": row.get("student"),
 				"company": row.get("company"),
-				"signed": row.get("signed"),
-				"sign_col_1": cint(row.get("sign_col_1")),
-				"sign_col_2": cint(row.get("sign_col_2")),
-				"sign_col_3": cint(row.get("sign_col_3")),
-				"sign_col_4": cint(row.get("sign_col_4")),
-				"sign_col_5": cint(row.get("sign_col_5")),
+				"signed": _attendee_sign_value(row.get("signed")),
+				"sign_col_1": _attendee_sign_value(row.get("sign_col_1")),
+				"sign_col_2": _attendee_sign_value(row.get("sign_col_2")),
+				"sign_col_3": _attendee_sign_value(row.get("sign_col_3")),
+				"sign_col_4": _attendee_sign_value(row.get("sign_col_4")),
+				"sign_col_5": _attendee_sign_value(row.get("sign_col_5")),
 			},
 		)
 	_ensure_attendee_rows(doc)

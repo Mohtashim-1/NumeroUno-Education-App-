@@ -159,11 +159,10 @@
 				{% for j in range(sign_count) %}
 				<td class="col-sign">
 					{% if row %}
-						{% if j == 0 and row.sign_col_1 %}✓
-						{% elif j == 1 and row.sign_col_2 %}✓
-						{% elif j == 2 and row.sign_col_3 %}✓
-						{% elif j == 3 and row.sign_col_4 %}✓
-						{% elif j == 4 and row.sign_col_5 %}✓{% endif %}
+						{% set sig_val = row.sign_col_1 if j == 0 else row.sign_col_2 if j == 1 else row.sign_col_3 if j == 2 else row.sign_col_4 if j == 3 else row.sign_col_5 %}
+						{% if sig_val and sig_val|string|length > 20 %}
+							<img src="{{ sig_val }}" class="sig-img" />
+						{% elif sig_val and sig_val|string not in ['0', 'False', 'None'] %}✓{% endif %}
 					{% endif %}
 				</td>
 				{% endfor %}

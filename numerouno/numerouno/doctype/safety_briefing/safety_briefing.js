@@ -4,6 +4,13 @@ frappe.ui.form.on("Safety Briefing", {
 	},
 
 	refresh(frm) {
+		// Always open the official template Document View unless ERP Form was requested.
+		if (!frappe.route_options?.stay_on_erp_form) {
+			open_safety_briefing_document_view(frm);
+			return;
+		}
+		delete frappe.route_options.stay_on_erp_form;
+
 		frm.add_custom_button(__("Document View"), () => {
 			open_safety_briefing_document_view(frm);
 		}, __("Actions"));
@@ -113,13 +120,18 @@ function index_existing_attendee_signatures(attendees) {
 	const by_student = {};
 	const by_name = {};
 	(attendees || []).forEach((row) => {
+		const norm = (v) => {
+			const s = (v == null ? "" : String(v)).trim();
+			if (!s || s === "0") return "";
+			return s;
+		};
 		const payload = {
-			signed: row.signed || "",
-			sign_col_1: row.sign_col_1 ? 1 : 0,
-			sign_col_2: row.sign_col_2 ? 1 : 0,
-			sign_col_3: row.sign_col_3 ? 1 : 0,
-			sign_col_4: row.sign_col_4 ? 1 : 0,
-			sign_col_5: row.sign_col_5 ? 1 : 0,
+			signed: norm(row.signed),
+			sign_col_1: norm(row.sign_col_1),
+			sign_col_2: norm(row.sign_col_2),
+			sign_col_3: norm(row.sign_col_3),
+			sign_col_4: norm(row.sign_col_4),
+			sign_col_5: norm(row.sign_col_5),
 		};
 		if (
 			!(
@@ -152,11 +164,11 @@ function merge_attendee_row(row, index) {
 		student: row.student || "",
 		company: row.company || "",
 		signed: prev.signed || row.signed || "",
-		sign_col_1: prev.sign_col_1 || row.sign_col_1 || 0,
-		sign_col_2: prev.sign_col_2 || row.sign_col_2 || 0,
-		sign_col_3: prev.sign_col_3 || row.sign_col_3 || 0,
-		sign_col_4: prev.sign_col_4 || row.sign_col_4 || 0,
-		sign_col_5: prev.sign_col_5 || row.sign_col_5 || 0,
+		sign_col_1: prev.sign_col_1 || row.sign_col_1 || "",
+		sign_col_2: prev.sign_col_2 || row.sign_col_2 || "",
+		sign_col_3: prev.sign_col_3 || row.sign_col_3 || "",
+		sign_col_4: prev.sign_col_4 || row.sign_col_4 || "",
+		sign_col_5: prev.sign_col_5 || row.sign_col_5 || "",
 	};
 }
 
