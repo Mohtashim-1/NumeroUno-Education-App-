@@ -496,16 +496,44 @@
 }
 
 .nutc-instructors .sbf-signature-wrap,
-.nutc-instructor-single .sbf-signature-wrap,
-.nutc-attendees .sbf-signature-wrap {
+.nutc-instructor-single .sbf-signature-wrap {
+	min-width: 132px;
+}
+
+.nutc-attendees .sbf-signature-wrap:not(.sbf-signature-compact) {
 	min-width: 132px;
 }
 
 .nutc-instructors td:has(.sbf-signature-wrap),
-.nutc-instructor-single td:has(.sbf-signature-wrap),
-.nutc-attendees .col-signed {
+.nutc-instructor-single td:has(.sbf-signature-wrap) {
 	min-width: 148px;
 	vertical-align: middle;
+}
+
+.nutc-attendees .col-name,
+.nutc-attendees .col-company {
+	min-width: 72px;
+	overflow: hidden;
+}
+
+.nutc-attendees .col-signed {
+	width: 22%;
+	max-width: 120px;
+	min-width: 64px;
+	vertical-align: middle;
+	padding: 1px !important;
+	overflow: hidden;
+}
+
+.nutc-attendees .col-signed .sbf-signature-wrap,
+.nutc-attendees .col-signed .sbf-signature-box {
+	min-width: 0 !important;
+}
+
+.sbf-cell-input:disabled {
+	color: #000;
+	opacity: 1;
+	-webkit-text-fill-color: #000;
 }
 
 .sbf-readonly {

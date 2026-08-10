@@ -257,7 +257,7 @@ class SafetyBriefingForm {
 						$(cell).html(this.signature_cell("attendees", attendee_idx, field, value, { compact: true }));
 					});
 			} else {
-				$(tr).find(".col-signed").html(this.signature_cell("attendees", attendee_idx, "signed", row.signed));
+				$(tr).find(".col-signed").html(this.signature_cell("attendees", attendee_idx, "signed", row.signed, { compact: true }));
 			}
 		});
 
