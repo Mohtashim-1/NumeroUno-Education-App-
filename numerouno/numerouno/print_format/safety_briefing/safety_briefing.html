@@ -206,9 +206,9 @@
 		</tr>
 		{% endfor %}
 		{% if not doc.instructors %}
-		{% set blank_rows = 9 if doc.briefing_type in ['TBOSIET', 'BOSIET EBS'] else 5 %}
+		{% set blank_rows = 5 %}
 		{% for i in range(1, blank_rows + 1) %}
-		<tr><td>{{ i }}.</td><td>OIS -</td><td></td></tr>
+		<tr><td>{{ i }}.</td><td>OIS</td><td></td></tr>
 		{% endfor %}
 		{% endif %}
 		{% endif %}

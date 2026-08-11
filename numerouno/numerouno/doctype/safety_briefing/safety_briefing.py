@@ -86,7 +86,7 @@ def apply_template(doc, template, clear_existing=False):
 				doc.append("instructors", {"module": module})
 		else:
 			for _ in range(template.get("instructor_rows") or 1):
-				doc.append("instructors", {"module": "OIS -"})
+				doc.append("instructors", {"module": "OIS"})
 
 	if not doc.attendees:
 		doc.attendees = []

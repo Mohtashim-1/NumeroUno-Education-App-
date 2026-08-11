@@ -333,7 +333,7 @@ class SafetyBriefingForm {
 					$(cells[1]).html(this.signature_cell("instructors", inst_idx, "signature", row.signature));
 				} else if (cells.length >= 3) {
 					$(cells[0]).html(`${inst_idx + 1}. ${this.text_input("instructors", inst_idx, "instructor_name", row.instructor_name || "")}`);
-					$(cells[1]).html(this.text_input("instructors", inst_idx, "module", row.module || "OIS -"));
+					$(cells[1]).html(this.text_input("instructors", inst_idx, "module", row.module || "OIS"));
 					$(cells[2]).html(this.signature_cell("instructors", inst_idx, "signature", row.signature, { compact: true }));
 				}
 			});
@@ -555,7 +555,7 @@ class SafetyBriefingForm {
 			});
 		}
 
-		return rows.filter((row) => row.instructor_name || row.signature || (row.module && row.module !== "OIS -"));
+		return rows.filter((row) => row.instructor_name || row.signature || (row.module && row.module !== "OIS" && row.module !== "OIS -"));
 	}
 
 	add_instructor_row() {
@@ -579,7 +579,7 @@ class SafetyBriefingForm {
 		const sign_cell = this.signature_cell("instructors", idx, "signature", "", { compact: true });
 		const row_html = is_tsbb
 			? `<tr><td>${name_cell}</td><td>${sign_cell}</td></tr>`
-			: `<tr><td>${name_cell}</td><td>${this.text_input("instructors", idx, "module", "OIS -")}</td><td>${sign_cell}</td></tr>`;
+			: `<tr><td>${name_cell}</td><td>${this.text_input("instructors", idx, "module", "OIS")}</td><td>${sign_cell}</td></tr>`;
 
 		$table.append(row_html);
 		this.init_signature_pads();
