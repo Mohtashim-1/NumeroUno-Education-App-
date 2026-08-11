@@ -1938,6 +1938,42 @@ function _instructor_portal_boot(page) {
 		frappe.set_route(target.route);
 	}
 
+	function guard_existing_course_form(form_kind, student_group, form_type, on_allowed) {
+		if (!student_group || !form_type) {
+			on_allowed();
+			return;
+		}
+		frappe.call({
+			method: "numerouno.numerouno.utils.form_duplicate_guard.check_existing_course_form",
+			args: {
+				form_kind: form_kind,
+				student_group: student_group,
+				form_type: form_type
+			},
+			freeze: true,
+			callback: function (r) {
+				if (r.exc) return;
+				if (r.message && r.message.exists) {
+					var label = form_kind === "safety_briefing" ? __("Safety Briefing") : __("Course Assessor Checklist");
+					frappe.msgprint({
+						title: __("{0} Already Exists", [label]),
+						indicator: "orange",
+						message:
+							"<p>" +
+							__("A form already exists for this student group ({0}).", [r.message.name]) +
+							"</p><p><a class='btn btn-primary btn-sm' href='" +
+							frappe.utils.escape_html(r.message.url) +
+							"'>" +
+							__("Open {0}", [r.message.name]) +
+							"</a></p>"
+					});
+					return;
+				}
+				on_allowed();
+			}
+		});
+	}
+
 	function open_assessor_checklist_dialog(defaults) {
 		defaults = defaults || {};
 		var typeOptions = [
@@ -1983,12 +2019,19 @@ function _instructor_portal_boot(page) {
 					frappe.msgprint(__("Select a Checklist Type"));
 					return;
 				}
-				dialog.hide();
-				frappe.route_options = {
-					checklist_type: values.checklist_type,
-					student_group: values.student_group || null
-				};
-				frappe.set_route("course-assessor-checklist-form");
+				guard_existing_course_form(
+					"assessor_checklist",
+					values.student_group,
+					values.checklist_type,
+					function () {
+						dialog.hide();
+						frappe.route_options = {
+							checklist_type: values.checklist_type,
+							student_group: values.student_group || null
+						};
+						frappe.set_route("course-assessor-checklist-form");
+					}
+				);
 			}
 		});
 
@@ -2349,12 +2392,19 @@ function _instructor_portal_boot(page) {
 					frappe.msgprint(__("Select a Briefing Type"));
 					return;
 				}
-				dialog.hide();
-				frappe.route_options = {
-					student_group: values.student_group,
-					briefing_type: values.briefing_type
-				};
-				frappe.set_route("safety-briefing-form");
+				guard_existing_course_form(
+					"safety_briefing",
+					values.student_group,
+					values.briefing_type,
+					function () {
+						dialog.hide();
+						frappe.route_options = {
+							student_group: values.student_group,
+							briefing_type: values.briefing_type
+						};
+						frappe.set_route("safety-briefing-form");
+					}
+				);
 			}
 		});
 

@@ -190,6 +190,15 @@ def get_form_data(docname=None, briefing_type=None, student_group=None):
 	if docname:
 		doc = frappe.get_doc("Safety Briefing", docname)
 	elif briefing_type:
+		from numerouno.numerouno.utils.form_duplicate_guard import throw_if_duplicate_course_form
+
+		if student_group:
+			throw_if_duplicate_course_form(
+				"Safety Briefing",
+				student_group,
+				"briefing_type",
+				briefing_type,
+			)
 		doc = frappe.new_doc("Safety Briefing")
 		doc.briefing_type = briefing_type
 		template = get_template_for_briefing_type(briefing_type)
@@ -218,6 +227,17 @@ def save_form_data(data):
 			frappe.throw("Submitted Safety Briefing cannot be edited")
 	else:
 		doc = frappe.new_doc("Safety Briefing")
+		student_group = (data.get("student_group") or "").strip()
+		briefing_type = (data.get("briefing_type") or "").strip()
+		if student_group and briefing_type:
+			from numerouno.numerouno.utils.form_duplicate_guard import throw_if_duplicate_course_form
+
+			throw_if_duplicate_course_form(
+				"Safety Briefing",
+				student_group,
+				"briefing_type",
+				briefing_type,
+			)
 
 	_apply_payload(doc, data)
 	doc.save()

@@ -10,6 +10,20 @@ class SafetyBriefing(Document):
 	def validate(self):
 		if not self.attendees:
 			self._ensure_attendee_rows()
+		self._validate_unique_for_student_group()
+
+	def _validate_unique_for_student_group(self):
+		from numerouno.numerouno.utils.form_duplicate_guard import throw_if_duplicate_course_form
+
+		if not (self.student_group and self.briefing_type):
+			return
+		throw_if_duplicate_course_form(
+			"Safety Briefing",
+			self.student_group,
+			"briefing_type",
+			self.briefing_type,
+			exclude_name=self.name,
+		)
 
 	def _ensure_attendee_rows(self):
 		for idx in range(1, 17):
@@ -66,8 +80,13 @@ def apply_template(doc, template, clear_existing=False):
 			)
 
 	if doc.instructor_mode == "Course Instructors Table" and not doc.instructors:
-		for _ in range(template.get("instructor_rows") or 1):
-			doc.append("instructors", {"module": "OIS -"})
+		instructor_modules = template.get("instructor_modules") or []
+		if instructor_modules:
+			for module in instructor_modules:
+				doc.append("instructors", {"module": module})
+		else:
+			for _ in range(template.get("instructor_rows") or 1):
+				doc.append("instructors", {"module": "OIS -"})
 
 	if not doc.attendees:
 		doc.attendees = []

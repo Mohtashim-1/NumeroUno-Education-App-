@@ -41,7 +41,18 @@
       "date_huet"
     ],
     "instructor_mode": "table",
-    "instructor_rows": 5,
+    "instructor_rows": 9,
+    "instructor_modules": [
+      "OIS 01",
+      "OIS 81 (L01 & L02)",
+      "OIS 81 (L03)",
+      "OIS 3 (L01)",
+      "OIS 3 (L03)",
+      "OIS 3 (L04)",
+      "OIS 3 (L02 & L05)",
+      "OIS 4 (L01 & L02)",
+      "OIS 4 (L03 & L04)"
+    ],
     "discussion_points": [
       "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
       "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",
@@ -212,7 +223,18 @@
       "date_huet_ebs"
     ],
     "instructor_mode": "table",
-    "instructor_rows": 5,
+    "instructor_rows": 9,
+    "instructor_modules": [
+      "OIS 01",
+      "OIS 02 (L01 & L02)",
+      "OIS 02 (L03)",
+      "OIS 03 (L01)",
+      "OIS 03 (L03)",
+      "OIS 03 (L04)",
+      "OIS 03 (L02 & L05)",
+      "OIS 04 (L01 & L02)",
+      "OIS 04 (L03 & L04)"
+    ],
     "discussion_points": [
       "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
       "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",

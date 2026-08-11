@@ -10,6 +10,20 @@ class AssessorChecklist(Document):
 	def validate(self):
 		if not self.learners:
 			self._ensure_learner_rows()
+		self._validate_unique_for_student_group()
+
+	def _validate_unique_for_student_group(self):
+		from numerouno.numerouno.utils.form_duplicate_guard import throw_if_duplicate_course_form
+
+		if not (self.student_group and self.checklist_type):
+			return
+		throw_if_duplicate_course_form(
+			"Assessor Checklist",
+			self.student_group,
+			"checklist_type",
+			self.checklist_type,
+			exclude_name=self.name,
+		)
 
 	def _ensure_learner_rows(self):
 		for idx in range(1, 17):

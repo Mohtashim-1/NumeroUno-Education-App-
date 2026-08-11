@@ -326,27 +326,71 @@ class CourseAssessorChecklist {
 		this.loading_key = load_key;
 		this.make_form_actions();
 
-		frappe.call({
-			method:
-				"numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.get_form_html",
-			args,
-			freeze: true,
-			callback: (r) => {
-				if (r.exc) {
+		const proceed = () => {
+			frappe.call({
+				method:
+					"numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.get_form_html",
+				args,
+				freeze: true,
+				callback: (r) => {
+					if (r.exc) {
+						this.loading_key = null;
+						return;
+					}
+					this.doc = r.message.doc;
+					this.render(r.message.html);
+					const title = this.doc.name
+						? `${this.doc.checklist_type} (${this.doc.name})`
+						: this.doc.checklist_type;
+					this.page.set_title(`${__("Course Assessor Checklist")} — ${title}`);
+				},
+				error: () => {
 					this.loading_key = null;
-					return;
-				}
-				this.doc = r.message.doc;
-				this.render(r.message.html);
-				const title = this.doc.name
-					? `${this.doc.checklist_type} (${this.doc.name})`
-					: this.doc.checklist_type;
-				this.page.set_title(`${__("Course Assessor Checklist")} — ${title}`);
-			},
-			error: () => {
-				this.loading_key = null;
-			},
-		});
+				},
+			});
+		};
+
+		if (!args.docname && args.checklist_type && args.student_group) {
+			frappe.call({
+				method: "numerouno.numerouno.utils.form_duplicate_guard.check_existing_course_form",
+				args: {
+					form_kind: "assessor_checklist",
+					student_group: args.student_group,
+					form_type: args.checklist_type,
+				},
+				callback: (r) => {
+					if (r.exc) {
+						this.loading_key = null;
+						return;
+					}
+					if (r.message?.exists) {
+						this.loading_key = null;
+						const url = r.message.url || `/app/course-assessor-checklist-form/${r.message.name}`;
+						frappe.msgprint({
+							title: __("Assessor Checklist Already Exists"),
+							indicator: "orange",
+							message: `
+								<p>${frappe.utils.escape_html(
+									__("A form already exists for this student group ({0}).", [r.message.name])
+								)}</p>
+								<p><a class="btn btn-primary btn-sm" href="${frappe.utils.escape_html(url)}">${__(
+									"Open {0}",
+									[r.message.name]
+								)}</a></p>
+							`,
+						});
+						return;
+					}
+					proceed();
+				},
+				error: () => {
+					this.loading_key = null;
+				},
+			});
+			return;
+		}
+
+		proceed();
 	}
 
 	render(html) {

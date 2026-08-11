@@ -33,6 +33,7 @@ class SafetyBriefingForm {
 		this.page.add_inner_button(__("Cancel"), () => this.cancel_doc(), __("Actions"));
 		this.page.add_inner_button(__("Amend"), () => this.amend_doc(), __("Actions"));
 		this.page.add_inner_button(__("Populate Attendees"), () => this.populate_attendees(), __("Actions"));
+		this.page.add_inner_button(__("Add Instructor Row"), () => this.add_instructor_row(), __("Actions"));
 		this.page.add_inner_button(__("ERP Form"), () => this.open_erp_form(), __("Actions"));
 		this.page.add_inner_button(__("New"), () => this.show_picker(), __("Actions"));
 	}
@@ -128,25 +129,73 @@ class SafetyBriefingForm {
 			args.docname || `new:${args.briefing_type || ""}:${args.student_group || ""}`;
 		this.loading_key = load_key;
 
-		frappe.call({
-			method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.get_form_html",
-			args,
-			freeze: true,
-			callback: (r) => {
-				if (r.exc) {
+		const proceed = () => {
+			frappe.call({
+				method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.get_form_html",
+				args,
+				freeze: true,
+				callback: (r) => {
+					if (r.exc) {
+						this.loading_key = null;
+						return;
+					}
+					this.doc = r.message.doc;
+					this.render(r.message.html);
+					const title = this.doc.name
+						? `${this.doc.briefing_type} (${this.doc.name})`
+						: this.doc.briefing_type;
+					this.page.set_title(`${__("Safety Briefing")} — ${title}`);
+				},
+				error: () => {
 					this.loading_key = null;
-					return;
-				}
-				this.doc = r.message.doc;
-				this.render(r.message.html);
-				const title = this.doc.name
-					? `${this.doc.briefing_type} (${this.doc.name})`
-					: this.doc.briefing_type;
-				this.page.set_title(`${__("Safety Briefing")} — ${title}`);
-			},
-			error: () => {
-				this.loading_key = null;
-			},
+				},
+			});
+		};
+
+		if (!args.docname && args.briefing_type && args.student_group) {
+			frappe.call({
+				method: "numerouno.numerouno.utils.form_duplicate_guard.check_existing_course_form",
+				args: {
+					form_kind: "safety_briefing",
+					student_group: args.student_group,
+					form_type: args.briefing_type,
+				},
+				callback: (r) => {
+					if (r.exc) {
+						this.loading_key = null;
+						return;
+					}
+					if (r.message?.exists) {
+						this.loading_key = null;
+						this.show_existing_form_message(r.message, "Safety Briefing");
+						return;
+					}
+					proceed();
+				},
+				error: () => {
+					this.loading_key = null;
+				},
+			});
+			return;
+		}
+
+		proceed();
+	}
+
+	show_existing_form_message(payload, label) {
+		const url = payload.url || `/app/safety-briefing-form/${payload.name}`;
+		frappe.msgprint({
+			title: __("{0} Already Exists", [label]),
+			indicator: "orange",
+			message: `
+				<p>${frappe.utils.escape_html(
+					__("A form already exists for this student group ({0}).", [payload.name])
+				)}</p>
+				<p><a class="btn btn-primary btn-sm" href="${frappe.utils.escape_html(url)}">${__(
+					"Open {0}",
+					[payload.name]
+				)}</a></p>
+			`,
 		});
 	}
 
@@ -285,7 +334,7 @@ class SafetyBriefingForm {
 				} else if (cells.length >= 3) {
 					$(cells[0]).html(`${inst_idx + 1}. ${this.text_input("instructors", inst_idx, "instructor_name", row.instructor_name || "")}`);
 					$(cells[1]).html(this.text_input("instructors", inst_idx, "module", row.module || "OIS -"));
-					$(cells[2]).html(this.signature_cell("instructors", inst_idx, "signature", row.signature));
+					$(cells[2]).html(this.signature_cell("instructors", inst_idx, "signature", row.signature, { compact: true }));
 				}
 			});
 		}
@@ -507,6 +556,35 @@ class SafetyBriefingForm {
 		}
 
 		return rows.filter((row) => row.instructor_name || row.signature || (row.module && row.module !== "OIS -"));
+	}
+
+	add_instructor_row() {
+		if (!this.doc || this.doc.instructor_mode !== "Course Instructors Table") {
+			frappe.msgprint(__("Instructor rows are not used for this briefing type."));
+			return;
+		}
+		if (cint(this.doc.docstatus) === 1) {
+			frappe.msgprint(__("Submitted briefing is read-only."));
+			return;
+		}
+
+		const $table = this.$root.find(".nutc-instructors");
+		if (!$table.length) return;
+
+		const is_tsbb = this.doc.briefing_type === "TSbB";
+		const current_count = $table.find("tr").filter((_, tr) => !$(tr).find("th").length).length;
+		const idx = current_count;
+
+		const name_cell = `${idx + 1}. ${this.text_input("instructors", idx, "instructor_name", "")}`;
+		const sign_cell = this.signature_cell("instructors", idx, "signature", "", { compact: true });
+		const row_html = is_tsbb
+			? `<tr><td>${name_cell}</td><td>${sign_cell}</td></tr>`
+			: `<tr><td>${name_cell}</td><td>${this.text_input("instructors", idx, "module", "OIS -")}</td><td>${sign_cell}</td></tr>`;
+
+		$table.append(row_html);
+		this.init_signature_pads();
+		this.apply_readonly_state();
+		frappe.show_alert({ message: __("Instructor row added"), indicator: "green" });
 	}
 
 	save() {

@@ -333,6 +333,15 @@ def get_form_data(docname=None, checklist_type=None, student_group=None):
 		if _normalize_tbosiet_layout(doc) and cint(doc.docstatus) == 0:
 			doc.save(ignore_permissions=True)
 	elif checklist_type:
+		from numerouno.numerouno.utils.form_duplicate_guard import throw_if_duplicate_course_form
+
+		if student_group:
+			throw_if_duplicate_course_form(
+				"Assessor Checklist",
+				student_group,
+				"checklist_type",
+				checklist_type,
+			)
 		doc = frappe.new_doc("Assessor Checklist")
 		doc.checklist_type = checklist_type
 		template = get_template_for_checklist_type(checklist_type)
@@ -362,6 +371,17 @@ def save_form_data(data):
 			frappe.throw("Submitted Course Assessor Checklist cannot be edited")
 	else:
 		doc = frappe.new_doc("Assessor Checklist")
+		student_group = (data.get("student_group") or "").strip()
+		checklist_type = (data.get("checklist_type") or "").strip()
+		if student_group and checklist_type:
+			from numerouno.numerouno.utils.form_duplicate_guard import throw_if_duplicate_course_form
+
+			throw_if_duplicate_course_form(
+				"Assessor Checklist",
+				student_group,
+				"checklist_type",
+				checklist_type,
+			)
 
 	_apply_payload(doc, data)
 	_normalize_tbosiet_layout(doc)
