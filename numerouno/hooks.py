@@ -107,7 +107,10 @@ doctype_list_js = {
 
 # add methods and filters to jinja environment
 jinja = {
-	"filters": "numerouno.numerouno.utils.jinja_filters"
+	"filters": "numerouno.numerouno.utils.jinja_filters",
+	"methods": [
+		"numerouno.numerouno.api.certificate_verification.get_public_verification_url",
+	],
 }
 
 # Installation

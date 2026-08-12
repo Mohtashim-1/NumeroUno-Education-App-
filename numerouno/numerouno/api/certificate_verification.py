@@ -1,5 +1,24 @@
 import frappe
 from frappe.utils import add_days, getdate
+from urllib.parse import urlencode
+
+PUBLIC_VERIFICATION_BASE_URL = "https://nutc.ae/verify"
+
+
+def get_public_verification_url(certificate_number=None, student_name=None):
+	"""Public certificate verification page on the marketing site."""
+	params = {}
+
+	if certificate_number:
+		params["certNumber"] = (certificate_number or "").strip()
+
+	if student_name:
+		params["name"] = (student_name or "").strip()
+
+	if not params:
+		return PUBLIC_VERIFICATION_BASE_URL
+
+	return f"{PUBLIC_VERIFICATION_BASE_URL}?{urlencode(params)}"
 
 @frappe.whitelist(allow_guest=True)
 def verify_certificate(certificate_number, student_name):
