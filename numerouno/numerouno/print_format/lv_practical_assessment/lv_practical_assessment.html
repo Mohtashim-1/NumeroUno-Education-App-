@@ -1,72 +1,145 @@
-<div class="lv-form">
-  <div class="lv-title">{{ doc.form_title or "PRACTICAL ASSESSMENT – LIGHT VEHICLE" }}</div>
-  <div class="lv-subtitle">{{ doc.form_subtitle or "ADNOC Light Vehicles Assessment form" }}</div>
+<style>
+@page { size: A4 portrait; margin: 8mm 10mm 8mm 10mm; }
+.print-format { padding: 0 !important; margin: 0 !important; }
+.print-heading, .letter-head, .print-format-letterhead { display: none !important; }
+</style>
+
+<div class="lv-paper">
+  <table class="lv-brand">
+    <tr>
+      <td class="lv-brand-left">
+        <div class="lv-hse">
+          <div class="lv-hse-pct">100%</div>
+          <div class="lv-hse-txt">HSE</div>
+        </div>
+      </td>
+      <td class="lv-brand-mid">
+        <div class="lv-title">{{ doc.form_title or "PRACTICAL ASSESSMENT – LIGHT VEHICLE" }}</div>
+        <div class="lv-subtitle">{{ doc.form_subtitle or "ADNOC Light Vehicles Assessment form" }}</div>
+      </td>
+      <td class="lv-brand-right">
+        <div class="lv-adnoc">
+          <div class="lv-adnoc-mark"></div>
+          <div class="lv-adnoc-name">ADNOC</div>
+          <div class="lv-adnoc-ar">أدنوك</div>
+        </div>
+      </td>
+    </tr>
+  </table>
 
   <table class="lv-meta">
     <tr>
-      <td><b>Candidate Name</b><br><span class="lvp-field-candidate">{{ doc.candidate_name or "" }}</span></td>
-      <td><b>Date</b><br><span class="lvp-field-date">{{ frappe.utils.formatdate(doc.assessment_date) if doc.assessment_date else "" }}</span></td>
+      <td class="lv-meta-label">Candidate Name</td>
+      <td class="lv-meta-value">{{ doc.candidate_name or "" }}</td>
+      <td class="lv-meta-label">Date</td>
+      <td class="lv-meta-value">{{ frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "" }}</td>
     </tr>
     <tr>
-      <td><b>Employing company</b><br><span class="lvp-field-company">{{ doc.employing_company or "" }}</span></td>
-      <td><b>Mobile number</b><br><span class="lvp-field-mobile">{{ doc.mobile_number or "" }}</span></td>
+      <td class="lv-meta-label">Employing company</td>
+      <td class="lv-meta-value">{{ doc.employing_company or "" }}</td>
+      <td class="lv-meta-label">Mobile number</td>
+      <td class="lv-meta-value">{{ doc.mobile_number or "" }}</td>
     </tr>
   </table>
 
+  {% set ns = namespace(last_section="", span=0, group_idx=0) %}
   <table class="lv-grid">
-    <thead>
-      <tr>
-        <th style="width:4%">No.</th>
-        <th style="width:18%">Outcomes</th>
-        <th style="width:58%">Criteria</th>
-        <th style="width:8%">Achieved</th>
-        <th style="width:12%">Source of Evidence</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% set ns = namespace(last_section="") %}
-      {% for row in doc.criteria %}
-        {% if row.section and row.section != ns.last_section %}
-          {% set ns.last_section = row.section %}
-          <tr class="lv-section"><td colspan="5">{{ row.section }}</td></tr>
-        {% endif %}
-        <tr class="lvp-criterion-row" data-idx="{{ loop.index0 }}">
-          <td class="lv-check">{{ row.sr_no or loop.index }}</td>
-          <td>{{ row.outcome or "" }}</td>
-          <td class="lvp-col-criterion">{{ row.criterion or "" }}</td>
-          <td class="lv-check lvp-col-achieved">{{ "☑" if row.achieved else "☐" }}</td>
-          <td class="lv-check lvp-col-source">{{ row.source_of_evidence or "" }}</td>
+    {% for row in doc.criteria %}
+      {% set section = row.section or "" %}
+      {% if section != ns.last_section %}
+        {% set ns.last_section = section %}
+        {% set ns.group_idx = 0 %}
+        {% set ns.span = 0 %}
+        {% for r2 in doc.criteria %}
+          {% if (r2.section or "") == section %}
+            {% set ns.span = ns.span + 1 %}
+          {% endif %}
+        {% endfor %}
+        <tr>
+          <td colspan="3" class="lv-unit">{{ section or "UNIT 5 – Practical Driving Assessment" }}</td>
         </tr>
-      {% endfor %}
-    </tbody>
+        <tr>
+          <th class="lv-th-outcome">OUTCOMES</th>
+          <th class="lv-th-criteria">CRITERIA</th>
+          <th class="lv-th-source">SOURCE OF EVIDENCE</th>
+        </tr>
+      {% endif %}
+      {% set ns.group_idx = ns.group_idx + 1 %}
+      <tr>
+        {% if ns.group_idx == 1 %}
+          <td class="lv-outcome" rowspan="{{ ns.span }}">
+            <div class="lv-outcome-text">
+              {% if "Manual Handling" in (row.section or "") %}
+                2. Manual Handling techniques
+              {% elif "UNIT 5" in (row.section or "") or "Practical Driving" in (row.section or "") %}
+                1. Practical Driving
+              {% else %}
+                {{ row.outcome or row.section or "" }}
+              {% endif %}
+            </div>
+          </td>
+        {% endif %}
+        <td class="lv-criterion">
+          {% if (row.criterion or "")|trim %}
+            <span class="lv-num">2.{{ ns.group_idx }}</span>
+            <span class="lv-criterion-text">{{ row.criterion }}</span>
+          {% else %}
+            <span class="lv-blank">&nbsp;</span>
+          {% endif %}
+        </td>
+        <td class="lv-source">
+          <span class="lv-box">{% if row.achieved %}☑{% else %}☐{% endif %}</span>
+          {% if row.source_of_evidence %}
+            <span class="lv-src-letter">{{ row.source_of_evidence }}</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
   </table>
 
-  <div class="lv-guidance">
-    <b>Assessment Guidance</b><br>
-    This outcome specifies the standard of competence required by the driver, through a number of practical outcomes specified in Outcome 1 of Unit 5. Learners must successfully complete all practical exercises to achieve this Unit.
-    Records of methods used, and assessment results must be maintained.
-  </div>
-  <p><b>Remarks:</b> <span class="lvp-field-remarks">{{ doc.remarks or "" }}</span></p>
-  <p><small>Source of Evidence: O – Observation  S – Simulation  Q – Questioning  W – Witness</small></p>
+  <table class="lv-guide">
+    <tr>
+      <td class="lv-guide-label">Assessment Guidance</td>
+      <td class="lv-guide-text">
+        This outcome specifies the standard of competence required by the driver, through a number of practical outcomes specified in Outcome 1 of Unit 5. Learners must successfully complete all practical exercises to achieve this Unit.
+        Records of methods used, and assessment results must be maintained.
+      </td>
+    </tr>
+  </table>
 
-  <table class="lv-footer">
+  {% if doc.remarks or doc.training_development_needs or doc.assessor_name or doc.achievement_status %}
+  <table class="lv-notes">
+    {% if doc.remarks %}
     <tr>
-      <td><b>Learner Name:</b> {{ doc.candidate_name or "" }}</td>
-      <td><b>Company:</b> {{ doc.employing_company or "" }}</td>
+      <td class="lv-notes-label">Remarks</td>
+      <td class="lv-notes-value">{{ doc.remarks }}</td>
     </tr>
+    {% endif %}
+    {% if doc.training_development_needs %}
     <tr>
-      <td colspan="2"><b>Training and Development Needs:</b><br><span class="lvp-field-training">{{ doc.training_development_needs or "" }}</span></td>
+      <td class="lv-notes-label">Training and Development Needs</td>
+      <td class="lv-notes-value">{{ doc.training_development_needs }}</td>
     </tr>
+    {% endif %}
     <tr>
-      <td colspan="2">
-        <b>Declaration:</b> The person named was assessed by me against the standards of performance specified in this document and in accordance with the assessment guidance.<br><br>
-        I consider that the above person {% if doc.achievement_status == "Has achieved" %}<b>has</b>{% else %}<b>has not</b>{% endif %} achieved a sufficient level of understanding of the Light Vehicle Professional Driving Theory course.<br>
-        {% if doc.requires_further_training %}I consider that the above person requires further training and development in addition to that which is installation specific.{% endif %}
+      <td class="lv-notes-label">Result</td>
+      <td class="lv-notes-value">
+        {% if doc.achievement_status == "Has achieved" %}Has achieved{% elif doc.achievement_status == "Has not achieved" %}Has not achieved{% else %}{% endif %}
+        {% if doc.requires_further_training %} — Requires further training{% endif %}
       </td>
     </tr>
     <tr>
-      <td><b>Assessor's Name</b><br><span class="lvp-field-assessor">{{ doc.assessor_name or "" }}</span></td>
-      <td><b>Date</b><br><span class="lvp-field-assessor-date">{{ frappe.utils.formatdate(doc.assessor_date) if doc.assessor_date else "" }}</span></td>
+      <td class="lv-notes-label">Assessor</td>
+      <td class="lv-notes-value">
+        {{ doc.assessor_name or "" }}
+        {% if doc.assessor_date %} &nbsp; {{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") }}{% endif %}
+        {% if doc.assessor_signature %}
+          <br><img src="{{ doc.assessor_signature }}" class="lv-sign" />
+        {% endif %}
+      </td>
     </tr>
   </table>
+  {% endif %}
+
+  <div class="lv-legend">Source of Evidence: O – Observation &nbsp; S – Simulation &nbsp; Q – Questioning &nbsp; W – Witness</div>
 </div>

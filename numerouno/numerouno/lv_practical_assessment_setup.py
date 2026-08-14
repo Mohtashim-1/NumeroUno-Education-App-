@@ -52,13 +52,30 @@ def setup():
 
 
 def _ensure_print_format():
-	if frappe.db.exists("Print Format", PRINT_NAME):
-		return
-
 	html_path = Path(__file__).parent / "print_format/lv_practical_assessment/lv_practical_assessment.html"
 	css_path = Path(__file__).parent / "print_format/lv_practical_assessment/lv_practical_assessment.css"
 	html = html_path.read_text() if html_path.exists() else _default_print_html()
 	css = css_path.read_text() if css_path.exists() else _default_print_css()
+
+	if frappe.db.exists("Print Format", PRINT_NAME):
+		frappe.db.set_value(
+			"Print Format",
+			PRINT_NAME,
+			{
+				"css": css,
+				"html": html,
+				"custom_format": 1,
+				"print_format_type": "Jinja",
+				"font_size": 9,
+				"margin_top": 8,
+				"margin_bottom": 8,
+				"margin_left": 10,
+				"margin_right": 10,
+			},
+			update_modified=True,
+		)
+		frappe.db.commit()
+		return
 
 	doc = frappe.new_doc("Print Format")
 	doc.name = PRINT_NAME
