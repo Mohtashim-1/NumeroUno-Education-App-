@@ -60,26 +60,13 @@
 }
 
 .lv-adnoc { text-align: right; }
+.lv-adnoc-logo {
+	max-height: 58px;
+	max-width: 90px;
+	display: inline-block;
+}
 .lv-adnoc-mark {
-	width: 28px;
-	height: 28px;
-	margin: 0 0 2px auto;
-	background: #0a3d91;
-	border-radius: 50% 50% 50% 0;
-	transform: rotate(-20deg);
-}
-.lv-adnoc-name {
-	color: #0a3d91;
-	font-size: 16px;
-	font-weight: 800;
-	letter-spacing: 0.12em;
-	line-height: 1;
-}
-.lv-adnoc-ar {
-	color: #0a3d91;
-	font-size: 12px;
-	font-weight: 700;
-	line-height: 1.2;
+	display: none;
 }
 
 .lv-meta {
