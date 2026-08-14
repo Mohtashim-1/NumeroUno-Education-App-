@@ -19,7 +19,7 @@ frappe.ui.form.on("LV Practical Assessment", {
 				});
 			}, __("Actions"));
 		}
-		if not frm.is_new()) {
+		if (!frm.is_new()) {
 			frm.add_custom_button(__("Open Simple Form"), () => {
 				frappe.set_route("lv-practical-assessment-form", frm.doc.name);
 			}, __("Actions"));
@@ -30,7 +30,7 @@ frappe.ui.form.on("LV Practical Assessment", {
 		if (!frm.doc.student || frm.doc.candidate_name) return;
 		frappe.db.get_value("Student", frm.doc.student, "student_name").then((r) => {
 			if (r && r.message) {
-				frm.set_value("candidate_name", r.message);
+				frm.set_value("candidate_name", r.message.student_name || r.message);
 			}
 		});
 	},
