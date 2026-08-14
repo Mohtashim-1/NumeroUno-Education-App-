@@ -552,6 +552,7 @@ function _instructor_portal_boot(page) {
 					<button type="button" class="portal-tab" data-target="resit-section">Resit</button>
 					<button type="button" class="portal-tab" data-target="assessor-checklist-section">Course Assessor Checklist</button>
 					<button type="button" class="portal-tab" data-target="safety-briefing-section">Safety Briefing</button>
+					<button type="button" class="portal-tab" data-target="lv-practical-section">LV Practical Assessment</button>
 					<button type="button" class="portal-tab" data-target="wms-pretest-section">WMS Pretest</button>
 					<button type="button" class="portal-tab" data-target="adsd-pretest-section">ADSD Pretest</button>
 				</div>
@@ -855,6 +856,62 @@ function _instructor_portal_boot(page) {
 				</div>
 			</div>
 
+			<div class="portal-section" id="lv-practical-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>LV</span>
+							<div>
+								<h3>LV Practical Assessment</h3>
+								<p class="panel-subtitle">Open the digital Light Vehicle + Manual Handling assessment for each learner in a student group.</p>
+							</div>
+						</div>
+						<div>
+							<button type="button" class="portal-btn portal-btn-primary" id="lv-practical-open-btn">Open Assessment</button>
+						</div>
+					</div>
+					<div class="sb-summary-cards" id="lv-practical-summary">
+						<div class="sb-summary-card">
+							<span class="sb-summary-label">Total Groups</span>
+							<strong id="lv-metric-total">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-pending">
+							<span class="sb-summary-label">Not Started</span>
+							<strong id="lv-metric-pending">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-draft">
+							<span class="sb-summary-label">In Progress</span>
+							<strong id="lv-metric-draft">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-done">
+							<span class="sb-summary-label">Complete</span>
+							<strong id="lv-metric-submitted">0</strong>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Student Group</th>
+									<th>Course</th>
+									<th>Learners</th>
+									<th>Started</th>
+									<th>Submitted</th>
+									<th>Pending</th>
+									<th>Status</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-lv-practical-body">
+								<tr>
+									<td colspan="8" class="empty-state">Loading...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
 			<div class="portal-section" id="wms-pretest-section" hidden>
 				<div class="portal-panel">
 					<div class="panel-header">
@@ -954,12 +1011,14 @@ function _instructor_portal_boot(page) {
 	init_tabs();
 	init_instructor_form_actions();
 	init_safety_briefing_actions();
+	init_lv_practical_actions();
 	load_portal_data();
 	load_quiz_status();
 	load_results();
 	load_bulk_assessments();
 	load_all_instructor_forms();
 	load_safety_briefing_groups();
+	load_lv_practical_groups();
 
 	function load_portal_data() {
 		frappe.call({
@@ -1098,6 +1157,7 @@ function _instructor_portal_boot(page) {
 		load_bulk_assessments();
 		load_all_instructor_forms();
 		load_safety_briefing_groups();
+		load_lv_practical_groups();
 	}
 
 	function render_attendance(records, append) {
@@ -2346,6 +2406,96 @@ function _instructor_portal_boot(page) {
 				briefing_type: $(this).data("briefing-type")
 			});
 		});
+	}
+
+	function init_lv_practical_actions() {
+		$("#lv-practical-open-btn").off("click").on("click", function () {
+			open_lv_practical_form(filterState.student_group);
+		});
+	}
+
+	function load_lv_practical_groups() {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_lv_practical_group_status",
+			args: {
+				student_group: filterState.student_group,
+				course: filterState.course,
+				instructor: filterState.instructor
+			},
+			callback: function (r) {
+				var message = r.message || {};
+				render_lv_practical_summary(message.summary || {});
+				render_lv_practical_groups(message.groups || []);
+			},
+			error: function () {
+				render_lv_practical_summary({});
+				render_lv_practical_groups([]);
+				frappe.msgprint("Unable to load LV Practical Assessment group status.");
+			}
+		});
+	}
+
+	function render_lv_practical_summary(summary) {
+		$("#lv-metric-total").text(summary.total || 0);
+		$("#lv-metric-pending").text(summary.pending || 0);
+		$("#lv-metric-draft").text(summary.draft || 0);
+		$("#lv-metric-submitted").text(summary.submitted || 0);
+	}
+
+	function render_lv_practical_groups(rows) {
+		var $body = $("#instructor-lv-practical-body");
+		$body.empty();
+		if (!rows.length) {
+			$body.append(`
+				<tr>
+					<td colspan="8" class="empty-state">No student groups found for your filters.</td>
+				</tr>
+			`);
+			return;
+		}
+		rows.forEach(function (row) {
+			$body.append(render_lv_practical_group_row(row));
+		});
+		bind_lv_practical_group_actions();
+	}
+
+	function render_lv_practical_group_row(row) {
+		var status = row.status || "pending";
+		var statusLabel = status === "submitted" ? "Complete" : status === "draft" ? "In Progress" : "Not Started";
+		var statusClass = status === "submitted" ? "pass" : status === "draft" ? "pending" : "fail";
+		var actionLabel = status === "submitted" ? "View" : status === "draft" ? "Continue" : "Open Assessment";
+
+		return `
+			<tr>
+				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(row.course || "-")}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.learners || 0))}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.started || 0))}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.submitted || 0))}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.pending || 0))}</div></td>
+				<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
+				<td>
+					<button type="button" class="portal-btn portal-btn-primary lv-practical-open-btn"
+						data-student-group="${frappe.utils.escape_html(row.student_group || "")}">
+						${frappe.utils.escape_html(actionLabel)}
+					</button>
+				</td>
+			</tr>
+		`;
+	}
+
+	function bind_lv_practical_group_actions() {
+		$(".lv-practical-open-btn").off("click").on("click", function () {
+			open_lv_practical_form($(this).data("student-group"));
+		});
+	}
+
+	function open_lv_practical_form(student_group) {
+		frappe.route_options = frappe.route_options || {};
+		if (student_group) {
+			frappe.route_options.student_group = student_group;
+		}
+		frappe.set_route("lv-practical-assessment-form");
 	}
 
 	function open_safety_briefing_dialog(defaults) {
