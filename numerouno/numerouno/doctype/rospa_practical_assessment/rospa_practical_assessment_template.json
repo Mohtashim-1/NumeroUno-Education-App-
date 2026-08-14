@@ -1,0 +1,159 @@
+{
+  "form_title": "PRACTICAL ASSESSMENT – ROSPA",
+  "form_subtitle": "RoSPA Light, Off-Road & Desert Assessment form",
+  "unit_title": "RoSPA Practical Driving Assessment",
+  "assessment_guidance": "This assessment specifies the standard of competence required by the driver for RoSPA Light Vehicle, Off-Road and Desert practical outcomes. Learners must successfully complete all practical exercises. Records of methods used, and assessment results must be maintained.",
+  "source_legend": "Source of Evidence: O – Observation  S – Simulation  Q – Questioning  W – Witness",
+  "criteria": [
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "That you have checked that occupants are wearing a seat belt properly"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "How to apply and release the parking brake effectively"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Moving off safely and under control, after checking for any potential external hazards"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "How to accelerate smoothly and appropriately"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Using the appropriate gear for specific speeds and driving conditions"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Driving at the correct speed for the driving conditions coupled with forward distance observation and anticipation of other traffic and potential hazards"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Using the footbrake in a controlled manner appropriate to the driving conditions and the distance available"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Using the correct hand position on the steering wheel and turning the vehicle smoothly"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Using the mirrors before braking, increasing speed, signaling, identifying a hazard and changing direction"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Using the mirrors to keep track of other vehicles traveling to the rear or to the side"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Using signals, when necessary, in the correct manner and with applicable timing for each situation and maneuver"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Responding appropriately to traffic signs, road markings, traffic signals and traffic controllers (e.g., construction areas, crossing guards)"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Following traffic at a safe distance"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Progressing on the journey at an appropriate speed and without undue hesitation"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Approaching junctions at an appropriate speed and without undue hesitation, observing other vehicles and using the correct signal"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Positioning the vehicle appropriately in the lanes and during maneuvers"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Using judgment when approaching other vehicles, crossing uncontrolled intersections and in overtaking"
+    },
+    {
+      "section": "1. On-Road Light Vehicle Practical",
+      "outcome": "Outcome 1",
+      "criterion": "Reverse parking under control and after observing nearby obstructions"
+    },
+    {
+      "section": "2. Off-Road Driving",
+      "outcome": "Outcome 2",
+      "criterion": "Complete vehicle, tyre and recovery-equipment checks before leaving the sealed road"
+    },
+    {
+      "section": "2. Off-Road Driving",
+      "outcome": "Outcome 2",
+      "criterion": "Set tyre pressures appropriate to the terrain and re-inflate after the exercise"
+    },
+    {
+      "section": "2. Off-Road Driving",
+      "outcome": "Outcome 2",
+      "criterion": "Select the correct gear and technique for approach, departure and ramp-over angles"
+    },
+    {
+      "section": "2. Off-Road Driving",
+      "outcome": "Outcome 2",
+      "criterion": "Maintain vehicle control on uneven, rocky or loose surfaces"
+    },
+    {
+      "section": "2. Off-Road Driving",
+      "outcome": "Outcome 2",
+      "criterion": "Demonstrate correct positioning and speed on inclines and declines"
+    },
+    {
+      "section": "2. Off-Road Driving",
+      "outcome": "Outcome 2",
+      "criterion": "Use recovery points, boards, snatch or winch techniques safely"
+    },
+    {
+      "section": "3. Desert Driving",
+      "outcome": "Outcome 3",
+      "criterion": "Assess sand conditions and select a safe route before committing the vehicle"
+    },
+    {
+      "section": "3. Desert Driving",
+      "outcome": "Outcome 3",
+      "criterion": "Maintain momentum and correct tyre pressure in soft sand"
+    },
+    {
+      "section": "3. Desert Driving",
+      "outcome": "Outcome 3",
+      "criterion": "Demonstrate dune approach, cresting and descent techniques"
+    },
+    {
+      "section": "3. Desert Driving",
+      "outcome": "Outcome 3",
+      "criterion": "Recover a vehicle from sand using approved methods"
+    },
+    {
+      "section": "3. Desert Driving",
+      "outcome": "Outcome 3",
+      "criterion": "Apply heat, hydration, convoy spacing and emergency procedures in desert conditions"
+    },
+    {
+      "section": "3. Desert Driving",
+      "outcome": "Outcome 3",
+      "criterion": "Park and secure the vehicle safely after the desert exercise"
+    }
+  ]
+}
