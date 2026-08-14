@@ -553,7 +553,9 @@ function _instructor_portal_boot(page) {
 					<button type="button" class="portal-tab" data-target="assessor-checklist-section">Course Assessor Checklist</button>
 					<button type="button" class="portal-tab" data-target="safety-briefing-section">Safety Briefing</button>
 					<button type="button" class="portal-tab" data-target="lv-practical-section">LV Practical Assessment</button>
+					<button type="button" class="portal-tab" data-target="off-road-practical-section">Off Road Practical Assessment</button>
 					<button type="button" class="portal-tab" data-target="rospa-practical-section">ROSPA Practical Assessment</button>
+					<button type="button" class="portal-tab" data-target="rospa-learning-outcome-section">ROSPA Learning Outcome</button>
 					<button type="button" class="portal-tab" data-target="wms-pretest-section">WMS Pretest</button>
 					<button type="button" class="portal-tab" data-target="adsd-pretest-section">ADSD Pretest</button>
 				</div>
@@ -913,6 +915,62 @@ function _instructor_portal_boot(page) {
 				</div>
 			</div>
 
+			<div class="portal-section" id="off-road-practical-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>OR</span>
+							<div>
+								<h3>Off Road Practical Assessment</h3>
+								<p class="panel-subtitle">Open the digital ADNOC Off-road and Desert assessment for each learner in a student group.</p>
+							</div>
+						</div>
+						<div>
+							<button type="button" class="portal-btn portal-btn-primary" id="off-road-practical-open-btn">Open Assessment</button>
+						</div>
+					</div>
+					<div class="sb-summary-cards" id="off-road-practical-summary">
+						<div class="sb-summary-card">
+							<span class="sb-summary-label">Total Groups</span>
+							<strong id="off-road-metric-total">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-pending">
+							<span class="sb-summary-label">Not Started</span>
+							<strong id="off-road-metric-pending">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-draft">
+							<span class="sb-summary-label">In Progress</span>
+							<strong id="off-road-metric-draft">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-done">
+							<span class="sb-summary-label">Complete</span>
+							<strong id="off-road-metric-submitted">0</strong>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Student Group</th>
+									<th>Course</th>
+									<th>Learners</th>
+									<th>Started</th>
+									<th>Submitted</th>
+									<th>Pending</th>
+									<th>Status</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-off-road-practical-body">
+								<tr>
+									<td colspan="8" class="empty-state">Loading...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
 			<div class="portal-section" id="rospa-practical-section" hidden>
 				<div class="portal-panel">
 					<div class="panel-header">
@@ -960,6 +1018,62 @@ function _instructor_portal_boot(page) {
 								</tr>
 							</thead>
 							<tbody id="instructor-rospa-practical-body">
+								<tr>
+									<td colspan="8" class="empty-state">Loading...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="portal-section" id="rospa-learning-outcome-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>LO</span>
+							<div>
+								<h3>ROSPA Learning Outcome Assessment</h3>
+								<p class="panel-subtitle">Open the Defensive Driving for Light Vehicle learning outcome record for each learner in a student group.</p>
+							</div>
+						</div>
+						<div>
+							<button type="button" class="portal-btn portal-btn-primary" id="rospa-learning-outcome-open-btn">Open Assessment</button>
+						</div>
+					</div>
+					<div class="sb-summary-cards" id="rospa-learning-outcome-summary">
+						<div class="sb-summary-card">
+							<span class="sb-summary-label">Total Groups</span>
+							<strong id="rlo-metric-total">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-pending">
+							<span class="sb-summary-label">Not Started</span>
+							<strong id="rlo-metric-pending">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-draft">
+							<span class="sb-summary-label">In Progress</span>
+							<strong id="rlo-metric-draft">0</strong>
+						</div>
+						<div class="sb-summary-card sb-summary-done">
+							<span class="sb-summary-label">Complete</span>
+							<strong id="rlo-metric-submitted">0</strong>
+						</div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Student Group</th>
+									<th>Course</th>
+									<th>Learners</th>
+									<th>Started</th>
+									<th>Submitted</th>
+									<th>Pending</th>
+									<th>Status</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-rospa-learning-outcome-body">
 								<tr>
 									<td colspan="8" class="empty-state">Loading...</td>
 								</tr>
@@ -1069,7 +1183,9 @@ function _instructor_portal_boot(page) {
 	init_instructor_form_actions();
 	init_safety_briefing_actions();
 	init_lv_practical_actions();
+	init_off_road_practical_actions();
 	init_rospa_practical_actions();
+	init_rospa_learning_outcome_actions();
 	load_portal_data();
 	load_quiz_status();
 	load_results();
@@ -1077,7 +1193,9 @@ function _instructor_portal_boot(page) {
 	load_all_instructor_forms();
 	load_safety_briefing_groups();
 	load_lv_practical_groups();
+	load_off_road_practical_groups();
 	load_rospa_practical_groups();
+	load_rospa_learning_outcome_groups();
 
 	function load_portal_data() {
 		frappe.call({
@@ -1217,7 +1335,9 @@ function _instructor_portal_boot(page) {
 		load_all_instructor_forms();
 		load_safety_briefing_groups();
 		load_lv_practical_groups();
+		load_off_road_practical_groups();
 		load_rospa_practical_groups();
+		load_rospa_learning_outcome_groups();
 	}
 
 	function render_attendance(records, append) {
@@ -2558,6 +2678,96 @@ function _instructor_portal_boot(page) {
 		frappe.set_route("lv-practical-assessment-form");
 	}
 
+	function init_off_road_practical_actions() {
+		$("#off-road-practical-open-btn").off("click").on("click", function () {
+			open_off_road_practical_form(filterState.student_group);
+		});
+	}
+
+	function load_off_road_practical_groups() {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_off_road_practical_group_status",
+			args: {
+				student_group: filterState.student_group,
+				course: filterState.course,
+				instructor: filterState.instructor
+			},
+			callback: function (r) {
+				var message = r.message || {};
+				render_off_road_practical_summary(message.summary || {});
+				render_off_road_practical_groups(message.groups || []);
+			},
+			error: function () {
+				render_off_road_practical_summary({});
+				render_off_road_practical_groups([]);
+				frappe.msgprint("Unable to load Off Road Practical Assessment group status.");
+			}
+		});
+	}
+
+	function render_off_road_practical_summary(summary) {
+		$("#off-road-metric-total").text(summary.total || 0);
+		$("#off-road-metric-pending").text(summary.pending || 0);
+		$("#off-road-metric-draft").text(summary.draft || 0);
+		$("#off-road-metric-submitted").text(summary.submitted || 0);
+	}
+
+	function render_off_road_practical_groups(rows) {
+		var $body = $("#instructor-off-road-practical-body");
+		$body.empty();
+		if (!rows.length) {
+			$body.append(`
+				<tr>
+					<td colspan="8" class="empty-state">No student groups found for your filters.</td>
+				</tr>
+			`);
+			return;
+		}
+		rows.forEach(function (row) {
+			$body.append(render_off_road_practical_group_row(row));
+		});
+		bind_off_road_practical_group_actions();
+	}
+
+	function render_off_road_practical_group_row(row) {
+		var status = row.status || "pending";
+		var statusLabel = status === "submitted" ? "Complete" : status === "draft" ? "In Progress" : "Not Started";
+		var statusClass = status === "submitted" ? "pass" : status === "draft" ? "pending" : "fail";
+		var actionLabel = status === "submitted" ? "View" : status === "draft" ? "Continue" : "Open Assessment";
+
+		return `
+			<tr>
+				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(row.course || "-")}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.learners || 0))}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.started || 0))}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.submitted || 0))}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.pending || 0))}</div></td>
+				<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
+				<td>
+					<button type="button" class="portal-btn portal-btn-primary off-road-practical-open-btn"
+						data-student-group="${frappe.utils.escape_html(row.student_group || "")}">
+						${frappe.utils.escape_html(actionLabel)}
+					</button>
+				</td>
+			</tr>
+		`;
+	}
+
+	function bind_off_road_practical_group_actions() {
+		$(".off-road-practical-open-btn").off("click").on("click", function () {
+			open_off_road_practical_form($(this).data("student-group"));
+		});
+	}
+
+	function open_off_road_practical_form(student_group) {
+		frappe.route_options = frappe.route_options || {};
+		if (student_group) {
+			frappe.route_options.student_group = student_group;
+		}
+		frappe.set_route("off-road-practical-assessment-form");
+	}
+
 	function init_rospa_practical_actions() {
 		$("#rospa-practical-open-btn").off("click").on("click", function () {
 			open_rospa_practical_form(filterState.student_group);
@@ -2646,6 +2856,96 @@ function _instructor_portal_boot(page) {
 			frappe.route_options.student_group = student_group;
 		}
 		frappe.set_route("rospa-practical-assessment-form");
+	}
+
+	function init_rospa_learning_outcome_actions() {
+		$("#rospa-learning-outcome-open-btn").off("click").on("click", function () {
+			open_rospa_learning_outcome_form(filterState.student_group);
+		});
+	}
+
+	function load_rospa_learning_outcome_groups() {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_rospa_learning_outcome_group_status",
+			args: {
+				student_group: filterState.student_group,
+				course: filterState.course,
+				instructor: filterState.instructor
+			},
+			callback: function (r) {
+				var message = r.message || {};
+				render_rospa_learning_outcome_summary(message.summary || {});
+				render_rospa_learning_outcome_groups(message.groups || []);
+			},
+			error: function () {
+				render_rospa_learning_outcome_summary({});
+				render_rospa_learning_outcome_groups([]);
+				frappe.msgprint("Unable to load ROSPA Learning Outcome Assessment group status.");
+			}
+		});
+	}
+
+	function render_rospa_learning_outcome_summary(summary) {
+		$("#rlo-metric-total").text(summary.total || 0);
+		$("#rlo-metric-pending").text(summary.pending || 0);
+		$("#rlo-metric-draft").text(summary.draft || 0);
+		$("#rlo-metric-submitted").text(summary.submitted || 0);
+	}
+
+	function render_rospa_learning_outcome_groups(rows) {
+		var $body = $("#instructor-rospa-learning-outcome-body");
+		$body.empty();
+		if (!rows.length) {
+			$body.append(`
+				<tr>
+					<td colspan="8" class="empty-state">No student groups found for your filters.</td>
+				</tr>
+			`);
+			return;
+		}
+		rows.forEach(function (row) {
+			$body.append(render_rospa_learning_outcome_group_row(row));
+		});
+		bind_rospa_learning_outcome_group_actions();
+	}
+
+	function render_rospa_learning_outcome_group_row(row) {
+		var status = row.status || "pending";
+		var statusLabel = status === "submitted" ? "Complete" : status === "draft" ? "In Progress" : "Not Started";
+		var statusClass = status === "submitted" ? "pass" : status === "draft" ? "pending" : "fail";
+		var actionLabel = status === "submitted" ? "View" : status === "draft" ? "Continue" : "Open Assessment";
+
+		return `
+			<tr>
+				<td><div class="data-title">${render_student_group_cell(row.student_group)}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(row.course || "-")}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.learners || 0))}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.started || 0))}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.submitted || 0))}</div></td>
+				<td><div class="data-title">${frappe.utils.escape_html(String(row.pending || 0))}</div></td>
+				<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
+				<td>
+					<button type="button" class="portal-btn portal-btn-primary rospa-learning-outcome-open-btn"
+						data-student-group="${frappe.utils.escape_html(row.student_group || "")}">
+						${frappe.utils.escape_html(actionLabel)}
+					</button>
+				</td>
+			</tr>
+		`;
+	}
+
+	function bind_rospa_learning_outcome_group_actions() {
+		$(".rospa-learning-outcome-open-btn").off("click").on("click", function () {
+			open_rospa_learning_outcome_form($(this).data("student-group"));
+		});
+	}
+
+	function open_rospa_learning_outcome_form(student_group) {
+		frappe.route_options = frappe.route_options || {};
+		if (student_group) {
+			frappe.route_options.student_group = student_group;
+		}
+		frappe.set_route("rospa-learning-outcome-form");
 	}
 
 	function open_safety_briefing_dialog(defaults) {

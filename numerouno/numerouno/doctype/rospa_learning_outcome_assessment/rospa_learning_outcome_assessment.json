@@ -1,0 +1,245 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2026-08-14 15:40:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "form_title",
+  "form_subtitle",
+  "assessment_date",
+  "column_break_header",
+  "student_group",
+  "student",
+  "candidate_name",
+  "learner_signature",
+  "employing_company",
+  "mobile_number",
+  "section_break_criteria",
+  "criteria",
+  "section_break_result",
+  "remarks",
+  "training_development_needs",
+  "column_break_result",
+  "achievement_status",
+  "requires_further_training",
+  "section_break_assessor",
+  "assessor_name",
+  "assessor_date",
+  "column_break_assessor",
+  "assessor_signature",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "RLO-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "RLO-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "default": "Learning Outcome Assessment Record \u2013 Defensive Driving for Light Vehicle",
+   "fieldname": "form_title",
+   "fieldtype": "Data",
+   "label": "Form Title"
+  },
+  {
+   "default": "Level 2 Defensive Driving for Light Vehicles | Learning Outcome Assessment Record_Feb26",
+   "fieldname": "form_subtitle",
+   "fieldtype": "Data",
+   "label": "Form Subtitle"
+  },
+  {
+   "default": "Today",
+   "fieldname": "assessment_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_header",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student Group",
+   "options": "Student Group"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Learner Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "learner_signature",
+   "fieldtype": "Signature",
+   "label": "Learner Signature"
+  },
+  {
+   "fieldname": "employing_company",
+   "fieldtype": "Data",
+   "label": "Employing Company"
+  },
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "label": "Mobile Number"
+  },
+  {
+   "fieldname": "section_break_criteria",
+   "fieldtype": "Section Break",
+   "label": "Assessment Criteria"
+  },
+  {
+   "fieldname": "criteria",
+   "fieldtype": "Table",
+   "label": "Criteria",
+   "options": "ROSPA Learning Outcome Criterion",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_result",
+   "fieldtype": "Section Break",
+   "label": "Result"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "training_development_needs",
+   "fieldtype": "Small Text",
+   "label": "Training and Development Needs"
+  },
+  {
+   "fieldname": "column_break_result",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "achievement_status",
+   "fieldtype": "Select",
+   "label": "Achievement Status",
+   "options": "\nHas achieved\nHas not achieved"
+  },
+  {
+   "default": "0",
+   "fieldname": "requires_further_training",
+   "fieldtype": "Check",
+   "label": "Requires Further Training"
+  },
+  {
+   "fieldname": "section_break_assessor",
+   "fieldtype": "Section Break",
+   "label": "Assessor"
+  },
+  {
+   "fieldname": "assessor_name",
+   "fieldtype": "Data",
+   "label": "Assessor Name"
+  },
+  {
+   "fieldname": "assessor_date",
+   "fieldtype": "Date",
+   "label": "Assessor Date"
+  },
+  {
+   "fieldname": "column_break_assessor",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "assessor_signature",
+   "fieldtype": "Signature",
+   "label": "Assessor Signature"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "ROSPA Learning Outcome Assessment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "default_print_format": "ROSPA Learning Outcome Assessment Form",
+ "links": [],
+ "modified": "2026-08-14 15:40:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "ROSPA Learning Outcome Assessment",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Instructor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Trainer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "candidate_name,student_group,student",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

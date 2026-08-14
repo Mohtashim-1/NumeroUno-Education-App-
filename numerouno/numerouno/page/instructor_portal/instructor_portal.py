@@ -1765,6 +1765,117 @@ def get_lv_practical_group_status(student_group=None, course=None, instructor=No
 
 
 @frappe.whitelist()
+def get_off_road_practical_group_status(student_group=None, course=None, instructor=None):
+    from frappe.utils import cint
+
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+    student_group = (student_group or "").strip()
+    course = (course or "").strip()
+    instructor = (instructor or "").strip()
+    empty_response = {
+        "groups": [],
+        "summary": {"total": 0, "submitted": 0, "draft": 0, "pending": 0},
+    }
+
+    student_group_names = _resolve_student_group_names(user, roles, instructor)
+    if student_group_names == []:
+        return empty_response
+
+    scoped_groups = _scope_student_group_names(student_group_names, student_group, course)
+    if scoped_groups == []:
+        return empty_response
+
+    group_filters = {}
+    if scoped_groups is not None:
+        group_filters["name"] = ["in", scoped_groups]
+
+    groups = frappe.get_all(
+        "Student Group",
+        filters=group_filters,
+        fields=["name", "course"],
+        order_by="modified desc",
+        limit=300,
+    )
+    if not groups:
+        return empty_response
+
+    group_names = [row.name for row in groups]
+    learner_counts = {
+        row.parent: cint(row.total)
+        for row in frappe.db.sql(
+            """
+            SELECT parent, COUNT(DISTINCT student) AS total
+            FROM `tabStudent Group Student`
+            WHERE parent IN %(groups)s
+            GROUP BY parent
+            """,
+            {"groups": group_names},
+            as_dict=True,
+        )
+    }
+
+    form_rows = frappe.get_all(
+        "Off Road Practical Assessment",
+        filters={"student_group": ["in", group_names], "docstatus": ["<", 2]},
+        fields=["student_group", "student", "docstatus"],
+    )
+
+    submitted_by_group = {}
+    draft_by_group = {}
+    for row in form_rows:
+        group_name = row.student_group
+        student = row.student
+        if not group_name or not student:
+            continue
+        if cint(row.docstatus) == 1:
+            submitted_by_group.setdefault(group_name, set()).add(student)
+        else:
+            draft_by_group.setdefault(group_name, set()).add(student)
+
+    status_order = {"pending": 0, "draft": 1, "submitted": 2}
+    rows = []
+    summary = {"total": 0, "submitted": 0, "draft": 0, "pending": 0}
+
+    for group in groups:
+        submitted_students = submitted_by_group.get(group.name, set())
+        draft_students = draft_by_group.get(group.name, set()) - submitted_students
+        learners = cint(learner_counts.get(group.name, 0))
+        started = len(submitted_students | draft_students)
+        submitted = len(submitted_students)
+        pending = max(learners - started, 0)
+
+        if learners > 0 and submitted >= learners:
+            status = "submitted"
+        elif started > 0:
+            status = "draft"
+        else:
+            status = "pending"
+        summary[status] += 1
+        summary["total"] += 1
+
+        rows.append(
+            {
+                "student_group": group.name,
+                "course": group.course,
+                "learners": learners,
+                "started": started,
+                "submitted": submitted,
+                "pending": pending,
+                "status": status,
+            }
+        )
+
+    rows.sort(
+        key=lambda row: (
+            status_order.get(row["status"], 9),
+            row.get("student_group") or "",
+        )
+    )
+    return {"groups": rows, "summary": summary}
+
+
+@frappe.whitelist()
 def get_rospa_practical_group_status(student_group=None, course=None, instructor=None):
     from frappe.utils import cint
 
@@ -1817,6 +1928,117 @@ def get_rospa_practical_group_status(student_group=None, course=None, instructor
 
     form_rows = frappe.get_all(
         "ROSPA Practical Assessment",
+        filters={"student_group": ["in", group_names], "docstatus": ["<", 2]},
+        fields=["student_group", "student", "docstatus"],
+    )
+
+    submitted_by_group = {}
+    draft_by_group = {}
+    for row in form_rows:
+        group_name = row.student_group
+        student = row.student
+        if not group_name or not student:
+            continue
+        if cint(row.docstatus) == 1:
+            submitted_by_group.setdefault(group_name, set()).add(student)
+        else:
+            draft_by_group.setdefault(group_name, set()).add(student)
+
+    status_order = {"pending": 0, "draft": 1, "submitted": 2}
+    rows = []
+    summary = {"total": 0, "submitted": 0, "draft": 0, "pending": 0}
+
+    for group in groups:
+        submitted_students = submitted_by_group.get(group.name, set())
+        draft_students = draft_by_group.get(group.name, set()) - submitted_students
+        learners = cint(learner_counts.get(group.name, 0))
+        started = len(submitted_students | draft_students)
+        submitted = len(submitted_students)
+        pending = max(learners - started, 0)
+
+        if learners > 0 and submitted >= learners:
+            status = "submitted"
+        elif started > 0:
+            status = "draft"
+        else:
+            status = "pending"
+        summary[status] += 1
+        summary["total"] += 1
+
+        rows.append(
+            {
+                "student_group": group.name,
+                "course": group.course,
+                "learners": learners,
+                "started": started,
+                "submitted": submitted,
+                "pending": pending,
+                "status": status,
+            }
+        )
+
+    rows.sort(
+        key=lambda row: (
+            status_order.get(row["status"], 9),
+            row.get("student_group") or "",
+        )
+    )
+    return {"groups": rows, "summary": summary}
+
+
+@frappe.whitelist()
+def get_rospa_learning_outcome_group_status(student_group=None, course=None, instructor=None):
+    from frappe.utils import cint
+
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+    student_group = (student_group or "").strip()
+    course = (course or "").strip()
+    instructor = (instructor or "").strip()
+    empty_response = {
+        "groups": [],
+        "summary": {"total": 0, "submitted": 0, "draft": 0, "pending": 0},
+    }
+
+    student_group_names = _resolve_student_group_names(user, roles, instructor)
+    if student_group_names == []:
+        return empty_response
+
+    scoped_groups = _scope_student_group_names(student_group_names, student_group, course)
+    if scoped_groups == []:
+        return empty_response
+
+    group_filters = {}
+    if scoped_groups is not None:
+        group_filters["name"] = ["in", scoped_groups]
+
+    groups = frappe.get_all(
+        "Student Group",
+        filters=group_filters,
+        fields=["name", "course"],
+        order_by="modified desc",
+        limit=300,
+    )
+    if not groups:
+        return empty_response
+
+    group_names = [row.name for row in groups]
+    learner_counts = {
+        row.parent: cint(row.total)
+        for row in frappe.db.sql(
+            """
+            SELECT parent, COUNT(DISTINCT student) AS total
+            FROM `tabStudent Group Student`
+            WHERE parent IN %(groups)s
+            GROUP BY parent
+            """,
+            {"groups": group_names},
+            as_dict=True,
+        )
+    }
+
+    form_rows = frappe.get_all(
+        "ROSPA Learning Outcome Assessment",
         filters={"student_group": ["in", group_names], "docstatus": ["<", 2]},
         fields=["student_group", "student", "docstatus"],
     )

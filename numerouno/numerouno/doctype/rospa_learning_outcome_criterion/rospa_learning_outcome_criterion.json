@@ -1,0 +1,75 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-08-15 00:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sr_no",
+  "criterion_no",
+  "outcome",
+  "criterion",
+  "result",
+  "comments"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "sr_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "No.",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "criterion_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Ref",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outcome",
+   "fieldtype": "Small Text",
+   "label": "Learning Outcome",
+   "read_only": 1
+  },
+  {
+   "columns": 4,
+   "fieldname": "criterion",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Assessment Criteria"
+  },
+  {
+   "columns": 2,
+   "fieldname": "result",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Pass / Fail",
+   "options": "\nPass\nFail"
+  },
+  {
+   "columns": 2,
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Comments"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-15 00:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "ROSPA Learning Outcome Criterion",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

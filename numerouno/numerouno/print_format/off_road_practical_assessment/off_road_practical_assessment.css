@@ -1,0 +1,337 @@
+.lv-paper {
+	font-family: Arial, Helvetica, sans-serif;
+	color: #111;
+	font-size: 9pt;
+	line-height: 1.22;
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+
+.lv-page-1 {
+	page-break-after: always;
+}
+
+.lv-page-2 {
+	page-break-before: always;
+	page-break-after: auto;
+	min-height: 262mm;
+	display: flex;
+	flex-direction: column;
+}
+
+.lv-p2-body {
+	flex: 1 1 auto;
+}
+
+.lv-brand {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin: 0 0 4px !important;
+}
+.lv-brand td {
+	vertical-align: middle !important;
+	border: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+}
+.lv-brand-left { width: 78px; }
+.lv-brand-right { width: 120px; text-align: right; }
+.lv-brand-mid { width: auto; }
+
+.lv-hse {
+	width: 58px;
+	height: 58px;
+	border: 3px solid #1e4d9c;
+	background: #1e4d9c !important;
+	color: #fff !important;
+	text-align: center;
+	box-sizing: border-box;
+}
+.lv-hse-pct {
+	font-size: 11px;
+	font-weight: 700;
+	padding-top: 8px;
+	line-height: 1.1;
+}
+.lv-hse-txt {
+	font-size: 16px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	line-height: 1.1;
+}
+
+.lv-adnoc-logo {
+	max-height: 56px;
+	max-width: 108px;
+	display: inline-block;
+}
+
+.lv-title {
+	text-align: center;
+	font-size: 17pt;
+	font-weight: 800;
+	letter-spacing: 0;
+	text-transform: uppercase;
+	line-height: 1.1;
+	margin: 4px 0 0;
+}
+.lv-title-orange { color: #ef7a28 !important; }
+.lv-title-blue { color: #1e4d9c !important; }
+
+.lv-subtitle {
+	text-align: center;
+	color: #ef7a28 !important;
+	font-size: 11pt;
+	font-weight: 700;
+	margin: 2px 0 8px;
+}
+
+.lv-meta {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin: 0 0 8px !important;
+	table-layout: fixed;
+}
+.lv-meta td {
+	border: 1px solid #6f7f93 !important;
+	padding: 5px 7px !important;
+	vertical-align: middle !important;
+}
+.lv-meta-label {
+	width: 17%;
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 700;
+	font-size: 8.5pt;
+}
+.lv-meta-value {
+	width: 33%;
+	background: #fff !important;
+	font-weight: 600;
+	color: #111;
+}
+
+.lv-grid {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	table-layout: fixed;
+}
+.lv-grid th,
+.lv-grid td {
+	border: 1px solid #6f7f93 !important;
+	vertical-align: middle;
+}
+.lv-unit {
+	background: #ef7a28 !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 10pt;
+	text-align: center;
+	padding: 5px 8px !important;
+	text-transform: none !important;
+}
+.lv-th-outcome,
+.lv-th-criteria,
+.lv-th-source {
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 8.5pt;
+	text-align: center;
+	padding: 4px !important;
+	text-transform: uppercase !important;
+}
+.lv-th-outcome { width: 9%; }
+.lv-th-criteria { width: 78%; }
+.lv-th-source { width: 13%; }
+
+.lv-outcome {
+	background: #1e4d9c !important;
+	color: #fff !important;
+	width: 9%;
+	text-align: center;
+	vertical-align: middle !important;
+	padding: 2px !important;
+}
+.lv-outcome-text {
+	display: inline-block;
+	-webkit-transform: rotate(-90deg);
+	transform: rotate(-90deg);
+	white-space: nowrap;
+	font-size: 9pt;
+	font-weight: 700;
+	width: 170px;
+	margin-left: -66px;
+	color: #fff !important;
+}
+
+.lv-criterion {
+	padding: 2px 6px 2px 8px !important;
+	background: #fff !important;
+	vertical-align: middle !important;
+}
+.lv-num {
+	color: #ef7a28 !important;
+	font-weight: 800;
+	margin-right: 5px;
+}
+.lv-criterion-text {
+	color: #c45c12;
+}
+
+.lv-source {
+	text-align: center;
+	vertical-align: middle !important;
+	padding: 2px 4px !important;
+	background: #fff !important;
+}
+.lv-cb {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border: 1.4px solid #333;
+	background: #fff;
+	line-height: 10px;
+	font-size: 10px;
+	font-weight: 700;
+	color: #1e4d9c;
+	text-align: center;
+	vertical-align: middle;
+}
+
+.lv-guide-label {
+	width: 9%;
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 7.5pt;
+	padding: 8px 5px !important;
+	vertical-align: middle !important;
+	text-align: center;
+}
+.lv-guide-text {
+	padding: 6px 8px !important;
+	font-size: 8pt;
+	background: #fff !important;
+	vertical-align: middle !important;
+	color: #111;
+}
+
+.lv-company-footer {
+	margin-top: 8px;
+	padding-top: 5px;
+	border-top: 1.5px solid #1e4d9c;
+	text-align: right;
+	color: #1e4d9c !important;
+	font-weight: 700;
+	font-size: 9pt;
+}
+
+.lv-page-2 .lv-company-footer {
+	margin-top: 18px;
+}
+
+.lv-field {
+	margin: 0 0 16px;
+}
+.lv-field-label {
+	color: #1e4d9c !important;
+	font-weight: 700;
+	font-size: 11pt;
+	text-decoration: underline;
+	margin: 0;
+}
+.lv-write {
+	min-height: 22px;
+	border-bottom: 1.6px solid #1e4d9c;
+	padding: 4px 2px 3px;
+	font-size: 11pt;
+	color: #111;
+}
+.lv-write-tall {
+	min-height: 78px;
+}
+
+.lv-grey-bar {
+	background: #d8d8d8 !important;
+	text-align: center;
+	padding: 8px 10px;
+	margin: 6px 0 18px;
+	font-size: 9.5pt;
+	font-weight: 600;
+	color: #111;
+}
+
+.lv-declaration {
+	margin: 28px 12px 22px;
+	font-size: 10pt;
+	line-height: 1.5;
+	text-align: center;
+	color: #111;
+}
+.lv-del {
+	text-decoration: line-through;
+	color: #444;
+}
+.lv-del-note {
+	margin-top: 10px;
+	font-size: 9pt;
+	font-style: italic;
+}
+
+.lv-assessor {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin-top: 8px;
+}
+.lv-assessor th {
+	background: #ef7a28 !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 11pt;
+	padding: 8px !important;
+	border: 1px solid #d45f14 !important;
+	text-align: center;
+	text-transform: none !important;
+}
+.lv-assessor td {
+	border: 1px solid #6f7f93 !important;
+	height: 62px;
+	padding: 6px 8px !important;
+	vertical-align: middle !important;
+	text-align: center;
+	width: 33.33%;
+	background: #fff !important;
+	text-transform: none !important;
+}
+.lv-sign { max-height: 48px; max-width: 160px; }
+
+.lv-page-1 .lv-criterion {
+	padding: 1px 5px 1px 6px !important;
+	font-size: 8pt;
+	line-height: 1.15;
+}
+.lv-page-1 .lv-num { font-size: 8pt; }
+.lv-page-1 .lv-criterion-text { font-size: 8pt; }
+.lv-page-1 .lv-source { padding: 1px 2px !important; }
+.lv-sub { display: block; padding-left: 12px; }
+.lv-outcome-text {
+	display: block !important;
+	-webkit-transform: none !important;
+	transform: none !important;
+	writing-mode: vertical-rl;
+	transform: rotate(180deg) !important;
+	-webkit-transform: rotate(180deg) !important;
+	white-space: normal !important;
+	width: 24px !important;
+	margin: 10px auto !important;
+	font-size: 7.5pt !important;
+	line-height: 1.2;
+	text-align: center;
+}
+.lv-th-outcome { width: 7%; }
+.lv-th-criteria { width: 80%; }
+.lv-th-source { width: 13%; }
+.lv-page-2 .lv-grid { margin-bottom: 12px; }
+.lv-page-2 .lv-criterion { font-size: 9pt; padding: 6px 8px !important; }
+.lv-guide-label { font-size: 7pt; }

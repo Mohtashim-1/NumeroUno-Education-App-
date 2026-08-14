@@ -1,0 +1,175 @@
+<style>
+@page { size: A4 portrait; margin: 10mm 12mm; }
+.print-format { padding: 0 !important; margin: 0 !important; }
+.print-heading, .letter-head, .print-format-letterhead { display: none !important; }
+.print-format th { text-transform: none !important; }
+.print-format * {
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+.loar-paper {
+	font-family: Arial, Helvetica, sans-serif;
+	color: #111;
+	font-size: 9pt;
+	line-height: 1.25;
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+.loar-page-1 { page-break-after: always; }
+.loar-page-2 { page-break-before: always; }
+.loar-title {
+	text-align: center;
+	font-size: 14pt;
+	font-weight: 800;
+	color: #1e4d9c;
+	margin: 0 0 12px;
+}
+.loar-meta {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin-bottom: 10px;
+	table-layout: fixed;
+}
+.loar-meta td {
+	border: 1px solid #6f7f93 !important;
+	padding: 6px 7px !important;
+	vertical-align: middle !important;
+}
+.loar-meta-label {
+	width: 16%;
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 700;
+	font-size: 8pt;
+	text-transform: uppercase;
+}
+.loar-meta-value { background: #fff !important; min-height: 28px; }
+.loar-sign { max-height: 36px; max-width: 120px; }
+.loar-grid {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	table-layout: fixed;
+}
+.loar-grid th,
+.loar-grid td {
+	border: 1px solid #6f7f93 !important;
+	vertical-align: top;
+}
+.loar-grid th {
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 8pt;
+	text-align: center;
+	padding: 6px 4px !important;
+	text-transform: uppercase !important;
+}
+.loar-th-outcome { width: 26%; }
+.loar-th-criteria { width: 44%; }
+.loar-th-result { width: 12%; }
+.loar-th-comments { width: 18%; }
+.loar-outcome {
+	background: #eef3fb !important;
+	font-weight: 700;
+	font-size: 8pt;
+	padding: 6px !important;
+	vertical-align: middle !important;
+}
+.loar-criterion {
+	padding: 5px 6px !important;
+	font-size: 8.5pt;
+}
+.loar-num { color: #ef7a28; font-weight: 800; margin-right: 4px; }
+.loar-result {
+	text-align: center;
+	vertical-align: middle !important;
+	font-weight: 800;
+	font-size: 9pt;
+}
+.loar-pass { color: #1e7e34; }
+.loar-fail { color: #c0392b; }
+.loar-comments {
+	padding: 5px 6px !important;
+	font-size: 8pt;
+}
+.loar-footer {
+	margin-top: 14px;
+	padding-top: 6px;
+	border-top: 1.5px solid #1e4d9c;
+	color: #1e4d9c;
+	font-weight: 700;
+	font-size: 8.5pt;
+	text-align: left;
+}
+
+</style>
+
+{% macro loar_header() %}
+<div class="loar-title">{{ doc.form_title or "Learning Outcome Assessment Record – Defensive Driving for Light Vehicle" }}</div>
+<table class="loar-meta">
+	<tr>
+		<td class="loar-meta-label">Learner Name</td>
+		<td class="loar-meta-value">{{ doc.candidate_name or "" }}</td>
+		<td class="loar-meta-label">Signature</td>
+		<td class="loar-meta-value">{% if doc.learner_signature %}<img src="{{ doc.learner_signature }}" class="loar-sign" />{% endif %}</td>
+		<td class="loar-meta-label">Date</td>
+		<td class="loar-meta-value">{{ frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "" }}</td>
+	</tr>
+	<tr>
+		<td class="loar-meta-label">Assessor Name</td>
+		<td class="loar-meta-value">{{ doc.assessor_name or "" }}</td>
+		<td class="loar-meta-label">Signature</td>
+		<td class="loar-meta-value">{% if doc.assessor_signature %}<img src="{{ doc.assessor_signature }}" class="loar-sign" />{% endif %}</td>
+		<td class="loar-meta-label">Date</td>
+		<td class="loar-meta-value">{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else "" }}</td>
+	</tr>
+</table>
+{% endmacro %}
+
+{% macro loar_grid(page) %}
+{% set ns = namespace(last="") %}
+<table class="loar-grid">
+	<tr>
+		<th class="loar-th-outcome">Learning Outcome</th>
+		<th class="loar-th-criteria">Assessment Criteria</th>
+		<th class="loar-th-result">Pass / Fail</th>
+		<th class="loar-th-comments">Comments</th>
+	</tr>
+	{% for row in doc.criteria %}
+		{% set is_p2 = (row.outcome or "").startswith("7:") %}
+		{% if (page == 2 and is_p2) or (page == 1 and not is_p2) %}
+			<tr>
+				{% if row.outcome != ns.last %}
+					{% set ns.last = row.outcome %}
+					{% set count = namespace(n=0) %}
+					{% for r2 in doc.criteria %}
+						{% if r2.outcome == row.outcome %}
+							{% set count.n = count.n + 1 %}
+						{% endif %}
+					{% endfor %}
+					<td class="loar-outcome" rowspan="{{ count.n }}">{{ row.outcome }}</td>
+				{% endif %}
+				<td class="loar-criterion">
+					<span class="loar-num">{{ row.criterion_no }}</span>
+					{{ row.criterion | replace("\n", "<br>") }}
+				</td>
+				<td class="loar-result {% if row.result == 'Pass' %}loar-pass{% elif row.result == 'Fail' %}loar-fail{% endif %}">
+					{{ row.result or "" }}
+				</td>
+				<td class="loar-comments">{{ row.comments or "" }}</td>
+			</tr>
+		{% endif %}
+	{% endfor %}
+</table>
+{% endmacro %}
+
+<div class="loar-paper loar-page-1">
+	{{ loar_header() }}
+	{{ loar_grid(1) }}
+</div>
+
+<div class="loar-paper loar-page-2">
+	{{ loar_header() }}
+	{{ loar_grid(2) }}
+	<div class="loar-footer">{{ doc.form_subtitle or "Level 2 Defensive Driving for Light Vehicles | Learning Outcome Assessment Record_Feb26" }}</div>
+</div>
