@@ -4,6 +4,8 @@ import frappe
 from frappe import _
 from frappe.utils import add_days, cint, flt, nowdate
 
+from numerouno.numerouno.utils.food_invoice import append_food_for_student_rows
+
 
 def _as_list(value):
 	if not value:
@@ -75,6 +77,7 @@ def get_data(filters=None):
 			sgs.end_date,
 			sgs.customer_purchase_order,
 			sgs.sales_person,
+			sgs.custom_food_required,
 			CASE WHEN {pending_condition} THEN 1 ELSE 0 END AS is_pending,
 			CASE
 				WHEN EXISTS (
@@ -160,6 +163,7 @@ def get_data(filters=None):
 				"end_date": row.end_date,
 				"customer_purchase_order": row.customer_purchase_order,
 				"sales_person": row.sales_person,
+				"food_required": row.custom_food_required,
 				"invoice_status": row.invoice_status,
 				"is_pending": cint(row.is_pending),
 			}
@@ -198,6 +202,7 @@ def _get_pending_student_rows(customer, row_names):
 			sgs.end_date,
 			sgs.customer_purchase_order,
 			sgs.sales_person,
+			sgs.custom_food_required,
 			sg.course
 		FROM `tabStudent Group Student` sgs
 		LEFT JOIN `tabStudent Group` sg
@@ -366,6 +371,8 @@ def create_invoice(customer, row_names):
 				"rate": _get_item_rate(course),
 			},
 		)
+
+	append_food_for_student_rows(invoice, rows)
 
 	if rows[0].customer_purchase_order:
 		invoice.po_no = rows[0].customer_purchase_order

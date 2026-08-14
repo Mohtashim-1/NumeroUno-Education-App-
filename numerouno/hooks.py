@@ -362,4 +362,7 @@ override_whitelisted_methods = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
-after_migrate = ["numerouno.numerouno.customer_portal_setup.after_migrate"]
+after_migrate = [
+    "numerouno.numerouno.customer_portal_setup.after_migrate",
+    "numerouno.numerouno.food_required_setup.after_migrate",
+]

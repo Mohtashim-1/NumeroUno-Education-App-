@@ -500,6 +500,7 @@ class InvoicedCreationPage {
 							<span>${this.escape(student.student || "")}</span>
 							<span>${student.start_date ? frappe.datetime.str_to_user(student.start_date) : ""}</span>
 							<span>${this.escape(student.customer_purchase_order || "")}</span>
+							${student.food_required ? `<span>${__("Food")}: ${this.escape(student.food_required)}</span>` : ""}
 						</div>
 					</div>
 				</div>
@@ -563,6 +564,7 @@ class InvoicedCreationPage {
 			student.invoice_status,
 			student.customer_purchase_order,
 			student.sales_person,
+			student.food_required,
 			student.start_date,
 			student.end_date,
 		]));

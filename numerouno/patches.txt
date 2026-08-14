@@ -15,4 +15,5 @@ numerouno.patches.v1_0.setup_staff_attendance_user_role
 numerouno.patches.v1_0.fix_attendance_staff_roles_column
 numerouno.patches.v1_0.setup_asset_document_archive
 numerouno.patches.v1_0.allow_asset_documents_after_submit
+numerouno.patches.v1_0.setup_food_required_fields
 # Patches added in this section will be executed after doctypes are migrated

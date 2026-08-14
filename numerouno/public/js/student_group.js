@@ -1,4 +1,17 @@
 frappe.ui.form.on('Student Group', {
+    custom_food_required: function(frm) {
+        apply_food_required_to_students(frm);
+        if (frm.doc.custom_food_required === 'Yes' && !flt(frm.doc.custom_food_rate)) {
+            frappe.call({
+                method: 'numerouno.numerouno.utils.food_invoice.get_default_food_rate',
+                callback: function(r) {
+                    if (flt(r.message)) {
+                        frm.set_value('custom_food_rate', r.message);
+                    }
+                }
+            });
+        }
+    },
     refresh: function(frm) {
         frm.add_custom_button(__('Create Coarse Schedule'), () => {
             show_coarse_dialog(frm);
@@ -34,6 +47,11 @@ frappe.ui.form.on('Student Group', {
             // Return empty filters to remove all restrictions
             return {};
         });
+    },
+    students_add: function(frm, cdt, cdn) {
+        if (frm.doc.custom_food_required) {
+            frappe.model.set_value(cdt, cdn, 'custom_food_required', frm.doc.custom_food_required);
+        }
     }
 });
 
@@ -48,8 +66,19 @@ frappe.ui.form.on('Student Group Student', {
                 }
             });
         }
+    },
+    students_add: function(frm, cdt, cdn) {
+        if (frm.doc.custom_food_required) {
+            frappe.model.set_value(cdt, cdn, 'custom_food_required', frm.doc.custom_food_required);
+        }
     }
 });
+
+function apply_food_required_to_students(frm) {
+    (frm.doc.students || []).forEach(function(row) {
+        frappe.model.set_value(row.doctype, row.name, 'custom_food_required', frm.doc.custom_food_required || '');
+    });
+}
 
 function show_coarse_dialog(frm) {
     const dialog = new frappe.ui.Dialog({

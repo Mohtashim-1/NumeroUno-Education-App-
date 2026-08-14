@@ -5,6 +5,7 @@ from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from frappe.model.document import Document
 from frappe.utils.background_jobs import enqueue
 from numerouno.numerouno.doctype.sales_invoice.sales_invoice import fetch_students_from_sg
+from numerouno.numerouno.utils.food_invoice import append_food_for_student_rows
 from education.education.utils import OverlapError
 
 
@@ -73,6 +74,10 @@ def sync_children(doc, method):
             student_applicant = frappe.db.get_value("Student", row.student, "student_applicant")
             if student_applicant:
                 row.student_applicant = student_applicant
+
+        # 7) Default Food Required from the Student Group when the row is empty
+        if not row.get("custom_food_required") and doc.get("custom_food_required"):
+            row.custom_food_required = doc.custom_food_required
 
 
 @frappe.whitelist()
@@ -277,6 +282,7 @@ def create_sales_order(student_group, item_code, rate):
         "qty": qty,
         "rate": rate
     })
+    append_food_for_student_rows(sales_order, students, default_student_group=student_group)
 
     sales_order.insert()
     sales_order.submit()
@@ -786,6 +792,7 @@ def create_sales_order_for_purchase_order(doc, method):
                     "qty": len(doc.students),
                     "rate": course_rate
                 })
+                append_food_for_student_rows(sales_order, doc.students, default_student_group=doc.name)
 
                 sales_order.append("taxes",{
                      "charge_type":"On Net Total",
@@ -922,6 +929,7 @@ def create_sales_order_for_advance_payment(doc, method):
                     "qty": len(doc.students),
                     "rate": course_rate
                 })
+                append_food_for_student_rows(sales_order, doc.students, default_student_group=doc.name)
                 sales_order.append("taxes", {
                     "charge_type": "On Net Total",
                     "account_head": "VAT 5% - NUTC",
@@ -1049,6 +1057,7 @@ def create_sales_invoice_for_cash_payment(doc, method):
                     "qty": len(doc.students),
                     "rate": course_rate
                 })
+                append_food_for_student_rows(sales_order, doc.students, default_student_group=doc.name)
                 
                 # Add taxes
                 sales_order.append("taxes", {
@@ -1397,6 +1406,7 @@ def create_sales_order_from_student_group(doc, method):
                             "description": f"Course: {doc.course} for {len(group_data['students'])} students"
                         })
                         print(f"Added new item row for course: {doc.course}")
+                    append_food_for_student_rows(so, group_data['students'], default_student_group=doc.name)
                     
                     # Ensure PO number is set if it wasn't before
                     if po_number and not so.po_no:
@@ -1452,6 +1462,11 @@ def create_sales_order_from_student_group(doc, method):
                         "rate": course_rate,
                         "description": f"Course: {doc.course} for {len(group_data['students'])} students"
                     })
+                    append_food_for_student_rows(
+                        sales_order,
+                        group_data['students'],
+                        default_student_group=doc.name,
+                    )
                     
                     # Add taxes
                     sales_order.append("taxes", {
