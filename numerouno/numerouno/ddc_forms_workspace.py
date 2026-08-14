@@ -8,33 +8,36 @@ WORKSPACE = "Forms"
 ADNOC_HEADER = "ADNOC"
 LEGACY_HEADERS = ("DDC Instructor Course", "ADNOC DDC Instructor Course")
 
-# ADNOC DDC Instructor Development Course forms
+# ADNOC DDC Instructor Development Course forms (link_to, color, display label)
 ADNOC_SHORTCUTS = (
-	("DDC Candidate Prerequisite", "Green"),
-	("DDC Written Assessment", "Blue"),
-	("DDC OMR Answer Sheet", "Orange"),
-	("DDC Practical Assessment", "Red"),
-	("DDC Micro Teaching Assessment", "Purple"),
-	("Pre Test ADSD", "Cyan"),
+	("DDC Candidate Prerequisite", "Green", "DDC Candidate Pre-Requisite Checklist"),
+	("DDC Written Assessment", "Blue", "DDC Written Assessment"),
+	("DDC OMR Answer Sheet", "Orange", "DDC OMR Answer Sheet"),
+	("DDC Practical Assessment", "Red", "DDC Practical Assessment"),
+	("DDC Micro Teaching Assessment", "Purple", "DDC Micro Teaching Assessment"),
+	("Pre Test ADSD", "Cyan", "Pre Test ADSD"),
 )
 
 
 def setup():
 	workspace = frappe.get_doc("Workspace", WORKSPACE)
-	existing = {row.label or row.link_to for row in workspace.shortcuts}
+	existing_by_link = {row.link_to: row for row in workspace.shortcuts}
 
-	for label, color in ADNOC_SHORTCUTS:
-		if label in existing:
+	for link_to, color, display_label in ADNOC_SHORTCUTS:
+		if not frappe.db.exists("DocType", link_to):
 			continue
-		if not frappe.db.exists("DocType", label):
+		row = existing_by_link.get(link_to)
+		if row:
+			row.label = display_label
+			row.color = color
 			continue
 		workspace.append(
 			"shortcuts",
 			{
 				"type": "DocType",
-				"link_to": label,
+				"link_to": link_to,
 				"doc_view": "List",
-				"label": label,
+				"label": display_label,
 				"color": color,
 			},
 		)
@@ -49,13 +52,19 @@ def setup():
 	return {
 		"workspace": WORKSPACE,
 		"header": ADNOC_HEADER,
-		"shortcuts": [label for label, _color in ADNOC_SHORTCUTS if frappe.db.exists("DocType", label)],
+		"shortcuts": [
+			display_label
+			for link_to, _color, display_label in ADNOC_SHORTCUTS
+			if frappe.db.exists("DocType", link_to)
+		],
 	}
 
 
 def _strip_legacy_adnoc_blocks(content: list) -> list:
 	"""Remove old DDC/ADNOC headers and their shortcut blocks so we can rebuild cleanly."""
-	adnoc_labels = {label for label, _color in ADNOC_SHORTCUTS}
+	adnoc_shortcut_names = {
+		display_label for _link_to, _color, display_label in ADNOC_SHORTCUTS
+	} | {link_to for link_to, _color, _display_label in ADNOC_SHORTCUTS}
 	filtered = []
 	skip_shortcuts = False
 
@@ -71,13 +80,13 @@ def _strip_legacy_adnoc_blocks(content: list) -> list:
 
 		if skip_shortcuts and block.get("type") == "shortcut":
 			shortcut_name = block.get("data", {}).get("shortcut_name")
-			if shortcut_name in adnoc_labels:
+			if shortcut_name in adnoc_shortcut_names:
 				continue
 			skip_shortcuts = False
 
 		if block.get("type") == "shortcut":
 			shortcut_name = block.get("data", {}).get("shortcut_name")
-			if shortcut_name in adnoc_labels:
+			if shortcut_name in adnoc_shortcut_names:
 				continue
 
 		filtered.append(block)
@@ -100,16 +109,16 @@ def _ensure_adnoc_section(content: list) -> list:
 		}
 	)
 
-	for label, _color in ADNOC_SHORTCUTS:
-		if label in shortcut_names:
+	for link_to, _color, display_label in ADNOC_SHORTCUTS:
+		if display_label in shortcut_names:
 			continue
-		if not frappe.db.exists("DocType", label):
+		if not frappe.db.exists("DocType", link_to):
 			continue
 		content.append(
 			{
 				"id": frappe.generate_hash(length=10),
 				"type": "shortcut",
-				"data": {"shortcut_name": label, "col": 3},
+				"data": {"shortcut_name": display_label, "col": 3},
 			}
 		)
 

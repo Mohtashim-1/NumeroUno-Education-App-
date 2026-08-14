@@ -43,8 +43,7 @@ portal_menu_items = [
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/numerouno/css/numerouno.css"
-# app_include_js = "/assets/numerouno/js/CustomLessonContent.vue"
+app_include_js = "/assets/numerouno/js/lv_practical_assessment_cache_bust.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/numerouno/css/numerouno.css"

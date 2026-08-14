@@ -1,0 +1,13 @@
+.lv-form { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #000; }
+.lv-title { text-align: center; font-weight: 700; font-size: 12pt; margin-bottom: 4px; }
+.lv-subtitle { text-align: center; margin-bottom: 10px; }
+.lv-meta { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.lv-meta td { border: 1px solid #000; padding: 4px 6px; }
+.lv-grid { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.lv-grid th, .lv-grid td { border: 1px solid #000; padding: 3px 4px; vertical-align: top; }
+.lv-grid th { background: #eee; font-weight: 700; text-align: center; }
+.lv-check { text-align: center; width: 28px; }
+.lv-section { font-weight: 700; background: #f5f5f5; }
+.lv-guidance { border: 1px solid #000; padding: 6px; margin: 8px 0; font-size: 8.5pt; white-space: pre-wrap; }
+.lv-footer { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.lv-footer td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; }
