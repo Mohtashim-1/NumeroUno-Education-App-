@@ -50,7 +50,14 @@
 	<table class="nyc-sign">
 		<tr>
 			<td><strong>Assessor's Name:</strong> {{ doc.assessor_signature_name or doc.assessor_name or '................................' }}</td>
-			<td><strong>Assessor's Signature:</strong> ................................</td>
+			<td>
+				<strong>Assessor's Signature:</strong>
+				{% if doc.assessor_signature %}
+					<img src="{{ doc.assessor_signature }}" class="nyc-sign-img" />
+				{% else %}
+					................................
+				{% endif %}
+			</td>
 			<td><strong>Date:</strong> {% if doc.assessor_signature_date %}{{ frappe.utils.formatdate(doc.assessor_signature_date, 'dd-MM-yyyy') }}{% else %}................{% endif %}</td>
 		</tr>
 	</table>

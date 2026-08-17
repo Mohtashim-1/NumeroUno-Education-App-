@@ -22,6 +22,10 @@ class NYCReassessmentChecklist(Document):
 		self._set_retest_validity()
 		self._set_retest_status()
 		self._ensure_outcome_rows()
+		if not self.assessor_signature_name and self.assessor_name:
+			self.assessor_signature_name = self.assessor_name
+		if self.assessor_signature and not self.assessor_signature_date:
+			self.assessor_signature_date = today()
 
 	def on_submit(self):
 		if self.retest_status == "Expired":
@@ -375,3 +379,40 @@ def ensure_retest_allowed(student, student_group, quiz_name=None):
 	if not result.get("allowed"):
 		frappe.throw(result.get("message"), title=_("Retest Not Allowed"))
 	return True
+
+
+def update_print_format():
+	from pathlib import Path
+
+	base = Path(__file__).resolve().parents[2] / "print_format/nyc_reassessment_checklist"
+	html = (base / "nyc_reassessment_checklist.html").read_text()
+	css = (
+		".nyc-form { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; }"
+		".nyc-title { text-align: center; font-size: 13pt; font-weight: bold; margin: 8px 0 14px; text-transform: uppercase; }"
+		".nyc-box { width: 100%; border: 1px solid #000; border-collapse: collapse; margin-bottom: 12px; }"
+		".nyc-box td { border: 1px solid #000; padding: 6px 8px; vertical-align: top; }"
+		".nyc-section-title { margin: 10px 0 4px; }"
+		".nyc-details-box { border: 1px solid #000; min-height: 80px; padding: 8px; margin-bottom: 12px; }"
+		".nyc-reassessment-head { display: flex; justify-content: space-between; margin: 8px 0 4px; }"
+		".nyc-grid { width: 100%; border-collapse: collapse; margin-bottom: 12px; }"
+		".nyc-grid th, .nyc-grid td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; }"
+		".nyc-grid th { background: #f5f5f5; }"
+		".col-ref { width: 5%; }"
+		".col-done { width: 8%; text-align: center; }"
+		".col-source { width: 18%; }"
+		".center { text-align: center; }"
+		".nyc-declaration { margin: 12px 0; line-height: 1.4; }"
+		".nyc-sign { width: 100%; margin-top: 16px; }"
+		".nyc-sign td { padding: 8px 4px; vertical-align: bottom; }"
+		".nyc-sign-img { max-height: 48px; max-width: 160px; display: block; margin-top: 4px; }"
+		".nyc-footer { display: flex; justify-content: space-between; margin-top: 18px; font-size: 9pt; }"
+	)
+	if frappe.db.exists("Print Format", "NYC Reassessment Checklist"):
+		frappe.db.set_value(
+			"Print Format",
+			"NYC Reassessment Checklist",
+			{"html": html, "css": css, "custom_format": 1, "print_format_type": "Jinja"},
+			update_modified=True,
+		)
+	frappe.db.commit()
+	return {"print_format": "NYC Reassessment Checklist"}

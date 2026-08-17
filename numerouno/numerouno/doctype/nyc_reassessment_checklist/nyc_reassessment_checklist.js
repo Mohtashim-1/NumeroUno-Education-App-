@@ -19,5 +19,16 @@ frappe.ui.form.on("NYC Reassessment Checklist", {
 				eligible ? "blue" : "red"
 			);
 		}
+		if (!frm.doc.assessor_signature_name && frm.doc.assessor_name) {
+			frm.set_value("assessor_signature_name", frm.doc.assessor_name);
+		}
+	},
+	assessor_signature(frm) {
+		if (frm.doc.assessor_signature && !frm.doc.assessor_signature_date) {
+			frm.set_value("assessor_signature_date", frappe.datetime.get_today());
+		}
+		if (frm.doc.assessor_signature && !frm.doc.assessor_signature_name && frm.doc.assessor_name) {
+			frm.set_value("assessor_signature_name", frm.doc.assessor_name);
+		}
 	},
 });
