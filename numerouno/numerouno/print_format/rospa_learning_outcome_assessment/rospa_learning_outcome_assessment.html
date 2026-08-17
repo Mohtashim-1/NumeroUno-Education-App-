@@ -234,9 +234,8 @@
 	text-align: center;
 	background: #fff !important;
 }
-.pa-sign-name { width: 26%; }
-.pa-sign-signature { width: 24%; }
-.pa-sign-candidate { width: 24%; }
+.pa-sign-name { width: 42%; }
+.pa-sign-signature { width: 42%; }
 .pa-sign-date { width: 16%; }
 .pa-sign-img { max-height: 48px; max-width: 150px; }
 @media screen {
@@ -342,14 +341,18 @@
 		<tr>
 			<td class="pa-info-label">Learner Name</td>
 			<td class="pa-info-value">{{ doc.candidate_name or "" }}</td>
-			<td class="pa-info-label">Date</td>
-			<td class="pa-info-value">{{ frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "" }}</td>
+			<td class="pa-info-label">Student Signature</td>
+			<td class="pa-info-value">{% if sig.learner %}<img src="{{ sig.learner }}" class="pa-sign-img">{% endif %}</td>
 		</tr>
 		<tr>
 			<td class="pa-info-label">Assessor Name</td>
 			<td class="pa-info-value">{{ doc.assessor_name or "" }}</td>
-			<td class="pa-info-label">Signature</td>
+			<td class="pa-info-label">Assessor Signature</td>
 			<td class="pa-info-value">{% if sig.instructor %}<img src="{{ sig.instructor }}" class="pa-sign-img">{% endif %}</td>
+		</tr>
+		<tr>
+			<td class="pa-info-label">Date</td>
+			<td class="pa-info-value" colspan="3">{{ frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "" }}</td>
 		</tr>
 	</table>
 
@@ -416,8 +419,8 @@
 		<thead>
 			<tr>
 				<th class="pa-sign-name">Assessor's Name</th>
-				<th class="pa-sign-signature">Instructor Signature</th>
-				<th class="pa-sign-candidate">Candidate Signature</th>
+				<th class="pa-sign-signature">Assessor Signature</th>
+				<th class="pa-sign-candidate">Student Signature</th>
 				<th class="pa-sign-date">Date</th>
 			</tr>
 		</thead>
