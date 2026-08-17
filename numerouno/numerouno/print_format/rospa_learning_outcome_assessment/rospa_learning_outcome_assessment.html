@@ -15,234 +15,265 @@
 	print-color-adjust: exact !important;
 	box-sizing: border-box;
 }
-.pa-paper {
+.lv-paper {
 	font-family: Arial, Helvetica, sans-serif;
-	color: #4a4a4a;
+	color: #111;
 	font-size: 9pt;
+	line-height: 1.18;
 	-webkit-print-color-adjust: exact !important;
 	print-color-adjust: exact !important;
 }
-.pa-page-1 { page-break-after: always; }
-.pa-page-2 { page-break-before: always; }
-.pa-logo-row {
+.lv-page-1 {
+	page-break-after: always;
+	break-after: page;
+}
+.lv-page-2 {
+	page-break-before: always;
+	break-before: page;
+	page-break-after: auto;
+	min-height: 262mm;
+	display: flex;
+	flex-direction: column;
+}
+.lv-p2-body { flex: 1 1 auto; }
+.lv-brand {
 	width: 100% !important;
 	border-collapse: collapse !important;
-	margin-bottom: 8px;
+	margin: 0 0 4px !important;
 }
-.pa-logo-row td {
-	border: none !important;
-	background: transparent !important;
-	padding: 0 !important;
+.lv-brand td {
 	vertical-align: middle !important;
+	border: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
 }
-.pa-logo-left { width: 90px; }
-.pa-logo-right { text-align: right; }
-.pa-hse {
+.lv-brand-left { width: 78px; }
+.lv-brand-right { width: 120px; text-align: right; }
+.lv-hse {
 	width: 58px;
 	height: 58px;
-	border: 3px solid #27569d;
-	background: #27569d !important;
+	border: 3px solid #1e4d9c;
+	background: #1e4d9c !important;
 	color: #fff !important;
 	text-align: center;
 	box-sizing: border-box;
 }
-.pa-hse-pct {
-	font-size: 11px;
-	font-weight: 700;
-	padding-top: 8px;
-	line-height: 1.1;
-}
-.pa-hse-txt {
-	font-size: 16px;
-	font-weight: 800;
-	letter-spacing: 0.04em;
-	line-height: 1.1;
-}
-.pa-logo-right img {
-	max-height: 56px;
-	max-width: 108px;
-}
-.pa-main-title {
-	font-size: 18pt;
-	font-weight: 800;
-	margin-top: 2px;
-	margin-bottom: 2px;
+.lv-hse-pct { font-size: 11px; font-weight: 700; padding-top: 8px; line-height: 1.1; }
+.lv-hse-txt { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; line-height: 1.1; }
+.lv-adnoc-logo { max-height: 56px; max-width: 108px; display: inline-block; }
+.lv-title {
 	text-align: center;
-	line-height: 1.15;
+	font-size: 16pt;
+	font-weight: 800;
+	text-transform: uppercase;
+	line-height: 1.1;
+	margin: 2px 0 0;
 }
-.pa-orange-text { color: #f58220; }
-.pa-blue-text { color: #27569d; }
-.pa-subtitle {
-	color: #27569d;
+.lv-title-orange { color: #ef7a28 !important; }
+.lv-title-blue { color: #1e4d9c !important; }
+.lv-subtitle {
+	text-align: center;
+	color: #1e4d9c !important;
 	font-size: 11pt;
 	font-weight: 700;
-	margin-bottom: 8px;
-	text-align: center;
+	margin: 2px 0 7px;
 }
-.pa-info {
+.lv-meta {
 	width: 100% !important;
 	border-collapse: collapse !important;
-	margin-bottom: 8px;
+	margin: 0 0 7px !important;
 	table-layout: fixed;
 }
-.pa-info td {
-	border: 1px solid #555 !important;
-	height: 31px;
+.lv-meta td {
+	border: 1px solid #6f7f93 !important;
+	padding: 5px 7px !important;
 	vertical-align: middle !important;
-	padding: 4px 7px !important;
+	height: 28px;
 }
-.pa-info-label {
-	width: 18%;
-	background: #27569d !important;
+.lv-meta-label {
+	width: 17%;
+	background: #1e4d9c !important;
 	color: #fff !important;
 	font-weight: 700;
+	font-size: 8.5pt;
 }
-.pa-info-value { width: 32%; }
-.pa-unit-title {
-	background: #f58220 !important;
-	color: #fff !important;
-	padding: 5px 8px;
-	font-weight: 700;
-	border: 1px solid #333;
-	font-size: 9.5pt;
+.lv-meta-value {
+	width: 33%;
+	background: #fff !important;
+	font-weight: 600;
+	color: #111;
 }
-.pa-grid {
+.lv-grid {
 	width: 100% !important;
 	border-collapse: collapse !important;
 	table-layout: fixed;
 }
-.pa-grid th,
-.pa-grid td { border: 1px solid #444 !important; }
-.pa-grid th {
-	background: #27569d !important;
+.lv-grid th,
+.lv-grid td { border: 1px solid #6f7f93 !important; }
+.lv-unit {
+	background: #ef7a28 !important;
 	color: #fff !important;
+	font-weight: 800;
+	font-size: 9.5pt;
+	text-align: center;
+	padding: 5px 8px !important;
+	text-transform: none !important;
+}
+.lv-th-outcome,
+.lv-th-criteria,
+.lv-th-source {
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 800;
 	font-size: 8pt;
+	text-align: center;
+	padding: 4px !important;
+	text-transform: uppercase !important;
+}
+.lv-th-outcome { width: 22%; }
+.lv-th-criteria { width: 66%; }
+.lv-th-source { width: 12%; }
+.lv-outcome {
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-size: 7pt;
 	font-weight: 700;
 	padding: 5px 6px !important;
-	text-align: center;
-	text-transform: none !important;
-}
-.pa-outcome-head { width: 24%; }
-.pa-criteria-head { width: 48%; }
-.pa-check-head { width: 12%; }
-.pa-evidence-head { width: 16%; }
-.pa-outcome {
-	background: #27569d !important;
-	color: #fff !important;
-	font-size: 8pt;
-	font-weight: 700;
-	padding: 6px !important;
 	vertical-align: middle !important;
-}
-.pa-criteria {
-	padding: 4px 7px !important;
-	vertical-align: top !important;
-	font-size: 8pt;
-}
-.pa-num {
-	color: #f58220;
-	font-weight: 700;
-	display: inline-block;
-	min-width: 28px;
-}
-.pa-result {
-	text-align: center;
-	vertical-align: middle !important;
-	font-weight: 700;
-	font-size: 8.5pt;
-	text-transform: uppercase;
-}
-.pa-evidence {
-	vertical-align: top;
-	padding: 5px !important;
-	font-size: 8pt;
-}
-.pa-guidance-label {
-	background: #27569d !important;
-	color: #fff !important;
-	font-weight: 700;
-	padding: 8px !important;
-	vertical-align: middle !important;
-	text-align: center;
-	font-size: 8pt;
-}
-.pa-guidance-text {
-	padding: 8px !important;
-	font-size: 8.5pt;
+	text-align: left;
 	line-height: 1.2;
 }
-.pa-footer-line {
-	border-top: 2px solid #27569d;
-	margin-top: 16px;
+.lv-criterion {
+	padding: 3px 6px !important;
+	background: #fff !important;
+	vertical-align: top !important;
+	font-size: 7.6pt;
+	line-height: 1.18;
 }
-.pa-footer-company {
-	color: #27569d;
-	text-align: right;
-	font-size: 10pt;
+.lv-num {
+	color: #ef7a28 !important;
+	font-weight: 800;
+	margin-right: 4px;
+}
+.lv-criterion-text { color: #444; }
+.lv-source {
+	text-align: center;
+	vertical-align: middle !important;
+	padding: 2px 4px !important;
+	background: #fff !important;
+}
+.lv-cb {
+	display: inline-block;
+	width: 13px;
+	height: 13px;
+	border: 1.4px solid #333;
+	background: #fff;
+	line-height: 11px;
+	font-size: 10px;
 	font-weight: 700;
-	margin-top: 12px;
+	color: #1e4d9c;
+	text-align: center;
+	vertical-align: middle;
 }
-.pa-remarks-title,
-.pa-field-title {
-	color: #27569d;
-	font-weight: 700;
-	text-decoration: underline;
-	font-size: 10pt;
-}
-.pa-remarks-space {
-	min-height: 90px;
-	padding-top: 5px;
-}
-.pa-evidence-bar {
-	background: #ddd !important;
-	padding: 7px 10px;
-	font-size: 9pt;
-	margin: 10px 0 8px;
-}
-.pa-page2-field {
-	border-bottom: 1px solid #555;
-	min-height: 42px;
-	padding: 5px 4px 8px;
-	margin-bottom: 8px;
-}
-.pa-training { min-height: 70px; }
-.pa-declaration {
-	padding: 10px 4px 14px;
-	font-size: 9pt;
-	line-height: 1.4;
+.lv-guide-label {
+	width: 22%;
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 7.5pt;
+	padding: 7px 5px !important;
+	vertical-align: middle !important;
 	text-align: center;
 }
-.pa-del { text-decoration: line-through; color: #666; }
-.pa-sign-table {
+.lv-guide-text {
+	padding: 6px 8px !important;
+	font-size: 8pt;
+	background: #fff !important;
+	vertical-align: middle !important;
+	color: #111;
+}
+.lv-company-footer {
+	margin-top: 8px;
+	padding-top: 5px;
+	border-top: 1.5px solid #1e4d9c;
+	text-align: right;
+	color: #1e4d9c !important;
+	font-weight: 700;
+	font-size: 9pt;
+}
+.lv-page-2 .lv-company-footer { margin-top: auto; padding-top: 8px; }
+.lv-field { margin: 0 0 14px; }
+.lv-field-label {
+	color: #1e4d9c !important;
+	font-weight: 700;
+	font-size: 11pt;
+	text-decoration: underline;
+	margin: 0;
+}
+.lv-write {
+	min-height: 22px;
+	border-bottom: 1.6px solid #1e4d9c;
+	padding: 4px 2px 3px;
+	font-size: 11pt;
+	color: #111;
+}
+.lv-write-tall { min-height: 78px; }
+.lv-grey-bar {
+	background: #d8d8d8 !important;
+	text-align: center;
+	padding: 8px 10px;
+	margin: 6px 0 16px;
+	font-size: 9.5pt;
+	font-weight: 600;
+	color: #111;
+}
+.lv-declaration {
+	margin: 22px 8px 18px;
+	font-size: 10pt;
+	line-height: 1.5;
+	text-align: center;
+	color: #111;
+}
+.lv-del { text-decoration: line-through; color: #444; }
+.lv-del-note { margin-top: 10px; font-size: 9pt; font-style: italic; }
+.lv-assessor {
 	width: 100% !important;
 	border-collapse: collapse !important;
+	margin-top: 8px;
 	table-layout: fixed;
 }
-.pa-sign-table th {
-	background: #f58220 !important;
+.lv-assessor th {
+	background: #ef7a28 !important;
 	color: #fff !important;
+	font-weight: 800;
+	font-size: 11pt;
+	padding: 8px !important;
 	border: 1px solid #d45f14 !important;
-	padding: 6px 7px !important;
 	text-align: center;
 	text-transform: none !important;
 }
-.pa-sign-table td {
-	border: 1px solid #555 !important;
-	height: 62px;
-	padding: 6px !important;
+.lv-assessor td {
+	border: 1px solid #6f7f93 !important;
+	height: 68px;
+	padding: 6px 8px !important;
 	vertical-align: middle !important;
 	text-align: center;
+	width: 33.33%;
 	background: #fff !important;
 }
-.pa-sign-name { width: 42%; }
-.pa-sign-signature { width: 42%; }
-.pa-sign-date { width: 16%; }
-.pa-sign-img { max-height: 48px; max-width: 150px; }
+.lv-sign { max-height: 48px; max-width: 160px; }
+.lv-learner-sign { max-height: 36px; max-width: 120px; margin-left: 10px; vertical-align: middle; }
 @media screen {
-	.pa-page-2 {
-		margin-top: 16px;
-		padding-top: 12px;
-		border-top: 2px dashed #b7c0cc;
+	.lv-page-1,
+	.lv-page-2 {
+		min-height: 277mm;
+		padding-bottom: 4mm;
+		margin-bottom: 18px;
+		background: #fff;
+		box-shadow: 0 0 0 1px #cfd6de;
+	}
+	.lv-page-2 {
+		padding-top: 2mm;
 	}
 }
 </style>
@@ -275,169 +306,155 @@
 	{% set sig.learner = frappe.db.get_value("Student Card", {"student": doc.student}, "student_signature") or "" %}
 {% endif %}
 
-{% macro header() %}
-<table class="pa-logo-row">
+{% macro lv_brand() %}
+<table class="lv-brand">
 	<tr>
-		<td class="pa-logo-left">
-			<div class="pa-hse">
-				<div class="pa-hse-pct">100%</div>
-				<div class="pa-hse-txt">HSE</div>
+		<td class="lv-brand-left">
+			<div class="lv-hse">
+				<div class="lv-hse-pct">100%</div>
+				<div class="lv-hse-txt">HSE</div>
 			</div>
 		</td>
 		<td></td>
-		<td class="pa-logo-right">
-			<img src="/files/images (1).png" alt="ADNOC">
+		<td class="lv-brand-right">
+			<img src="/files/images (1).png" alt="ADNOC" class="lv-adnoc-logo">
 		</td>
 	</tr>
 </table>
 {% endmacro %}
 
-{% macro criteria_table(page) %}
-{% set ns = namespace(last="") %}
-<table class="pa-grid">
-	<thead>
-		<tr>
-			<th class="pa-outcome-head">LEARNING OUTCOME</th>
-			<th class="pa-criteria-head">ASSESSMENT CRITERIA</th>
-			<th class="pa-check-head">PASS / FAIL</th>
-			<th class="pa-evidence-head">COMMENTS</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for row in doc.criteria %}
-			{% set is_p2 = (row.criterion_no or "").startswith("7") %}
-			{% if (page == 2 and is_p2) or (page == 1 and not is_p2) %}
-			<tr>
-				{% if row.outcome != ns.last %}
-					{% set ns.last = row.outcome %}
-					{% set counter = namespace(total=0) %}
-					{% for x in doc.criteria %}
-						{% set x_p2 = (x.criterion_no or "").startswith("7") %}
-						{% if x.outcome == row.outcome and ((page == 2 and x_p2) or (page == 1 and not x_p2)) %}
-							{% set counter.total = counter.total + 1 %}
-						{% endif %}
-					{% endfor %}
-					<td class="pa-outcome" rowspan="{{ counter.total }}">{{ row.outcome or "" }}</td>
-				{% endif %}
-				<td class="pa-criteria">
-					<span class="pa-num">{{ row.criterion_no or "" }}</span>
-					{{ row.criterion | replace("\n", "<br>") }}
-				</td>
-				<td class="pa-result">{{ row.result or "" }}</td>
-				<td class="pa-evidence">{{ row.comments or "" }}</td>
-			</tr>
-			{% endif %}
-		{% endfor %}
-	</tbody>
-</table>
+{% macro lv_footer() %}
+<div class="lv-company-footer">Abu Dhabi National Oil Company</div>
 {% endmacro %}
 
-<div class="pa-paper pa-page-1">
-	{{ header() }}
+<div class="lv-paper lv-page-1">
+	{{ lv_brand() }}
 
-	<div class="pa-main-title">
-		<span class="pa-orange-text">LEARNING OUTCOME ASSESSMENT</span>
-		<span class="pa-blue-text"> – LIGHT VEHICLE</span>
+	<div class="lv-title">
+		<span class="lv-title-orange">LEARNING OUTCOME ASSESSMENT</span><span class="lv-title-blue"> – LIGHT VEHICLE</span>
 	</div>
-	<div class="pa-subtitle">ADNOC Learning Outcome Assessment Record</div>
+	<div class="lv-subtitle">ADNOC Learning Outcome Assessment Record</div>
 
-	<table class="pa-info">
+	<table class="lv-meta">
 		<tr>
-			<td class="pa-info-label">Learner Name</td>
-			<td class="pa-info-value">{{ doc.candidate_name or "" }}</td>
-			<td class="pa-info-label">Student Signature</td>
-			<td class="pa-info-value">{% if sig.learner %}<img src="{{ sig.learner }}" class="pa-sign-img">{% endif %}</td>
+			<td class="lv-meta-label">Candidate Name</td>
+			<td class="lv-meta-value">{{ doc.candidate_name or "" }}</td>
+			<td class="lv-meta-label">Date</td>
+			<td class="lv-meta-value">{{ frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "" }}</td>
 		</tr>
 		<tr>
-			<td class="pa-info-label">Assessor Name</td>
-			<td class="pa-info-value">{{ sig.assessor_name or "" }}</td>
-			<td class="pa-info-label">Assessor Signature</td>
-			<td class="pa-info-value">{% if sig.instructor %}<img src="{{ sig.instructor }}" class="pa-sign-img">{% endif %}</td>
-		</tr>
-		<tr>
-			<td class="pa-info-label">Date</td>
-			<td class="pa-info-value" colspan="3">{{ frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "" }}</td>
+			<td class="lv-meta-label">Employing company</td>
+			<td class="lv-meta-value">{{ doc.employing_company or "" }}</td>
+			<td class="lv-meta-label">Mobile number</td>
+			<td class="lv-meta-value">{{ doc.mobile_number or "" }}</td>
 		</tr>
 	</table>
 
-	<div class="pa-unit-title">Learning Outcome Assessment Record – Defensive Driving for Light Vehicle</div>
-	{{ criteria_table(1) }}
-
-	<table class="pa-grid" style="margin-top:0;">
+	{% set ns = namespace(last="") %}
+	<table class="lv-grid">
 		<tr>
-			<td class="pa-guidance-label" style="width:24%;">Assessment<br>Guidance</td>
-			<td class="pa-guidance-text" colspan="3">
+			<td colspan="3" class="lv-unit">{{ doc.form_title or "Learning Outcome Assessment Record – Defensive Driving for Light Vehicle" }}</td>
+		</tr>
+		<tr>
+			<th class="lv-th-outcome">OUTCOMES</th>
+			<th class="lv-th-criteria">CRITERIA</th>
+			<th class="lv-th-source">SOURCE OF EVIDENCE</th>
+		</tr>
+		{% for row in doc.criteria %}
+			{% if (row.criterion or "")|trim %}
+			<tr>
+				{% if row.outcome != ns.last %}
+					{% set ns.last = row.outcome %}
+					{% set span = namespace(n=0) %}
+					{% for x in doc.criteria %}
+						{% if x.outcome == row.outcome and (x.criterion or "")|trim %}
+							{% set span.n = span.n + 1 %}
+						{% endif %}
+					{% endfor %}
+					<td class="lv-outcome" rowspan="{{ span.n }}">{{ row.outcome or "" }}</td>
+				{% endif %}
+				<td class="lv-criterion">
+					<span class="lv-num">{{ row.criterion_no or "" }}</span>
+					<span class="lv-criterion-text">{{ row.criterion | replace("\n", "<br>") }}</span>
+				</td>
+				<td class="lv-source">
+					<span class="lv-cb">{% if row.result == "Pass" %}✓{% elif row.result == "Fail" %}✗{% endif %}</span>
+				</td>
+			</tr>
+			{% endif %}
+		{% endfor %}
+		<tr>
+			<td class="lv-guide-label">Assessment<br>Guidance</td>
+			<td class="lv-guide-text" colspan="2">
 				Learners must successfully complete all assessment criteria to achieve this unit. Records of methods used, and assessment results must be maintained.
 			</td>
 		</tr>
 	</table>
 
-	<div class="pa-footer-line"></div>
-	<div class="pa-footer-company">Abu Dhabi National Oil Company</div>
+	{{ lv_footer() }}
 </div>
 
-<div class="pa-paper pa-page-2">
-	{{ header() }}
-	{{ criteria_table(2) }}
+<div class="lv-paper lv-page-2">
+	{{ lv_brand() }}
 
-	<div class="pa-remarks-title" style="margin-top:14px;">Remarks:</div>
-	<div class="pa-remarks-space">{{ doc.remarks or "" }}</div>
+	<div class="lv-p2-body">
+		<div class="lv-field">
+			<div class="lv-field-label">Remarks:</div>
+			<div class="lv-write lv-write-tall">{{ doc.remarks or "" }}</div>
+		</div>
 
-	<div class="pa-evidence-bar">
-		Source of Evidence: O – Observation &nbsp;&nbsp; S – Simulation &nbsp;&nbsp; Q – Questioning &nbsp;&nbsp; W – Witness
-	</div>
+		<div class="lv-grey-bar">
+			Source of Evidence: O – Observation &nbsp;&nbsp; S – Simulation &nbsp;&nbsp; Q – Questioning &nbsp;&nbsp; W – Witness
+		</div>
 
-	<div class="pa-page2-field">
-		<div class="pa-field-title">Learner Name:</div>
-		<div style="margin-top:8px;">{{ doc.candidate_name or "" }}</div>
-	</div>
+		<div class="lv-field">
+			<div class="lv-field-label">Learner Name:</div>
+			<div class="lv-write">
+				{{ doc.candidate_name or "" }}
+				{% if sig.learner %}<img src="{{ sig.learner }}" class="lv-learner-sign">{% endif %}
+			</div>
+		</div>
 
-	<div class="pa-page2-field">
-		<div class="pa-field-title">Company:</div>
-		<div style="margin-top:8px;">{{ doc.employing_company or "" }}</div>
-	</div>
+		<div class="lv-field">
+			<div class="lv-field-label">Company:</div>
+			<div class="lv-write">{{ doc.employing_company or "" }}</div>
+		</div>
 
-	<div class="pa-page2-field pa-training">
-		<div class="pa-field-title">Training and Development Needs:</div>
-		<div style="margin-top:8px;">{{ doc.training_development_needs or "" }}</div>
-	</div>
+		<div class="lv-field">
+			<div class="lv-field-label">Training and Development Needs:</div>
+			<div class="lv-write lv-write-tall">{{ doc.training_development_needs or "" }}</div>
+		</div>
 
-	<div class="pa-declaration">
-		<b>Declaration:</b> The person named was assessed by me against the standards of performance specified in this document and in accordance with the assessment guidance.<br><br>
-		I consider that the above person
-		{% if doc.achievement_status == "Has not achieved" %}
-			*<span class="pa-del">has</span>/<b>has not</b>
-		{% else %}
-			*<b>has</b>/<span class="pa-del">has not</span>
-		{% endif %}
-		achieved a sufficient level of understanding of the Light Vehicle Professional Driving Theory course.<br><br>
-		{% if doc.requires_further_training %}
-			*I consider that the above person requires further training and development in addition to that which is installation specific.
-		{% else %}
-			*<span class="pa-del">I consider that the above person requires further training and development in addition to that which is installation specific.</span>
-		{% endif %}
-		<br><br>* delete whichever does not apply
-	</div>
+		<div class="lv-declaration">
+			<b>Declaration:</b> The person named was assessed by me against the standards of performance specified in this document and in accordance with the assessment guidance.<br><br>
+			I consider that the above person
+			{% if doc.achievement_status == "Has not achieved" %}
+				*<span class="lv-del">has</span>/<b>has not</b>
+			{% else %}
+				*<b>has</b>/<span class="lv-del">has not</span>
+			{% endif %}
+			achieved a sufficient level of understanding of the Light Vehicle Professional Driving Theory course.<br><br>
+			{% if doc.requires_further_training %}
+				*I consider that the above person requires further training and development in addition to that which is installation specific.
+			{% else %}
+				*<span class="lv-del">I consider that the above person requires further training and development in addition to that which is installation specific.</span>
+			{% endif %}
+			<div class="lv-del-note">* delete whichever does not apply</div>
+		</div>
 
-	<table class="pa-sign-table">
-		<thead>
+		<table class="lv-assessor">
 			<tr>
-				<th class="pa-sign-name">Assessor's Name</th>
-				<th class="pa-sign-signature">Assessor Signature</th>
-				<th class="pa-sign-candidate">Student Signature</th>
-				<th class="pa-sign-date">Date</th>
+				<th>Assessor’s Name</th>
+				<th>Signature</th>
+				<th>Date</th>
 			</tr>
-		</thead>
-		<tbody>
 			<tr>
 				<td>{{ sig.assessor_name or "" }}</td>
-				<td>{% if sig.instructor %}<img src="{{ sig.instructor }}" class="pa-sign-img">{% endif %}</td>
-				<td>{% if sig.learner %}<img src="{{ sig.learner }}" class="pa-sign-img">{% endif %}</td>
+				<td>{% if sig.instructor %}<img src="{{ sig.instructor }}" class="lv-sign">{% endif %}</td>
 				<td>{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else (frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "") }}</td>
 			</tr>
-		</tbody>
-	</table>
+		</table>
+	</div>
 
-	<div class="pa-footer-line" style="margin-top:20px;"></div>
-	<div class="pa-footer-company">Abu Dhabi National Oil Company</div>
+	{{ lv_footer() }}
 </div>

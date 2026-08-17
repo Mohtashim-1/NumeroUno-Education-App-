@@ -1,45 +1,77 @@
-.pa-paper {
+.lv-paper {
 	font-family: Arial, Helvetica, sans-serif;
-	color: #4a4a4a;
+	color: #111;
 	font-size: 9pt;
+	line-height: 1.18;
 	-webkit-print-color-adjust: exact !important;
 	print-color-adjust: exact !important;
 }
-.pa-page-1 { page-break-after: always; }
-.pa-page-2 { page-break-before: always; }
-.pa-logo-row { width: 100% !important; border-collapse: collapse !important; margin-bottom: 8px; }
-.pa-logo-row td { border: none !important; background: transparent !important; padding: 0 !important; }
-.pa-hse {
+.lv-page-1 {
+	page-break-after: always;
+	break-after: page;
+}
+.lv-page-2 {
+	page-break-before: always;
+	break-before: page;
+	min-height: 262mm;
+	display: flex;
+	flex-direction: column;
+}
+.lv-p2-body { flex: 1 1 auto; }
+.lv-brand { width: 100% !important; border-collapse: collapse !important; margin: 0 0 4px !important; }
+.lv-brand td { border: 0 !important; background: transparent !important; padding: 0 !important; vertical-align: middle !important; }
+.lv-hse {
 	width: 58px;
 	height: 58px;
-	border: 3px solid #27569d;
-	background: #27569d !important;
+	border: 3px solid #1e4d9c;
+	background: #1e4d9c !important;
 	color: #fff !important;
 	text-align: center;
 }
-.pa-main-title { font-size: 18pt; font-weight: 800; text-align: center; }
-.pa-orange-text { color: #f58220; }
-.pa-blue-text { color: #27569d; }
-.pa-subtitle { color: #27569d; font-size: 11pt; font-weight: 700; text-align: center; margin-bottom: 8px; }
-.pa-info { width: 100% !important; border-collapse: collapse !important; table-layout: fixed; margin-bottom: 8px; }
-.pa-info td { border: 1px solid #555 !important; padding: 4px 7px !important; }
-.pa-info-label { width: 18%; background: #27569d !important; color: #fff !important; font-weight: 700; }
-.pa-unit-title { background: #f58220 !important; color: #fff !important; padding: 5px 8px; font-weight: 700; }
-.pa-grid { width: 100% !important; border-collapse: collapse !important; table-layout: fixed; }
-.pa-grid th, .pa-grid td { border: 1px solid #444 !important; }
-.pa-grid th { background: #27569d !important; color: #fff !important; }
-.pa-outcome { background: #27569d !important; color: #fff !important; font-weight: 700; padding: 6px !important; }
-.pa-num { color: #f58220; font-weight: 700; }
-.pa-result { text-align: center; font-weight: 700; text-transform: uppercase; }
-.pa-guidance-label { background: #27569d !important; color: #fff !important; font-weight: 700; text-align: center; }
-.pa-footer-company { color: #27569d; text-align: right; font-weight: 700; }
-.pa-remarks-title, .pa-field-title { color: #27569d; font-weight: 700; text-decoration: underline; }
-.pa-evidence-bar { background: #ddd !important; padding: 7px 10px; }
-.pa-sign-table { width: 100% !important; border-collapse: collapse !important; }
-.pa-sign-table th { background: #f58220 !important; color: #fff !important; }
-.pa-sign-table td { border: 1px solid #555 !important; height: 62px; text-align: center; }
-.pa-sign-name { width: 26%; }
-.pa-sign-signature { width: 24%; }
-.pa-sign-candidate { width: 24%; }
-.pa-sign-date { width: 16%; }
-.pa-sign-img { max-height: 48px; max-width: 150px; }
+.lv-title { text-align: center; font-size: 16pt; font-weight: 800; text-transform: uppercase; }
+.lv-title-orange { color: #ef7a28 !important; }
+.lv-title-blue { color: #1e4d9c !important; }
+.lv-subtitle { text-align: center; color: #1e4d9c !important; font-size: 11pt; font-weight: 700; margin: 2px 0 7px; }
+.lv-meta { width: 100% !important; border-collapse: collapse !important; table-layout: fixed; margin: 0 0 7px !important; }
+.lv-meta td { border: 1px solid #6f7f93 !important; padding: 5px 7px !important; }
+.lv-meta-label { width: 17%; background: #1e4d9c !important; color: #fff !important; font-weight: 700; }
+.lv-meta-value { width: 33%; background: #fff !important; font-weight: 600; }
+.lv-grid { width: 100% !important; border-collapse: collapse !important; table-layout: fixed; }
+.lv-grid th, .lv-grid td { border: 1px solid #6f7f93 !important; }
+.lv-unit { background: #ef7a28 !important; color: #fff !important; font-weight: 800; text-align: center; padding: 5px 8px !important; }
+.lv-th-outcome, .lv-th-criteria, .lv-th-source {
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 800;
+	text-align: center;
+	text-transform: uppercase !important;
+}
+.lv-outcome { background: #1e4d9c !important; color: #fff !important; font-size: 7pt; font-weight: 700; padding: 5px 6px !important; }
+.lv-num { color: #ef7a28 !important; font-weight: 800; }
+.lv-cb {
+	display: inline-block;
+	width: 13px;
+	height: 13px;
+	border: 1.4px solid #333;
+	text-align: center;
+	font-weight: 700;
+	color: #1e4d9c;
+}
+.lv-guide-label { background: #1e4d9c !important; color: #fff !important; font-weight: 800; text-align: center; }
+.lv-company-footer {
+	margin-top: 8px;
+	padding-top: 5px;
+	border-top: 1.5px solid #1e4d9c;
+	text-align: right;
+	color: #1e4d9c !important;
+	font-weight: 700;
+}
+.lv-field-label { color: #1e4d9c !important; font-weight: 700; font-size: 11pt; text-decoration: underline; }
+.lv-write { min-height: 22px; border-bottom: 1.6px solid #1e4d9c; padding: 4px 2px 3px; }
+.lv-write-tall { min-height: 78px; }
+.lv-grey-bar { background: #d8d8d8 !important; text-align: center; padding: 8px 10px; margin: 6px 0 16px; }
+.lv-assessor { width: 100% !important; border-collapse: collapse !important; }
+.lv-assessor th { background: #ef7a28 !important; color: #fff !important; text-align: center; }
+.lv-assessor td { border: 1px solid #6f7f93 !important; height: 68px; text-align: center; }
+.lv-sign { max-height: 48px; max-width: 160px; }
+.lv-del { text-decoration: line-through; color: #444; }
