@@ -69,6 +69,7 @@ numerouno.rospa_learning_outcome.Form = class {
 		this.saving = false;
 		this.loading_key = null;
 		this.group_field = null;
+		this.assessor_field = null;
 		this.$root = $('<div class="lvp-root"></div>').appendTo(this.page.main);
 		this.bind_root_events();
 		this.resolve_route_and_load();
@@ -494,8 +495,8 @@ numerouno.rospa_learning_outcome.Form = class {
 					<h4>${__("Assessor")}</h4>
 					<div class="lvp-fields">
 						<label class="lvp-field">
-							<span>${__("Assessor name")}</span>
-							${this.text_input_root("assessor_name", d.assessor_name)}
+							<span>${__("Assessor")}</span>
+							<div class="lvp-assessor-wrap"></div>
 						</label>
 						<label class="lvp-field">
 							<span>${__("Assessor date")}</span>
@@ -511,7 +512,29 @@ numerouno.rospa_learning_outcome.Form = class {
 			</div>
 		`);
 
+		this.make_assessor_field(d);
 		this.apply_readonly_state();
+	}
+
+	make_assessor_field(doc) {
+		this.assessor_field = frappe.ui.form.make_control({
+			df: {
+				fieldtype: "Link",
+				options: "Instructor",
+				fieldname: "assessor",
+				label: __("Assessor"),
+				placeholder: __("Select Instructor"),
+			},
+			parent: this.$root.find(".lvp-assessor-wrap"),
+			render_input: true,
+		});
+		this.assessor_field.make();
+		this.assessor_field.refresh();
+		this.$root.find(".lvp-assessor-wrap .help-box, .lvp-assessor-wrap .control-label").hide();
+		this.assessor_field.$input.attr("placeholder", __("Select Instructor"));
+		if (doc.assessor) {
+			this.assessor_field.set_value(doc.assessor);
+		}
 	}
 
 	criteria_html() {
@@ -729,6 +752,7 @@ numerouno.rospa_learning_outcome.Form = class {
 		this.$root.find("[data-root]").each((_, el) => {
 			payload[$(el).data("root")] = $(el).val();
 		});
+		payload.assessor = this.assessor_field?.get_value() || this.assessor_field?.$input?.val() || "";
 		const formCanvas = this.$root.find(".lvp-form-sign-canvas").get(0);
 		if (formCanvas && this.canvas_has_ink(formCanvas)) {
 			payload.learner_signature = formCanvas.toDataURL("image/png");
@@ -744,6 +768,11 @@ numerouno.rospa_learning_outcome.Form = class {
 	apply_readonly_state() {
 		const readonly = lvpCint(this.doc?.docstatus) === 1;
 		this.$root.find("input, select, textarea, .lvp-toggle, .lvp-chip, .lvp-mark-all, .lvp-form-sign-clear").prop("disabled", readonly);
+		if (this.assessor_field) {
+			this.assessor_field.df.read_only = readonly ? 1 : 0;
+			this.assessor_field.refresh();
+			this.$root.find(".lvp-assessor-wrap .help-box, .lvp-assessor-wrap .control-label").hide();
+		}
 		if (readonly) {
 			this.page.clear_primary_action();
 			this.$root.find(".lvp-save-btn, .lvp-submit-btn, .lvp-mark-all").hide();

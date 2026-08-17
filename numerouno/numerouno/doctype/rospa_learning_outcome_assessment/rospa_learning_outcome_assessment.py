@@ -12,6 +12,56 @@ class ROSPALearningOutcomeAssessment(Document):
 	def validate(self):
 		if not self.criteria:
 			apply_template(self)
+		self._sync_assessor()
+
+	def _sync_assessor(self):
+		if not self.assessor and self.student_group:
+			self.assessor = get_group_instructor(self.student_group)
+		if not self.assessor and self.assessor_name:
+			self.assessor = resolve_instructor(self.assessor_name)
+		if self.assessor:
+			self.assessor_name = (
+				frappe.db.get_value("Instructor", self.assessor, "instructor_name") or self.assessor_name
+			)
+			image = frappe.db.get_value("Instructor", self.assessor, "image") or ""
+			if image and (not self.assessor_signature or self.has_value_changed("assessor")):
+				self.assessor_signature = image
+
+
+def resolve_instructor(value):
+	value = (value or "").strip()
+	if not value:
+		return None
+	# Use the stored Instructor name, not the typed casing.
+	name = frappe.db.get_value("Instructor", value, "name")
+	if name:
+		return name
+	exact = frappe.db.get_value("Instructor", {"instructor_name": value}, "name")
+	if exact:
+		return exact
+	like = frappe.db.get_value("Instructor", {"instructor_name": ["like", f"{value}%"]}, "name")
+	if like:
+		return like
+	row = frappe.db.sql(
+		"""
+		select name from `tabInstructor`
+		where trim(instructor_name) = %s
+		limit 1
+		""",
+		value,
+	)
+	return row[0][0] if row else None
+
+
+def get_group_instructor(student_group):
+	if not student_group:
+		return None
+	return frappe.db.get_value(
+		"Student Group Instructor",
+		{"parent": student_group},
+		"instructor",
+		order_by="idx asc",
+	)
 
 
 def _load_template():
@@ -79,7 +129,11 @@ def _create_for_student(student_group, student_row, assessment_date=None, assess
 	)
 	doc.mobile_number = frappe.db.get_value("Student", student_row.student, "student_mobile_number") or ""
 	doc.assessment_date = assessment_date or today()
-	doc.assessor_name = assessor_name or ""
+	doc.assessor = resolve_instructor(assessor_name) or get_group_instructor(student_group)
+	if doc.assessor:
+		doc.assessor_name = frappe.db.get_value("Instructor", doc.assessor, "instructor_name") or assessor_name or ""
+	else:
+		doc.assessor_name = assessor_name or ""
 	doc.assessor_date = doc.assessment_date
 	apply_template(doc)
 	doc.insert(ignore_permissions=True)
@@ -144,6 +198,8 @@ def populate_from_student_group(docname, student_group):
 	doc.mobile_number = frappe.db.get_value("Student", row.student, "student_mobile_number") or ""
 	if not doc.criteria:
 		apply_template(doc)
+	if not doc.assessor:
+		doc.assessor = get_group_instructor(student_group)
 	doc.save()
 	return doc.name
 

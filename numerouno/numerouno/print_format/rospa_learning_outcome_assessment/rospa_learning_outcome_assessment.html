@@ -247,9 +247,13 @@
 }
 </style>
 
-{% set sig = namespace(instructor="", learner=doc.learner_signature or "") %}
-{% set iname = (doc.assessor_name or "") | trim %}
-{% if iname %}
+{% set sig = namespace(instructor="", learner=doc.learner_signature or "", assessor_name=doc.assessor_name or "") %}
+{% if doc.get("assessor") %}
+	{% set sig.instructor = frappe.db.get_value("Instructor", doc.assessor, "image") or "" %}
+	{% set sig.assessor_name = frappe.db.get_value("Instructor", doc.assessor, "instructor_name") or sig.assessor_name %}
+{% endif %}
+{% set iname = (sig.assessor_name or "") | trim %}
+{% if not sig.instructor and iname %}
 	{% set sig.instructor = frappe.db.get_value("Instructor", {"instructor_name": iname}, "image") or "" %}
 	{% if not sig.instructor %}
 		{% set sig.instructor = frappe.db.get_value("Instructor", {"instructor_name": ["like", iname ~ "%"]}, "image") or "" %}
@@ -346,7 +350,7 @@
 		</tr>
 		<tr>
 			<td class="pa-info-label">Assessor Name</td>
-			<td class="pa-info-value">{{ doc.assessor_name or "" }}</td>
+			<td class="pa-info-value">{{ sig.assessor_name or "" }}</td>
 			<td class="pa-info-label">Assessor Signature</td>
 			<td class="pa-info-value">{% if sig.instructor %}<img src="{{ sig.instructor }}" class="pa-sign-img">{% endif %}</td>
 		</tr>
@@ -426,7 +430,7 @@
 		</thead>
 		<tbody>
 			<tr>
-				<td>{{ doc.assessor_name or "" }}</td>
+				<td>{{ sig.assessor_name or "" }}</td>
 				<td>{% if sig.instructor %}<img src="{{ sig.instructor }}" class="pa-sign-img">{% endif %}</td>
 				<td>{% if sig.learner %}<img src="{{ sig.learner }}" class="pa-sign-img">{% endif %}</td>
 				<td>{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else (frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "") }}</td>

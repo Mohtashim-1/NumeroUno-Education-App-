@@ -499,6 +499,17 @@
 	grid-column: 1 / -1;
 }
 
+.lvp-assessor-wrap .help-box,
+.lvp-assessor-wrap .control-label {
+	display: none !important;
+}
+
+.lvp-assessor-wrap input {
+	height: 38px;
+	border-radius: 8px;
+	width: 100%;
+}
+
 .lvp-cell-input {
 	width: 100%;
 	border: 1px solid #cfd8e3;
