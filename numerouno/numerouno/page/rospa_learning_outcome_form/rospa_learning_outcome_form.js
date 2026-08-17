@@ -610,6 +610,14 @@ numerouno.rospa_learning_outcome.Form = class {
 			frappe.msgprint(__("Save the form first."));
 			return;
 		}
+		localStorage.setItem(
+			"print_format:ROSPA Learning Outcome Assessment",
+			"ROSPA Learning Outcome Assessment Form"
+		);
+		frappe.route_options = {
+			format: "ROSPA Learning Outcome Assessment Form",
+			no_letterhead: 1,
+		};
 		frappe.set_route("print", "ROSPA Learning Outcome Assessment", this.doc.name);
 	}
 };

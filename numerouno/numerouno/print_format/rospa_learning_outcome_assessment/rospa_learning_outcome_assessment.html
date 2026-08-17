@@ -1,175 +1,409 @@
 <style>
-@page { size: A4 portrait; margin: 10mm 12mm; }
+@page {
+	size: A4 portrait;
+	margin: 8mm 10mm 10mm 10mm;
+}
 .print-format { padding: 0 !important; margin: 0 !important; }
-.print-heading, .letter-head, .print-format-letterhead { display: none !important; }
+.print-heading,
+.letter-head,
+.print-format-letterhead,
+.letterhead,
+.letter-head-image { display: none !important; }
 .print-format th { text-transform: none !important; }
 .print-format * {
 	-webkit-print-color-adjust: exact !important;
 	print-color-adjust: exact !important;
+	box-sizing: border-box;
 }
-.loar-paper {
+.pa-paper {
 	font-family: Arial, Helvetica, sans-serif;
-	color: #111;
+	color: #4a4a4a;
 	font-size: 9pt;
-	line-height: 1.25;
 	-webkit-print-color-adjust: exact !important;
 	print-color-adjust: exact !important;
 }
-.loar-page-1 { page-break-after: always; }
-.loar-page-2 { page-break-before: always; }
-.loar-title {
-	text-align: center;
-	font-size: 14pt;
-	font-weight: 800;
-	color: #1e4d9c;
-	margin: 0 0 12px;
-}
-.loar-meta {
+.pa-page-1 { page-break-after: always; }
+.pa-page-2 { page-break-before: always; }
+.pa-logo-row {
 	width: 100% !important;
 	border-collapse: collapse !important;
-	margin-bottom: 10px;
-	table-layout: fixed;
+	margin-bottom: 8px;
 }
-.loar-meta td {
-	border: 1px solid #6f7f93 !important;
-	padding: 6px 7px !important;
+.pa-logo-row td {
+	border: none !important;
+	background: transparent !important;
+	padding: 0 !important;
 	vertical-align: middle !important;
 }
-.loar-meta-label {
-	width: 16%;
-	background: #1e4d9c !important;
+.pa-logo-left { width: 90px; }
+.pa-logo-right { text-align: right; }
+.pa-hse {
+	width: 58px;
+	height: 58px;
+	border: 3px solid #27569d;
+	background: #27569d !important;
+	color: #fff !important;
+	text-align: center;
+	box-sizing: border-box;
+}
+.pa-hse-pct {
+	font-size: 11px;
+	font-weight: 700;
+	padding-top: 8px;
+	line-height: 1.1;
+}
+.pa-hse-txt {
+	font-size: 16px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	line-height: 1.1;
+}
+.pa-logo-right img {
+	max-height: 56px;
+	max-width: 108px;
+}
+.pa-main-title {
+	font-size: 18pt;
+	font-weight: 800;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	text-align: center;
+	line-height: 1.15;
+}
+.pa-orange-text { color: #f58220; }
+.pa-blue-text { color: #27569d; }
+.pa-subtitle {
+	color: #27569d;
+	font-size: 11pt;
+	font-weight: 700;
+	margin-bottom: 8px;
+	text-align: center;
+}
+.pa-info {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin-bottom: 8px;
+	table-layout: fixed;
+}
+.pa-info td {
+	border: 1px solid #555 !important;
+	height: 31px;
+	vertical-align: middle !important;
+	padding: 4px 7px !important;
+}
+.pa-info-label {
+	width: 18%;
+	background: #27569d !important;
 	color: #fff !important;
 	font-weight: 700;
-	font-size: 8pt;
-	text-transform: uppercase;
 }
-.loar-meta-value { background: #fff !important; min-height: 28px; }
-.loar-sign { max-height: 36px; max-width: 120px; }
-.loar-grid {
+.pa-info-value { width: 32%; }
+.pa-unit-title {
+	background: #f58220 !important;
+	color: #fff !important;
+	padding: 5px 8px;
+	font-weight: 700;
+	border: 1px solid #333;
+	font-size: 9.5pt;
+}
+.pa-grid {
 	width: 100% !important;
 	border-collapse: collapse !important;
 	table-layout: fixed;
 }
-.loar-grid th,
-.loar-grid td {
-	border: 1px solid #6f7f93 !important;
-	vertical-align: top;
-}
-.loar-grid th {
-	background: #1e4d9c !important;
+.pa-grid th,
+.pa-grid td { border: 1px solid #444 !important; }
+.pa-grid th {
+	background: #27569d !important;
 	color: #fff !important;
-	font-weight: 800;
 	font-size: 8pt;
-	text-align: center;
-	padding: 6px 4px !important;
-	text-transform: uppercase !important;
-}
-.loar-th-outcome { width: 26%; }
-.loar-th-criteria { width: 44%; }
-.loar-th-result { width: 12%; }
-.loar-th-comments { width: 18%; }
-.loar-outcome {
-	background: #eef3fb !important;
 	font-weight: 700;
+	padding: 5px 6px !important;
+	text-align: center;
+	text-transform: none !important;
+}
+.pa-outcome-head { width: 24%; }
+.pa-criteria-head { width: 48%; }
+.pa-check-head { width: 12%; }
+.pa-evidence-head { width: 16%; }
+.pa-outcome {
+	background: #27569d !important;
+	color: #fff !important;
 	font-size: 8pt;
+	font-weight: 700;
 	padding: 6px !important;
 	vertical-align: middle !important;
 }
-.loar-criterion {
-	padding: 5px 6px !important;
-	font-size: 8.5pt;
-}
-.loar-num { color: #ef7a28; font-weight: 800; margin-right: 4px; }
-.loar-result {
-	text-align: center;
-	vertical-align: middle !important;
-	font-weight: 800;
-	font-size: 9pt;
-}
-.loar-pass { color: #1e7e34; }
-.loar-fail { color: #c0392b; }
-.loar-comments {
-	padding: 5px 6px !important;
+.pa-criteria {
+	padding: 4px 7px !important;
+	vertical-align: top !important;
 	font-size: 8pt;
 }
-.loar-footer {
-	margin-top: 14px;
-	padding-top: 6px;
-	border-top: 1.5px solid #1e4d9c;
-	color: #1e4d9c;
+.pa-num {
+	color: #f58220;
+	font-weight: 700;
+	display: inline-block;
+	min-width: 28px;
+}
+.pa-result {
+	text-align: center;
+	vertical-align: middle !important;
 	font-weight: 700;
 	font-size: 8.5pt;
-	text-align: left;
+	text-transform: uppercase;
 }
-
+.pa-evidence {
+	vertical-align: top;
+	padding: 5px !important;
+	font-size: 8pt;
+}
+.pa-guidance-label {
+	background: #27569d !important;
+	color: #fff !important;
+	font-weight: 700;
+	padding: 8px !important;
+	vertical-align: middle !important;
+	text-align: center;
+	font-size: 8pt;
+}
+.pa-guidance-text {
+	padding: 8px !important;
+	font-size: 8.5pt;
+	line-height: 1.2;
+}
+.pa-footer-line {
+	border-top: 2px solid #27569d;
+	margin-top: 16px;
+}
+.pa-footer-company {
+	color: #27569d;
+	text-align: right;
+	font-size: 10pt;
+	font-weight: 700;
+	margin-top: 12px;
+}
+.pa-remarks-title,
+.pa-field-title {
+	color: #27569d;
+	font-weight: 700;
+	text-decoration: underline;
+	font-size: 10pt;
+}
+.pa-remarks-space {
+	min-height: 90px;
+	padding-top: 5px;
+}
+.pa-evidence-bar {
+	background: #ddd !important;
+	padding: 7px 10px;
+	font-size: 9pt;
+	margin: 10px 0 8px;
+}
+.pa-page2-field {
+	border-bottom: 1px solid #555;
+	min-height: 42px;
+	padding: 5px 4px 8px;
+	margin-bottom: 8px;
+}
+.pa-training { min-height: 70px; }
+.pa-declaration {
+	padding: 10px 4px 14px;
+	font-size: 9pt;
+	line-height: 1.4;
+	text-align: center;
+}
+.pa-del { text-decoration: line-through; color: #666; }
+.pa-sign-table {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	table-layout: fixed;
+}
+.pa-sign-table th {
+	background: #f58220 !important;
+	color: #fff !important;
+	border: 1px solid #d45f14 !important;
+	padding: 6px 7px !important;
+	text-align: center;
+	text-transform: none !important;
+}
+.pa-sign-table td {
+	border: 1px solid #555 !important;
+	height: 62px;
+	padding: 6px !important;
+	vertical-align: middle !important;
+	text-align: center;
+	background: #fff !important;
+}
+.pa-sign-name { width: 42%; }
+.pa-sign-signature { width: 42%; }
+.pa-sign-date { width: 16%; }
+.pa-sign-img { max-height: 48px; max-width: 150px; }
+@media screen {
+	.pa-page-2 {
+		margin-top: 16px;
+		padding-top: 12px;
+		border-top: 2px dashed #b7c0cc;
+	}
+}
 </style>
 
-{% macro loar_header() %}
-<div class="loar-title">{{ doc.form_title or "Learning Outcome Assessment Record – Defensive Driving for Light Vehicle" }}</div>
-<table class="loar-meta">
+{% macro header() %}
+<table class="pa-logo-row">
 	<tr>
-		<td class="loar-meta-label">Learner Name</td>
-		<td class="loar-meta-value">{{ doc.candidate_name or "" }}</td>
-		<td class="loar-meta-label">Signature</td>
-		<td class="loar-meta-value">{% if doc.learner_signature %}<img src="{{ doc.learner_signature }}" class="loar-sign" />{% endif %}</td>
-		<td class="loar-meta-label">Date</td>
-		<td class="loar-meta-value">{{ frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "" }}</td>
-	</tr>
-	<tr>
-		<td class="loar-meta-label">Assessor Name</td>
-		<td class="loar-meta-value">{{ doc.assessor_name or "" }}</td>
-		<td class="loar-meta-label">Signature</td>
-		<td class="loar-meta-value">{% if doc.assessor_signature %}<img src="{{ doc.assessor_signature }}" class="loar-sign" />{% endif %}</td>
-		<td class="loar-meta-label">Date</td>
-		<td class="loar-meta-value">{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else "" }}</td>
+		<td class="pa-logo-left">
+			<div class="pa-hse">
+				<div class="pa-hse-pct">100%</div>
+				<div class="pa-hse-txt">HSE</div>
+			</div>
+		</td>
+		<td></td>
+		<td class="pa-logo-right">
+			<img src="/files/images (1).png" alt="ADNOC">
+		</td>
 	</tr>
 </table>
 {% endmacro %}
 
-{% macro loar_grid(page) %}
+{% macro criteria_table(page) %}
 {% set ns = namespace(last="") %}
-<table class="loar-grid">
-	<tr>
-		<th class="loar-th-outcome">Learning Outcome</th>
-		<th class="loar-th-criteria">Assessment Criteria</th>
-		<th class="loar-th-result">Pass / Fail</th>
-		<th class="loar-th-comments">Comments</th>
-	</tr>
-	{% for row in doc.criteria %}
-		{% set is_p2 = (row.outcome or "").startswith("7:") %}
-		{% if (page == 2 and is_p2) or (page == 1 and not is_p2) %}
+<table class="pa-grid">
+	<thead>
+		<tr>
+			<th class="pa-outcome-head">LEARNING OUTCOME</th>
+			<th class="pa-criteria-head">ASSESSMENT CRITERIA</th>
+			<th class="pa-check-head">PASS / FAIL</th>
+			<th class="pa-evidence-head">COMMENTS</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for row in doc.criteria %}
+			{% set is_p2 = (row.criterion_no or "").startswith("7") %}
+			{% if (page == 2 and is_p2) or (page == 1 and not is_p2) %}
 			<tr>
 				{% if row.outcome != ns.last %}
 					{% set ns.last = row.outcome %}
-					{% set count = namespace(n=0) %}
-					{% for r2 in doc.criteria %}
-						{% if r2.outcome == row.outcome %}
-							{% set count.n = count.n + 1 %}
+					{% set counter = namespace(total=0) %}
+					{% for x in doc.criteria %}
+						{% set x_p2 = (x.criterion_no or "").startswith("7") %}
+						{% if x.outcome == row.outcome and ((page == 2 and x_p2) or (page == 1 and not x_p2)) %}
+							{% set counter.total = counter.total + 1 %}
 						{% endif %}
 					{% endfor %}
-					<td class="loar-outcome" rowspan="{{ count.n }}">{{ row.outcome }}</td>
+					<td class="pa-outcome" rowspan="{{ counter.total }}">{{ row.outcome or "" }}</td>
 				{% endif %}
-				<td class="loar-criterion">
-					<span class="loar-num">{{ row.criterion_no }}</span>
+				<td class="pa-criteria">
+					<span class="pa-num">{{ row.criterion_no or "" }}</span>
 					{{ row.criterion | replace("\n", "<br>") }}
 				</td>
-				<td class="loar-result {% if row.result == 'Pass' %}loar-pass{% elif row.result == 'Fail' %}loar-fail{% endif %}">
-					{{ row.result or "" }}
-				</td>
-				<td class="loar-comments">{{ row.comments or "" }}</td>
+				<td class="pa-result">{{ row.result or "" }}</td>
+				<td class="pa-evidence">{{ row.comments or "" }}</td>
 			</tr>
-		{% endif %}
-	{% endfor %}
+			{% endif %}
+		{% endfor %}
+	</tbody>
 </table>
 {% endmacro %}
 
-<div class="loar-paper loar-page-1">
-	{{ loar_header() }}
-	{{ loar_grid(1) }}
+<div class="pa-paper pa-page-1">
+	{{ header() }}
+
+	<div class="pa-main-title">
+		<span class="pa-orange-text">LEARNING OUTCOME ASSESSMENT</span>
+		<span class="pa-blue-text"> – LIGHT VEHICLE</span>
+	</div>
+	<div class="pa-subtitle">ADNOC Learning Outcome Assessment Record</div>
+
+	<table class="pa-info">
+		<tr>
+			<td class="pa-info-label">Learner Name</td>
+			<td class="pa-info-value">{{ doc.candidate_name or "" }}</td>
+			<td class="pa-info-label">Date</td>
+			<td class="pa-info-value">{{ frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "" }}</td>
+		</tr>
+		<tr>
+			<td class="pa-info-label">Assessor Name</td>
+			<td class="pa-info-value">{{ doc.assessor_name or "" }}</td>
+			<td class="pa-info-label">Signature</td>
+			<td class="pa-info-value">{% if doc.assessor_signature %}<img src="{{ doc.assessor_signature }}" class="pa-sign-img">{% endif %}</td>
+		</tr>
+	</table>
+
+	<div class="pa-unit-title">Learning Outcome Assessment Record – Defensive Driving for Light Vehicle</div>
+	{{ criteria_table(1) }}
+
+	<table class="pa-grid" style="margin-top:0;">
+		<tr>
+			<td class="pa-guidance-label" style="width:24%;">Assessment<br>Guidance</td>
+			<td class="pa-guidance-text" colspan="3">
+				Learners must successfully complete all assessment criteria to achieve this unit. Records of methods used, and assessment results must be maintained.
+			</td>
+		</tr>
+	</table>
+
+	<div class="pa-footer-line"></div>
+	<div class="pa-footer-company">Abu Dhabi National Oil Company</div>
 </div>
 
-<div class="loar-paper loar-page-2">
-	{{ loar_header() }}
-	{{ loar_grid(2) }}
-	<div class="loar-footer">{{ doc.form_subtitle or "Level 2 Defensive Driving for Light Vehicles | Learning Outcome Assessment Record_Feb26" }}</div>
+<div class="pa-paper pa-page-2">
+	{{ header() }}
+	{{ criteria_table(2) }}
+
+	<div class="pa-remarks-title" style="margin-top:14px;">Remarks:</div>
+	<div class="pa-remarks-space">{{ doc.remarks or "" }}</div>
+
+	<div class="pa-evidence-bar">
+		Source of Evidence: O – Observation &nbsp;&nbsp; S – Simulation &nbsp;&nbsp; Q – Questioning &nbsp;&nbsp; W – Witness
+	</div>
+
+	<div class="pa-page2-field">
+		<div class="pa-field-title">Learner Name:</div>
+		<div style="margin-top:8px;">{{ doc.candidate_name or "" }}</div>
+	</div>
+
+	<div class="pa-page2-field">
+		<div class="pa-field-title">Company:</div>
+		<div style="margin-top:8px;">{{ doc.employing_company or "" }}</div>
+	</div>
+
+	<div class="pa-page2-field pa-training">
+		<div class="pa-field-title">Training and Development Needs:</div>
+		<div style="margin-top:8px;">{{ doc.training_development_needs or "" }}</div>
+	</div>
+
+	<div class="pa-declaration">
+		<b>Declaration:</b> The person named was assessed by me against the standards of performance specified in this document and in accordance with the assessment guidance.<br><br>
+		I consider that the above person
+		{% if doc.achievement_status == "Has not achieved" %}
+			*<span class="pa-del">has</span>/<b>has not</b>
+		{% else %}
+			*<b>has</b>/<span class="pa-del">has not</span>
+		{% endif %}
+		achieved a sufficient level of understanding of the Light Vehicle Professional Driving Theory course.<br><br>
+		{% if doc.requires_further_training %}
+			*I consider that the above person requires further training and development in addition to that which is installation specific.
+		{% else %}
+			*<span class="pa-del">I consider that the above person requires further training and development in addition to that which is installation specific.</span>
+		{% endif %}
+		<br><br>* delete whichever does not apply
+	</div>
+
+	<table class="pa-sign-table">
+		<thead>
+			<tr>
+				<th class="pa-sign-name">Assessor's Name</th>
+				<th class="pa-sign-signature">Signature</th>
+				<th class="pa-sign-date">Date</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>{{ doc.assessor_name or "" }}</td>
+				<td>{% if doc.assessor_signature %}<img src="{{ doc.assessor_signature }}" class="pa-sign-img">{% endif %}</td>
+				<td>{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else "" }}</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<div class="pa-footer-line" style="margin-top:20px;"></div>
+	<div class="pa-footer-company">Abu Dhabi National Oil Company</div>
 </div>

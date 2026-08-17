@@ -84,9 +84,15 @@ def _ensure_print_format():
 				"margin_bottom": 8,
 				"margin_left": 10,
 				"margin_right": 10,
+				"show_section_headings": 0,
+				"page_number": "Hide",
+				"align_labels_right": 0,
+				"line_breaks": 0,
 			},
 			update_modified=True,
 		)
+		if frappe.db.exists("DocType", DOCTYPE):
+			frappe.db.set_value("DocType", DOCTYPE, "default_print_format", PRINT_NAME)
 		frappe.db.commit()
 		return
 
