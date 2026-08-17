@@ -258,11 +258,14 @@
 	padding: 6px 8px !important;
 	vertical-align: middle !important;
 	text-align: center;
-	width: 33.33%;
 	background: #fff !important;
 }
-.lv-sign { max-height: 48px; max-width: 160px; }
-.lv-learner-sign { max-height: 36px; max-width: 120px; margin-left: 10px; vertical-align: middle; }
+.lv-sign-name { width: 28%; }
+.lv-sign-assessor { width: 26%; }
+.lv-sign-student { width: 26%; }
+.lv-sign-date { width: 20%; }
+.lv-sign { max-height: 48px; max-width: 150px; }
+.lv-meta-sign { height: 44px !important; padding: 3px 6px !important; }
 @media screen {
 	.lv-page-1,
 	.lv-page-2 {
@@ -348,6 +351,12 @@
 			<td class="lv-meta-label">Mobile number</td>
 			<td class="lv-meta-value">{{ doc.mobile_number or "" }}</td>
 		</tr>
+		<tr>
+			<td class="lv-meta-label">Student Signature</td>
+			<td class="lv-meta-value lv-meta-sign">{% if sig.learner %}<img src="{{ sig.learner }}" class="lv-sign">{% endif %}</td>
+			<td class="lv-meta-label">Assessor Signature</td>
+			<td class="lv-meta-value lv-meta-sign">{% if sig.instructor %}<img src="{{ sig.instructor }}" class="lv-sign">{% endif %}</td>
+		</tr>
 	</table>
 
 	{% set ns = namespace(last="") %}
@@ -409,10 +418,7 @@
 
 		<div class="lv-field">
 			<div class="lv-field-label">Learner Name:</div>
-			<div class="lv-write">
-				{{ doc.candidate_name or "" }}
-				{% if sig.learner %}<img src="{{ sig.learner }}" class="lv-learner-sign">{% endif %}
-			</div>
+			<div class="lv-write">{{ doc.candidate_name or "" }}</div>
 		</div>
 
 		<div class="lv-field">
@@ -444,13 +450,15 @@
 
 		<table class="lv-assessor">
 			<tr>
-				<th>Assessor’s Name</th>
-				<th>Signature</th>
-				<th>Date</th>
+				<th class="lv-sign-name">Assessor’s Name</th>
+				<th class="lv-sign-assessor">Assessor Signature</th>
+				<th class="lv-sign-student">Student Signature</th>
+				<th class="lv-sign-date">Date</th>
 			</tr>
 			<tr>
 				<td>{{ sig.assessor_name or "" }}</td>
 				<td>{% if sig.instructor %}<img src="{{ sig.instructor }}" class="lv-sign">{% endif %}</td>
+				<td>{% if sig.learner %}<img src="{{ sig.learner }}" class="lv-sign">{% endif %}</td>
 				<td>{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else (frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "") }}</td>
 			</tr>
 		</table>

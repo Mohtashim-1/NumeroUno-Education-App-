@@ -73,5 +73,10 @@
 .lv-assessor { width: 100% !important; border-collapse: collapse !important; }
 .lv-assessor th { background: #ef7a28 !important; color: #fff !important; text-align: center; }
 .lv-assessor td { border: 1px solid #6f7f93 !important; height: 68px; text-align: center; }
-.lv-sign { max-height: 48px; max-width: 160px; }
+.lv-sign-name { width: 28%; }
+.lv-sign-assessor { width: 26%; }
+.lv-sign-student { width: 26%; }
+.lv-sign-date { width: 20%; }
+.lv-sign { max-height: 48px; max-width: 150px; }
+.lv-meta-sign { height: 44px !important; }
 .lv-del { text-decoration: line-through; color: #444; }
