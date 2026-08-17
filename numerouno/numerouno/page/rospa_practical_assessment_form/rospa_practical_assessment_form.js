@@ -120,6 +120,10 @@ numerouno.rospa_practical.Form = class {
 			e.preventDefault();
 			this.mark_all_achieved();
 		});
+		this.$root.on("click", ".lvp-form-sign-clear", (e) => {
+			e.preventDefault();
+			this.clear_form_signature();
+		});
 		this.$root.on("keydown", ".lvp-group-field-wrap input", (e) => {
 			if (e.key === "Enter") {
 				e.preventDefault();
@@ -390,6 +394,7 @@ numerouno.rospa_practical.Form = class {
 				}
 				this.doc = r.message.doc;
 				this.render();
+				this.init_signature_canvases();
 				const title = this.doc.candidate_name || this.doc.student || __("Assessment");
 				this.page.set_title(`${__("ROSPA Practical Assessment")} — ${title}`);
 				if (this.doc.name) {
@@ -440,6 +445,10 @@ numerouno.rospa_practical.Form = class {
 						<label class="lvp-field">
 							<span>${__("Mobile Number")}</span>
 							${this.text_input_root("mobile_number", d.mobile_number)}
+						</label>
+						<label class="lvp-field lvp-field-full">
+							<span>${__("Student Signature")}</span>
+							${this.learner_signature_html(d)}
 						</label>
 					</div>
 				</section>
@@ -582,11 +591,114 @@ numerouno.rospa_practical.Form = class {
 		return `<input type="date" class="lvp-cell-input" data-root="${field}" value="${value || ""}">`;
 	}
 
+	learner_signature_html(doc) {
+		const value = doc.learner_signature || "";
+		const img = value ? `<img src="${lvpEscape(value)}" class="lvp-sign-img" alt="Signature">` : "";
+		return `<div class="lvp-sign-wrap">
+			${img}
+			<canvas class="lvp-sign-canvas lvp-form-sign-canvas ${value ? "has-signature" : ""}" width="280" height="90"></canvas>
+			<input type="hidden" class="lvp-learner-sig-value" data-root="learner_signature" value="${lvpEscape(value)}">
+			<div class="lvp-sign-actions">
+				<button type="button" class="lvp-btn lvp-form-sign-clear">${__("Clear")}</button>
+			</div>
+		</div>`;
+	}
+
+	init_signature_canvases() {
+		this.$root.find(".lvp-sign-canvas").each((_, canvas) => {
+			this.bind_signature_canvas(canvas);
+		});
+	}
+
+	bind_signature_canvas(canvas) {
+		if (!canvas || canvas.dataset.bound === "1") {
+			return;
+		}
+		canvas.dataset.bound = "1";
+		const ctx = canvas.getContext("2d");
+		ctx.strokeStyle = "#122033";
+		ctx.lineWidth = 2;
+		ctx.lineCap = "round";
+		let drawing = false;
+
+		const coords = (e) => {
+			const rect = canvas.getBoundingClientRect();
+			const src = e.touches && e.touches[0] ? e.touches[0] : e;
+			return {
+				x: (src.clientX - rect.left) * (canvas.width / rect.width),
+				y: (src.clientY - rect.top) * (canvas.height / rect.height),
+			};
+		};
+		const start = (e) => {
+			e.preventDefault();
+			drawing = true;
+			const p = coords(e);
+			ctx.beginPath();
+			ctx.moveTo(p.x, p.y);
+			canvas.dataset.dirty = "1";
+		};
+		const move = (e) => {
+			if (!drawing) {
+				return;
+			}
+			e.preventDefault();
+			const p = coords(e);
+			ctx.lineTo(p.x, p.y);
+			ctx.stroke();
+		};
+		const end = (e) => {
+			if (e) {
+				e.preventDefault();
+			}
+			drawing = false;
+			const $hidden = $(canvas).closest(".lvp-sign-wrap").find(".lvp-learner-sig-value");
+			if ($hidden.length && this.canvas_has_ink(canvas)) {
+				$hidden.val(canvas.toDataURL("image/png"));
+			}
+		};
+
+		canvas.addEventListener("mousedown", start);
+		canvas.addEventListener("mousemove", move);
+		canvas.addEventListener("mouseup", end);
+		canvas.addEventListener("mouseleave", () => {
+			drawing = false;
+		});
+		canvas.addEventListener("touchstart", start, { passive: false });
+		canvas.addEventListener("touchmove", move, { passive: false });
+		canvas.addEventListener("touchend", end, { passive: false });
+	}
+
+	canvas_has_ink(canvas) {
+		const ctx = canvas.getContext("2d");
+		const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+		for (let i = 3; i < pixels.length; i += 4) {
+			if (pixels[i] !== 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	clear_form_signature() {
+		const canvas = this.$root.find(".lvp-form-sign-canvas").get(0);
+		if (canvas) {
+			canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+			canvas.dataset.dirty = "";
+			$(canvas).removeClass("has-signature");
+		}
+		this.$root.find(".lvp-learner-sig-value").val("");
+		this.$root.find(".lvp-sign-wrap .lvp-sign-img").remove();
+	}
+
 	collect_payload() {
 		const payload = frappe.utils.deep_clone(this.doc || {});
 		this.$root.find("[data-root]").each((_, el) => {
 			payload[$(el).data("root")] = $(el).val();
 		});
+		const formCanvas = this.$root.find(".lvp-form-sign-canvas").get(0);
+		if (formCanvas && this.canvas_has_ink(formCanvas)) {
+			payload.learner_signature = formCanvas.toDataURL("image/png");
+		}
 		(payload.criteria || []).forEach((row, idx) => {
 			const $item = this.$root.find(`.lvp-item[data-idx="${idx}"]`);
 			row.achieved = $item.find(".lvp-toggle.is-on").length ? 1 : 0;
@@ -601,7 +713,7 @@ numerouno.rospa_practical.Form = class {
 
 	apply_readonly_state() {
 		const readonly = lvpCint(this.doc?.docstatus) === 1;
-		this.$root.find("input, select, textarea, .lvp-toggle, .lvp-chip, .lvp-mark-all").prop("disabled", readonly);
+		this.$root.find("input, select, textarea, .lvp-toggle, .lvp-chip, .lvp-mark-all, .lvp-form-sign-clear").prop("disabled", readonly);
 		if (readonly) {
 			this.page.clear_primary_action();
 			this.$root.find(".lvp-save-btn, .lvp-submit-btn, .lvp-mark-all").hide();
@@ -662,6 +774,14 @@ numerouno.rospa_practical.Form = class {
 			frappe.msgprint(__("Save the form first."));
 			return;
 		}
+		localStorage.setItem(
+			"print_format:ROSPA Practical Assessment",
+			"ROSPA Practical Assessment Form"
+		);
+		frappe.route_options = {
+			format: "ROSPA Practical Assessment Form",
+			no_letterhead: 1,
+		};
 		frappe.set_route("print", "ROSPA Practical Assessment", this.doc.name);
 	}
 };

@@ -1,13 +1,63 @@
-.lv-form { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #000; }
-.lv-title { text-align: center; font-weight: 700; font-size: 12pt; margin-bottom: 4px; }
-.lv-subtitle { text-align: center; margin-bottom: 10px; }
-.lv-meta { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-.lv-meta td { border: 1px solid #000; padding: 4px 6px; }
-.lv-grid { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-.lv-grid th, .lv-grid td { border: 1px solid #000; padding: 3px 4px; vertical-align: top; }
-.lv-grid th { background: #eee; font-weight: 700; text-align: center; }
-.lv-check { text-align: center; width: 28px; }
-.lv-section { font-weight: 700; background: #f5f5f5; }
-.lv-guidance { border: 1px solid #000; padding: 6px; margin: 8px 0; font-size: 8.5pt; white-space: pre-wrap; }
-.lv-footer { width: 100%; border-collapse: collapse; margin-top: 10px; }
-.lv-footer td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; }
+.lv-paper {
+	font-family: Arial, Helvetica, sans-serif;
+	color: #111;
+	font-size: 9pt;
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+.lv-page-1 { page-break-after: always; break-after: page; }
+.lv-page-2 { page-break-before: always; break-before: page; min-height: 262mm; }
+.lv-brand { width: 100% !important; border-collapse: collapse !important; }
+.lv-brand td { border: 0 !important; background: transparent !important; padding: 0 !important; }
+.lv-hse {
+	width: 58px;
+	height: 58px;
+	border: 3px solid #1e4d9c;
+	background: #1e4d9c !important;
+	color: #fff !important;
+	text-align: center;
+}
+.lv-title { text-align: center; font-size: 16pt; font-weight: 800; text-transform: uppercase; }
+.lv-title-orange { color: #ef7a28 !important; }
+.lv-title-blue { color: #1e4d9c !important; }
+.lv-subtitle { text-align: center; color: #1e4d9c !important; font-weight: 700; }
+.lv-meta { width: 100% !important; border-collapse: collapse !important; table-layout: fixed; }
+.lv-meta td { border: 1px solid #6f7f93 !important; padding: 4px 7px !important; }
+.lv-meta-label { background: #1e4d9c !important; color: #fff !important; font-weight: 700; }
+.lv-grid { width: 100% !important; border-collapse: collapse !important; table-layout: fixed; }
+.lv-grid th, .lv-grid td { border: 1px solid #6f7f93 !important; }
+.lv-unit { background: #ef7a28 !important; color: #fff !important; font-weight: 800; text-align: center; }
+.lv-th-outcome, .lv-th-criteria, .lv-th-source {
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 800;
+	text-align: center;
+	text-transform: uppercase !important;
+}
+.lv-outcome { background: #1e4d9c !important; color: #fff !important; font-weight: 700; text-align: center; }
+.lv-num { color: #ef7a28 !important; font-weight: 800; }
+.lv-cb {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border: 1.4px solid #333;
+	text-align: center;
+	font-weight: 700;
+	color: #1e4d9c;
+}
+.lv-guide-label { background: #1e4d9c !important; color: #fff !important; font-weight: 800; text-align: center; }
+.lv-company-footer {
+	border-top: 1.5px solid #1e4d9c;
+	text-align: right;
+	color: #1e4d9c !important;
+	font-weight: 700;
+}
+.lv-field-label { color: #1e4d9c !important; font-weight: 700; text-decoration: underline; }
+.lv-write { border-bottom: 1.6px solid #1e4d9c; min-height: 22px; }
+.lv-write-tall { min-height: 78px; }
+.lv-grey-bar { background: #d8d8d8 !important; text-align: center; padding: 8px 10px; }
+.lv-assessor { width: 100% !important; border-collapse: collapse !important; }
+.lv-assessor th { background: #ef7a28 !important; color: #fff !important; text-align: center; }
+.lv-assessor td { border: 1px solid #6f7f93 !important; height: 68px; text-align: center; }
+.lv-sign { max-height: 48px; max-width: 150px; }
+.lv-del { text-decoration: line-through; color: #444; }

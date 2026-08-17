@@ -51,28 +51,39 @@ def setup():
 
 
 def _ensure_print_format():
-	if frappe.db.exists("Print Format", PRINT_NAME):
-		return
-
 	html_path = Path(__file__).parent / "print_format/rospa_practical_assessment/rospa_practical_assessment.html"
 	css_path = Path(__file__).parent / "print_format/rospa_practical_assessment/rospa_practical_assessment.css"
 	html = html_path.read_text() if html_path.exists() else _default_print_html()
 	css = css_path.read_text() if css_path.exists() else _default_print_css()
+
+	values = {
+		"css": css,
+		"html": html,
+		"custom_format": 1,
+		"print_format_type": "Jinja",
+		"font_size": 9,
+		"margin_top": 8,
+		"margin_bottom": 8,
+		"margin_left": 10,
+		"margin_right": 10,
+		"show_section_headings": 0,
+		"page_number": "Hide",
+		"align_labels_right": 0,
+		"line_breaks": 0,
+	}
+
+	if frappe.db.exists("Print Format", PRINT_NAME):
+		frappe.db.set_value("Print Format", PRINT_NAME, values, update_modified=True)
+		if frappe.db.exists("DocType", DOCTYPE):
+			frappe.db.set_value("DocType", DOCTYPE, "default_print_format", PRINT_NAME)
+		return
 
 	doc = frappe.new_doc("Print Format")
 	doc.name = PRINT_NAME
 	doc.doc_type = DOCTYPE
 	doc.module = MODULE
 	doc.standard = "Yes"
-	doc.custom_format = 1
-	doc.print_format_type = "Jinja"
-	doc.font_size = 9
-	doc.margin_top = 8
-	doc.margin_bottom = 8
-	doc.margin_left = 10
-	doc.margin_right = 10
-	doc.css = css
-	doc.html = html
+	doc.update(values)
 	doc.insert(ignore_permissions=True)
 
 

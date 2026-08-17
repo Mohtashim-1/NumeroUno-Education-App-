@@ -556,6 +556,41 @@
 	border-top: 1px solid #e3eaf1;
 }
 
+.lvp-sign-canvas {
+	display: block;
+	width: 220px;
+	height: 72px;
+	border: 1px dashed #9eb0c9;
+	border-radius: 8px;
+	background: #fff;
+	cursor: crosshair;
+	touch-action: none;
+}
+
+.lvp-form-sign-canvas {
+	width: 280px;
+	height: 90px;
+}
+
+.lvp-sign-img {
+	max-height: 56px;
+	max-width: 180px;
+	display: block;
+}
+
+.lvp-sign-actions {
+	display: flex;
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.lvp-sign-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	align-items: flex-start;
+}
+
 @media (max-width: 768px) {
 	.lvp-group-picker {
 		grid-template-columns: 1fr;

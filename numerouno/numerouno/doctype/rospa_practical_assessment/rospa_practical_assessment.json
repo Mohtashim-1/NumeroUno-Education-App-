@@ -14,6 +14,7 @@
   "student_group",
   "student",
   "candidate_name",
+  "learner_signature",
   "employing_company",
   "mobile_number",
   "section_break_criteria",
@@ -86,6 +87,11 @@
    "in_list_view": 1,
    "label": "Candidate Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "learner_signature",
+   "fieldtype": "Signature",
+   "label": "Student Signature"
   },
   {
    "fieldname": "employing_company",
@@ -179,7 +185,7 @@
  "is_submittable": 1,
  "default_print_format": "ROSPA Practical Assessment Form",
  "links": [],
- "modified": "2026-08-14 15:40:00.000000",
+ "modified": "2026-08-17 22:55:00.000000",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "ROSPA Practical Assessment",

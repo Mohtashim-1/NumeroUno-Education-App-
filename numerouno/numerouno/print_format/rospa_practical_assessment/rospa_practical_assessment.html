@@ -1,72 +1,457 @@
-<div class="lv-form">
-  <div class="lv-title">{{ doc.form_title or "PRACTICAL ASSESSMENT – ROSPA" }}</div>
-  <div class="lv-subtitle">{{ doc.form_subtitle or "RoSPA Light, Off-Road & Desert Assessment form" }}</div>
+<style>
+@page {
+	size: A4 portrait;
+	margin: 8mm 10mm 10mm 10mm;
+}
+.print-format { padding: 0 !important; margin: 0 !important; }
+.print-heading,
+.letter-head,
+.print-format-letterhead,
+.letterhead,
+.letter-head-image { display: none !important; }
+.print-format th { text-transform: none !important; }
+.print-format * {
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+	box-sizing: border-box;
+}
+.lv-paper {
+	font-family: Arial, Helvetica, sans-serif;
+	color: #111;
+	font-size: 9pt;
+	line-height: 1.15;
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+.lv-page-1 {
+	page-break-after: always;
+	break-after: page;
+}
+.lv-page-2 {
+	page-break-before: always;
+	break-before: page;
+	min-height: 262mm;
+	display: flex;
+	flex-direction: column;
+}
+.lv-p2-body { flex: 1 1 auto; }
+.lv-brand {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin: 0 0 4px !important;
+}
+.lv-brand td {
+	vertical-align: middle !important;
+	border: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+}
+.lv-brand-left { width: 78px; }
+.lv-brand-right { width: 120px; text-align: right; }
+.lv-hse {
+	width: 58px;
+	height: 58px;
+	border: 3px solid #1e4d9c;
+	background: #1e4d9c !important;
+	color: #fff !important;
+	text-align: center;
+	box-sizing: border-box;
+}
+.lv-hse-pct { font-size: 11px; font-weight: 700; padding-top: 8px; line-height: 1.1; }
+.lv-hse-txt { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; line-height: 1.1; }
+.lv-adnoc-logo { max-height: 56px; max-width: 108px; display: inline-block; }
+.lv-title {
+	text-align: center;
+	font-size: 16pt;
+	font-weight: 800;
+	text-transform: uppercase;
+	line-height: 1.1;
+	margin: 2px 0 0;
+}
+.lv-title-orange { color: #ef7a28 !important; }
+.lv-title-blue { color: #1e4d9c !important; }
+.lv-subtitle {
+	text-align: center;
+	color: #1e4d9c !important;
+	font-size: 10.5pt;
+	font-weight: 700;
+	margin: 2px 0 6px;
+}
+.lv-meta {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin: 0 0 6px !important;
+	table-layout: fixed;
+}
+.lv-meta td {
+	border: 1px solid #6f7f93 !important;
+	padding: 4px 7px !important;
+	vertical-align: middle !important;
+	height: 26px;
+}
+.lv-meta-label {
+	width: 17%;
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 700;
+	font-size: 8.5pt;
+}
+.lv-meta-value {
+	width: 33%;
+	background: #fff !important;
+	font-weight: 600;
+	color: #111;
+}
+.lv-grid {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	table-layout: fixed;
+}
+.lv-grid th,
+.lv-grid td { border: 1px solid #6f7f93 !important; }
+.lv-unit {
+	background: #ef7a28 !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 9.5pt;
+	text-align: center;
+	padding: 4px 8px !important;
+	text-transform: none !important;
+}
+.lv-th-outcome,
+.lv-th-criteria,
+.lv-th-source {
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 8pt;
+	text-align: center;
+	padding: 3px 4px !important;
+	text-transform: uppercase !important;
+}
+.lv-th-outcome { width: 16%; }
+.lv-th-criteria { width: 72%; }
+.lv-th-source { width: 12%; }
+.lv-outcome {
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-size: 7.2pt;
+	font-weight: 700;
+	padding: 4px 5px !important;
+	vertical-align: middle !important;
+	text-align: center;
+	line-height: 1.2;
+}
+.lv-criterion {
+	padding: 2px 6px !important;
+	background: #fff !important;
+	vertical-align: middle !important;
+	font-size: 7.6pt;
+	line-height: 1.15;
+}
+.lv-num {
+	color: #ef7a28 !important;
+	font-weight: 800;
+	margin-right: 4px;
+}
+.lv-criterion-text { color: #444; }
+.lv-source {
+	text-align: center;
+	vertical-align: middle !important;
+	padding: 1px 3px !important;
+	background: #fff !important;
+	font-size: 7.5pt;
+	font-weight: 700;
+	color: #1e4d9c;
+}
+.lv-cb {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border: 1.4px solid #333;
+	background: #fff;
+	line-height: 10px;
+	font-size: 9px;
+	font-weight: 700;
+	color: #1e4d9c;
+	text-align: center;
+	vertical-align: middle;
+}
+.lv-guide-label {
+	width: 16%;
+	background: #1e4d9c !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 7pt;
+	padding: 6px 4px !important;
+	vertical-align: middle !important;
+	text-align: center;
+}
+.lv-guide-text {
+	padding: 5px 7px !important;
+	font-size: 7.8pt;
+	background: #fff !important;
+	vertical-align: middle !important;
+	color: #111;
+}
+.lv-company-footer {
+	margin-top: 6px;
+	padding-top: 4px;
+	border-top: 1.5px solid #1e4d9c;
+	text-align: right;
+	color: #1e4d9c !important;
+	font-weight: 700;
+	font-size: 9pt;
+}
+.lv-page-2 .lv-company-footer { margin-top: auto; padding-top: 8px; }
+.lv-field { margin: 0 0 14px; }
+.lv-field-label {
+	color: #1e4d9c !important;
+	font-weight: 700;
+	font-size: 11pt;
+	text-decoration: underline;
+	margin: 0;
+}
+.lv-write {
+	min-height: 22px;
+	border-bottom: 1.6px solid #1e4d9c;
+	padding: 4px 2px 3px;
+	font-size: 11pt;
+	color: #111;
+}
+.lv-write-tall { min-height: 78px; }
+.lv-grey-bar {
+	background: #d8d8d8 !important;
+	text-align: center;
+	padding: 8px 10px;
+	margin: 6px 0 16px;
+	font-size: 9.5pt;
+	font-weight: 600;
+	color: #111;
+}
+.lv-declaration {
+	margin: 22px 8px 18px;
+	font-size: 10pt;
+	line-height: 1.5;
+	text-align: center;
+	color: #111;
+}
+.lv-del { text-decoration: line-through; color: #444; }
+.lv-del-note { margin-top: 10px; font-size: 9pt; font-style: italic; }
+.lv-assessor {
+	width: 100% !important;
+	border-collapse: collapse !important;
+	margin-top: 8px;
+	table-layout: fixed;
+}
+.lv-assessor th {
+	background: #ef7a28 !important;
+	color: #fff !important;
+	font-weight: 800;
+	font-size: 11pt;
+	padding: 8px !important;
+	border: 1px solid #d45f14 !important;
+	text-align: center;
+	text-transform: none !important;
+}
+.lv-assessor td {
+	border: 1px solid #6f7f93 !important;
+	height: 68px;
+	padding: 6px 8px !important;
+	vertical-align: middle !important;
+	text-align: center;
+	background: #fff !important;
+}
+.lv-sign-name { width: 28%; }
+.lv-sign-assessor { width: 26%; }
+.lv-sign-student { width: 26%; }
+.lv-sign-date { width: 20%; }
+.lv-sign { max-height: 48px; max-width: 150px; }
+@media screen {
+	.lv-page-1,
+	.lv-page-2 {
+		min-height: 277mm;
+		padding-bottom: 4mm;
+		margin-bottom: 18px;
+		background: #fff;
+		box-shadow: 0 0 0 1px #cfd6de;
+	}
+}
+</style>
 
-  <table class="lv-meta">
-    <tr>
-      <td><b>Candidate Name</b><br><span class="lvp-field-candidate">{{ doc.candidate_name or "" }}</span></td>
-      <td><b>Date</b><br><span class="lvp-field-date">{{ frappe.utils.formatdate(doc.assessment_date) if doc.assessment_date else "" }}</span></td>
-    </tr>
-    <tr>
-      <td><b>Employing company</b><br><span class="lvp-field-company">{{ doc.employing_company or "" }}</span></td>
-      <td><b>Mobile number</b><br><span class="lvp-field-mobile">{{ doc.mobile_number or "" }}</span></td>
-    </tr>
-  </table>
+{% set sig = namespace(instructor=doc.assessor_signature or "", learner=doc.learner_signature or "", assessor_name=doc.assessor_name or "") %}
+{% set iname = (sig.assessor_name or "") | trim %}
+{% if not sig.instructor and iname %}
+	{% set sig.instructor = frappe.db.get_value("Instructor", {"instructor_name": iname}, "image") or "" %}
+	{% if not sig.instructor %}
+		{% set sig.instructor = frappe.db.get_value("Instructor", {"instructor_name": ["like", iname ~ "%"]}, "image") or "" %}
+	{% endif %}
+	{% if not sig.instructor and frappe.db.exists("Instructor", iname) %}
+		{% set sig.instructor = frappe.db.get_value("Instructor", iname, "image") or "" %}
+	{% endif %}
+{% endif %}
+{% if not sig.instructor and doc.student_group %}
+	{% set gid = frappe.db.get_value("Student Group Instructor", {"parent": doc.student_group}, "instructor") %}
+	{% if gid %}
+		{% set sig.instructor = frappe.db.get_value("Instructor", gid, "image") or "" %}
+		{% if not sig.assessor_name %}
+			{% set sig.assessor_name = frappe.db.get_value("Instructor", gid, "instructor_name") or "" %}
+		{% endif %}
+	{% endif %}
+{% endif %}
+{% if not sig.learner and doc.student %}
+	{% set sig.learner = frappe.db.get_value("Student Card", {"student": doc.student}, "student_signature") or "" %}
+{% endif %}
 
-  <table class="lv-grid">
-    <thead>
-      <tr>
-        <th style="width:4%">No.</th>
-        <th style="width:18%">Outcomes</th>
-        <th style="width:58%">Criteria</th>
-        <th style="width:8%">Achieved</th>
-        <th style="width:12%">Source of Evidence</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% set ns = namespace(last_section="") %}
-      {% for row in doc.criteria %}
-        {% if row.section and row.section != ns.last_section %}
-          {% set ns.last_section = row.section %}
-          <tr class="lv-section"><td colspan="5">{{ row.section }}</td></tr>
-        {% endif %}
-        <tr class="lvp-criterion-row" data-idx="{{ loop.index0 }}">
-          <td class="lv-check">{{ row.sr_no or loop.index }}</td>
-          <td>{{ row.outcome or "" }}</td>
-          <td class="lvp-col-criterion">{{ row.criterion or "" }}</td>
-          <td class="lv-check lvp-col-achieved">{{ "☑" if row.achieved else "☐" }}</td>
-          <td class="lv-check lvp-col-source">{{ row.source_of_evidence or "" }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+{% macro lv_brand() %}
+<table class="lv-brand">
+	<tr>
+		<td class="lv-brand-left">
+			<div class="lv-hse">
+				<div class="lv-hse-pct">100%</div>
+				<div class="lv-hse-txt">HSE</div>
+			</div>
+		</td>
+		<td></td>
+		<td class="lv-brand-right">
+			<img src="/files/images (1).png" alt="ADNOC" class="lv-adnoc-logo">
+		</td>
+	</tr>
+</table>
+{% endmacro %}
 
-  <div class="lv-guidance">
-    <b>Assessment Guidance</b><br>
-    This assessment specifies the standard of competence required by the driver for RoSPA Light Vehicle, Off-Road and Desert practical outcomes. Learners must successfully complete all practical exercises.
-    Records of methods used, and assessment results must be maintained.
-  </div>
-  <p><b>Remarks:</b> <span class="lvp-field-remarks">{{ doc.remarks or "" }}</span></p>
-  <p><small>Source of Evidence: O – Observation  S – Simulation  Q – Questioning  W – Witness</small></p>
+{% macro lv_footer() %}
+<div class="lv-company-footer">Abu Dhabi National Oil Company</div>
+{% endmacro %}
 
-  <table class="lv-footer">
-    <tr>
-      <td><b>Learner Name:</b> {{ doc.candidate_name or "" }}</td>
-      <td><b>Company:</b> {{ doc.employing_company or "" }}</td>
-    </tr>
-    <tr>
-      <td colspan="2"><b>Training and Development Needs:</b><br><span class="lvp-field-training">{{ doc.training_development_needs or "" }}</span></td>
-    </tr>
-    <tr>
-      <td colspan="2">
-        <b>Declaration:</b> The person named was assessed by me against the standards of performance specified in this document and in accordance with the assessment guidance.<br><br>
-        I consider that the above person {% if doc.achievement_status == "Has achieved" %}<b>has</b>{% else %}<b>has not</b>{% endif %} achieved a sufficient level of understanding of the RoSPA Light, Off-Road and Desert Practical course.<br>
-        {% if doc.requires_further_training %}I consider that the above person requires further training and development in addition to that which is installation specific.{% endif %}
-      </td>
-    </tr>
-    <tr>
-      <td><b>Assessor's Name</b><br><span class="lvp-field-assessor">{{ doc.assessor_name or "" }}</span></td>
-      <td><b>Date</b><br><span class="lvp-field-assessor-date">{{ frappe.utils.formatdate(doc.assessor_date) if doc.assessor_date else "" }}</span></td>
-    </tr>
-  </table>
+<div class="lv-paper lv-page-1">
+	{{ lv_brand() }}
+
+	<div class="lv-title">
+		<span class="lv-title-orange">PRACTICAL ASSESSMENT</span><span class="lv-title-blue"> – LIGHT VEHICLE</span>
+	</div>
+	<div class="lv-subtitle">{{ doc.form_subtitle or "RoSPA Light, Off-Road & Desert Assessment form" }}</div>
+
+	<table class="lv-meta">
+		<tr>
+			<td class="lv-meta-label">Candidate Name</td>
+			<td class="lv-meta-value">{{ doc.candidate_name or "" }}</td>
+			<td class="lv-meta-label">Date</td>
+			<td class="lv-meta-value">{{ frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "" }}</td>
+		</tr>
+		<tr>
+			<td class="lv-meta-label">Employing company</td>
+			<td class="lv-meta-value">{{ doc.employing_company or "" }}</td>
+			<td class="lv-meta-label">Mobile number</td>
+			<td class="lv-meta-value">{{ doc.mobile_number or "" }}</td>
+		</tr>
+	</table>
+
+	{% set ns = namespace(last="") %}
+	<table class="lv-grid">
+		<tr>
+			<td colspan="3" class="lv-unit">RoSPA Practical Driving Assessment</td>
+		</tr>
+		<tr>
+			<th class="lv-th-outcome">OUTCOMES</th>
+			<th class="lv-th-criteria">CRITERIA</th>
+			<th class="lv-th-source">SOURCE OF EVIDENCE</th>
+		</tr>
+		{% for row in doc.criteria %}
+			{% if (row.criterion or "")|trim %}
+			<tr>
+				{% if (row.section or row.outcome) != ns.last %}
+					{% set ns.last = row.section or row.outcome %}
+					{% set span = namespace(n=0) %}
+					{% for x in doc.criteria %}
+						{% if (x.section or x.outcome) == ns.last and (x.criterion or "")|trim %}
+							{% set span.n = span.n + 1 %}
+						{% endif %}
+					{% endfor %}
+					<td class="lv-outcome" rowspan="{{ span.n }}">{{ row.section or row.outcome or "" }}</td>
+				{% endif %}
+				<td class="lv-criterion">
+					<span class="lv-num">{{ row.sr_no or loop.index }}.</span>
+					<span class="lv-criterion-text">{{ row.criterion }}</span>
+				</td>
+				<td class="lv-source">
+					<span class="lv-cb">{% if row.achieved %}✓{% endif %}</span>
+					{% if row.source_of_evidence %}<div>{{ row.source_of_evidence }}</div>{% endif %}
+				</td>
+			</tr>
+			{% endif %}
+		{% endfor %}
+		<tr>
+			<td class="lv-guide-label">Assessment<br>Guidance</td>
+			<td class="lv-guide-text" colspan="2">
+				This assessment specifies the standard of competence required by the driver for RoSPA Light Vehicle, Off-Road and Desert practical outcomes. Learners must successfully complete all practical exercises to achieve this Unit. Records of methods used, and assessment results must be maintained.
+			</td>
+		</tr>
+	</table>
+
+	{{ lv_footer() }}
+</div>
+
+<div class="lv-paper lv-page-2">
+	{{ lv_brand() }}
+
+	<div class="lv-p2-body">
+		<div class="lv-field">
+			<div class="lv-field-label">Remarks:</div>
+			<div class="lv-write lv-write-tall">{{ doc.remarks or "" }}</div>
+		</div>
+
+		<div class="lv-grey-bar">
+			Source of Evidence: O – Observation &nbsp;&nbsp; S – Simulation &nbsp;&nbsp; Q – Questioning &nbsp;&nbsp; W – Witness
+		</div>
+
+		<div class="lv-field">
+			<div class="lv-field-label">Learner Name:</div>
+			<div class="lv-write">{{ doc.candidate_name or "" }}</div>
+		</div>
+
+		<div class="lv-field">
+			<div class="lv-field-label">Company:</div>
+			<div class="lv-write">{{ doc.employing_company or "" }}</div>
+		</div>
+
+		<div class="lv-field">
+			<div class="lv-field-label">Training and Development Needs:</div>
+			<div class="lv-write lv-write-tall">{{ doc.training_development_needs or "" }}</div>
+		</div>
+
+		<div class="lv-declaration">
+			<b>Declaration:</b> The person named was assessed by me against the standards of performance specified in this document and in accordance with the assessment guidance.<br><br>
+			I consider that the above person
+			{% if doc.achievement_status == "Has not achieved" %}
+				*<span class="lv-del">has</span>/<b>has not</b>
+			{% else %}
+				*<b>has</b>/<span class="lv-del">has not</span>
+			{% endif %}
+			achieved a sufficient level of understanding of the Light Vehicle Professional Driving Theory course.<br><br>
+			{% if doc.requires_further_training %}
+				*I consider that the above person requires further training and development in addition to that which is installation specific.
+			{% else %}
+				*<span class="lv-del">I consider that the above person requires further training and development in addition to that which is installation specific.</span>
+			{% endif %}
+			<div class="lv-del-note">* delete whichever does not apply</div>
+		</div>
+
+		<table class="lv-assessor">
+			<tr>
+				<th class="lv-sign-name">Assessor’s Name</th>
+				<th class="lv-sign-assessor">Assessor Signature</th>
+				<th class="lv-sign-student">Student Signature</th>
+				<th class="lv-sign-date">Date</th>
+			</tr>
+			<tr>
+				<td>{{ sig.assessor_name or "" }}</td>
+				<td>{% if sig.instructor %}<img src="{{ sig.instructor }}" class="lv-sign">{% endif %}</td>
+				<td>{% if sig.learner %}<img src="{{ sig.learner }}" class="lv-sign">{% endif %}</td>
+				<td>{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else (frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "") }}</td>
+			</tr>
+		</table>
+	</div>
+
+	{{ lv_footer() }}
 </div>
