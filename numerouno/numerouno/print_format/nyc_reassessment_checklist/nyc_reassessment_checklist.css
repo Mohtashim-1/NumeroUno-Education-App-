@@ -9,7 +9,6 @@
 }
 
 .print-format * {
-	box-sizing: border-box;
 	-webkit-print-color-adjust: exact !important;
 	print-color-adjust: exact !important;
 }
@@ -18,126 +17,102 @@
 	text-transform: none !important;
 }
 
-.nyc-paper {
+.print-heading h2,
+.print-format > .letter-head {
+	display: none !important;
+}
+
+.nyc-form {
 	font-family: Arial, Helvetica, sans-serif;
-	color: #1a1a1a;
-	font-size: 10pt;
-	line-height: 1.35;
+	font-size: 10.5pt;
+	color: #111;
 	width: 100%;
 }
 
 .nyc-letterhead {
 	width: 100%;
 	text-align: center;
-	margin: 0 0 4px 0;
-}
-
-.nyc-letterhead .print-heading,
-.nyc-letterhead .row {
-	display: block !important;
-	text-align: center !important;
-	margin: 0 !important;
-	padding: 0 !important;
+	margin: 0 0 6px 0;
 }
 
 .nyc-letterhead img {
-	width: auto !important;
-	max-width: 280px !important;
-	max-height: 68px !important;
+	width: 100% !important;
+	max-width: 100% !important;
 	height: auto !important;
-	display: inline-block !important;
-	margin: 0 auto 2px auto !important;
+	display: block;
+	margin: 0 auto;
 }
 
-.nyc-letterhead span {
-	display: inline;
-}
-
-.nyc-form-bar {
+.nyc-docbar {
 	width: 100%;
 	border-collapse: collapse;
-	margin: 4px 0 8px 0;
+	margin: 2px 0 8px 0;
 	table-layout: fixed;
 }
 
-.nyc-form-bar td {
+.nyc-docbar td {
 	border: none;
-	padding: 0 0 6px 0;
-	font-size: 8pt;
-	color: #143d8d;
+	border-bottom: 2px solid #1a3d7c;
+	padding: 2px 0 6px 0;
+	font-size: 8.5pt;
 	font-weight: 700;
-	border-bottom: 2px solid #1e5eff;
+	color: #1a3d7c;
 }
 
-.nyc-form-bar .left { text-align: left; }
-.nyc-form-bar .center { text-align: center; }
-.nyc-form-bar .right { text-align: right; }
+.nyc-docbar td:nth-child(1) { text-align: left; }
+.nyc-docbar td:nth-child(2) { text-align: center; }
+.nyc-docbar td:nth-child(3) { text-align: right; }
 
 .nyc-title {
 	text-align: center;
 	font-size: 14pt;
 	font-weight: 800;
-	color: #0d47a1;
-	margin: 8px 0 10px 0;
+	margin: 10px 0 12px;
 	text-transform: uppercase;
-	letter-spacing: 0.3px;
+	color: #111;
+	letter-spacing: 0.2px;
 }
 
-.nyc-info {
+.nyc-box {
 	width: 100%;
 	border-collapse: collapse;
+	margin-bottom: 12px;
 	table-layout: fixed;
-	margin-bottom: 10px;
 }
 
-.nyc-info td {
-	border: 1px solid #c9d3e3;
-	padding: 6px 8px;
-	vertical-align: top;
-	font-size: 10pt;
+.nyc-box td {
+	border: 1px solid #222;
+	padding: 7px 8px;
+	vertical-align: middle;
 }
 
-.nyc-info .label {
-	width: 32%;
-	background: #f4f7fb !important;
-	color: #143d8d;
+.nyc-box .lbl {
+	width: 34%;
 	font-weight: 700;
+	background: #f3f3f3;
 }
 
-.nyc-section {
-	background: #dfe8f5 !important;
-	color: #143d8d;
-	font-weight: 800;
-	font-size: 10pt;
-	text-transform: uppercase;
-	padding: 7px 10px;
-	border: 1px solid #c9d3e3;
-	margin: 0;
+.nyc-section-title {
+	margin: 10px 0 4px;
+	font-weight: 700;
+	font-size: 11pt;
 }
 
 .nyc-details-box {
-	border: 1px solid #c9d3e3;
-	border-top: none;
-	min-height: 62px;
+	border: 1px solid #222;
+	min-height: 56px;
 	padding: 8px 10px;
-	margin-bottom: 10px;
-	font-size: 10pt;
-	background: #fff;
+	margin-bottom: 12px;
 }
 
 .nyc-details-box p {
 	margin: 0 0 4px 0;
 }
 
-.nyc-details-box ul {
-	margin: 4px 0 0 18px;
-	padding: 0;
-}
-
 .nyc-reassessment-head {
 	width: 100%;
 	border-collapse: collapse;
-	margin-bottom: 0;
+	margin: 4px 0 4px;
 }
 
 .nyc-reassessment-head td {
@@ -146,124 +121,109 @@
 	vertical-align: bottom;
 }
 
-.nyc-reassessment-head .title {
-	background: #dfe8f5 !important;
-	color: #143d8d;
-	font-weight: 800;
-	font-size: 10pt;
-	text-transform: uppercase;
-	padding: 7px 10px;
-	border: 1px solid #c9d3e3;
-}
-
-.nyc-reassessment-head .when {
-	width: 42%;
+.nyc-date-time {
 	text-align: right;
 	font-size: 10pt;
-	padding-left: 8px;
 }
 
 .nyc-grid {
 	width: 100%;
 	border-collapse: collapse;
-	table-layout: fixed;
 	margin-bottom: 12px;
+	table-layout: fixed;
 }
 
 .nyc-grid th,
 .nyc-grid td {
-	border: 1px solid #9eb0c9;
-	padding: 5px 6px;
+	border: 1px solid #222;
+	padding: 6px 6px;
 	vertical-align: middle;
-	font-size: 9pt;
 }
 
 .nyc-grid th {
-	background: #143d8d !important;
-	color: #fff !important;
+	background: #1a3d7c;
+	color: #fff;
 	font-weight: 700;
 	text-align: center;
+	font-size: 9.5pt;
 }
 
-.nyc-grid .col-ref { width: 7%; text-align: center; }
-.nyc-grid .col-outcome { width: 38%; }
-.nyc-grid .col-done { width: 12%; text-align: center; font-weight: 700; color: #0d47a1; }
-.nyc-grid .col-source { width: 25%; }
-.nyc-grid .col-remarks { width: 18%; }
-.nyc-grid tbody tr:nth-child(even) td { background: #f7f9fc !important; }
+.nyc-grid td {
+	height: 26px;
+}
+
+.col-ref { width: 7%; text-align: center; }
+.col-outcome { width: 38%; }
+.col-done { width: 12%; text-align: center; font-weight: 700; }
+.col-source { width: 25%; }
+.col-remarks { width: 18%; }
 
 .nyc-declaration {
-	margin: 8px 0 12px 0;
-	padding: 8px 10px;
-	border-left: 3px solid #1e5eff;
-	background: #f4f7fb !important;
-	font-size: 9.5pt;
+	margin: 10px 0 12px;
 	line-height: 1.45;
+	font-size: 10pt;
 }
 
 .nyc-sign {
 	width: 100%;
 	border-collapse: collapse;
 	table-layout: fixed;
-	margin-top: 6px;
+	margin-top: 4px;
 	page-break-inside: avoid;
 }
 
-.nyc-sign th {
-	background: #dfe8f5 !important;
-	color: #143d8d;
-	font-weight: 700;
-	text-align: center;
-	border: 1px solid #c9d3e3;
-	padding: 6px 8px;
-	font-size: 9pt;
+.nyc-sign td {
+	border: 1px solid #222;
+	padding: 8px 10px;
+	vertical-align: top;
+	height: 78px;
+	width: 33.33%;
 }
 
-.nyc-sign td {
-	border: 1px solid #c9d3e3;
-	padding: 8px;
-	height: 72px;
-	vertical-align: bottom;
-	text-align: center;
-	font-size: 10pt;
+.nyc-sign-label {
+	font-size: 8.5pt;
+	font-weight: 700;
+	color: #1a3d7c;
+	margin-bottom: 8px;
+	text-transform: uppercase;
+}
+
+.nyc-sign-value {
+	font-size: 11pt;
+	min-height: 28px;
 }
 
 .nyc-sign-img {
 	max-height: 48px;
 	max-width: 150px;
 	display: block;
-	margin: 0 auto 6px auto;
 }
 
-.nyc-lh-footer {
-	margin-top: 14px;
+.nyc-acc-footer {
 	width: 100%;
+	margin-top: 14px;
 }
 
-.nyc-lh-footer img {
+.nyc-acc-footer img {
 	width: 100% !important;
 	height: auto !important;
-	max-height: 40px;
 	display: block;
 }
 
-.nyc-doc-footer {
+.nyc-pagefoot {
 	width: 100%;
 	border-collapse: collapse;
-	margin-top: 6px;
+	margin-top: 4px;
 }
 
-.nyc-doc-footer td {
+.nyc-pagefoot td {
 	border: none;
-	padding: 4px 0 0 0;
+	border-top: 1px solid #1a3d7c;
+	padding: 5px 0 0 0;
 	font-size: 8pt;
-	color: #555;
-	border-top: 1px solid #c9d3e3;
+	color: #444;
 }
 
-.nyc-doc-footer .right { text-align: right; }
-
-.print-format > .print-heading > h2,
-.print-heading h2 {
-	display: none !important;
+.nyc-pagefoot .right {
+	text-align: right;
 }

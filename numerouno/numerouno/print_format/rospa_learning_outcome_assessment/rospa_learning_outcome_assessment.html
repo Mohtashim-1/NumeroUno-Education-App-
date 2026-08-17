@@ -234,8 +234,9 @@
 	text-align: center;
 	background: #fff !important;
 }
-.pa-sign-name { width: 42%; }
-.pa-sign-signature { width: 42%; }
+.pa-sign-name { width: 26%; }
+.pa-sign-signature { width: 24%; }
+.pa-sign-candidate { width: 24%; }
 .pa-sign-date { width: 16%; }
 .pa-sign-img { max-height: 48px; max-width: 150px; }
 @media screen {
@@ -246,6 +247,30 @@
 	}
 }
 </style>
+
+{% set sig = namespace(instructor="", learner=doc.learner_signature or "") %}
+{% set iname = (doc.assessor_name or "") | trim %}
+{% if iname %}
+	{% set sig.instructor = frappe.db.get_value("Instructor", {"instructor_name": iname}, "image") or "" %}
+	{% if not sig.instructor %}
+		{% set sig.instructor = frappe.db.get_value("Instructor", {"instructor_name": ["like", iname ~ "%"]}, "image") or "" %}
+	{% endif %}
+	{% if not sig.instructor and frappe.db.exists("Instructor", iname) %}
+		{% set sig.instructor = frappe.db.get_value("Instructor", iname, "image") or "" %}
+	{% endif %}
+{% endif %}
+{% if not sig.instructor and doc.student_group %}
+	{% set gid = frappe.db.get_value("Student Group Instructor", {"parent": doc.student_group}, "instructor") %}
+	{% if gid %}
+		{% set sig.instructor = frappe.db.get_value("Instructor", gid, "image") or "" %}
+	{% endif %}
+{% endif %}
+{% if not sig.instructor %}
+	{% set sig.instructor = doc.assessor_signature or "" %}
+{% endif %}
+{% if not sig.learner and doc.student %}
+	{% set sig.learner = frappe.db.get_value("Student Card", {"student": doc.student}, "student_signature") or "" %}
+{% endif %}
 
 {% macro header() %}
 <table class="pa-logo-row">
@@ -324,7 +349,7 @@
 			<td class="pa-info-label">Assessor Name</td>
 			<td class="pa-info-value">{{ doc.assessor_name or "" }}</td>
 			<td class="pa-info-label">Signature</td>
-			<td class="pa-info-value">{% if doc.assessor_signature %}<img src="{{ doc.assessor_signature }}" class="pa-sign-img">{% endif %}</td>
+			<td class="pa-info-value">{% if sig.instructor %}<img src="{{ sig.instructor }}" class="pa-sign-img">{% endif %}</td>
 		</tr>
 	</table>
 
@@ -391,15 +416,17 @@
 		<thead>
 			<tr>
 				<th class="pa-sign-name">Assessor's Name</th>
-				<th class="pa-sign-signature">Signature</th>
+				<th class="pa-sign-signature">Instructor Signature</th>
+				<th class="pa-sign-candidate">Candidate Signature</th>
 				<th class="pa-sign-date">Date</th>
 			</tr>
 		</thead>
 		<tbody>
 			<tr>
 				<td>{{ doc.assessor_name or "" }}</td>
-				<td>{% if doc.assessor_signature %}<img src="{{ doc.assessor_signature }}" class="pa-sign-img">{% endif %}</td>
-				<td>{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else "" }}</td>
+				<td>{% if sig.instructor %}<img src="{{ sig.instructor }}" class="pa-sign-img">{% endif %}</td>
+				<td>{% if sig.learner %}<img src="{{ sig.learner }}" class="pa-sign-img">{% endif %}</td>
+				<td>{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else (frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "") }}</td>
 			</tr>
 		</tbody>
 	</table>

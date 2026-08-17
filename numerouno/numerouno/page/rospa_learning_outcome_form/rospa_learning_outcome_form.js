@@ -118,6 +118,18 @@ numerouno.rospa_learning_outcome.Form = class {
 			e.preventDefault();
 			this.mark_all_pass();
 		});
+		this.$root.on("click", ".lvp-sign-save", (e) => {
+			e.preventDefault();
+			this.save_list_signature($(e.currentTarget).closest("tr"));
+		});
+		this.$root.on("click", ".lvp-sign-clear", (e) => {
+			e.preventDefault();
+			this.clear_list_signature($(e.currentTarget).closest("tr"));
+		});
+		this.$root.on("click", ".lvp-form-sign-clear", (e) => {
+			e.preventDefault();
+			this.clear_form_signature();
+		});
 		this.$root.on("keydown", ".lvp-group-field-wrap input", (e) => {
 			if (e.key === "Enter") {
 				e.preventDefault();
@@ -330,36 +342,61 @@ numerouno.rospa_learning_outcome.Form = class {
 			summary.appendChild(prepare);
 		}
 
-		grid.innerHTML = "";
-		records.forEach((row) => {
-			const card = document.createElement("div");
-			card.className = "lvp-student-card";
+		grid.innerHTML = `
+			<table class="lvp-student-table">
+				<thead>
+					<tr>
+						<th class="col-no">#</th>
+						<th>Student</th>
+						<th>Company</th>
+						<th>Status</th>
+						<th class="col-sign">Student Signature</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		`;
+		const $body = this.$root.find(".lvp-student-table tbody");
+		records.forEach((row, idx) => {
+			const submitted = lvpCint(row.docstatus) === 1;
+			const signed = !!(row.learner_signature);
+			let signCell = "";
+			if (signed) {
+				signCell = `<img src="${lvpEscape(row.learner_signature)}" class="lvp-sign-img" alt="Signature">`;
+				if (!submitted) {
+					signCell += `<div class="lvp-sign-actions"><button type="button" class="lvp-btn lvp-sign-clear">${__("Clear")}</button></div>`;
+				}
+			} else if (!submitted) {
+				signCell = `
+					<canvas class="lvp-sign-canvas" width="220" height="72"></canvas>
+					<div class="lvp-sign-actions">
+						<button type="button" class="lvp-btn lvp-sign-clear">${__("Clear")}</button>
+						<button type="button" class="lvp-btn lvp-btn-primary lvp-sign-save">${__("Save Signature")}</button>
+					</div>
+				`;
+			} else {
+				signCell = `<span class="text-muted">${__("No signature")}</span>`;
+			}
 
-			const top = document.createElement("div");
-			top.className = "lvp-card-top";
-			const info = document.createElement("div");
-			const name = document.createElement("h5");
-			name.textContent = row.student_name || row.student || "";
-			const company = document.createElement("p");
-			company.textContent = row.employing_company || __("No company");
-			info.appendChild(name);
-			info.appendChild(company);
-
-			const status = document.createElement("div");
-			status.innerHTML = this.student_status(row);
-			top.appendChild(info);
-			top.appendChild(status);
-
-			const btn = document.createElement("button");
-			btn.type = "button";
-			btn.className = "lvp-btn lvp-btn-primary lvp-open-student";
-			btn.textContent = row.form_name ? __("Open Form") : __("Start Form");
-			btn.setAttribute("data-student", row.student || "");
-
-			card.appendChild(top);
-			card.appendChild(btn);
-			grid.appendChild(card);
+			$body.append(`
+				<tr data-student="${lvpEscape(row.student || "")}" data-form="${lvpEscape(row.form_name || "")}">
+					<td class="col-no">${idx + 1}</td>
+					<td>
+						<div class="lvp-stu-name">${lvpEscape(row.student_name || row.student || "")}</div>
+					</td>
+					<td>${lvpEscape(row.employing_company || "")}</td>
+					<td>${this.student_status(row)}</td>
+					<td class="col-sign">${signCell}</td>
+					<td>
+						<button type="button" class="lvp-btn lvp-btn-primary lvp-open-student" data-student="${lvpEscape(row.student || "")}">
+							${row.form_name ? __("Open Form") : __("Start Form")}
+						</button>
+					</td>
+				</tr>
+			`);
 		});
+		this.init_signature_canvases();
 	}
 
 	student_status(row) {
@@ -388,6 +425,7 @@ numerouno.rospa_learning_outcome.Form = class {
 				}
 				this.doc = r.message.doc;
 				this.render();
+				this.init_signature_canvases();
 				const title = this.doc.candidate_name || this.doc.student || __("Assessment");
 				this.page.set_title(`${__("ROSPA Learning Outcome Assessment")} — ${title}`);
 				if (this.doc.name) {
@@ -430,6 +468,10 @@ numerouno.rospa_learning_outcome.Form = class {
 						<label class="lvp-field">
 							<span>${__("Date")}</span>
 							${this.date_input("assessment_date", d.assessment_date)}
+						</label>
+						<label class="lvp-field lvp-field-full">
+							<span>${__("Student Signature")}</span>
+							${this.learner_signature_html(d)}
 						</label>
 					</div>
 				</section>
@@ -534,11 +576,163 @@ numerouno.rospa_learning_outcome.Form = class {
 		return `<input type="date" class="lvp-cell-input" data-root="${field}" value="${value || ""}">`;
 	}
 
+	learner_signature_html(doc) {
+		const value = doc.learner_signature || "";
+		const img = value ? `<img src="${lvpEscape(value)}" class="lvp-sign-img" alt="Signature">` : "";
+		return `<div class="lvp-sign-wrap">
+			${img}
+			<canvas class="lvp-sign-canvas lvp-form-sign-canvas ${value ? "has-signature" : ""}" width="280" height="90"></canvas>
+			<input type="hidden" class="lvp-learner-sig-value" data-root="learner_signature" value="${lvpEscape(value)}">
+			<div class="lvp-sign-actions">
+				<button type="button" class="lvp-btn lvp-form-sign-clear">${__("Clear")}</button>
+			</div>
+		</div>`;
+	}
+
+	init_signature_canvases() {
+		this.$root.find(".lvp-sign-canvas").each((_, canvas) => {
+			this.bind_signature_canvas(canvas);
+		});
+	}
+
+	bind_signature_canvas(canvas) {
+		if (!canvas || canvas.dataset.bound === "1") {
+			return;
+		}
+		canvas.dataset.bound = "1";
+		const ctx = canvas.getContext("2d");
+		ctx.strokeStyle = "#122033";
+		ctx.lineWidth = 2;
+		ctx.lineCap = "round";
+		let drawing = false;
+
+		const coords = (e) => {
+			const rect = canvas.getBoundingClientRect();
+			const src = e.touches && e.touches[0] ? e.touches[0] : e;
+			return {
+				x: (src.clientX - rect.left) * (canvas.width / rect.width),
+				y: (src.clientY - rect.top) * (canvas.height / rect.height),
+			};
+		};
+		const start = (e) => {
+			e.preventDefault();
+			drawing = true;
+			const p = coords(e);
+			ctx.beginPath();
+			ctx.moveTo(p.x, p.y);
+			canvas.dataset.dirty = "1";
+		};
+		const move = (e) => {
+			if (!drawing) {
+				return;
+			}
+			e.preventDefault();
+			const p = coords(e);
+			ctx.lineTo(p.x, p.y);
+			ctx.stroke();
+		};
+		const end = (e) => {
+			if (e) {
+				e.preventDefault();
+			}
+			drawing = false;
+			const $hidden = $(canvas).closest(".lvp-sign-wrap").find(".lvp-learner-sig-value");
+			if ($hidden.length && this.canvas_has_ink(canvas)) {
+				$hidden.val(canvas.toDataURL("image/png"));
+			}
+		};
+
+		canvas.addEventListener("mousedown", start);
+		canvas.addEventListener("mousemove", move);
+		canvas.addEventListener("mouseup", end);
+		canvas.addEventListener("mouseleave", () => {
+			drawing = false;
+		});
+		canvas.addEventListener("touchstart", start, { passive: false });
+		canvas.addEventListener("touchmove", move, { passive: false });
+		canvas.addEventListener("touchend", end, { passive: false });
+	}
+
+	canvas_has_ink(canvas) {
+		const ctx = canvas.getContext("2d");
+		const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+		for (let i = 3; i < pixels.length; i += 4) {
+			if (pixels[i] !== 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	save_list_signature($row) {
+		const student = $row.data("student");
+		const canvas = $row.find("canvas.lvp-sign-canvas").get(0);
+		if (!student || !canvas) {
+			return;
+		}
+		if (!this.canvas_has_ink(canvas)) {
+			frappe.msgprint(__("Please sign in the box first."));
+			return;
+		}
+		frappe.call({
+			method: "numerouno.numerouno.page.rospa_learning_outcome_form.rospa_learning_outcome_form_api.save_signature",
+			args: {
+				student_group: this.group,
+				student,
+				signature: canvas.toDataURL("image/png"),
+			},
+			freeze: true,
+			freeze_message: __("Saving signature..."),
+			callback: (r) => {
+				if (r.exc) {
+					return;
+				}
+				frappe.show_alert({ message: __("Signature saved"), indicator: "green" });
+				this.load_group_students();
+			},
+		});
+	}
+
+	clear_list_signature($row) {
+		const student = $row.data("student");
+		const canvas = $row.find("canvas.lvp-sign-canvas").get(0);
+		if (canvas) {
+			canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+			canvas.dataset.dirty = "";
+		}
+		if ($row.find(".lvp-sign-img").length) {
+			frappe.call({
+				method: "numerouno.numerouno.page.rospa_learning_outcome_form.rospa_learning_outcome_form_api.save_signature",
+				args: { student_group: this.group, student, signature: "" },
+				callback: (r) => {
+					if (!r.exc) {
+						this.load_group_students();
+					}
+				},
+			});
+		}
+	}
+
+	clear_form_signature() {
+		const canvas = this.$root.find(".lvp-form-sign-canvas").get(0);
+		if (canvas) {
+			canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+			canvas.dataset.dirty = "";
+			$(canvas).removeClass("has-signature");
+		}
+		this.$root.find(".lvp-learner-sig-value").val("");
+		this.$root.find(".lvp-sign-wrap .lvp-sign-img").remove();
+	}
+
 	collect_payload() {
 		const payload = frappe.utils.deep_clone(this.doc || {});
 		this.$root.find("[data-root]").each((_, el) => {
 			payload[$(el).data("root")] = $(el).val();
 		});
+		const formCanvas = this.$root.find(".lvp-form-sign-canvas").get(0);
+		if (formCanvas && this.canvas_has_ink(formCanvas)) {
+			payload.learner_signature = formCanvas.toDataURL("image/png");
+		}
 		(payload.criteria || []).forEach((row, idx) => {
 			const $item = this.$root.find(`.lvp-item[data-idx="${idx}"]`);
 			row.result = $item.find(".lvp-chip.is-on").data("value") || "";
@@ -549,7 +743,7 @@ numerouno.rospa_learning_outcome.Form = class {
 
 	apply_readonly_state() {
 		const readonly = lvpCint(this.doc?.docstatus) === 1;
-		this.$root.find("input, select, textarea, .lvp-toggle, .lvp-chip, .lvp-mark-all").prop("disabled", readonly);
+		this.$root.find("input, select, textarea, .lvp-toggle, .lvp-chip, .lvp-mark-all, .lvp-form-sign-clear").prop("disabled", readonly);
 		if (readonly) {
 			this.page.clear_primary_action();
 			this.$root.find(".lvp-save-btn, .lvp-submit-btn, .lvp-mark-all").hide();

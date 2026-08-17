@@ -6,6 +6,7 @@ from numerouno.numerouno.page.rospa_learning_outcome_form.rospa_learning_outcome
 	get_group_students,
 	prepare_group,
 	save_form_data,
+	save_learner_signature,
 	submit_form,
 )
 
@@ -48,6 +49,11 @@ def cancel(docname):
 @frappe.whitelist()
 def get_students(student_group):
 	return get_group_students(student_group)
+
+
+@frappe.whitelist()
+def save_signature(student_group, student, signature=None):
+	return save_learner_signature(student_group, student, signature=signature)
 
 
 @frappe.whitelist()

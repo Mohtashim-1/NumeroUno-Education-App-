@@ -38,4 +38,8 @@
 .pa-sign-table { width: 100% !important; border-collapse: collapse !important; }
 .pa-sign-table th { background: #f58220 !important; color: #fff !important; }
 .pa-sign-table td { border: 1px solid #555 !important; height: 62px; text-align: center; }
+.pa-sign-name { width: 26%; }
+.pa-sign-signature { width: 24%; }
+.pa-sign-candidate { width: 24%; }
+.pa-sign-date { width: 16%; }
 .pa-sign-img { max-height: 48px; max-width: 150px; }

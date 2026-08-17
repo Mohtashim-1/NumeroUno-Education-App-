@@ -139,7 +139,7 @@ def get_group_students(student_group):
 				"student": row.student,
 				"docstatus": ["<", 2],
 			},
-			["name", "docstatus"],
+			["name", "docstatus", "learner_signature"],
 			as_dict=True,
 		)
 		records.append(
@@ -149,6 +149,7 @@ def get_group_students(student_group):
 				"employing_company": row.customer_name or "",
 				"form_name": existing.name if existing else "",
 				"docstatus": existing.docstatus if existing else None,
+				"learner_signature": (existing.learner_signature if existing else "") or "",
 			}
 		)
 
@@ -195,6 +196,28 @@ def get_form_data(docname=None, student_group=None, student=None):
 		doc.save()
 
 	return _serialize_doc(doc)
+
+
+@frappe.whitelist()
+def save_learner_signature(student_group, student, signature=None):
+	"""Save a student signature from the learner list onto the assessment form."""
+	student_group = (student_group or "").strip()
+	student = (student or "").strip()
+	if not student_group or not student:
+		frappe.throw("Student Group and Student are required")
+
+	doc = _get_or_create_doc(student_group, student)
+	if doc.docstatus == 1:
+		frappe.throw("Submitted assessment cannot be edited")
+	doc.learner_signature = signature or ""
+	doc.save()
+	frappe.db.commit()
+	return {
+		"name": doc.name,
+		"student": doc.student,
+		"learner_signature": doc.learner_signature or "",
+		"docstatus": doc.docstatus,
+	}
 
 
 @frappe.whitelist()

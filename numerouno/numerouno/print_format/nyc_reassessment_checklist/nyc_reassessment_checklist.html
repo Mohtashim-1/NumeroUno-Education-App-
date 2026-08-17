@@ -1,58 +1,51 @@
-{% set ns = namespace(lh=none) %}
-{% if frappe.db.exists("Letter Head", "Letter Head New") %}
-	{% set ns.lh = frappe.get_doc("Letter Head", "Letter Head New") %}
-{% endif %}
-
-<div class="nyc-paper">
-	{% if ns.lh and ns.lh.content %}
+<div class="nyc-form">
 	<div class="nyc-letterhead">
-		{{ ns.lh.content }}
+		<img src="/files/IMAGE_NUTC.png" alt="Numero Uno Training &amp; Consulting LLC (NUTC)" />
 	</div>
-	{% endif %}
 
-	<table class="nyc-form-bar">
+	<table class="nyc-docbar">
 		<tr>
-			<td class="left">{{ doc.form_code or "NUTC-P14-F15" }}</td>
-			<td class="center">Rev 0</td>
-			<td class="right">Dated 22.01.2022</td>
+			<td>{{ doc.form_code or "NUTC-P14-F15" }}</td>
+			<td>Rev 0</td>
+			<td>Dated 22.08.2022</td>
 		</tr>
 	</table>
 
 	<div class="nyc-title">{{ doc.form_title or "Not Yet Competent Reassessment Checklist" }}</div>
 
-	<table class="nyc-info">
+	<table class="nyc-box">
 		<tr>
-			<td class="label">Course Name</td>
+			<td class="lbl">Course Name</td>
 			<td>{{ doc.course_name or doc.course or "" }}</td>
 		</tr>
 		<tr>
-			<td class="label">Candidate Name</td>
+			<td class="lbl">Candidate Name</td>
 			<td>{{ doc.candidate_name or "" }}</td>
 		</tr>
 		<tr>
-			<td class="label">Company Name</td>
+			<td class="lbl">Company Name</td>
 			<td>{{ doc.company_name or "" }}</td>
 		</tr>
 		<tr>
-			<td class="label">Date &amp; Time of First Assessment</td>
+			<td class="lbl">Date &amp; Time of first assessment</td>
 			<td>
 				{% if doc.first_assessment_date %}{{ frappe.utils.formatdate(doc.first_assessment_date, "dd-MM-yyyy") }}{% endif %}
 				{% if doc.first_assessment_time %} {{ doc.first_assessment_time }}{% endif %}
 			</td>
 		</tr>
 		<tr>
-			<td class="label">Name of Assessor</td>
+			<td class="lbl">Name of Assessor</td>
 			<td>{{ doc.assessor_name or "" }}</td>
 		</tr>
 	</table>
 
-	<div class="nyc-section">Details of Learning Outcome found Not Yet Competent (NYC)</div>
+	<p class="nyc-section-title">Details of Learning outcome found Not Yet Competent (NYC)</p>
 	<div class="nyc-details-box">{{ (doc.nyc_details or "&nbsp;") | safe }}</div>
 
 	<table class="nyc-reassessment-head">
 		<tr>
-			<td class="title">Details of Reassessment</td>
-			<td class="when">
+			<td class="nyc-section-title" style="padding:0; margin:0;">Details of Reassessment</td>
+			<td class="nyc-date-time">
 				<strong>Date:</strong>
 				{% if doc.reassessment_date %}{{ frappe.utils.formatdate(doc.reassessment_date, "dd-MM-yyyy") }}{% else %}.................{% endif %}
 				&nbsp;&nbsp;
@@ -70,47 +63,82 @@
 			<th class="col-source">Source of Evidence</th>
 			<th class="col-remarks">Remarks</th>
 		</tr>
+		{% set ns = namespace(shown=0) %}
 		{% for row in doc.outcomes %}
-		<tr>
-			<td class="col-ref">{{ row.ref_no or loop.index }}</td>
-			<td class="col-outcome">{{ row.learning_outcome or "" }}</td>
-			<td class="col-done">{% if row.completed %}✓{% endif %}</td>
-			<td class="col-source">{{ row.source_of_evidence or "" }}</td>
-			<td class="col-remarks">{{ row.remarks or "" }}</td>
-		</tr>
+			{% if row.learning_outcome or row.completed or row.source_of_evidence or row.remarks %}
+				{% set ns.shown = ns.shown + 1 %}
+				<tr>
+					<td class="col-ref">{{ row.ref_no or ns.shown }}</td>
+					<td>{{ row.learning_outcome or "" }}</td>
+					<td class="col-done">{% if row.completed %}✓{% endif %}</td>
+					<td>{{ row.source_of_evidence or "" }}</td>
+					<td>{{ row.remarks or "" }}</td>
+				</tr>
+			{% endif %}
+		{% endfor %}
+		{% for i in range(ns.shown + 1, 6) %}
+			<tr>
+				<td class="col-ref">{{ i }}</td>
+				<td></td>
+				<td class="col-done"></td>
+				<td></td>
+				<td></td>
+			</tr>
 		{% endfor %}
 	</table>
 
-	<div class="nyc-declaration">{{ doc.declaration_text }}</div>
+	<p class="nyc-declaration">{{ doc.declaration_text }}</p>
+
+	{% set ns = namespace(sig="", iname=(doc.assessor_signature_name or doc.assessor_name or "") | trim) %}
+	{% if ns.iname %}
+		{% set ns.sig = frappe.db.get_value("Instructor", {"instructor_name": ns.iname}, "image") or "" %}
+		{% if not ns.sig %}
+			{% set ns.sig = frappe.db.get_value("Instructor", {"instructor_name": ["like", ns.iname ~ "%"]}, "image") or "" %}
+		{% endif %}
+		{% if not ns.sig and frappe.db.exists("Instructor", ns.iname) %}
+			{% set ns.sig = frappe.db.get_value("Instructor", ns.iname, "image") or "" %}
+		{% endif %}
+	{% endif %}
+	{% if not ns.sig and doc.student_group %}
+		{% set gid = frappe.db.get_value("Student Group Instructor", {"parent": doc.student_group}, "instructor") %}
+		{% if gid %}
+			{% set ns.sig = frappe.db.get_value("Instructor", gid, "image") or "" %}
+		{% endif %}
+	{% endif %}
+	{% if not ns.sig %}
+		{% set ns.sig = doc.assessor_signature or "" %}
+	{% endif %}
 
 	<table class="nyc-sign">
 		<tr>
-			<th>Assessor's Name</th>
-			<th>Assessor's Signature</th>
-			<th>Date</th>
-		</tr>
-		<tr>
-			<td>{{ doc.assessor_signature_name or doc.assessor_name or "" }}</td>
 			<td>
-				{% if doc.assessor_signature %}
-					<img src="{{ doc.assessor_signature }}" class="nyc-sign-img" alt="Assessor signature" />
+				<div class="nyc-sign-label">Assessor's Name</div>
+				<div class="nyc-sign-value">{{ doc.assessor_signature_name or doc.assessor_name or "" }}</div>
+			</td>
+			<td>
+				<div class="nyc-sign-label">Assessor's Signature</div>
+				{% if ns.sig %}
+					<img src="{{ ns.sig }}" class="nyc-sign-img" alt="Assessor signature" />
+				{% else %}
+					<div class="nyc-sign-value">&nbsp;</div>
 				{% endif %}
 			</td>
 			<td>
-				{% if doc.assessor_signature_date %}{{ frappe.utils.formatdate(doc.assessor_signature_date, "dd-MM-yyyy") }}{% endif %}
+				<div class="nyc-sign-label">Date</div>
+				<div class="nyc-sign-value">
+					{% if doc.assessor_signature_date %}{{ frappe.utils.formatdate(doc.assessor_signature_date, "dd-MM-yyyy") }}{% endif %}
+				</div>
 			</td>
 		</tr>
 	</table>
 
-	{% if ns.lh and ns.lh.footer %}
-	<div class="nyc-lh-footer">
-		{{ ns.lh.footer }}
+	<div class="nyc-acc-footer">
+		<img src="/files/FOOTER.png" alt="NUTC accreditations" />
 	</div>
-	{% endif %}
 
-	<table class="nyc-doc-footer">
+	<table class="nyc-pagefoot">
 		<tr>
-			<td>{{ doc.form_code or "NUTC-P14-F15" }} Rev 0 Dated 22.01.2022</td>
+			<td>{{ doc.form_code or "NUTC-P14-F15" }} Rev 0 Dated 22.08.2022</td>
 			<td class="right">Page 1 of 1</td>
 		</tr>
 	</table>

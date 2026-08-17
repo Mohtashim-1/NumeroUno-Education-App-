@@ -135,9 +135,83 @@
 .lvp-pill-done { background: #edf7ed; color: #1e7e34; }
 
 .lvp-student-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-	gap: 12px;
+	display: block;
+	overflow-x: auto;
+	background: #fff;
+	border: 1px solid #dbe3ec;
+	border-radius: 14px;
+	box-shadow: 0 4px 14px rgba(18, 32, 51, 0.04);
+}
+
+.lvp-student-table {
+	width: 100%;
+	border-collapse: collapse;
+	min-width: 760px;
+}
+
+.lvp-student-table th {
+	background: #143d8d;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 700;
+	text-align: left;
+	padding: 10px 12px;
+}
+
+.lvp-student-table td {
+	border-bottom: 1px solid #e3eaf1;
+	padding: 10px 12px;
+	vertical-align: middle;
+	font-size: 13px;
+	color: var(--lvp-ink);
+}
+
+.lvp-student-table .col-no {
+	width: 44px;
+	text-align: center;
+}
+
+.lvp-student-table .col-sign {
+	width: 250px;
+}
+
+.lvp-stu-name {
+	font-weight: 700;
+}
+
+.lvp-sign-canvas {
+	display: block;
+	width: 220px;
+	height: 72px;
+	border: 1px dashed #9eb0c9;
+	border-radius: 8px;
+	background: #fff;
+	cursor: crosshair;
+	touch-action: none;
+}
+
+.lvp-form-sign-canvas {
+	width: 280px;
+	height: 90px;
+}
+
+.lvp-sign-img {
+	max-height: 56px;
+	max-width: 180px;
+	display: block;
+}
+
+.lvp-sign-actions {
+	display: flex;
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.lvp-sign-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	align-items: flex-start;
 }
 
 .lvp-student-card {
