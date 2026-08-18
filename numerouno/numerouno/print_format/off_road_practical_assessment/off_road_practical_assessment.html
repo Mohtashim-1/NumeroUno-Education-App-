@@ -1,7 +1,7 @@
 <style>
 @page { size: A4 portrait; margin: 7mm 9mm 9mm 9mm; }
 .print-format { padding: 0 !important; margin: 0 !important; }
-.print-heading, .letter-head, .print-format-letterhead { display: none !important; }
+.print-heading, .letter-head, .print-format-letterhead, .letterhead, .letter-head-image { display: none !important; }
 .print-format th { text-transform: none !important; }
 .print-format * {
 	-webkit-print-color-adjust: exact !important;
@@ -368,6 +368,37 @@
 <div class="lv-company-footer">Abu Dhabi National Oil Company</div>
 {% endmacro %}
 
+{% set sig = namespace(instructor=doc.assessor_signature or "", learner=doc.learner_signature or "", assessor_name=doc.assessor_name or "") %}
+{% if doc.get("assessor") %}
+	{% set fetched = frappe.db.get_value("Instructor", doc.assessor, "image") or "" %}
+	{% if fetched %}
+		{% set sig.instructor = fetched %}
+	{% endif %}
+	{% set sig.assessor_name = frappe.db.get_value("Instructor", doc.assessor, "instructor_name") or sig.assessor_name %}
+{% endif %}
+{% set iname = (sig.assessor_name or "") | trim %}
+{% if not sig.instructor and iname %}
+	{% set sig.instructor = frappe.db.get_value("Instructor", {"instructor_name": iname}, "image") or "" %}
+	{% if not sig.instructor %}
+		{% set sig.instructor = frappe.db.get_value("Instructor", {"instructor_name": ["like", iname ~ "%"]}, "image") or "" %}
+	{% endif %}
+	{% if not sig.instructor and frappe.db.exists("Instructor", iname) %}
+		{% set sig.instructor = frappe.db.get_value("Instructor", iname, "image") or "" %}
+	{% endif %}
+{% endif %}
+{% if not sig.instructor and doc.student_group %}
+	{% set gid = frappe.db.get_value("Student Group Instructor", {"parent": doc.student_group}, "instructor") %}
+	{% if gid %}
+		{% set sig.instructor = frappe.db.get_value("Instructor", gid, "image") or "" %}
+		{% if not sig.assessor_name %}
+			{% set sig.assessor_name = frappe.db.get_value("Instructor", gid, "instructor_name") or "" %}
+		{% endif %}
+	{% endif %}
+{% endif %}
+{% if not sig.learner and doc.student %}
+	{% set sig.learner = frappe.db.get_value("Student Card", {"student": doc.student}, "student_signature") or "" %}
+{% endif %}
+
 {% set o1 = namespace(span=0, idx=0) %}
 {% set o2 = namespace(span=0, idx=0) %}
 {% for row in doc.criteria %}
@@ -520,16 +551,16 @@
 
 		<table class="lv-assessor">
 			<tr>
-				<th>Assessor’s Name</th>
-				<th>Signature</th>
-				<th>Date</th>
+				<th class="lv-sign-name">Assessor’s Name</th>
+				<th class="lv-sign-assessor">Assessor Signature</th>
+				<th class="lv-sign-student">Student Signature</th>
+				<th class="lv-sign-date">Date</th>
 			</tr>
 			<tr>
-				<td>{{ doc.assessor_name or "" }}</td>
-				<td class="lv-assessor-sign">
-					{% if doc.assessor_signature %}<img src="{{ doc.assessor_signature }}" class="lv-sign" />{% endif %}
-				</td>
-				<td>{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else "" }}</td>
+				<td>{{ sig.assessor_name or "" }}</td>
+				<td>{% if sig.instructor %}<img src="{{ sig.instructor }}" class="lv-sign">{% endif %}</td>
+				<td>{% if sig.learner %}<img src="{{ sig.learner }}" class="lv-sign">{% endif %}</td>
+				<td>{{ frappe.utils.formatdate(doc.assessor_date, "dd-MM-yyyy") if doc.assessor_date else (frappe.utils.formatdate(doc.assessment_date, "dd-MM-yyyy") if doc.assessment_date else "") }}</td>
 			</tr>
 		</table>
 	</div>

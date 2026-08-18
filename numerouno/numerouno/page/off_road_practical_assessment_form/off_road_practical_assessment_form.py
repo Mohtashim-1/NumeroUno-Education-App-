@@ -3,6 +3,7 @@ from frappe.utils import cint, today
 
 from numerouno.numerouno.doctype.off_road_practical_assessment.off_road_practical_assessment import (
 	apply_template,
+	get_group_instructor,
 )
 
 
@@ -31,6 +32,7 @@ def _serialize_doc(doc):
 		"student_group": doc.student_group,
 		"student": doc.student,
 		"candidate_name": doc.candidate_name,
+		"learner_signature": doc.learner_signature,
 		"employing_company": doc.employing_company,
 		"mobile_number": doc.mobile_number,
 		"criteria": _serialize_criteria(doc.criteria),
@@ -38,6 +40,7 @@ def _serialize_doc(doc):
 		"training_development_needs": doc.training_development_needs,
 		"achievement_status": doc.achievement_status,
 		"requires_further_training": cint(doc.requires_further_training),
+		"assessor": doc.assessor,
 		"assessor_name": doc.assessor_name,
 		"assessor_date": doc.assessor_date,
 		"assessor_signature": doc.assessor_signature,
@@ -53,12 +56,14 @@ def _apply_payload(doc, data):
 		"student_group",
 		"student",
 		"candidate_name",
+		"learner_signature",
 		"employing_company",
 		"mobile_number",
 		"remarks",
 		"training_development_needs",
 		"achievement_status",
 		"requires_further_training",
+		"assessor",
 		"assessor_name",
 		"assessor_date",
 		"assessor_signature",
@@ -118,6 +123,7 @@ def _get_or_create_doc(student_group, student, assessment_date=None):
 	)
 	doc.mobile_number = frappe.db.get_value("Student", student, "student_mobile_number") or ""
 	doc.assessment_date = assessment_date or today()
+	doc.assessor = get_group_instructor(student_group)
 	doc.assessor_date = doc.assessment_date
 	apply_template(doc)
 	doc.insert(ignore_permissions=True)

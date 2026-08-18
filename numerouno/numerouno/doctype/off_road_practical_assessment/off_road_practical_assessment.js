@@ -34,6 +34,30 @@ frappe.ui.form.on("Off Road Practical Assessment", {
 			}
 		});
 	},
+
+	student_group(frm) {
+		if (frm.doc.assessor || !frm.doc.student_group) return;
+		frappe.db.get_value("Student Group Instructor", { parent: frm.doc.student_group }, "instructor").then((r) => {
+			const instructor = r && r.message && r.message.instructor;
+			if (instructor) {
+				frm.set_value("assessor", instructor);
+			}
+		});
+	},
+
+	assessor(frm) {
+		if (!frm.doc.assessor) return;
+		frappe.db.get_value("Instructor", frm.doc.assessor, ["instructor_name", "image"]).then((r) => {
+			const msg = r && r.message;
+			if (!msg) return;
+			if (msg.instructor_name) {
+				frm.set_value("assessor_name", msg.instructor_name);
+			}
+			if (msg.image && !frm.doc.assessor_signature) {
+				frm.set_value("assessor_signature", msg.image);
+			}
+		});
+	},
 });
 
 function load_lv_template(frm) {
