@@ -12,6 +12,14 @@ class ROSPAPracticalAssessment(Document):
 	def validate(self):
 		if not self.criteria:
 			apply_template(self)
+		self._sync_learner_signature()
+
+	def _sync_learner_signature(self):
+		if getattr(self, "learner_signature", None):
+			return
+		from numerouno.numerouno.utils.signatures import get_student_attendance_signature
+
+		self.learner_signature = get_student_attendance_signature(self.student, self.student_group)
 
 
 def _load_template():

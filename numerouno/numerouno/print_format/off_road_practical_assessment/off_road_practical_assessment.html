@@ -396,6 +396,9 @@
 	{% endif %}
 {% endif %}
 {% if not sig.learner and doc.student %}
+	{% set sig.learner = frappe.get_attr("numerouno.numerouno.utils.signatures.get_student_attendance_signature")(doc.student, doc.student_group) or "" %}
+{% endif %}
+{% if not sig.learner and doc.student %}
 	{% set sig.learner = frappe.db.get_value("Student Card", {"student": doc.student}, "student_signature") or "" %}
 {% endif %}
 

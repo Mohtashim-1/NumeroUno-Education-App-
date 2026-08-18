@@ -13,6 +13,14 @@ class ROSPALearningOutcomeAssessment(Document):
 		if not self.criteria:
 			apply_template(self)
 		self._sync_assessor()
+		self._sync_learner_signature()
+
+	def _sync_learner_signature(self):
+		if self.learner_signature:
+			return
+		from numerouno.numerouno.utils.signatures import get_student_attendance_signature
+
+		self.learner_signature = get_student_attendance_signature(self.student, self.student_group)
 
 	def _sync_assessor(self):
 		if not self.assessor and self.student_group:

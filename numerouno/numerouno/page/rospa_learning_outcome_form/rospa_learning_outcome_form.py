@@ -5,6 +5,7 @@ from numerouno.numerouno.doctype.rospa_learning_outcome_assessment.rospa_learnin
 	apply_template,
 	get_group_instructor,
 )
+from numerouno.numerouno.utils.signatures import get_student_attendance_signature
 
 
 def _serialize_criteria(rows):
@@ -32,7 +33,8 @@ def _serialize_doc(doc):
 		"student_group": doc.student_group,
 		"student": doc.student,
 		"candidate_name": doc.candidate_name,
-		"learner_signature": doc.learner_signature,
+		"learner_signature": doc.learner_signature
+		or get_student_attendance_signature(doc.student, doc.student_group),
 		"employing_company": doc.employing_company,
 		"mobile_number": doc.mobile_number,
 		"criteria": _serialize_criteria(doc.criteria),
