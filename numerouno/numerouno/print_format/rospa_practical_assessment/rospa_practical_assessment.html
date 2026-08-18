@@ -280,7 +280,15 @@
 </style>
 
 {% set sig = namespace(instructor=doc.assessor_signature or "", learner=doc.learner_signature or "", assessor_name=doc.assessor_name or "") %}
+{% if "signature-placeholder" in sig.instructor %}{% set sig.instructor = "" %}{% endif %}
 {% if "signature-placeholder" in sig.learner %}{% set sig.learner = "" %}{% endif %}
+{% if doc.get("assessor") %}
+	{% set fetched = frappe.db.get_value("Instructor", doc.assessor, "image") or "" %}
+	{% if fetched %}
+		{% set sig.instructor = fetched %}
+	{% endif %}
+	{% set sig.assessor_name = frappe.db.get_value("Instructor", doc.assessor, "instructor_name") or sig.assessor_name %}
+{% endif %}
 {% set iname = (sig.assessor_name or "") | trim %}
 {% if not sig.instructor and iname %}
 	{% set sig.instructor = frappe.db.get_value("Instructor", {"instructor_name": iname}, "image") or "" %}

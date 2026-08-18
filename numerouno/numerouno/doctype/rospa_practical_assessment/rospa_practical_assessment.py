@@ -10,15 +10,21 @@ from frappe.utils import cint, today
 
 class ROSPAPracticalAssessment(Document):
 	def before_print(self, settings=None):
-		from numerouno.numerouno.utils.signatures import resolve_learner_signature
+		from numerouno.numerouno.utils.signatures import is_empty_signature, resolve_learner_signature
 
+		self._sync_assessor()
 		self.learner_signature = resolve_learner_signature(
 			self.student, self.student_group, self.learner_signature
 		)
+		if is_empty_signature(self.assessor_signature) and self.assessor:
+			image = frappe.db.get_value("Instructor", self.assessor, "image") or ""
+			if image:
+				self.assessor_signature = image
 
 	def validate(self):
 		if not self.criteria:
 			apply_template(self)
+		self._sync_assessor()
 		self._sync_learner_signature()
 
 	def _sync_learner_signature(self):
@@ -29,6 +35,56 @@ class ROSPAPracticalAssessment(Document):
 		self.learner_signature = resolve_learner_signature(
 			self.student, self.student_group, self.learner_signature
 		)
+
+	def _sync_assessor(self):
+		from numerouno.numerouno.utils.signatures import is_empty_signature
+
+		if not self.assessor and self.student_group:
+			self.assessor = get_group_instructor(self.student_group)
+		if not self.assessor and self.assessor_name:
+			self.assessor = resolve_instructor(self.assessor_name)
+		if self.assessor:
+			self.assessor_name = (
+				frappe.db.get_value("Instructor", self.assessor, "instructor_name") or self.assessor_name
+			)
+			image = frappe.db.get_value("Instructor", self.assessor, "image") or ""
+			if image and (is_empty_signature(self.assessor_signature) or self.has_value_changed("assessor")):
+				self.assessor_signature = image
+
+
+def resolve_instructor(value):
+	value = (value or "").strip()
+	if not value:
+		return None
+	name = frappe.db.get_value("Instructor", value, "name")
+	if name:
+		return name
+	exact = frappe.db.get_value("Instructor", {"instructor_name": value}, "name")
+	if exact:
+		return exact
+	like = frappe.db.get_value("Instructor", {"instructor_name": ["like", f"{value}%"]}, "name")
+	if like:
+		return like
+	row = frappe.db.sql(
+		"""
+		select name from `tabInstructor`
+		where lower(trim(instructor_name)) = lower(%s)
+		limit 1
+		""",
+		value,
+	)
+	return row[0][0] if row else None
+
+
+def get_group_instructor(student_group):
+	if not student_group:
+		return None
+	return frappe.db.get_value(
+		"Student Group Instructor",
+		{"parent": student_group},
+		"instructor",
+		order_by="idx asc",
+	)
 
 
 def _load_template():

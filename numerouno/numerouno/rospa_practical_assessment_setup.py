@@ -46,8 +46,48 @@ def get_template_rows():
 def setup():
 	_ensure_print_format()
 	_ensure_workspace()
+	_backfill_assessors()
 	frappe.db.commit()
 	return {"doctype": DOCTYPE, "print_format": PRINT_NAME, "workspace": WORKSPACE}
+
+
+def _backfill_assessors():
+	from numerouno.numerouno.doctype.rospa_practical_assessment.rospa_practical_assessment import (
+		get_group_instructor,
+		resolve_instructor,
+	)
+
+	if not frappe.db.has_column("ROSPA Practical Assessment", "assessor"):
+		return
+
+	rows = frappe.db.sql(
+		"""
+		select name, assessor, assessor_name, student_group, assessor_signature
+		from `tabROSPA Practical Assessment`
+		""",
+		as_dict=True,
+	)
+	for row in rows:
+		assessor = (
+			resolve_instructor(row.assessor)
+			or resolve_instructor(row.assessor_name)
+			or get_group_instructor(row.student_group)
+		)
+		if not assessor:
+			continue
+		values = {
+			"assessor": assessor,
+			"assessor_name": frappe.db.get_value("Instructor", assessor, "instructor_name") or row.assessor_name,
+		}
+		image = frappe.db.get_value("Instructor", assessor, "image") or ""
+		if image and not row.assessor_signature:
+			values["assessor_signature"] = image
+		if (
+			values["assessor"] != (row.assessor or "")
+			or values["assessor_name"] != (row.assessor_name or "")
+			or ("assessor_signature" in values)
+		):
+			frappe.db.set_value("ROSPA Practical Assessment", row.name, values, update_modified=False)
 
 
 def _ensure_print_format():

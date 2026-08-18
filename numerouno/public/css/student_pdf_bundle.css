@@ -1,0 +1,124 @@
+.student-pdf-bundle-page .page-form {
+	margin-bottom: 12px;
+}
+
+.spb-root {
+	padding: 4px 0 24px;
+}
+
+.spb-help {
+	background: #f8fafc;
+	border: 1px solid #dbeafe;
+	border-radius: 8px;
+	color: #334155;
+	font-size: 13px;
+	line-height: 1.5;
+	margin-bottom: 14px;
+	padding: 12px 14px;
+}
+
+.spb-toolbar {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	justify-content: space-between;
+	margin-bottom: 14px;
+}
+
+.spb-stats {
+	color: #475569;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+}
+
+.spb-stat b {
+	color: #0f172a;
+}
+
+.spb-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.spb-results {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.spb-empty {
+	background: #fff;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	color: #64748b;
+	padding: 28px;
+	text-align: center;
+}
+
+.spb-group {
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.spb-group-title {
+	background: #eff6ff;
+	border-bottom: 1px solid #dbeafe;
+	color: #1e3a8a;
+	font-size: 13px;
+	font-weight: 700;
+	padding: 10px 14px;
+	text-transform: uppercase;
+}
+
+.spb-row {
+	align-items: center;
+	border-bottom: 1px solid #f1f5f9;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: 28px 1fr auto;
+	padding: 12px 14px;
+}
+
+.spb-row:last-child {
+	border-bottom: 0;
+}
+
+.spb-row-check {
+	margin: 0;
+}
+
+.spb-row-title {
+	color: #0f172a;
+	font-size: 14px;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.spb-row-meta {
+	color: #64748b;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 12px;
+	gap: 8px 14px;
+}
+
+.spb-status {
+	color: #0369a1;
+	font-weight: 600;
+}
+
+@media (max-width: 768px) {
+	.spb-row {
+		grid-template-columns: 28px 1fr;
+	}
+
+	.spb-open-print {
+		grid-column: 2;
+		justify-self: start;
+	}
+}

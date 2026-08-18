@@ -3,6 +3,7 @@ from frappe.utils import cint, today
 
 from numerouno.numerouno.doctype.rospa_practical_assessment.rospa_practical_assessment import (
 	apply_template,
+	get_group_instructor,
 )
 from numerouno.numerouno.utils.signatures import resolve_learner_signature
 
@@ -42,6 +43,7 @@ def _serialize_doc(doc):
 		"training_development_needs": doc.training_development_needs,
 		"achievement_status": doc.achievement_status,
 		"requires_further_training": cint(doc.requires_further_training),
+		"assessor": doc.assessor,
 		"assessor_name": doc.assessor_name,
 		"assessor_date": doc.assessor_date,
 		"assessor_signature": doc.assessor_signature,
@@ -64,6 +66,7 @@ def _apply_payload(doc, data):
 		"training_development_needs",
 		"achievement_status",
 		"requires_further_training",
+		"assessor",
 		"assessor_name",
 		"assessor_date",
 		"assessor_signature",
@@ -124,6 +127,10 @@ def _get_or_create_doc(student_group, student, assessment_date=None):
 	doc.mobile_number = frappe.db.get_value("Student", student, "student_mobile_number") or ""
 	doc.assessment_date = assessment_date or today()
 	doc.assessor_date = doc.assessment_date
+	doc.assessor = get_group_instructor(student_group)
+	if doc.assessor:
+		doc.assessor_name = frappe.db.get_value("Instructor", doc.assessor, "instructor_name") or ""
+		doc.assessor_signature = frappe.db.get_value("Instructor", doc.assessor, "image") or ""
 	apply_template(doc)
 	doc.insert(ignore_permissions=True)
 	return doc
