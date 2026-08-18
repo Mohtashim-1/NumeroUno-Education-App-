@@ -78,7 +78,7 @@ PDF_CATALOG = [
 		"key": "assessment_certificate",
 		"label": "Assessment Certificate",
 		"doctype": "Assessment Result",
-		"print_format": "Assessment Certificate",
+		"print_format": "Assesment Result 1",
 		"scope": "student",
 	},
 	{
@@ -86,7 +86,7 @@ PDF_CATALOG = [
 		"key": "student_card",
 		"label": "Student Card",
 		"doctype": "Assessment Result",
-		"print_format": "Assesment Result Student Card",
+		"print_format": "Student ATM Card",
 		"scope": "student",
 	},
 	{
@@ -281,6 +281,12 @@ def get_pdf_catalog():
 	return PDF_CATALOG
 
 
+def _print_format_enabled(print_format):
+	if not print_format or not frappe.db.exists("Print Format", print_format):
+		return False
+	return not cint(frappe.db.get_value("Print Format", print_format, "disabled"))
+
+
 @frappe.whitelist()
 def find_pdfs(student_group=None, student=None):
 	student_group = (student_group or "").strip() or None
@@ -292,6 +298,8 @@ def find_pdfs(student_group=None, student=None):
 	seen = set()
 	for source in PDF_CATALOG:
 		if not frappe.db.exists("DocType", source["doctype"]):
+			continue
+		if not _print_format_enabled(source.get("print_format")):
 			continue
 		if source["scope"] == "group":
 			if not student_group:
@@ -359,6 +367,8 @@ def _safe_filename(value):
 def _render_pdf(item):
 	if not frappe.has_permission(item["doctype"], "print", item["name"]):
 		frappe.throw(_("Not permitted to print {0} {1}").format(item["doctype"], item["name"]))
+	if not _print_format_enabled(item.get("print_format")):
+		frappe.throw(_("Print Format {0} is disabled").format(item.get("print_format")))
 	doc = frappe.get_doc(item["doctype"], item["name"])
 	return frappe.get_print(
 		item["doctype"],
@@ -387,7 +397,7 @@ def prepare_download(items, merge=1):
 	return key
 
 
-@frappe.whitelist(methods=["GET", "POST"])
+@frappe.whitelist()
 def download_pdfs(key=None, items=None, merge=1):
 	if key:
 		payload = frappe.cache().get_value(f"student_pdf_bundle:{key}")
@@ -401,11 +411,19 @@ def download_pdfs(key=None, items=None, merge=1):
 		frappe.throw(_("Select at least one PDF."))
 
 	rendered = []
+	errors = []
 	for item in items:
 		item = frappe._dict(item)
-		content = _render_pdf(item)
+		try:
+			content = _render_pdf(item)
+		except Exception as e:
+			errors.append(f"{item.get('title') or item.get('name')}: {cstr(e)}")
+			continue
 		filename = _safe_filename(item.get("title") or f"{item.doctype}-{item.name}") + ".pdf"
 		rendered.append((filename, content))
+
+	if not rendered:
+		frappe.throw(_("Could not generate any PDFs.<br>{0}").format("<br>".join(errors)))
 
 	if cint(merge):
 		from PyPDF2 import PdfMerger

@@ -235,11 +235,68 @@ class StudentPdfBundlePage {
 					frappe.msgprint(__("Could not prepare download."));
 					return;
 				}
-				open_url_post(
-					"/api/method/numerouno.numerouno.page.student_pdf_bundle.student_pdf_bundle.download_pdfs",
-					{ key }
-				);
+				this.trigger_download(key, merge);
 			},
 		});
+	}
+
+	trigger_download(key, merge) {
+		const filename = merge ? "Student-PDF-Bundle.pdf" : "Student-PDF-Bundle.zip";
+
+		fetch(
+			frappe.urllib.get_full_url(
+				"/api/method/numerouno.numerouno.page.student_pdf_bundle.student_pdf_bundle.download_pdfs"
+			),
+			{
+				method: "POST",
+				headers: {
+					"X-Frappe-CSRF-Token": frappe.csrf_token,
+				},
+				body: new URLSearchParams({ key }),
+				credentials: "same-origin",
+			}
+		)
+			.then(async (response) => {
+				const content_type = response.headers.get("content-type") || "";
+				if (!response.ok || content_type.includes("application/json")) {
+					let message = __("Could not download PDFs.");
+					try {
+						const data = await response.json();
+						if (data._server_messages) {
+							const messages = JSON.parse(data._server_messages);
+							message = JSON.parse(messages[0]).message || message;
+						} else if (data.exception) {
+							message = data.exception;
+						} else if (data.message) {
+							message = data.message;
+						}
+					} catch (e) {
+						// keep default message
+					}
+					frappe.msgprint({
+						title: __("Download failed"),
+						message,
+						indicator: "red",
+					});
+					return null;
+				}
+				return response.blob();
+			})
+			.then((blob) => {
+				if (!blob) {
+					return;
+				}
+				const link = document.createElement("a");
+				const object_url = URL.createObjectURL(blob);
+				link.href = object_url;
+				link.download = filename;
+				document.body.appendChild(link);
+				link.click();
+				link.remove();
+				URL.revokeObjectURL(object_url);
+			})
+			.catch(() => {
+				frappe.msgprint(__("Could not download PDFs."));
+			});
 	}
 }
