@@ -9,6 +9,13 @@ from frappe.utils import cint, today
 
 
 class OffRoadPracticalAssessment(Document):
+	def before_print(self, settings=None):
+		from numerouno.numerouno.utils.signatures import resolve_learner_signature
+
+		self.learner_signature = resolve_learner_signature(
+			self.student, self.student_group, self.learner_signature
+		)
+
 	def validate(self):
 		if not self.criteria:
 			apply_template(self)
@@ -16,11 +23,13 @@ class OffRoadPracticalAssessment(Document):
 		self._sync_learner_signature()
 
 	def _sync_learner_signature(self):
-		if self.learner_signature:
-			return
-		from numerouno.numerouno.utils.signatures import get_student_attendance_signature
+		from numerouno.numerouno.utils.signatures import is_empty_signature, resolve_learner_signature
 
-		self.learner_signature = get_student_attendance_signature(self.student, self.student_group)
+		if not is_empty_signature(self.learner_signature):
+			return
+		self.learner_signature = resolve_learner_signature(
+			self.student, self.student_group, self.learner_signature
+		)
 
 	def _sync_assessor(self):
 		if not self.assessor and self.student_group:

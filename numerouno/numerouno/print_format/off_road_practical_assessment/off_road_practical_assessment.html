@@ -369,6 +369,7 @@
 {% endmacro %}
 
 {% set sig = namespace(instructor=doc.assessor_signature or "", learner=doc.learner_signature or "", assessor_name=doc.assessor_name or "") %}
+{% if "signature-placeholder" in sig.learner %}{% set sig.learner = "" %}{% endif %}
 {% if doc.get("assessor") %}
 	{% set fetched = frappe.db.get_value("Instructor", doc.assessor, "image") or "" %}
 	{% if fetched %}
@@ -394,12 +395,6 @@
 			{% set sig.assessor_name = frappe.db.get_value("Instructor", gid, "instructor_name") or "" %}
 		{% endif %}
 	{% endif %}
-{% endif %}
-{% if not sig.learner and doc.student %}
-	{% set sig.learner = frappe.get_attr("numerouno.numerouno.utils.signatures.get_student_attendance_signature")(doc.student, doc.student_group) or "" %}
-{% endif %}
-{% if not sig.learner and doc.student %}
-	{% set sig.learner = frappe.db.get_value("Student Card", {"student": doc.student}, "student_signature") or "" %}
 {% endif %}
 
 {% set o1 = namespace(span=0, idx=0) %}

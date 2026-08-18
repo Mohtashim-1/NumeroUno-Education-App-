@@ -9,17 +9,26 @@ from frappe.utils import cint, today
 
 
 class ROSPAPracticalAssessment(Document):
+	def before_print(self, settings=None):
+		from numerouno.numerouno.utils.signatures import resolve_learner_signature
+
+		self.learner_signature = resolve_learner_signature(
+			self.student, self.student_group, self.learner_signature
+		)
+
 	def validate(self):
 		if not self.criteria:
 			apply_template(self)
 		self._sync_learner_signature()
 
 	def _sync_learner_signature(self):
-		if getattr(self, "learner_signature", None):
-			return
-		from numerouno.numerouno.utils.signatures import get_student_attendance_signature
+		from numerouno.numerouno.utils.signatures import is_empty_signature, resolve_learner_signature
 
-		self.learner_signature = get_student_attendance_signature(self.student, self.student_group)
+		if not is_empty_signature(getattr(self, "learner_signature", None)):
+			return
+		self.learner_signature = resolve_learner_signature(
+			self.student, self.student_group, self.learner_signature
+		)
 
 
 def _load_template():
