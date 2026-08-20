@@ -317,6 +317,22 @@ function toggle_attendee_signature_columns(frm) {
 }
 
 function open_safety_briefing_document_view(frm) {
+	if (frm.doc.amended_from && (frm.is_new() || is_unsaved_safety_briefing(frm))) {
+		frappe.call({
+			method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.amend",
+			args: { docname: frm.doc.amended_from },
+			freeze: true,
+			freeze_message: __("Copying Safety Briefing with signatures..."),
+			callback(r) {
+				if (r.exc) return;
+				if (r.message?.name) {
+					frappe.set_route("safety-briefing-form", r.message.name);
+				}
+			},
+		});
+		return;
+	}
+
 	if (frm.is_new() || is_unsaved_safety_briefing(frm)) {
 		if (!frm.doc.briefing_type) {
 			frappe.msgprint(__("Select a Briefing Type first"));

@@ -260,11 +260,54 @@ def cancel_form(docname):
 	return {"name": doc.name, "docstatus": doc.docstatus}
 
 
+def _reuse_unsigned_draft(cancelled):
+	from numerouno.numerouno.doctype.safety_briefing.safety_briefing import (
+		_draft_has_attendee_signatures,
+		copy_safety_briefing_content,
+	)
+
+	existing_name = frappe.db.get_value(
+		"Safety Briefing",
+		{"amended_from": cancelled.name, "docstatus": 0},
+		"name",
+	)
+	if not existing_name and cancelled.student_group and cancelled.briefing_type:
+		existing_name = frappe.db.get_value(
+			"Safety Briefing",
+			{
+				"student_group": cancelled.student_group,
+				"briefing_type": cancelled.briefing_type,
+				"docstatus": 0,
+				"name": ["!=", cancelled.name],
+			},
+			"name",
+			order_by="creation desc",
+		)
+	if not existing_name:
+		return None
+
+	draft = frappe.get_doc("Safety Briefing", existing_name)
+	if draft.amended_from and draft.amended_from != cancelled.name:
+		return None
+	if _draft_has_attendee_signatures(draft) and draft.amended_from == cancelled.name:
+		return draft
+
+	copy_safety_briefing_content(cancelled, draft)
+	draft.amended_from = cancelled.name
+	draft.save()
+	return draft
+
+
 @frappe.whitelist()
 def amend_form(docname):
 	doc = frappe.get_doc("Safety Briefing", docname)
 	if doc.docstatus != 2:
 		frappe.throw("Only cancelled Safety Briefings can be amended")
+
+	existing = _reuse_unsigned_draft(doc)
+	if existing:
+		return _serialize_doc(existing)
+
 	amended = frappe.copy_doc(doc)
 	amended.amended_from = doc.name
 	amended.insert()

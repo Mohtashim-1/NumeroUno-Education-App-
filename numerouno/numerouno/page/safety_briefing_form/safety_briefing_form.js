@@ -635,6 +635,63 @@ class SafetyBriefingForm {
 		});
 	}
 
+	cancel_doc() {
+		if (!this.doc?.name) {
+			frappe.msgprint(__("Please save the document first."));
+			return;
+		}
+		if (cint(this.doc.docstatus) !== 1) {
+			frappe.msgprint(__("Only a submitted Safety Briefing can be cancelled."));
+			return;
+		}
+		frappe.confirm(
+			__("Cancel this Safety Briefing? Use Amend afterwards to keep all data and signatures."),
+			() => {
+				frappe.call({
+					method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.cancel",
+					args: { docname: this.doc.name },
+					freeze: true,
+					callback: (r) => {
+						if (r.exc) return;
+						frappe.show_alert({ message: __("Cancelled"), indicator: "orange" });
+						this.loading_key = null;
+						this.fetch_form({ docname: this.doc.name });
+					},
+				});
+			}
+		);
+	}
+
+	amend_doc() {
+		if (!this.doc?.name) {
+			frappe.msgprint(__("Please save the document first."));
+			return;
+		}
+		if (cint(this.doc.docstatus) !== 2) {
+			frappe.msgprint(__("Cancel the Safety Briefing first, then Amend to keep signatures."));
+			return;
+		}
+		frappe.confirm(__("Create an editable copy with the same data and signatures?"), () => {
+			frappe.call({
+				method: "numerouno.numerouno.page.safety_briefing_form.safety_briefing_form_api.amend",
+				args: { docname: this.doc.name },
+				freeze: true,
+				freeze_message: __("Copying Safety Briefing..."),
+				callback: (r) => {
+					if (r.exc) return;
+					const name = r.message?.name;
+					if (!name) {
+						frappe.msgprint(__("Amend did not return a new document."));
+						return;
+					}
+					frappe.show_alert({ message: __("Amended as {0}", [name]), indicator: "green" });
+					this.loading_key = null;
+					frappe.set_route("safety-briefing-form", name);
+				},
+			});
+		});
+	}
+
 	save_and_then(done) {
 		if (cint(this.doc.docstatus) === 1) {
 			done();

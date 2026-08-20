@@ -254,3 +254,127 @@ def populate_attendees_from_student_group(docname, student_group):
 	doc.student_group = student_group
 	doc.save()
 	return doc.name
+
+
+PARENT_COPY_FIELDS = (
+	"briefing_type",
+	"form_code",
+	"title",
+	"briefing_date",
+	"student_group",
+	"course",
+	"variant_9014",
+	"variant_9014_a",
+	"variant_9014_b",
+	"date_ff",
+	"date_fa",
+	"date_ss",
+	"date_lb",
+	"date_huet",
+	"date_huet_ebs",
+	"attendee_signature_mode",
+	"signature_labels",
+	"instructor_mode",
+	"instructor_name",
+	"instructor_signature",
+	"instructor_date",
+)
+
+
+def copy_safety_briefing_content(source, target):
+	"""Copy all briefing data, including signatures, onto an existing draft."""
+	for field in PARENT_COPY_FIELDS:
+		target.set(field, source.get(field))
+
+	target.discussion_points = []
+	for row in source.discussion_points or []:
+		target.append(
+			"discussion_points",
+			{
+				"sr_no": row.sr_no,
+				"discussion_point": row.discussion_point,
+				"confirmed": row.confirmed,
+				"denied": row.denied,
+			},
+		)
+
+	target.practical_items = []
+	for row in source.practical_items or []:
+		target.append(
+			"practical_items",
+			{
+				"sr_no": row.sr_no,
+				"exercise_group": row.exercise_group,
+				"activity_detail": row.activity_detail,
+				"risk_points": row.risk_points,
+				"confirmed": row.confirmed,
+				"denied": row.denied,
+			},
+		)
+
+	target.attendees = []
+	for row in source.attendees or []:
+		target.append(
+			"attendees",
+			{
+				"learner_name": row.learner_name,
+				"student": row.student,
+				"company": row.company,
+				"signed": row.signed,
+				"sign_col_1": row.sign_col_1,
+				"sign_col_2": row.sign_col_2,
+				"sign_col_3": row.sign_col_3,
+				"sign_col_4": row.sign_col_4,
+				"sign_col_5": row.sign_col_5,
+			},
+		)
+
+	target.instructors = []
+	for row in source.instructors or []:
+		target.append(
+			"instructors",
+			{
+				"instructor_name": row.instructor_name,
+				"module": row.module,
+				"signature": row.signature,
+			},
+		)
+
+
+def _draft_has_attendee_signatures(doc):
+	for row in doc.attendees or []:
+		for field in ("signed", "sign_col_1", "sign_col_2", "sign_col_3", "sign_col_4", "sign_col_5"):
+			value = _normalize_attendee_sign(row.get(field))
+			if value and value != "1":
+				return True
+	return False
+
+
+@frappe.whitelist()
+def restore_from_cancelled(target_name, source_name=None):
+	"""Put cancelled briefing data/signatures back onto a draft created by a broken Amend."""
+	target = frappe.get_doc("Safety Briefing", target_name)
+	if target.docstatus != 0:
+		frappe.throw("Only a draft Safety Briefing can be restored.")
+
+	source_name = (source_name or target.amended_from or "").strip()
+	if not source_name:
+		source_name = frappe.db.get_value(
+			"Safety Briefing",
+			{
+				"student_group": target.student_group,
+				"briefing_type": target.briefing_type,
+				"docstatus": 2,
+				"name": ["!=", target.name],
+			},
+			"name",
+			order_by="modified desc",
+		)
+	if not source_name:
+		frappe.throw("No cancelled Safety Briefing found to restore from.")
+
+	source = frappe.get_doc("Safety Briefing", source_name)
+	copy_safety_briefing_content(source, target)
+	target.amended_from = source.name
+	target.save()
+	return target.name
