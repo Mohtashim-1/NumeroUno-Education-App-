@@ -1,0 +1,46 @@
+{
+ "actions": [],
+ "creation": "2026-08-25 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "learner_name",
+  "criteria",
+  "rationale"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "learner_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Learner Name"
+  },
+  {
+   "columns": 3,
+   "fieldname": "criteria",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Practical/Knowledge Criteria"
+  },
+  {
+   "columns": 4,
+   "fieldname": "rationale",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Why the learner did not achieve the criteria"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-25 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "HABC1 Referral",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

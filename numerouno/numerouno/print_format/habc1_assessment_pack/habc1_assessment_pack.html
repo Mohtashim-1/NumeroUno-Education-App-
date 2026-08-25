@@ -1,0 +1,436 @@
+{% set editable = editable|default(0) %}
+{% set pages = doc.learner_pages if doc.learner_pages else [doc.learners or []] %}
+{% set referrals = doc.referral_rows if doc.referral_rows else (doc.referrals or []) %}
+
+<style>
+@page { size: A4 portrait; margin: 10mm 11mm 10mm 11mm; }
+</style>
+<style>
+.h1-paper {
+	font-family: Arial, Helvetica, sans-serif;
+	color: #1a1a1a;
+	font-size: 10pt;
+	line-height: 1.25;
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+.h1-page-1 { page-break-after: always; }
+.h1-page-2 { page-break-before: always; }
+.h1-topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: #e6e6e6 !important;
+	padding: 8px 12px;
+	margin: -2px 0 12px;
+}
+.h1-brand {
+	font-size: 13pt;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+}
+.h1-brand span { font-weight: 500; }
+.h1-mark {
+	width: 190px;
+	height: auto;
+	max-height: 58px;
+	display: block;
+}
+.h1-title {
+	font-size: 16pt;
+	font-weight: 800;
+	margin: 6px 0 2px;
+	line-height: 1.15;
+}
+.h1-subtitle {
+	font-size: 13pt;
+	margin: 0 0 14px;
+}
+.h1-box {
+	border: 1px solid #8a8a8a;
+	margin-bottom: 14px;
+}
+.h1-box-head {
+	background: #d8d8d8 !important;
+	font-weight: 800;
+	font-size: 11pt;
+	padding: 5px 10px;
+	border-bottom: 1px solid #8a8a8a;
+}
+.h1-grid {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+.h1-grid td {
+	border: 0 !important;
+	padding: 5px 10px !important;
+	vertical-align: middle !important;
+	background: #fff !important;
+}
+.h1-lab {
+	width: 28%;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.h1-val { width: 72%; min-height: 18px; }
+.h1-lab-sm { width: 22%; font-weight: 700; }
+.h1-val-sm { width: 28%; }
+.h1-note {
+	text-align: right;
+	font-size: 8pt;
+	padding: 2px 10px 6px;
+	color: #333;
+}
+.h1-decl {
+	padding: 8px 12px 4px;
+	font-size: 9.5pt;
+}
+.h1-decl p { margin: 0 0 8px; }
+.h1-sign-row td { height: 58px; }
+.h1-uline {
+	border-bottom: 1px solid #111;
+	min-height: 28px;
+	display: block;
+}
+.h1-footer-bar {
+	background: #4d4d4d !important;
+	color: #fff !important;
+	text-align: center;
+	font-size: 8pt;
+	padding: 7px 10px;
+	margin-top: 18px;
+}
+.h1-legal {
+	display: flex;
+	justify-content: space-between;
+	font-size: 8pt;
+	margin-top: 6px;
+	color: #333;
+}
+.h1-sheet {
+	background: #ececec !important;
+	border-radius: 10px;
+	padding: 12px 12px 16px;
+}
+.h1-sheet-title {
+	font-weight: 800;
+	margin: 0 0 8px;
+}
+.h1-learners, .h1-refer {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	font-size: 8pt;
+	background: #fff;
+}
+.h1-learners th, .h1-refer th {
+	background: #111 !important;
+	color: #fff !important;
+	font-weight: 700;
+	text-align: center;
+	text-transform: none !important;
+	padding: 5px 4px !important;
+	border: 1px solid #111 !important;
+	font-size: 7.5pt;
+}
+.h1-learners td, .h1-refer td {
+	border: 1px solid #111 !important;
+	padding: 3px 4px !important;
+	height: 26px;
+	background: #fff !important;
+	vertical-align: middle !important;
+}
+.h1-learners .c-no { width: 6%; text-align: center; }
+.h1-learners .c-name { width: 38%; }
+.h1-learners .c-dob { width: 14%; text-align: center; }
+.h1-learners .c-tel { width: 18%; }
+.h1-learners .c-g { width: 14%; text-align: center; }
+.h1-learners .c-r { width: 10%; text-align: center; }
+.h1-refer-copy {
+	font-size: 8.4pt;
+	margin: 12px 0 8px;
+	text-align: justify;
+}
+.h1-refer .c-ln { width: 28%; }
+.h1-refer .c-cr { width: 28%; }
+.h1-refer .c-why { width: 44%; }
+.h1-sign-img { max-height: 42px; max-width: 160px; }
+.h1-sign-wrap img.h1-sign-img + .h1-sign-canvas { display: none; }
+.print-format { padding: 0 !important; margin: 0 !important; }
+.print-heading, .letter-head, .print-format-letterhead, .letterhead, .letter-head-image { display: none !important; }
+.print-format th { text-transform: none !important; }
+
+</style>
+
+{% macro mark() %}
+<img class="h1-mark" src="/files/highfield_approved_centre.jpg" alt="Highfield Qualifications Approved Centre">
+{% endmacro %}
+
+{% macro input(name, value, extra="") %}
+	{% if editable %}
+		<input class="h1-input" data-field="{{ name }}" value="{{ value or '' }}" {{ extra }}>
+	{% else %}
+		{{ value or "" }}
+	{% endif %}
+{% endmacro %}
+
+<div class="h1-paper h1-page-1">
+	<div class="h1-topbar">
+		<div class="h1-brand">Highfield <span>EMERGENCY FIRST AID</span></div>
+		{{ mark() }}
+	</div>
+	<div class="h1-title">{{ doc.form_title or "Highfield International Emergency First Aid, AED &amp; CPR all Ages (Level 3 Award)" }}</div>
+	<div class="h1-subtitle">Assessment Pack</div>
+
+	<div class="h1-box">
+		<div class="h1-box-head">Course Details</div>
+		<table class="h1-grid">
+			<tr>
+				<td class="h1-lab">Centre’s Name:</td>
+				<td class="h1-val" colspan="3">{{ input("centre_name", doc.centre_name) }}</td>
+			</tr>
+			<tr>
+				<td class="h1-lab">Venue Address:</td>
+				<td class="h1-val" colspan="3">
+					{% if editable %}
+						<textarea class="h1-input" data-field="venue_address" rows="2">{{ doc.venue_address or "" }}</textarea>
+					{% else %}
+						{{ doc.venue_address or "" }}
+					{% endif %}
+				</td>
+			</tr>
+			<tr>
+				<td class="h1-lab-sm">Telephone No:</td>
+				<td class="h1-val-sm">{{ input("telephone_no", doc.telephone_no) }}</td>
+				<td class="h1-lab-sm">Centre No:</td>
+				<td class="h1-val-sm">{{ input("centre_number", doc.centre_number) }}</td>
+			</tr>
+			<tr>
+				<td class="h1-lab">Tutor’s Name:</td>
+				<td class="h1-val" colspan="3">{{ input("tutor_name", doc.tutor_name) }}</td>
+			</tr>
+			<tr>
+				<td class="h1-lab">Assessor’s Name*:</td>
+				<td class="h1-val" colspan="3">{{ input("assessor_name", doc.assessor_name) }}</td>
+			</tr>
+			<tr>
+				<td class="h1-lab">IQA’s Name**:</td>
+				<td class="h1-val" colspan="3">{{ input("iqa_name", doc.iqa_name) }}</td>
+			</tr>
+			<tr>
+				<td class="h1-lab">Course Identification No.:</td>
+				<td class="h1-val" colspan="3">{{ input("course_identification_no", doc.course_identification_no) }}</td>
+			</tr>
+			<tr>
+				<td class="h1-lab-sm">Course start date:</td>
+				<td class="h1-val-sm">
+					{% if editable %}
+						<input class="h1-input" type="date" data-field="course_start_date" value="{{ doc.course_start_date or '' }}">
+					{% else %}
+						{{ frappe.utils.formatdate(doc.course_start_date, "dd/MM/yyyy") if doc.course_start_date else "" }}
+					{% endif %}
+				</td>
+				<td class="h1-lab-sm">Course finish date:</td>
+				<td class="h1-val-sm">
+					{% if editable %}
+						<input class="h1-input" type="date" data-field="course_finish_date" value="{{ doc.course_finish_date or '' }}">
+					{% else %}
+						{{ frappe.utils.formatdate(doc.course_finish_date, "dd/MM/yyyy") if doc.course_finish_date else "" }}
+					{% endif %}
+				</td>
+			</tr>
+			<tr>
+				<td class="h1-lab">Blended learning (✓/✘)</td>
+				<td class="h1-val" colspan="3">
+					{% if editable %}
+						<label><input type="checkbox" class="h1-input" data-field="blended_learning" {% if doc.blended_learning %}checked{% endif %}> ✓</label>
+					{% else %}
+						{{ "✓" if doc.blended_learning else "✘" }}
+					{% endif %}
+				</td>
+			</tr>
+		</table>
+		<div class="h1-note">*if different from tutor &nbsp; **if sampled</div>
+	</div>
+
+	<div class="h1-box">
+		<div class="h1-box-head">Assessment Declaration</div>
+		<div class="h1-decl">
+			<p>I have read and adhered to Highfield’s qualification and assessment requirements.</p>
+			<p>I have checked the identification and kept records of all the learners in the course.</p>
+			<p>I confirm that the learners listed below have been assessed as per the qualification requirements and the criteria in the <b>Assessment Crib Sheet</b>.</p>
+			<p>The learners (if any) who <b>did not pass</b> the qualification, have been identified with a <b>refer (R)</b> in the list below.</p>
+			<p>Where distance learning has been used, evidence of the learner’s distance learning has been retained with the course paperwork.</p>
+		</div>
+		<table class="h1-grid">
+			<tr class="h1-sign-row">
+				<td class="h1-lab">Tutor’s Signature:</td>
+				<td class="h1-val">
+					{% if editable %}
+						<div class="h1-sign-wrap">
+							{% if doc.tutor_signature %}<img src="{{ doc.tutor_signature }}" class="h1-sign-img">{% endif %}
+							<canvas class="h1-sign-canvas" width="260" height="70"></canvas>
+							<input type="hidden" class="h1-input" data-field="tutor_signature" value="{{ doc.tutor_signature or '' }}">
+							<button type="button" class="h1-sign-clear">Clear</button>
+						</div>
+					{% elif doc.tutor_signature %}
+						<img src="{{ doc.tutor_signature }}" class="h1-sign-img">
+					{% else %}
+						<span class="h1-uline">&nbsp;</span>
+					{% endif %}
+				</td>
+				<td class="h1-lab-sm">Date:</td>
+				<td class="h1-val-sm">
+					{% if editable %}
+						<input class="h1-input" type="date" data-field="tutor_date" value="{{ doc.tutor_date or '' }}">
+					{% else %}
+						{{ frappe.utils.formatdate(doc.tutor_date, "dd/MM/yyyy") if doc.tutor_date else "" }}
+					{% endif %}
+				</td>
+			</tr>
+			<tr class="h1-sign-row">
+				<td class="h1-lab">Assessor’s Signature*:</td>
+				<td class="h1-val">
+					{% if editable %}
+						<div class="h1-sign-wrap">
+							{% if doc.assessor_signature %}<img src="{{ doc.assessor_signature }}" class="h1-sign-img">{% endif %}
+							<canvas class="h1-sign-canvas" width="260" height="70"></canvas>
+							<input type="hidden" class="h1-input" data-field="assessor_signature" value="{{ doc.assessor_signature or '' }}">
+							<button type="button" class="h1-sign-clear">Clear</button>
+						</div>
+					{% elif doc.assessor_signature %}
+						<img src="{{ doc.assessor_signature }}" class="h1-sign-img">
+					{% else %}
+						<span class="h1-uline">&nbsp;</span>
+					{% endif %}
+				</td>
+				<td class="h1-lab-sm">Date:</td>
+				<td class="h1-val-sm">
+					{% if editable %}
+						<input class="h1-input" type="date" data-field="assessor_date" value="{{ doc.assessor_date or '' }}">
+					{% else %}
+						{{ frappe.utils.formatdate(doc.assessor_date, "dd/MM/yyyy") if doc.assessor_date else "" }}
+					{% endif %}
+				</td>
+			</tr>
+		</table>
+		<div class="h1-note">*if different from tutor</div>
+	</div>
+
+	<div class="h1-footer-bar">A global leader for qualifications, assessment, digital solutions, innovative products, e-learning and customer service.</div>
+	<div class="h1-legal"><span>June 2026</span><span>© 2026 Highfield International.</span></div>
+</div>
+
+{% for page_rows in pages %}
+<div class="h1-paper h1-page-2">
+	<div class="h1-topbar">
+		<div class="h1-brand">Highfield <span>EMERGENCY FIRST AID</span></div>
+		{{ mark() }}
+	</div>
+	<div class="h1-sheet">
+		<div class="h1-sheet-title">Highfield EMERGENCY FIRST AID:</div>
+		<table class="h1-learners">
+			<thead>
+				<tr>
+					<th class="c-no"></th>
+					<th class="c-name">Learner’s Name (in capitals)</th>
+					<th class="c-dob">DOB<br>(DD/MM/YY)</th>
+					<th class="c-tel">Tel. No.</th>
+					<th class="c-g">Male (M) /<br>Female (F)</th>
+					<th class="c-r">Refer (R)</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for row in page_rows %}
+				<tr>
+					<td class="c-no">{{ row.sr_no or loop.index }}.</td>
+					<td class="c-name">
+						{% if editable %}
+							<input class="h1-input" data-row-field="learner_name" data-sr="{{ row.sr_no or loop.index }}" value="{{ row.learner_name or '' }}">
+						{% else %}
+							{{ row.learner_name or "" }}
+						{% endif %}
+					</td>
+					<td class="c-dob">
+						{% if editable %}
+							<input class="h1-input" type="date" data-row-field="date_of_birth" data-sr="{{ row.sr_no or loop.index }}" value="{{ row.date_of_birth or '' }}">
+						{% else %}
+							{{ frappe.utils.formatdate(row.date_of_birth, "dd/MM/yy") if row.date_of_birth else "" }}
+						{% endif %}
+					</td>
+					<td class="c-tel">
+						{% if editable %}
+							<input class="h1-input" data-row-field="telephone" data-sr="{{ row.sr_no or loop.index }}" value="{{ row.telephone or '' }}">
+						{% else %}
+							{{ row.telephone or "" }}
+						{% endif %}
+					</td>
+					<td class="c-g">
+						{% if editable %}
+							<select class="h1-input" data-row-field="gender" data-sr="{{ row.sr_no or loop.index }}">
+								<option value=""></option>
+								<option value="M" {% if row.gender == "M" %}selected{% endif %}>M</option>
+								<option value="F" {% if row.gender == "F" %}selected{% endif %}>F</option>
+							</select>
+						{% else %}
+							{{ row.gender or "" }}
+						{% endif %}
+					</td>
+					<td class="c-r">
+						{% if editable %}
+							<input type="checkbox" data-row-field="refer" data-sr="{{ row.sr_no or loop.index }}" {% if row.refer %}checked{% endif %}>
+						{% else %}
+							{{ "R" if row.refer else "" }}
+						{% endif %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+
+		<div class="h1-refer-copy">
+			<b>Qualification Outcome “Refer”:</b> To pass this qualification, learners are required to achieve all the practical and knowledge criteria as per the Assessment Crib Sheet. For learners who did not achieve all the practical and knowledge assessment criteria, must be marked as “Refer” on this pack. Assessors must record the rationale for marking a learner as “Refer” in the section below, specifying the criteria that they did not achieve.
+		</div>
+
+		<table class="h1-refer">
+			<thead>
+				<tr>
+					<th class="c-ln">Learner Name:</th>
+					<th class="c-cr">Practical/Knowledge Criteria:</th>
+					<th class="c-why">Record why the learner did not achieve the criteria.</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for row in referrals %}
+				<tr>
+					<td>
+						{% if editable %}
+							<input class="h1-input" data-ref-field="learner_name" data-ref="{{ loop.index }}" value="{{ row.learner_name or '' }}">
+						{% else %}
+							{{ row.learner_name or "" }}
+						{% endif %}
+					</td>
+					<td>
+						{% if editable %}
+							<input class="h1-input" data-ref-field="criteria" data-ref="{{ loop.index }}" value="{{ row.criteria or '' }}">
+						{% else %}
+							{{ row.criteria or "" }}
+						{% endif %}
+					</td>
+					<td>
+						{% if editable %}
+							<input class="h1-input" data-ref-field="rationale" data-ref="{{ loop.index }}" value="{{ row.rationale or '' }}">
+						{% else %}
+							{{ row.rationale or "" }}
+						{% endif %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	<div class="h1-footer-bar">A global leader for qualifications, assessment, digital solutions, innovative products, e-learning and customer service.</div>
+	<div class="h1-legal"><span>June 2026</span><span>© 2026 Highfield International.</span></div>
+</div>
+{% endfor %}

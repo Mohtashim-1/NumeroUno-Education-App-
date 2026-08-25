@@ -1,0 +1,27 @@
+{
+ "content": null,
+ "creation": "2026-08-25 11:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-08-25 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Numerouno",
+ "name": "habc2-examination-form",
+ "owner": "Administrator",
+ "page_name": "habc2-examination-form",
+ "roles": [
+  {"role": "All"},
+  {"role": "System Manager"},
+  {"role": "Instructor"},
+  {"role": "Trainer"},
+  {"role": "Quality Manager"},
+  {"role": "Academics User"},
+  {"role": "Education Manager"}
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "HABC2 Examination Declaration"
+}

@@ -1,0 +1,1131 @@
+{%- from "templates/print_formats/standard_macros.html" import add_header -%}
+
+{#
+HEADER / FOOTER FIX
+- Removed repeat_header_footer wrappers from invoice sections.
+- Otherwise Chrome/Frappe repeats the invoice header ("TAX INVOICE")
+  on attendance pages, causing double logos and wrong titles.
+- Attendance now shows only its own header.
+#}
+
+{#
+PDF PAGINATION FIX
+- Do not use empty page-break DIVs with Chrome PDF.
+- Put .force-new-page on the real content wrapper.
+- This avoids blank/header-only pages.
+#}
+
+<style>
+.force-new-page {
+    page-break-before: always !important;
+    break-before: page !important;
+}
+
+.no-page-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+/*
+IMPORTANT FOR CHROME PDF:
+Do NOT use an empty DIV as a page-break element.
+Apply .force-new-page directly to the content that must start on a new page.
+This prevents blank/header-only pages when prior content already ends
+naturally at a page boundary.
+*/
+.attendance-page {
+    page-break-inside: auto;
+    break-inside: auto;
+}
+
+.attendance-page table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+</style>
+
+{# ===================================================== #}
+{# 1) INVOICE + ACKNOWLEDGEMENT  (controlled by custom_include_invoice) #}
+{# ===================================================== #}
+
+{% if doc.custom_include_invoice %}
+
+<!-- ========================================== -->
+<!-- PAGE 1: INVOICE SECTION -->
+<!-- ========================================== -->
+
+<div class="row">
+    <div class="col-md-12" style="display:flex; width:100%;margin-top:-20px; margin-bottom:-20px;">
+        <div>
+        {% if doc.company == "Numero Uno Training and Consulting LLC" %}
+            {% set letter_head=frappe.get_doc("Letter Head","Letter Head New") %}
+            {% if letter_head %}
+                <div class="letter-head">
+                    {{ letter_head.content }}
+                </div>
+            {% endif -%}
+        {% endif -%}
+        <div class="row" style="text-align: CENTER ;margin-top:0px;">
+            <h2><b>TAX INVOICE</b></h2>
+            {% if doc.company_trn %}
+                <span style="font-size:12px;"><b>TRN: {{doc.company_trn}}</b></span><br/><br/><br/>
+            {% endif %}
+        </div>
+        {% if doc.status == "Draft" %}
+            <div class="col-md-12" align="center">
+                <span style="color:blue;text-transform:uppercase;border:2px solid blue;padding:2px;"><b>{{doc.status}}</b></span>
+            </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 d-flex flex-column justify-content-between" style="width:50%; margin-top:0%; float:left; font-size:11px;">
+        <div style="width:100%;">
+            <h5><b>Invoice To:</b></h5>
+            <span style="font-size:12px;"><b>{{doc.customer}}</b></span>
+            <p>{{doc.address_display or ''}}</p>
+            <p><b>Contact Name:</b> {{doc.contact_display or ''}}</p>
+            <p><b>Customer TRN:</b> {{doc.tax_id or ''}}</p>
+        </div>
+    </div><br>
+    <div class="col-md-6" style="height:100%;width:50%;float:right; margin-top:0px">
+        <table class="table table-bordered" style="margin-top:-10px; margin-bottom:0px;">
+            <tr><th style="width:40%;text-align:left;">Invoice No</th><td>{{doc.name}}</td></tr>
+            <tr><th style="width:40%;text-align:left;">Date</th><td>{{doc.get_formatted("posting_date") or ''}}</td></tr>
+            <tr><th style="width:40%;text-align:left;">LPO No</th><td>{{doc.po_no or ''}}</td></tr>
+            <tr><th style="width:40%;text-align:left;">Payment Terms</th><td>{{doc.payment_terms_template or ''}}</td></tr>
+            <tr style="word-wrap: break-word;">
+                <th style="width:40%;text-align:left;">Sales Manager</th>
+                {% if doc.sales_team %}
+                    {% for row in doc.sales_team %}
+                        <td>{{row.sales_person or ''}}</td>
+                    {% endfor %}
+                {% else %}
+                    <td></td>
+                {%endif%}
+        </table>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12" style="width:100%; margin-top: 0%;">
+        <table class="table table-bordered" style="margin-top: 0%;">
+            <thead>
+                <tr>
+                    <th style="width:3%">No</th>
+                    <th style="width:35%">Description</th>
+                    <th style="width:7%;">Qty</th>
+                    <th style="width:10%;">Unit Rate</th>
+                    <th style="width:13%;">Amount</th>
+                    <th style="width:7%;">VAT %</th>
+                    <th style="width:10%;">VAT Amt</th>
+                    <th style="width:15%;">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in doc.items %}
+                    {% set std_count = frappe.db.get_all(
+                        'Sales Invoice Student',
+                        filters={ 'parent': doc.name, 'course': item.item_code },
+                        fields=['count(course) as stud_count', 'student_group', 'start_date', 'end_date'],
+                        group_by = "student_group",
+                        as_list=False
+                    ) %}
+                    <tr>
+                        <td style="text-align:center;">{{item.idx}}</td>
+                        <td><b>{{item.item_code}}</b>
+                            <br><br>
+                            {% for s_grp in std_count %}
+                                <b>Training Ref No. &nbsp;: {{ s_grp.student_group }}</b><br>
+                                No of candidates &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {{s_grp.stud_count}}<br>
+                                Training Start Date &nbsp;: {{frappe.utils.format_date(s_grp.start_date)}}<br>
+                                Training End Date &nbsp;&nbsp;&nbsp;: {{frappe.utils.format_date(s_grp.end_date)}}
+                                <br><br>
+                            {% endfor %}
+                        </td>
+                        <td style="text-align:center;">
+                            {{"{:,.0f}".format(item.qty)}}
+                            <span class="light">{{item.uom}}</span>
+                        </td>
+                        <td style="text-align:right;">{{"{:,.2f}".format(item.rate)}}</td>
+                        <td style="text-align:right;">{{"{:,.2f}".format(item.amount)}}</td>
+                        <td style="text-align:center;">5%</td>
+                        <td style="text-align:right;">{{"{:,.2f}".format(item.tax_amount)}}</td>
+                        <td style="text-align:right;">{{"{:,.2f}".format(item.amount+item.tax_amount)}}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row no-page-break">
+    <div class="col-md-12">
+        <div class="row">
+            <div class="col-md-6 no-page-break" style="width:58%;float:Left; margin-top:-20px;">
+                <div class="no-page-break">
+                    Amount in Words:&nbsp;&nbsp;<span style="font-weight:bold;font-style:italic;font-size:11px;">{{doc.in_words}}</span>
+                    <br><br>
+                    <p><span style="font-size:11px;"><b>Bank Details &nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;</b></span></p>
+                    <p><span style="font-size:11px;">Account Name &nbsp;&nbsp;:&nbsp; {{ doc.company or '' }} </span></p>
+                    <p><span style="font-size:11px;">Account No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp; {{ doc.bank_account_no or '' }} </span></p>
+                    <p><span style="font-size:11px;">Bank Name &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp; {{ doc.bank_name or '' }} </span></p>
+                    <p><span style="font-size:11px;">IBAN No &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp; {{ doc.iban_no or '' }} </span></p>
+                    <p><span style="font-size:11px;">Swift Code &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {{ doc.swift_number or '' }} </span></p><br>
+                </div>
+            </div>
+            <div class="col-md-6" style="width:42%;float:right; margin-top:-45px;">
+                <div>
+                    <table class="table table-bordered totalTable">
+                        <tr><th style="width:57.5%;text-align:left;">Sub Total</th>
+                            <td style="text-align:right;">{{"{:,.2f}".format(doc.total)}}</td></tr>
+                        <tr><th style="width:57.5%;text-align:left;">Discount</th>
+                            <td style="text-align:right;">{{"{:,.2f}".format(doc.discount_amount)}}</td></tr>
+                        <tr><th style="width:57.5%;text-align:left;">Total Amount</th>
+                            <td style="text-align:right;">{{"{:,.2f}".format(doc.net_total)}}</td></tr>
+                        <tr><th style="width:57.5%;text-align:left;">VAT @ 5%</th><td style="text-align:right;">{{"{:,.2f}".format(doc.total_taxes_and_charges)}}</td></tr>
+                        <tr class="totalRow"><th style="text-align:left;"><span style="font-weight:700;color:black;">Amount Including VAT</span></th>
+                            <td style="text-align:right;"><b>{{doc.currency}} {{"{:,.2f}".format(doc.grand_total)}}</b></td></tr>
+                        <tr><th style="width:57%;text-align:left;">Advance Received </th>
+                            <td style="text-align:right;color:red;"> (-) {{'%0.2f'%(doc.total_advance)|float}}</td></tr>
+                        <tr class="totalRow"><th style="text-align:left;"><span style="font-weight:700;color:black;">Balance Due</span></th>
+                            <td style="text-align:right;"><b>{{doc.currency}} {{"{:,.2f}".format(doc.outstanding_amount)}}</b></td></tr>
+                    </table>
+
+                    {# ----------------------------------------------------- #}
+                    {# COMPANY STAMP / SIGNATURE AFTER BALANCE DUE          #}
+                    {# File records supplied by user:                       #}
+                    {# 8dbcddcbdf and 6a1e89c143                            #}
+                    {# frappe.utils.get_url(file_url) creates a safe        #}
+                    {# absolute URL for browser preview and PDF rendering.  #}
+                    {# ----------------------------------------------------- #}
+                    {% set stamp_file_1 = frappe.db.get_value("File", "ca563a873d", "file_url") %}
+                    {% set stamp_file_2 = frappe.db.get_value("File", "6a1e89c143", "file_url") %}
+
+                    {% set stamp_url_1 = frappe.utils.get_url(stamp_file_1) if stamp_file_1 else "" %}
+                    {% set stamp_url_2 = frappe.utils.get_url(stamp_file_2) if stamp_file_2 else "" %}
+
+                    <div class="no-page-break"
+                         style="width:100%; text-align:center; margin-top:8px; min-height:125px;">
+
+                        <div style="font-size:11px; font-weight:700; margin-bottom:3px;">
+                            For {{ doc.company }}
+                        </div>
+
+                        <div style="position:relative; width:170px; height:105px; margin:0 auto;">
+
+                            {% if stamp_url_1 %}
+                                <img src="{{ stamp_url_1 }}"
+                                     alt="Company Stamp"
+                                     style="position:absolute; left:20px; top:0; width:120px; max-height:100px; object-fit:contain;">
+                            {% endif %}
+
+                            {% if stamp_url_2 %}
+                                <img src="{{ stamp_url_2 }}"
+                                     alt="Company Signature"
+                                     style="position:absolute; left:45px; top:15px; width:105px; max-height:85px; object-fit:contain;">
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row footer">
+    <div class="col-md-4 d-flex flex-column justify-content-between" style="width:30%;float:left;font-size:11px;">
+        <div style="width:100%;">
+            <br><br><br><br><br><br>
+            <b>Preapred By</b>
+        </div>
+    </div>
+    <div class="col-md-4 d-flex flex-column justify-content-between" style="width:30%;float:left;font-size:11px;">
+        <div style="width:100%;">
+            <br><br><br><br><br><br>
+            <b>Checked By</b>
+        </div>
+    </div>
+    <div class="col-md-4 d-flex flex-column justify-content-between" style="width:40%;float:right;font-size:11px;">
+        <div style="width:100%;">
+            <br><br><br><br><br><br>
+            <b>For {{doc.company}}</b>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PAGE 2: ACKNOWLEDGEMENT COPY -->
+<!-- ========================================== -->
+
+<div class="row force-new-page">
+    <div class="col-md-12" style="display:flex; width:100%;margin-top:-20px; margin-bottom:-20px;">
+        <div>
+        {% if doc.company == "Numero Uno Training and Consulting LLC" %}
+            {% set letter_head=frappe.get_doc("Letter Head","Letter Head New") %}
+            {% if letter_head %}
+                <div class="letter-head">
+                    {{ letter_head.content }}
+                </div>
+            {% endif -%}
+        {% endif -%}
+        <div class="row" style="text-align: CENTER ;margin-top:0px;">
+            <h2><b>TAX INVOICE</b></h2>
+            {% if doc.company_trn %}
+                <span style="font-size:12px;"><b>TRN: {{doc.company_trn}}</b></span>
+            {% endif %}
+        </div>
+        {% if doc.status == "Draft" %}
+            <div class="col-md-12" align="center">
+                <span style="color:blue;text-transform:uppercase;border:2px solid blue;padding:2px;"><b>{{doc.status}}</b></span>
+            </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+<div style="margin-left:70%; font-size:15px;">
+    <p><b>(Acknowledgement Copy)</b></p>
+</div>
+
+<div class="row">
+    <div class="col-md-6 d-flex flex-column justify-content-between" style="width:50%; margin-top:-2%; float:left; font-size:11px;">
+        <div style="width:100%;">
+            <h5><b>Invoice To:</b></h5>
+            <span style="font-size:12px;"><b>{{doc.customer}}</b></span>
+            <p>{{doc.address_display or ''}}</p>
+            <p><b>Contact Name:</b> {{doc.contact_display or ''}}</p>
+            <p><b>Customer TRN:</b> {{doc.tax_id or ''}}</p>
+        </div>
+    </div><br>
+    <div class="col-md-6" style="height:100%;width:50%;float:right; margin-top:0px">
+        <table class="table table-bordered" style="margin-top:-10px; margin-bottom:0px;">
+            <tr><th style="width:40%;text-align:left;">Invoice No</th><td>{{doc.name}}</td></tr>
+            <tr><th style="width:40%;text-align:left;">Date</th><td>{{doc.get_formatted("posting_date") or ''}}</td></tr>
+            <tr><th style="width:40%;text-align:left;">LPO No</th><td>{{doc.po_no or ''}}</td></tr>
+            <tr><th style="width:40%;text-align:left;">Payment Terms</th><td>{{doc.payment_terms_template or ''}}</td></tr>
+            <tr style="word-wrap: break-word;">
+                <th style="width:40%;text-align:left;">Sales Manager</th>
+                {% if doc.sales_team %}
+                    {% for row in doc.sales_team %}
+                        <td>{{row.sales_person or ''}}</td>
+                    {% endfor %}
+                {% else %}
+                    <td></td>
+                {%endif%}
+        </table>
+    </div>
+</div>
+
+<div class="no-page-break">
+    <div class="col-md-12" style="width:100%; margin-top: 0%;">
+        <table class="table table-bordered" style="margin-top: 0%;">
+            <thead>
+                <tr>
+                    <th style="width:3%">No</th>
+                    <th style="width:35%">Description</th>
+                    <th style="width:7%;">Qty</th>
+                    <th style="width:10%;">Unit Rate</th>
+                    <th style="width:13%;">Amount</th>
+                    <th style="width:7%;">VAT %</th>
+                    <th style="width:10%;">VAT Amt</th>
+                    <th style="width:15%;">Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in doc.items %}
+                    {% set std_count = frappe.db.get_all(
+                        'Sales Invoice Student',
+                        filters={ 'parent': doc.name, 'course': item.item_code },
+                        fields=['count(course) as stud_count', 'student_group', 'start_date', 'end_date'],
+                        group_by = "student_group",
+                        as_list=False
+                    ) %}
+                    <tr>
+                        <td style="text-align:center;">{{item.idx}}</td>
+                        <td><b>{{item.item_code}}</b>
+                            <br><br>
+                            {% for s_grp in std_count %}
+                                <b>Training Ref No. &nbsp;: {{ s_grp.student_group }}</b><br>
+                                No of candidates &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {{s_grp.stud_count}}<br>
+                                Training Start Date &nbsp;: {{frappe.utils.format_date(s_grp.start_date)}}<br>
+                                Training End Date &nbsp;&nbsp;&nbsp;: {{frappe.utils.format_date(s_grp.end_date)}}
+                                <br><br>
+                            {% endfor %}
+                        </td>
+                        <td style="text-align:center;">
+                            {{"{:,.0f}".format(item.qty)}}
+                            <span class="light">{{item.uom}}</span>
+                        </td>
+                        <td style="text-align:right;">{{"{:,.2f}".format(item.rate)}}</td>
+                        <td style="text-align:right;">{{"{:,.2f}".format(item.amount)}}</td>
+                        <td style="text-align:center;">5%</td>
+                        <td style="text-align:right;">{{"{:,.2f}".format(item.tax_amount)}}</td>
+                        <td style="text-align:right;">{{"{:,.2f}".format(item.amount+item.tax_amount)}}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row no-page-break">
+    <div class="col-md-12">
+        <div class="row">
+            <div class="col-md-6 no-page-break" style="width:58%;float:Left; margin-top:-16px;">
+                <div class="no-page-break">
+                    Amount in Words:&nbsp;&nbsp;<span style="font-weight:bold;font-style:italic;font-size:11px;">{{doc.in_words}}</span>
+                    <br><br>
+                    <p><span style="font-size:11px;"><b>Acknoweledgement Details &nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;</b></span></p><br>
+                    <p><span style="font-size:11px;"><b>Document Inside &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp; Certficates (&nbsp;&nbsp;) / Cards (&nbsp;&nbsp;) </b></span></p><br>
+                    <p><span style="font-size:11px;">Name of the Receiver &nbsp;&nbsp;&nbsp;:&nbsp; _______________________</span></p><br>
+                    <p><span style="font-size:11px;">Date of Receiving &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp; _______________________</span></p><br>
+                    <p><span style="font-size:11px;">Contact No. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp; _______________________</span></p>
+                </div>
+            </div>
+            <div class="col-md-6" style="width:42%;float:right; margin-top:-40px;">
+                <div class="no-page-break">
+                    <table class="table table-bordered totalTable">
+                        <tr><th style="width:57.5%;text-align:left;">Sub Total</th>
+                            <td style="text-align:right;">{{"{:,.2f}".format(doc.total)}}</td></tr>
+                        <tr><th style="width:57.5%;text-align:left;">Discount</th>
+                            <td style="text-align:right;">{{"{:,.2f}".format(doc.discount_amount)}}</td></tr>
+                        <tr><th style="width:57.5%;text-align:left;">Total Amount</th>
+                            <td style="text-align:right;">{{"{:,.2f}".format(doc.net_total)}}</td></tr>
+                        <tr><th style="width:57.5%;text-align:left;">VAT @ 5%</th><td style="text-align:right;">{{"{:,.2f}".format(doc.total_taxes_and_charges)}}</td></tr>
+                        <tr class="totalRow"><th style="text-align:left;"><span style="font-weight:700;color:black;">Amount Including VAT</span></th>
+                            <td style="text-align:right;"><b>{{doc.currency}} {{"{:,.2f}".format(doc.grand_total)}}</b></td></tr>
+                        <tr><th style="width:57%;text-align:left;">Advance Received </th>
+                            <td style="text-align:right;color:red;"> (-) {{'%0.2f'%(doc.total_advance)|float}}</td></tr>
+                        <tr class="totalRow"><th style="text-align:left;"><span style="font-weight:700;color:black;">Balance Due</span></th>
+                            <td style="text-align:right;"><b>{{doc.currency}} {{"{:,.2f}".format(doc.outstanding_amount)}}</b></td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-7 d-flex flex-column justify-content-between" style="width:60%;float:left;font-size:11px;">
+        <div style="width:100%;">
+            <br><br><br>
+            <b>Signature and Stamp &nbsp;&nbsp;: _______________________</b>
+        </div>
+    </div>
+    <div class="col-md-5 d-flex flex-column justify-content-between" style="width:40%;float:right;font-size:11px;">
+        <div style="width:100%;">
+            <br>
+            <b>Delivered By : _______________________</b>
+            <br><br>
+            <b>Delivered On : _______________________</b>
+        </div>
+    </div>
+</div>
+
+{% endif %} {# end custom_include_invoice #}
+
+{# ===================================================== #}
+{# 2) CERTIFICATES (new format, controlled by custom_include_certificates) #}
+{# ===================================================== #}
+
+{# ===================================================== #}
+{# 2) CERTIFICATES – new layout (one per student)        #}
+{# ===================================================== #}
+{# ===================================================== #}
+{# 2) CERTIFICATES – new layout (one per student)        #}
+{# ===================================================== #}
+{# ===================================================== #}
+{# 2) CERTIFICATES – new layout (one per student)        #}
+{# ===================================================== #}
+
+{# ===================================================== #}
+{# 2) CERTIFICATES – new layout (one per student)        #}
+{# ===================================================== #}
+
+{% if doc.custom_include_certificates %}
+
+  {# Linked Student Group (for Assessment Result filters) #}
+  {% set sg_name = doc.select_student_group[0].student_group if doc.select_student_group else None %}
+
+  {% for row in doc.student %}
+
+    {# ---- Fetch Assessment Result (name + certificate_validity_date) for this student ---- #}
+    {% set ar = frappe.db.get_value(
+      "Assessment Result",
+      {
+        "student": row.student,
+        "student_group": sg_name
+      },
+      ["name", "certificate_validity_date"],
+      as_dict=True
+    ) %}
+
+    {% set ar_name = ar.name if ar else None %}
+    {% set ar_validity = ar.certificate_validity_date if ar else None %}
+
+    <div class="{% if doc.custom_include_invoice or not loop.first %}force-new-page{% endif %}"
+         style="position: relative; width: 100%; font-family: Arial, sans-serif;">
+
+      <!-- Top Logo -->
+      <div style="text-align: left; margin-bottom: 20px;">
+        <img src="/files/Screenshot from 2025-07-15 08-45-36.png"
+             width="80" height="80" alt="Logo">
+      </div>
+
+      <br/><br/><br/>
+
+      <!-- Header Logo & Titles -->
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: blue; margin: 5px 0; font-size:30px">
+          NUMERO UNO TRAINING &amp; CONSULTING LLC
+        </h1>
+        <h3 style="margin: 0;">CERTIFICATE OF COMPLETION / ATTENDANCE</h3>
+      </div>
+
+      <br/>
+
+      <!-- Student Name & Main Text -->
+      <div style="text-align: center; margin: 20px 0;">
+        <h4 style="margin-bottom: 10px;"><strong>This is to certify that</strong></h4>
+        <h2 style="margin: 0 0 20px;">{{ row.student_name }}</h2>
+
+        <br/>
+
+        <p style="margin: 0 0 10px;">
+          <strong>
+            attended and has been assessed against, and met the outcomes of,
+            the following OPITO-approved standard:
+          </strong>
+        </p>
+
+        {# Program (optional) #}
+        {% if doc.program %}
+          {{ doc.program }}
+        {% endif %}
+
+        <br/>
+
+        {# Course name (agar course field SI pe nahi hai to yahan se hata bhi sakte ho) #}
+        {% if doc.course %}
+          {{ doc.course }}
+        {% endif %}
+
+        {# Formatted Award Date (from custom_certificate_validity_date on SI) #}
+        {% if doc.custom_certificate_validity_date %}
+          {% set dt = frappe.utils.get_datetime(doc.custom_certificate_validity_date) %}
+          {% if dt %}
+            {% set day = dt.day %}
+            {% set suffix = (
+               'th' if 11 <= day <= 13 else
+               'st' if day % 10 == 1 else
+               'nd' if day % 10 == 2 else
+               'rd' if day % 10 == 3 else
+               'th'
+            ) %}
+            <p style="margin-top: 10px; font-style: italic;">
+              Awarded on {{ day }}{{ suffix }} {{ dt.strftime("%B %Y") }}
+            </p>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      <!-- Course / Expiry / Certificate Details -->
+      <table style="width: 60%; margin: 0 auto 30px; font-size: 12px;">
+
+        {# ---------------- COURSE DATE ---------------- #}
+        <tr>
+          <td><strong>Course Date</strong></td>
+          <td>:</td>
+          <td style="border-bottom: 1px dotted #000;">
+
+            {% set start = doc.course_start_date
+                           or (sg_name and frappe.db.get_value("Student Group", sg_name, "from_date")) %}
+            {% set end   = doc.course_end_date
+                           or (sg_name and frappe.db.get_value("Student Group", sg_name, "to_date")) %}
+
+            {% if start and end %}
+              {% if start != end %}
+                {{ frappe.utils.formatdate(start, "dd-MM-yyyy") }}
+                to
+                {{ frappe.utils.formatdate(end, "dd-MM-yyyy") }}
+              {% else %}
+                {{ frappe.utils.formatdate(start, "dd-MM-yyyy") }}
+              {% endif %}
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
+        </tr>
+
+        {# ---------------- EXPIRY DATE (from Assessment Result.certificate_validity_date) ---------------- #}
+        <tr>
+          <td><strong>Expiry Date</strong></td>
+          <td>:</td>
+          <td style="border-bottom: 1px dotted #000;">
+            {% if ar_validity %}
+              {{ frappe.utils.formatdate(ar_validity, "dd-MM-yyyy") }}
+            {% else %}
+              N/A
+            {% endif %}
+          </td>
+        </tr>
+
+        {# ---------------- CERTIFICATE NO (Assessment Result name) ---------------- #}
+        <tr>
+          <td><strong>Certificate No</strong></td>
+          <td>:</td>
+          <td style="border-bottom: 1px dotted #000;">
+            {% if ar_name %}
+              {{ ar_name }}
+            {% else %}
+              {{ doc.name }}-{{ row.idx }}
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+
+      <!-- full-width 1×3 table -->
+      <table style="width:100%; margin:40px 0; border-collapse:collapse;">
+        <tr>
+          <!-- Instructor cell -->
+          <td style="width:33%; text-align:center; vertical-align:middle;">
+            {% set instructor_name = frappe.db.get_value(
+                 "Student Group Instructor",
+                 {"parent": sg_name},
+                 "instructor_name"
+            ) %}
+            {% if instructor_name %}
+              <img
+                src="/files/Screenshot from 2025-07-15 08-49-17.png"
+                width="120" height="80"
+                alt="Instructor Signature"
+                style="display:block; margin:0 auto 8px;"
+              />
+              {{ instructor_name }}
+            {% endif %}
+            <br/>
+            Instructor
+          </td>
+
+          <!-- QR code cell -->
+          <td style="width:33%; text-align:center; vertical-align:middle;">
+            {% set pf   = "Assessment Certificate" %}
+            {% set lh   = "0" %}
+            {% set lang = frappe.local.lang or "en" %}
+            {% set base = frappe.utils.get_url() %}
+            {% set print_url =
+                 base ~ "/printview"
+                 ~ "?doctype="  ~ doc.doctype|urlencode
+                 ~ "&name="     ~ doc.name|urlencode
+                 ~ "&format="   ~ pf|urlencode
+                 ~ "&no_letterhead=0"
+                 ~ "&letterhead="  ~ lh|urlencode
+                 ~ "&settings=%7B%7D"
+                 ~ "&_lang="    ~ lang|urlencode
+            %}
+            <img
+              src="https://barcode.tec-it.com/barcode.ashx?data={{ print_url|urlencode }}&code=QRCode&dpi=150"
+              width="120" height="120"
+              alt="QR code for {{ doc.name }}"
+            />
+            <p>ACTVET License No. <br/>0716/2013</p>
+          </td>
+
+          <!-- Academic Director cell -->
+          <td style="width:33%; text-align:center; vertical-align:middle;">
+            <img
+              src="/files/Screenshot from 2025-07-15 08-49-17.png"
+              width="120" height="80"
+              alt="Director Signature"
+              style="display:block; margin:0 auto 8px;"
+            />
+            Academic Director
+          </td>
+        </tr>
+      </table>
+
+      <!-- Footer Image -->
+      <div style="text-align: center;">
+        <img src="/files/Screenshot from 2025-07-15 08-47-53.png"
+             style="width: 100%;" alt="Footer">
+      </div>
+    </div>
+  {% endfor %}
+
+{% endif %}
+
+
+{# ===================================================== #}
+{# 3) ATTENDANCE SHEET (new Student Group-style, controlled by custom_include_attendance) #}
+{# ===================================================== #}
+
+{# ===================================================== #}
+{# 3) ATTENDANCE SHEET (Student Group style)            #}
+{# ===================================================== #}
+{# ===================================================== #}
+{# 3) ATTENDANCE SHEET - from Student Group format       #}
+{#     but driven from Sales Invoice                     #}
+{# ===================================================== #}
+{# ===================================================== #}
+{# 3) ATTENDANCE SHEET - from Student Group format       #}
+{#     but driven from Sales Invoice                     #}
+{# ===================================================== #}
+{# ===================================================== #}
+{# 3) ATTENDANCE SHEET – Student Group format via SI     #}
+{# ===================================================== #}
+
+{% if doc.custom_include_attendance %}
+
+  {%- from "templates/print_formats/standard_macros.html" import add_header -%}
+
+  {# ------------------------------------------------------------------ #}
+  {# IMPORTANT                                                          #}
+  {# - Process ALL rows in select_student_group, not only [0].          #}
+  {# - Use one controlled page break BETWEEN attendance sheets.         #}
+  {# - Do not use page-break-before:always on every attendance wrapper. #}
+  {# ------------------------------------------------------------------ #}
+
+  {% set attendance_pages = [] %}
+
+  {% if doc.select_student_group %}
+
+    {% for selected_group in doc.select_student_group %}
+
+      {% if selected_group.student_group %}
+
+        {% set sg_name = selected_group.student_group %}
+        {% set sg_doc  = frappe.get_doc("Student Group", sg_name) %}
+
+        {% if sg_doc and sg_doc.students %}
+
+          {# 1) Customer list - keep existing Sales Invoice behaviour #}
+          {% set selected_customer = doc.custom_customer or doc.customer %}
+          {% set customers = [] %}
+
+          {% if selected_customer %}
+            {% set customers = [selected_customer] %}
+          {% else %}
+            {% for i in sg_doc.students %}
+              {% if i.customer_name and i.customer_name not in customers %}
+                {% set _ = customers.append(i.customer_name) %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          {# If no customer is available at all, still allow one sheet #}
+          {% if customers|length == 0 %}
+            {% set customers = [None] %}
+          {% endif %}
+
+          {# 2) Date list - safely build it from the Student Group range #}
+          {% set start_raw = sg_doc.custom_from_date or sg_doc.from_date %}
+          {% set end_raw   = sg_doc.custom_to_date or sg_doc.to_date %}
+          {% set dates = [] %}
+
+          {% if start_raw and end_raw %}
+            {% set start = frappe.utils.getdate(start_raw) %}
+            {% set end   = frappe.utils.getdate(end_raw) %}
+            {% set total_days = frappe.utils.date_diff(end, start) + 1 %}
+
+            {% if total_days > 0 %}
+              {% for day_index in range(total_days) %}
+                {% set dt = frappe.utils.add_days(start, day_index) %}
+                {% set _ = dates.append(dt) %}
+              {% endfor %}
+            {% endif %}
+          {% endif %}
+
+          {# 3) Customer -> PO -> Attendance Sheet #}
+          {% for customer in customers %}
+
+            {% set title = customer if customer else (doc.customer or "&nbsp;") %}
+
+            {# Unique PO list for this customer #}
+            {% set po_list = [] %}
+
+            {% for k in sg_doc.students %}
+              {% if (not customer) or (k.customer_name == customer) %}
+                {% set student_po = frappe.db.get_value(
+                    "Student",
+                    k.student,
+                    "custom_customer_purchase_order"
+                ) %}
+
+                {% if student_po and student_po not in po_list %}
+                  {% set _ = po_list.append(student_po) %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+
+            {# Students without PO still need a sheet #}
+            {% set no_po_students = [] %}
+            {% for k in sg_doc.students %}
+              {% if (not customer) or (k.customer_name == customer) %}
+                {% set student_po_check = frappe.db.get_value(
+                    "Student",
+                    k.student,
+                    "custom_customer_purchase_order"
+                ) %}
+                {% if not student_po_check %}
+                  {% set _ = no_po_students.append(1) %}
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+
+            {% if no_po_students|length > 0 %}
+              {% set _ = po_list.append(None) %}
+            {% endif %}
+
+            {% if po_list|length == 0 %}
+              {% set po_list = [None] %}
+            {% endif %}
+
+            {% for po in po_list %}
+
+              {# Determine whether this particular page needs Secondary Company #}
+              {% set secondary_hits = [] %}
+
+              {% for k in sg_doc.students %}
+                {% if (not customer) or (k.customer_name == customer) %}
+
+                  {% set student_po = frappe.db.get_value(
+                      "Student",
+                      k.student,
+                      "custom_customer_purchase_order"
+                  ) %}
+
+                  {% if (po and student_po == po) or (not po and not student_po) %}
+                    {% set sc = frappe.db.get_value(
+                        "Student",
+                        k.student,
+                        "custom_secondary_customer"
+                    ) %}
+
+                    {% if sc %}
+                      {% set _ = secondary_hits.append(1) %}
+                    {% endif %}
+                  {% endif %}
+
+                {% endif %}
+              {% endfor %}
+
+              {% set show_secondary = secondary_hits|length > 0 %}
+
+              {# Make sure this PO/customer actually has students before printing #}
+              {% set matched_students = [] %}
+
+              {% for k in sg_doc.students %}
+                {% if (not customer) or (k.customer_name == customer) %}
+
+                  {% set student_po = frappe.db.get_value(
+                      "Student",
+                      k.student,
+                      "custom_customer_purchase_order"
+                  ) %}
+
+                  {% if (po and student_po == po) or (not po and not student_po) %}
+                    {% set _ = matched_students.append(k.student) %}
+                  {% endif %}
+
+                {% endif %}
+              {% endfor %}
+
+              {% if matched_students|length > 0 %}
+
+                {# -------------------------------------------------------- #}
+                {# Controlled pagination                                  #}
+                {# -------------------------------------------------------- #}
+                {# No empty page-break element. Break the actual sheet.    #}
+                {# -------------------------------------------------------- #}
+
+                <div class="attendance-page{% if doc.custom_include_invoice or doc.custom_include_certificates or attendance_pages|length > 0 %} force-new-page{% endif %}">
+
+                {% set _ = attendance_pages.append(1) %}
+
+                  {# ---------------- PAGE HEADER ---------------- #}
+                  {% set letter_head = frappe.get_doc("Letter Head", "Letter Head New") %}
+                  {% if letter_head %}
+                    <div class="letter-head">
+                      {{ letter_head.content }}
+                    </div>
+                  {% endif %}
+
+                  <div class="row" style="text-align:center; margin-top:0;">
+                    <h2><b><u>ATTENDENCE SHEET</u></b></h2>
+                  </div>
+
+                  <div style="margin-top:2%; display:flex; gap:24px;">
+                    <div class="col-1" style="width:50%;">
+                     {% set attendance_sheet_no = frappe.db.get_value(
+    "Student Attendance",
+    {
+        "student_group": sg_doc.name,
+        "docstatus": 1
+    },
+    "name"
+) %}
+
+<p>
+    <b>Sheet No :</b>
+    {{ attendance_sheet_no or "" }}
+</p>
+                      <p>
+                        <b>Date :</b>
+                        {{ frappe.utils.formatdate(doc.creation) if doc.creation else "" }}
+                      </p>
+                      <p>
+                        <b>Course Start Date :</b>
+                        {{ frappe.utils.formatdate(start_raw) if start_raw else "" }}
+                      </p>
+                      <p>
+                        <b>Course End Date :</b>
+                        {{ frappe.utils.formatdate(end_raw) if end_raw else "" }}
+                      </p>
+                    </div>
+
+                    <div class="col-2" style="width:50%;">
+                      <p>
+                        <b>Confirmation Type :</b>
+                        {{ po or doc.po_no or "" }}
+                      </p>
+                      <p><b>Training Ref No. :</b> {{ sg_doc.name or "" }}</p>
+                      <p><b>Training :</b> {{ sg_doc.course or "" }}</p>
+                      <p>
+                        <b>Course Location :</b>
+                        {{ sg_doc.custom_course_location_name or "" }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <table width="100%"
+                         style="margin-top:12px; border:none !important; border-collapse:collapse;">
+                    <tr style="border:none !important;">
+                      <td style="
+                          text-align:left;
+                          font-size:15px;
+                          font-weight:bold;
+                          padding:0;
+                          border:none !important;
+                      ">
+                        {{ title }}
+                        {% if po %}
+                          - PO: {{ po }}
+                        {% endif %}
+                      </td>
+                    </tr>
+                  </table>
+
+                  {# ---------------- MAIN TABLE ---------------- #}
+                  <table width="100%"
+                         style="border:1px solid #000; border-collapse:collapse; margin-top:5%; font-size:10px;">
+
+                    <thead>
+                      <tr>
+                        <th style="border:1px solid #000; padding:4px;">S.No</th>
+                        <th style="border:1px solid #000; padding:4px;">Name Of the Delegate</th>
+                        <th style="border:1px solid #000; padding:4px;">PO No</th>
+
+                        {% if show_secondary %}
+                          <th style="border:1px solid #000; padding:4px;">Secondary Company</th>
+                        {% endif %}
+
+                        <th style="border:1px solid #000; padding:4px;">Nationality</th>
+                        <th style="border:1px solid #000; padding:4px;">DOB</th>
+
+                        {% for d in dates %}
+                          <th style="border:1px solid #000; padding:4px; white-space:nowrap;">
+                            {{ frappe.utils.formatdate(d, "MMM dd") }}
+                          </th>
+                        {% endfor %}
+
+                        <th style="border:1px solid #000; padding:4px;">Result</th>
+                        <th style="border:1px solid #000; padding:4px;">Card Received</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {% set serial = [] %}
+
+                      {% for k in sg_doc.students %}
+
+                        {% if (not customer) or (k.customer_name == customer) %}
+
+                          {% set student_po = frappe.db.get_value(
+                              "Student",
+                              k.student,
+                              "custom_customer_purchase_order"
+                          ) %}
+
+                          {% if (po and student_po == po) or (not po and not student_po) %}
+
+                            {% set _ = serial.append(1) %}
+
+                            <tr style="page-break-inside:avoid;">
+
+                              <td style="border:1px solid #000; padding:4px; text-align:center;">
+                                {{ serial|length }}
+                              </td>
+
+                              <td style="border:1px solid #000; padding:4px;">
+                                {{ k.student_name or "" }}
+                              </td>
+
+                              <td style="border:1px solid #000; padding:4px;">
+                                {{ student_po or "" }}
+                              </td>
+
+                              {% if show_secondary %}
+                                {% set secondary_customer = frappe.db.get_value(
+                                    "Student",
+                                    k.student,
+                                    "custom_secondary_customer"
+                                ) %}
+                                <td style="border:1px solid #000; padding:4px;">
+                                  {{ secondary_customer or "" }}
+                                </td>
+                              {% endif %}
+
+                              {% set nationality = frappe.db.get_value(
+                                  "Student",
+                                  k.student,
+                                  "nationality"
+                              ) %}
+                              <td style="border:1px solid #000; padding:4px;">
+                                {{ nationality or "" }}
+                              </td>
+
+                              {% set dob = frappe.db.get_value(
+                                  "Student",
+                                  k.student,
+                                  "date_of_birth"
+                              ) %}
+                              <td style="border:1px solid #000; padding:4px;">
+                                {{ frappe.utils.formatdate(dob) if dob else "" }}
+                              </td>
+
+                              {# Attendance signatures per day #}
+                              {% for d in dates %}
+
+                                {% set attendance = frappe.db.get_value(
+                                    "Student Attendance",
+                                    {
+                                      "date": d,
+                                      "student_group": sg_doc.name,
+                                      "student": k.student,
+                                      "docstatus": 1
+                                    },
+                                    [
+                                      "custom_student_signature1",
+                                      "custom_student_signature"
+                                    ],
+                                    as_dict=True
+                                ) %}
+
+                                <td style="border:1px solid #000; padding:4px; text-align:center;">
+
+                                  {% if attendance and attendance.custom_student_signature1 %}
+                                    <img
+                                      src="{{ attendance.custom_student_signature1 }}"
+                                      style="width:60px; height:25px; object-fit:contain;"
+                                    />
+                                  {% elif attendance and attendance.custom_student_signature %}
+                                    <img
+                                      src="{{ attendance.custom_student_signature }}"
+                                      style="width:60px; height:25px; object-fit:contain;"
+                                    />
+                                  {% endif %}
+
+                                </td>
+
+                              {% endfor %}
+
+                              <td style="border:1px solid #000; padding:4px;"></td>
+
+                              {# Card Received signature #}
+                              {% set card_sig = frappe.db.get_value(
+                                  "Student Card",
+                                  {
+                                    "student_group": sg_doc.name,
+                                    "student": k.student,
+                                    "docstatus": 1
+                                  },
+                                  "student_signature"
+                              ) %}
+
+                              <td style="border:1px solid #000; padding:4px; text-align:center;">
+                                {% if card_sig %}
+                                  <img
+                                    src="{{ card_sig }}"
+                                    style="max-width:120px; max-height:50px; object-fit:contain;"
+                                  />
+                                {% endif %}
+                              </td>
+
+                            </tr>
+
+                          {% endif %}
+                        {% endif %}
+
+                      {% endfor %}
+                    </tbody>
+
+                  </table>
+
+                  {# ---------------- INSTRUCTOR AREA ---------------- #}
+                  <div style="width:100%; overflow:auto; page-break-inside:avoid;">
+
+                    <div style="float:left; margin-top:5%; width:50%;">
+                      {% if sg_doc.instructors %}
+                        {% for i in sg_doc.instructors %}
+                          <p>
+                            INSTRUCTOR'S NAME:
+                            <b>{{ i.instructor_name }}</b>
+                          </p>
+                        {% endfor %}
+                      {% endif %}
+                      <p>Date:</p>
+                    </div>
+
+                    <div style="float:right; margin-top:5%; width:30%;">
+                      <p>SIGNATURE:</p>
+                    </div>
+
+                  </div>
+
+                  <div style="clear:both;"></div>
+
+                </div>
+
+              {% endif %}
+
+            {% endfor %}
+          {% endfor %}
+
+        {% endif %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  {% endif %}
+
+  <div class="col-md-12" style="margin-top:10px;">
+    <div class="row">
+      <div class="letter-head-footer">
+        <table width="100%">
+          <tr>
+            <th>
+              Po Box 132435, ICAD, Behind Dalma Mall Block B Mussaffah, Abu Dhabi, U.A.E
+            </th>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+{% endif %}

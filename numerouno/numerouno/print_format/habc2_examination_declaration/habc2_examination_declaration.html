@@ -1,0 +1,475 @@
+{% set editable = editable|default(0) %}
+{% set pages = doc.learner_pages if doc.learner_pages else [doc.learners or []] %}
+
+<style>
+@page { size: A4 portrait; margin: 10mm 11mm 10mm 11mm; }
+</style>
+<style>
+.h2-paper {
+	font-family: "Times New Roman", Times, serif;
+	color: #111;
+	font-size: 10pt;
+	line-height: 1.25;
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+.h2-page-1 {
+	page-break-after: always;
+	break-after: page;
+}
+.h2-page-2 {
+	page-break-before: always;
+	break-before: page;
+}
+.h2-brand {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 2px;
+}
+.h2-brand td {
+	border: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+	vertical-align: top !important;
+}
+.h2-logo {
+	width: 240px;
+	text-align: right;
+	vertical-align: middle !important;
+}
+.h2-mark {
+	width: 220px;
+	height: auto;
+	max-height: 72px;
+	margin-left: auto;
+	display: block;
+}
+.h2-title {
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-size: 26pt;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	margin: 0 0 8px;
+	line-height: 1;
+}
+.h2-doc-title {
+	text-align: center;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12.5pt;
+	font-weight: 800;
+	text-transform: uppercase;
+	margin: 10px 0 0;
+}
+.h2-doc-sub {
+	text-align: center;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11pt;
+	font-weight: 700;
+	margin: 0 0 10px;
+}
+.h2-sec {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 10.5pt;
+	font-weight: 700;
+	margin: 10px 0 4px;
+}
+.h2-copy {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 8.6pt;
+	margin: 0 0 4px;
+	text-align: justify;
+}
+.h2-grid {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	margin: 6px 0 8px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 9pt;
+}
+.h2-grid td {
+	border: 1px solid #111 !important;
+	padding: 5px 7px !important;
+	vertical-align: middle !important;
+	height: 28px;
+}
+.h2-label {
+	background: #cfcfcf !important;
+	font-weight: 700;
+	width: 22%;
+}
+.h2-value {
+	background: #fff !important;
+	width: 28%;
+	font-weight: 600;
+}
+.h2-label-wide { width: 24%; }
+.h2-value-wide { width: 76%; }
+.h2-sign-cell { height: 62px !important; }
+.h2-comments {
+	border: 1px solid #111;
+	min-height: 92px;
+	padding: 6px 8px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 9pt;
+	white-space: pre-wrap;
+}
+.h2-footer {
+	display: flex;
+	justify-content: space-between;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	margin-top: 10px;
+}
+.h2-p2-head {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 4px 0 8px;
+	font-family: Arial, Helvetica, sans-serif;
+}
+.h2-p2-head td {
+	border: 0 !important;
+	background: transparent !important;
+	padding: 0 0 6px !important;
+	vertical-align: middle !important;
+}
+.h2-datebox, .h2-idbox {
+	border: 1px solid #111;
+	display: inline-block;
+	padding: 3px 8px;
+	min-width: 92px;
+	min-height: 18px;
+	font-weight: 600;
+}
+.h2-learners {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 7.4pt;
+}
+.h2-learners th, .h2-learners td {
+	border: 1px solid #111 !important;
+	padding: 2px 3px !important;
+	vertical-align: middle !important;
+}
+.h2-learners th {
+	background: #fff !important;
+	color: #111 !important;
+	font-weight: 700;
+	text-align: center;
+	text-transform: none !important;
+	font-size: 7pt;
+	line-height: 1.15;
+}
+.h2-learners td {
+	height: 28px;
+	background: #fff !important;
+}
+.h2-learners .c-no { width: 4%; text-align: center; }
+.h2-learners .c-name { width: 18%; }
+.h2-learners .c-sur { width: 16%; }
+.h2-learners .c-sig { width: 14%; text-align: center; }
+.h2-learners .c-dob { width: 10%; text-align: center; }
+.h2-learners .c-id { width: 10%; }
+.h2-learners .c-tel { width: 14%; }
+.h2-learners .c-re { width: 5%; text-align: center; }
+.h2-learners .c-g { width: 4.5%; text-align: center; }
+.h2-note {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 7.4pt;
+	margin-top: 8px;
+	text-align: justify;
+}
+.h2-sign-img { max-height: 42px; max-width: 110px; }
+.h2-inv-sign { max-height: 52px; max-width: 180px; }
+.h2-sign-wrap img.h2-sign-img + .h2-sign-canvas,
+.h2-sign-wrap img.h2-inv-sign + .h2-sign-canvas {
+	display: none;
+}
+.print-format { padding: 0 !important; margin: 0 !important; }
+.print-heading, .letter-head, .print-format-letterhead, .letterhead, .letter-head-image { display: none !important; }
+.print-format th { text-transform: none !important; }
+
+</style>
+
+{% macro mark() %}
+<img class="h2-mark" src="/files/highfield_approved_centre.jpg" alt="Highfield Qualifications Approved Centre">
+{% endmacro %}
+
+{% macro input(name, value, extra="") %}
+	{% if editable %}
+		<input class="h2-input" data-field="{{ name }}" value="{{ value or '' }}" {{ extra }}>
+	{% else %}
+		{{ value or "" }}
+	{% endif %}
+{% endmacro %}
+
+{% macro textarea(name, value) %}
+	{% if editable %}
+		<textarea class="h2-input" data-field="{{ name }}" rows="5">{{ value or "" }}</textarea>
+	{% else %}
+		{{ value or "" }}
+	{% endif %}
+{% endmacro %}
+
+<div class="h2-paper h2-page-1">
+	<table class="h2-brand">
+		<tr>
+			<td></td>
+			<td class="h2-logo">{{ mark() }}</td>
+		</tr>
+	</table>
+	<div class="h2-doc-title">Examination Declaration and Learner List</div>
+	<div class="h2-doc-sub">(International Approved Centres)</div>
+
+	<div class="h2-sec">1. Instructions and responsibilities</div>
+	<p class="h2-copy">1.1 It is the responsibility of the centre to ensure that the course/exam details registered on the Highfield Qualifications website are correct prior to the paperwork being received by Highfield Qualifications.</p>
+	<p class="h2-copy">1.2 It is the responsibility of the Examination Invigilator to ensure that all learner Examination Materials including the learner list below are sealed in the security bag provided and returned to Highfield Qualifications.</p>
+	<p class="h2-copy">1.3 The Invigilator is also responsible for confirming the times the examination started and finished and for signing the declaration at the bottom of this page.</p>
+
+	<div class="h2-sec">2. Course/Exam Details</div>
+	<p class="h2-copy">2.1 This section must be completed before the examination day by the centre to verify the number of learners registered, qualification title, date, examination time and Highfield’s centre and tutor numbers. This information would also be useful for the invigilator to help them complete the learners’ EASs data.</p>
+
+	<table class="h2-grid">
+		<tr>
+			<td class="h2-label">Centre name:</td>
+			<td class="h2-value">{{ input("centre_name", doc.centre_name) }}</td>
+			<td class="h2-label">Centre number:</td>
+			<td class="h2-value">{{ input("centre_number", doc.centre_number) }}</td>
+		</tr>
+		<tr>
+			<td class="h2-label">Nominated Tutor name:</td>
+			<td class="h2-value">{{ input("nominated_tutor_name", doc.nominated_tutor_name) }}</td>
+			<td class="h2-label">Tutor number:</td>
+			<td class="h2-value">{{ input("tutor_number", doc.tutor_number) }}</td>
+		</tr>
+		<tr>
+			<td class="h2-label">Address of examination venue:</td>
+			<td class="h2-value" colspan="3">{{ input("examination_venue", doc.examination_venue) }}</td>
+		</tr>
+	</table>
+
+	<table class="h2-grid">
+		<tr>
+			<td class="h2-label">Course / Exam ID:</td>
+			<td class="h2-value">{{ input("course_exam_id", doc.course_exam_id) }}</td>
+			<td class="h2-label">Number of learners:</td>
+			<td class="h2-value">{{ input("number_of_learners", doc.number_of_learners) }}</td>
+		</tr>
+		<tr>
+			<td class="h2-label">Qualification/Unit Title:</td>
+			<td class="h2-value" colspan="3">{{ input("qualification_unit_title", doc.qualification_unit_title) }}</td>
+		</tr>
+		<tr>
+			<td class="h2-label">Examination Date</td>
+			<td class="h2-value">
+				{% if editable %}
+					<input class="h2-input" type="date" data-field="examination_date" value="{{ doc.examination_date or '' }}">
+				{% else %}
+					{{ frappe.utils.formatdate(doc.examination_date, "dd/MM/yyyy") if doc.examination_date else "DD / MM / YYYY" }}
+				{% endif %}
+			</td>
+			<td class="h2-label">Exam Start Time:</td>
+			<td class="h2-value">
+				{% if editable %}
+					<input class="h2-input" type="time" data-field="exam_start_time" value="{{ doc.exam_start_time or '' }}">
+				{% else %}
+					{{ doc.exam_start_time or '' }}
+				{% endif %}
+			</td>
+		</tr>
+		<tr>
+			<td class="h2-label">Exam End Time:</td>
+			<td class="h2-value" colspan="3">
+				{% if editable %}
+					<input class="h2-input" type="time" data-field="exam_end_time" value="{{ doc.exam_end_time or '' }}">
+				{% else %}
+					{{ doc.exam_end_time or '' }}
+				{% endif %}
+			</td>
+		</tr>
+	</table>
+
+	<div class="h2-sec">3. Invigilator Declaration</div>
+	<p class="h2-copy">3.1 I confirm that I have read a copy of the Highfield Qualifications Examination and Invigilation Procedures. I have invigilated the examination in accordance with Highfield Qualifications examination requirements.</p>
+	<p class="h2-copy">3.2 I confirm that the examination took place at the venue recorded and on the date and times indicated in the declaration.</p>
+	<p class="h2-copy">3.3 All learners completed the examination within the duration stated on the question booklet.</p>
+	<p class="h2-copy">3.4 I confirm that each learner signed their own examination answer sheet.</p>
+	<p class="h2-copy">3.5 I confirm that I received the examination papers in the sealed bags and gave them to learners in the sealed bags.</p>
+	<p class="h2-copy">3.6 I confirm that I have checked the identification for all learners on the Examination Learner List and that all ID provided meets Highfield Qualifications requirements. The centre will keep a record of the type of identification taken from each learner and have this available for quality assurance engagements.</p>
+
+	<table class="h2-grid">
+		<tr>
+			<td class="h2-label">Name:</td>
+			<td class="h2-value">{{ input("invigilator_name", doc.invigilator_name) }}</td>
+			<td class="h2-label">Position:</td>
+			<td class="h2-value">{{ input("invigilator_position", doc.invigilator_position) }}</td>
+		</tr>
+		<tr>
+			<td class="h2-label h2-sign-cell">Signature:</td>
+			<td class="h2-value h2-sign-cell">
+				{% if editable %}
+					<div class="h2-sign-wrap" data-field="invigilator_signature">
+						{% if doc.invigilator_signature %}<img src="{{ doc.invigilator_signature }}" class="h2-inv-sign">{% endif %}
+						<canvas class="h2-sign-canvas h2-inv-canvas" width="280" height="80"></canvas>
+						<input type="hidden" class="h2-input" data-field="invigilator_signature" value="{{ doc.invigilator_signature or '' }}">
+						<button type="button" class="h2-sign-clear" data-target="invigilator_signature">Clear</button>
+					</div>
+				{% elif doc.invigilator_signature %}
+					<img src="{{ doc.invigilator_signature }}" class="h2-inv-sign">
+				{% endif %}
+			</td>
+			<td class="h2-label">Date:</td>
+			<td class="h2-value">
+				{% if editable %}
+					<input class="h2-input" type="date" data-field="invigilator_date" value="{{ doc.invigilator_date or '' }}">
+				{% else %}
+					{{ frappe.utils.formatdate(doc.invigilator_date, "dd/MM/yyyy") if doc.invigilator_date else "" }}
+				{% endif %}
+			</td>
+		</tr>
+	</table>
+
+	<p class="h2-copy"><b>IMPORTANT:</b> Please write in the space below any information or comments from the learners asked regarding the examination (for example: words or questions that the learners consider hard to understand.) and any situation contrary to Highfield examination procedures.</p>
+	<div class="h2-comments">{{ textarea("comments", doc.comments) }}</div>
+
+	<div class="h2-footer">
+		<span>Highfield International / May 2018 / ver. 0.2</span>
+		<span>Page | 1</span>
+	</div>
+</div>
+
+{% for page_rows in pages %}
+<div class="h2-paper h2-page-2">
+	<table class="h2-brand">
+		<tr>
+			<td></td>
+			<td class="h2-logo">{{ mark() }}</td>
+		</tr>
+	</table>
+	<table class="h2-p2-head">
+		<tr>
+			<td>
+				Course dates &nbsp;
+				from: <span class="h2-datebox">
+					{% if editable %}
+						<input class="h2-input" type="date" data-field="course_from" value="{{ doc.course_from or '' }}">
+					{% else %}
+						{{ frappe.utils.formatdate(doc.course_from, "dd/MM/yyyy") if doc.course_from else "" }}
+					{% endif %}
+				</span>
+				&nbsp; to: <span class="h2-datebox">
+					{% if editable %}
+						<input class="h2-input" type="date" data-field="course_to" value="{{ doc.course_to or '' }}">
+					{% else %}
+						{{ frappe.utils.formatdate(doc.course_to, "dd/MM/yyyy") if doc.course_to else "" }}
+					{% endif %}
+				</span>
+			</td>
+			<td style="text-align:right;">
+				Course ID
+				<span class="h2-idbox">{{ input("course_exam_id", doc.course_exam_id) }}</span>
+			</td>
+		</tr>
+	</table>
+
+	<table class="h2-learners">
+		<thead>
+			<tr>
+				<th class="c-no">#</th>
+				<th class="c-name">Learner's name(s)</th>
+				<th class="c-sur">Learner surname<br>(family name)</th>
+				<th class="c-sig">Signature</th>
+				<th class="c-dob">Date of Birth<br>(dd/mm/yy)</th>
+				<th class="c-id">ID Type used *</th>
+				<th class="c-tel">Telephone/contact<br>number</th>
+				<th class="c-re">✓ For<br>retake</th>
+				<th class="c-g">M</th>
+				<th class="c-g">F</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for row in page_rows %}
+			{% set idx = loop.index0 + ((loop.parent.index0 if false else 0)) %}
+			<tr data-row="{{ row.sr_no or loop.index }}">
+				<td class="c-no">{{ row.sr_no or loop.index }}</td>
+				<td class="c-name">
+					{% if editable %}
+						<input class="h2-input" data-row-field="learner_names" data-sr="{{ row.sr_no or loop.index }}" value="{{ row.learner_names or '' }}">
+					{% else %}
+						{{ row.learner_names or "" }}
+					{% endif %}
+				</td>
+				<td class="c-sur">
+					{% if editable %}
+						<input class="h2-input" data-row-field="learner_surname" data-sr="{{ row.sr_no or loop.index }}" value="{{ row.learner_surname or '' }}">
+					{% else %}
+						{{ row.learner_surname or "" }}
+					{% endif %}
+				</td>
+				<td class="c-sig">
+					{% if editable %}
+						<div class="h2-sign-wrap" data-sr="{{ row.sr_no or loop.index }}">
+							{% if row.signature %}<img src="{{ row.signature }}" class="h2-sign-img">{% endif %}
+							<canvas class="h2-sign-canvas h2-row-canvas" width="150" height="48" data-sr="{{ row.sr_no or loop.index }}"></canvas>
+							<input type="hidden" data-row-field="signature" data-sr="{{ row.sr_no or loop.index }}" value="{{ row.signature or '' }}">
+						</div>
+					{% elif row.signature %}
+						<img src="{{ row.signature }}" class="h2-sign-img">
+					{% endif %}
+				</td>
+				<td class="c-dob">
+					{% if editable %}
+						<input class="h2-input" type="date" data-row-field="date_of_birth" data-sr="{{ row.sr_no or loop.index }}" value="{{ row.date_of_birth or '' }}">
+					{% else %}
+						{{ frappe.utils.formatdate(row.date_of_birth, "dd/MM/yy") if row.date_of_birth else "" }}
+					{% endif %}
+				</td>
+				<td class="c-id">
+					{% if editable %}
+						<input class="h2-input" data-row-field="id_type" data-sr="{{ row.sr_no or loop.index }}" value="{{ row.id_type or '' }}">
+					{% else %}
+						{{ row.id_type or "" }}
+					{% endif %}
+				</td>
+				<td class="c-tel">
+					{% if editable %}
+						<input class="h2-input" data-row-field="telephone" data-sr="{{ row.sr_no or loop.index }}" value="{{ row.telephone or '' }}">
+					{% else %}
+						{{ row.telephone or "" }}
+					{% endif %}
+				</td>
+				<td class="c-re">
+					{% if editable %}
+						<input type="checkbox" data-row-field="retake" data-sr="{{ row.sr_no or loop.index }}" {% if row.retake %}checked{% endif %}>
+					{% else %}
+						{{ "✓" if row.retake else "" }}
+					{% endif %}
+				</td>
+				<td class="c-g">
+					{% if editable %}
+						<input type="radio" name="gender-{{ row.sr_no or loop.index }}" data-row-field="gender" data-sr="{{ row.sr_no or loop.index }}" value="M" {% if row.gender == "M" %}checked{% endif %}>
+					{% else %}
+						{{ "✓" if row.gender == "M" else "" }}
+					{% endif %}
+				</td>
+				<td class="c-g">
+					{% if editable %}
+						<input type="radio" name="gender-{{ row.sr_no or loop.index }}" data-row-field="gender" data-sr="{{ row.sr_no or loop.index }}" value="F" {% if row.gender == "F" %}checked{% endif %}>
+					{% else %}
+						{{ "✓" if row.gender == "F" else "" }}
+					{% endif %}
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+	<p class="h2-note">* IMPORTANT NOTE: Please note that it is not necessary to write the ID number just the type of ID that you used to identify yourself and this can be abbreviated. For example: Passport (Pspt), Emirates ID (EID), Computerised National ID Card (CNIC), Driver License (DL), Labour Card (LC), Resident Identity Card (Res IC), etcetera.</p>
+	<div class="h2-footer">
+		<span>Highfield International / May 2018 / ver. 0.2</span>
+		<span>Page | {{ loop.index + 1 }}</span>
+	</div>
+</div>
+{% endfor %}

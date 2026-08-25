@@ -9,6 +9,17 @@ def is_empty_signature(value):
 	return SIGNATURE_PLACEHOLDER in value
 
 
+def get_instructor_signature(instructor):
+	"""Instructor.image is labelled Attach Signature on the Instructor profile."""
+	instructor = (instructor or "").strip()
+	if not instructor:
+		return ""
+	image = frappe.db.get_value("Instructor", instructor, "image") or ""
+	if is_empty_signature(image):
+		return ""
+	return image
+
+
 def get_student_attendance_signature(student, student_group=None):
 	"""Latest Student Attendance signature for this student, preferring the same group."""
 	student = (student or "").strip()

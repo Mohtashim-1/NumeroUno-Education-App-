@@ -15,6 +15,7 @@ website_route_rules = [
     {"from_route": "/public-forms", "to_route": "public_portal_forms"},
     {"from_route": "/customer-portal", "to_route": "customer-portal"},
     {"from_route": "/customer-code", "to_route": "customer-code"},
+    {"from_route": "/training-schedule", "to_route": "training-schedule"},
 ]
 
 # Website pages accessible to guests
@@ -43,7 +44,7 @@ portal_menu_items = [
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_js = "/assets/numerouno/js/lv_practical_assessment_cache_bust.js"
+app_include_js = "/assets/numerouno/js/lv_practical_assessment_cache_bust.js?v=habc2"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/numerouno/css/numerouno.css"
@@ -75,6 +76,8 @@ doctype_list_js = {
     "Safety Briefing": "public/js/safety_briefing_list.js",
     "Assessor Checklist": "public/js/assessor_checklist_list.js",
     "Sales Invoice": "public/js/sales_invoice_list.js",
+    "HABC2 Examination Declaration": "public/js/habc2_examination_declaration_list.js",
+    "HABC1 Assessment Pack": "public/js/habc1_assessment_pack_list.js",
 }
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -365,4 +368,7 @@ override_whitelisted_methods = {
 after_migrate = [
     "numerouno.numerouno.customer_portal_setup.after_migrate",
     "numerouno.numerouno.food_required_setup.after_migrate",
+    "numerouno.numerouno.training_schedule_setup.after_migrate",
+    "numerouno.numerouno.habc2_setup.after_migrate",
+    "numerouno.numerouno.habc1_setup.after_migrate",
 ]

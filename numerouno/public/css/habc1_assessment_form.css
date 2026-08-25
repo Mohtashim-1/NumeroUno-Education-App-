@@ -1,0 +1,141 @@
+.habc1-assessment-page {
+	background: #d8dde3;
+	padding: 0 0 40px;
+	min-height: 70vh;
+}
+.h1-root {
+	max-width: 920px;
+	margin: 0 auto;
+	padding: 8px 16px 24px;
+}
+.h1-kicker {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #1a1a1a;
+	margin-bottom: 4px;
+}
+.h1-portal-header h3 {
+	margin: 0 0 6px;
+	font-size: 26px;
+	font-weight: 700;
+}
+.h1-portal-header p {
+	color: #5b6570;
+	max-width: 640px;
+}
+.h1-card {
+	background: #fff;
+	border: 1px solid #d0d7de;
+	border-radius: 12px;
+	padding: 16px;
+	margin-top: 12px;
+}
+.h1-group-picker {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 12px;
+	align-items: end;
+}
+.h1-btn {
+	border: 1px solid #c5ced6;
+	background: #fff;
+	border-radius: 8px;
+	height: 36px;
+	padding: 0 14px;
+	font-weight: 600;
+	cursor: pointer;
+}
+.h1-btn-primary {
+	background: #111;
+	color: #fff;
+	border-color: #111;
+}
+.h1-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+.h1-form-bar {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin: 8px 0 12px;
+	flex-wrap: wrap;
+}
+.h1-form-bar-meta {
+	flex: 1;
+	min-width: 180px;
+}
+.h1-form-bar-meta strong {
+	display: block;
+}
+.h1-form-bar-meta span {
+	color: #667;
+	font-size: 12px;
+}
+.h1-paper-wrap {
+	background: #fff;
+	border: 1px solid #bbb;
+	box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+	padding: 18px 22px 28px;
+}
+.h1-paper-wrap .h1-page-2 {
+	margin-top: 28px;
+	padding-top: 18px;
+	border-top: 2px dashed #bbb;
+	page-break-before: auto;
+}
+.h1-paper-wrap .h1-input,
+.h1-paper-wrap input.h1-input,
+.h1-paper-wrap textarea.h1-input {
+	width: 100%;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	outline: none;
+	font: inherit;
+	padding: 0;
+	min-height: 18px;
+}
+.h1-paper-wrap textarea.h1-input {
+	min-height: 80px;
+	resize: vertical;
+}
+.h1-sign-canvas {
+	display: block;
+	width: 100%;
+	max-width: 280px;
+	height: 48px;
+	border: 1px dashed #999;
+	background: #fafafa;
+	cursor: crosshair;
+	touch-action: none;
+}
+.h1-inv-canvas {
+	height: 72px;
+	max-width: 280px;
+}
+.h1-sign-clear {
+	margin-top: 4px;
+	font-size: 11px;
+	background: none;
+	border: 0;
+	text-decoration: underline;
+	cursor: pointer;
+}
+.h1-paper-wrap.is-readonly .h1-sign-canvas {
+	display: none;
+}
+.h1-sign-wrap img.h1-sign-img + .h1-sign-canvas {
+	display: none;
+}
+@media (max-width: 720px) {
+	.h1-group-picker { grid-template-columns: 1fr; }
+	.h1-paper-wrap { padding: 10px; }
+	.h1-learners { font-size: 10px; }
+}
+
+.h1-paper-wrap .h1-page-2 { margin-top: 24px; padding-top: 16px; border-top: 2px dashed #bbb; page-break-before: auto; }
+.h1-paper-wrap select.h1-input { min-height: 22px; }

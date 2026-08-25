@@ -12,6 +12,9 @@ frappe.ui.form.on('Student Group', {
             });
         }
     },
+    course: function(frm) {
+        fill_max_strength_from_course(frm);
+    },
     refresh: function(frm) {
         frm.add_custom_button(__('Create Coarse Schedule'), () => {
             show_coarse_dialog(frm);
@@ -73,6 +76,17 @@ frappe.ui.form.on('Student Group Student', {
         }
     }
 });
+
+function fill_max_strength_from_course(frm) {
+    if (!frm.doc.course || cint(frm.doc.max_strength)) {
+        return;
+    }
+    frappe.db.get_value('Course', frm.doc.course, 'custom_max_strength', function(r) {
+        if (r && cint(r.custom_max_strength)) {
+            frm.set_value('max_strength', cint(r.custom_max_strength));
+        }
+    });
+}
 
 function apply_food_required_to_students(frm) {
     (frm.doc.students || []).forEach(function(row) {

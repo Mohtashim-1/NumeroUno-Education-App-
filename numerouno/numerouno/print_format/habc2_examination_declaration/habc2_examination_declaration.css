@@ -1,0 +1,185 @@
+.h2-paper {
+	font-family: "Times New Roman", Times, serif;
+	color: #111;
+	font-size: 10pt;
+	line-height: 1.25;
+	-webkit-print-color-adjust: exact !important;
+	print-color-adjust: exact !important;
+}
+.h2-page-1 {
+	page-break-after: always;
+	break-after: page;
+}
+.h2-page-2 {
+	page-break-before: always;
+	break-before: page;
+}
+.h2-brand {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 2px;
+}
+.h2-brand td {
+	border: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+	vertical-align: top !important;
+}
+.h2-logo {
+	width: 240px;
+	text-align: right;
+	vertical-align: middle !important;
+}
+.h2-mark {
+	width: 220px;
+	height: auto;
+	max-height: 72px;
+	margin-left: auto;
+	display: block;
+}
+.h2-title {
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-size: 26pt;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	margin: 0 0 8px;
+	line-height: 1;
+}
+.h2-doc-title {
+	text-align: center;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12.5pt;
+	font-weight: 800;
+	text-transform: uppercase;
+	margin: 10px 0 0;
+}
+.h2-doc-sub {
+	text-align: center;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11pt;
+	font-weight: 700;
+	margin: 0 0 10px;
+}
+.h2-sec {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 10.5pt;
+	font-weight: 700;
+	margin: 10px 0 4px;
+}
+.h2-copy {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 8.6pt;
+	margin: 0 0 4px;
+	text-align: justify;
+}
+.h2-grid {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	margin: 6px 0 8px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 9pt;
+}
+.h2-grid td {
+	border: 1px solid #111 !important;
+	padding: 5px 7px !important;
+	vertical-align: middle !important;
+	height: 28px;
+}
+.h2-label {
+	background: #cfcfcf !important;
+	font-weight: 700;
+	width: 22%;
+}
+.h2-value {
+	background: #fff !important;
+	width: 28%;
+	font-weight: 600;
+}
+.h2-label-wide { width: 24%; }
+.h2-value-wide { width: 76%; }
+.h2-sign-cell { height: 62px !important; }
+.h2-comments {
+	border: 1px solid #111;
+	min-height: 92px;
+	padding: 6px 8px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 9pt;
+	white-space: pre-wrap;
+}
+.h2-footer {
+	display: flex;
+	justify-content: space-between;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+	margin-top: 10px;
+}
+.h2-p2-head {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 4px 0 8px;
+	font-family: Arial, Helvetica, sans-serif;
+}
+.h2-p2-head td {
+	border: 0 !important;
+	background: transparent !important;
+	padding: 0 0 6px !important;
+	vertical-align: middle !important;
+}
+.h2-datebox, .h2-idbox {
+	border: 1px solid #111;
+	display: inline-block;
+	padding: 3px 8px;
+	min-width: 92px;
+	min-height: 18px;
+	font-weight: 600;
+}
+.h2-learners {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 7.4pt;
+}
+.h2-learners th, .h2-learners td {
+	border: 1px solid #111 !important;
+	padding: 2px 3px !important;
+	vertical-align: middle !important;
+}
+.h2-learners th {
+	background: #fff !important;
+	color: #111 !important;
+	font-weight: 700;
+	text-align: center;
+	text-transform: none !important;
+	font-size: 7pt;
+	line-height: 1.15;
+}
+.h2-learners td {
+	height: 28px;
+	background: #fff !important;
+}
+.h2-learners .c-no { width: 4%; text-align: center; }
+.h2-learners .c-name { width: 18%; }
+.h2-learners .c-sur { width: 16%; }
+.h2-learners .c-sig { width: 14%; text-align: center; }
+.h2-learners .c-dob { width: 10%; text-align: center; }
+.h2-learners .c-id { width: 10%; }
+.h2-learners .c-tel { width: 14%; }
+.h2-learners .c-re { width: 5%; text-align: center; }
+.h2-learners .c-g { width: 4.5%; text-align: center; }
+.h2-note {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 7.4pt;
+	margin-top: 8px;
+	text-align: justify;
+}
+.h2-sign-img { max-height: 42px; max-width: 110px; }
+.h2-inv-sign { max-height: 52px; max-width: 180px; }
+.h2-sign-wrap img.h2-sign-img + .h2-sign-canvas,
+.h2-sign-wrap img.h2-inv-sign + .h2-sign-canvas {
+	display: none;
+}
+.print-format { padding: 0 !important; margin: 0 !important; }
+.print-heading, .letter-head, .print-format-letterhead, .letterhead, .letter-head-image { display: none !important; }
+.print-format th { text-transform: none !important; }
