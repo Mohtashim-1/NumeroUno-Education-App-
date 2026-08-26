@@ -14,7 +14,7 @@ frappe.pages["habc2-examination-form"].on_page_load = function (wrapper) {
 	try {
 		if (!$("#habc2-examination-css").length) {
 			$(
-				'<link id="habc2-examination-css" rel="stylesheet" type="text/css" href="/assets/numerouno/css/habc2_examination_form.css?v=3">'
+				'<link id="habc2-examination-css" rel="stylesheet" type="text/css" href="/assets/numerouno/css/habc2_examination_form.css?v=4">'
 			).appendTo("head");
 		}
 		const page =

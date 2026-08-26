@@ -174,6 +174,13 @@
 	font-weight: 700;
 }
 
+.cac-status-lg {
+	font-size: 13px;
+	padding: 6px 14px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
 .cac-status-draft {
 	background: #fff4e5;
 	color: #9a5b00;
@@ -187,6 +194,78 @@
 .cac-status-cancelled {
 	background: #fdecec;
 	color: #b42318;
+}
+
+.cac-toolbar-heading {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	min-width: 0;
+	flex: 1;
+}
+
+.cac-status-banner {
+	max-width: 1180px;
+	margin: 0 auto 12px;
+	border-radius: 12px;
+	padding: 10px 16px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.cac-status-banner.is-draft {
+	background: #fff4e5;
+	color: #9a5b00;
+	border: 1px solid #f5c77a;
+}
+
+.cac-status-banner.is-submitted {
+	background: #0f7a3c;
+	color: #fff;
+}
+
+.cac-status-banner.is-cancelled {
+	background: #b42318;
+	color: #fff;
+}
+
+.cac-status-banner.is-submitted .cac-status,
+.cac-status-banner.is-cancelled .cac-status {
+	background: rgba(255, 255, 255, 0.18);
+	color: #fff;
+}
+
+.cac-status-banner-text {
+	line-height: 1.35;
+}
+
+.cac-doc-wrap.is-cancelled {
+	position: relative;
+	outline: 3px solid #b42318;
+	outline-offset: 2px;
+}
+
+.cac-doc-wrap.is-cancelled::after {
+	content: "CANCELLED";
+	position: absolute;
+	top: 28%;
+	left: 50%;
+	transform: translate(-50%, -50%) rotate(-18deg);
+	font-size: 64px;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	color: rgba(180, 35, 24, 0.16);
+	pointer-events: none;
+	z-index: 5;
+	white-space: nowrap;
+}
+
+.cac-doc-wrap.is-submitted {
+	outline: 3px solid #0f7a3c;
+	outline-offset: 2px;
 }
 
 .cac-load-more-wrap {
@@ -592,10 +671,20 @@
 @media print {
 	.course-assessor-checklist-page .page-head,
 	.cac-toolbar-bar,
+	.cac-status-banner,
 	.cac-form-meta-panel,
 	.cac-portal,
 	.cac-col-fill {
 		display: none !important;
+	}
+
+	.cac-doc-wrap {
+		padding: 0;
+		outline: none !important;
+	}
+
+	.cac-doc-wrap.is-cancelled::after {
+		display: none;
 	}
 
 	.cac-doc-wrap {

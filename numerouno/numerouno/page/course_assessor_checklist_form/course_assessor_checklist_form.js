@@ -105,6 +105,7 @@ class CourseAssessorChecklist {
 		this.loading_key = "list";
 		this.make_actions();
 		this.page.set_title(__("Course Assessor Checklist"));
+		this.clear_status_indicator();
 
 		if (!append) {
 			this.list_offset = 0;
@@ -253,11 +254,62 @@ class CourseAssessorChecklist {
 		`;
 	}
 
-	status_pill(docstatus) {
+	status_info(docstatus) {
 		const ds = cint(docstatus);
-		if (ds === 1) return `<span class="cac-status cac-status-submitted">${__("Submitted")}</span>`;
-		if (ds === 2) return `<span class="cac-status cac-status-cancelled">${__("Cancelled")}</span>`;
-		return `<span class="cac-status cac-status-draft">${__("Draft")}</span>`;
+		if (ds === 1) {
+			return {
+				label: __("Submitted"),
+				color: "green",
+				cls: "is-submitted",
+				note: __("Submitted (read-only). Cancel then Amend to edit."),
+			};
+		}
+		if (ds === 2) {
+			return {
+				label: __("Cancelled"),
+				color: "red",
+				cls: "is-cancelled",
+				note: __("This checklist is cancelled. Use Amend to create an editable copy."),
+			};
+		}
+		return {
+			label: __("Draft"),
+			color: "orange",
+			cls: "is-draft",
+			note: __("Draft — save and submit when complete."),
+		};
+	}
+
+	status_pill(docstatus, size) {
+		const info = this.status_info(docstatus);
+		const sizeClass = size === "lg" ? " cac-status-lg" : "";
+		const ds = cint(docstatus);
+		const tone =
+			ds === 1 ? "cac-status-submitted" : ds === 2 ? "cac-status-cancelled" : "cac-status-draft";
+		return `<span class="cac-status ${tone}${sizeClass}">${frappe.utils.escape_html(info.label)}</span>`;
+	}
+
+	status_banner(docstatus) {
+		const info = this.status_info(docstatus);
+		return `<div class="cac-status-banner ${info.cls}" role="status">
+			${this.status_pill(docstatus, "lg")}
+			<span class="cac-status-banner-text">${frappe.utils.escape_html(info.note)}</span>
+		</div>`;
+	}
+
+	apply_status_indicator() {
+		const info = this.status_info(this.doc?.docstatus);
+		if (typeof this.page.set_indicator === "function") {
+			this.page.set_indicator(info.label, info.color);
+		}
+	}
+
+	clear_status_indicator() {
+		if (typeof this.page.clear_indicator === "function") {
+			this.page.clear_indicator();
+		} else if (this.page.$title_area) {
+			this.page.$title_area.find(".indicator-pill").hide();
+		}
 	}
 
 	open_create_dialog(defaults = {}) {
@@ -343,6 +395,7 @@ class CourseAssessorChecklist {
 						? `${this.doc.checklist_type} (${this.doc.name})`
 						: this.doc.checklist_type;
 					this.page.set_title(`${__("Course Assessor Checklist")} — ${title}`);
+					this.apply_status_indicator();
 				},
 				error: () => {
 					this.loading_key = null;
@@ -398,15 +451,19 @@ class CourseAssessorChecklist {
 
 		this.$root.html(`
 			<div class="cac-toolbar-bar">
-				<p class="cac-toolbar-note">
-					<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong>
-					${this.doc.form_code ? ` — ${frappe.utils.escape_html(this.doc.form_code)}` : ""}
-					<br>${__("Click a cell, then use C / N / Space. Arrow keys move between marks.")}
-				</p>
+				<div class="cac-toolbar-heading">
+					${this.status_pill(this.doc.docstatus, "lg")}
+					<p class="cac-toolbar-note">
+						<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong>
+						${this.doc.form_code ? ` — ${frappe.utils.escape_html(this.doc.form_code)}` : ""}
+						<br>${__("Click a cell, then use C / N / Space. Arrow keys move between marks.")}
+					</p>
+				</div>
 				<div class="cac-toolbar-actions">
 					<button type="button" class="cac-btn cac-btn-ghost cac-back-list">${__("Back to List")}</button>
 				</div>
 			</div>
+			${this.status_banner(this.doc.docstatus)}
 			<div class="cac-form-meta-panel">
 				<div class="cac-header-fields">
 					<div class="cac-field cac-field-date">
@@ -430,7 +487,7 @@ class CourseAssessorChecklist {
 					</span>
 				</div>
 			</div>
-			<div class="cac-doc-wrap">
+			<div class="cac-doc-wrap ${this.status_info(this.doc.docstatus).cls}">
 				<div class="cac-doc">${html}</div>
 			</div>
 		`);
@@ -777,16 +834,20 @@ class CourseAssessorChecklist {
 			this.$root.find(".cac-student-group-wrap .clearfix, .cac-student-group-wrap .control-label").remove();
 		}
 		const ds = cint(this.doc?.docstatus);
+		const info = this.status_info(ds);
+		this.apply_status_indicator();
+		this.$root.find(".cac-doc-wrap").removeClass("is-draft is-submitted is-cancelled").addClass(info.cls);
+		this.$root.find(".cac-status-banner").replaceWith(this.status_banner(ds));
 		if (ds === 1) {
 			this.page.clear_primary_action();
 			this.$root.find(".cac-toolbar-note").html(
-				`<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong> — ${__("Submitted (read-only). Cancel then Amend to edit.")}`
+				`<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong> — ${info.note}`
 			);
 			this.$root.find(".cac-entry-toolbar").hide();
 		} else if (ds === 2) {
 			this.page.clear_primary_action();
 			this.$root.find(".cac-toolbar-note").html(
-				`<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong> — ${__("Cancelled. Use Amend to create an editable copy.")}`
+				`<strong>${frappe.utils.escape_html(this.doc.checklist_type || "")}</strong> — ${info.note}`
 			);
 			this.$root.find(".cac-entry-toolbar").hide();
 		} else {
@@ -883,6 +944,10 @@ class CourseAssessorChecklist {
 			frappe.msgprint(__("Please save the document first."));
 			return;
 		}
+		if (cint(this.doc.docstatus) !== 0) {
+			frappe.msgprint(__("Only a draft Course Assessor Checklist can be submitted."));
+			return;
+		}
 		frappe.confirm(__("Submit this Course Assessor Checklist?"), () => {
 			this.save_and_then(() => {
 				frappe.call({
@@ -896,6 +961,65 @@ class CourseAssessorChecklist {
 						this.fetch_form({ docname: this.doc.name });
 					},
 				});
+			});
+		});
+	}
+
+	cancel_doc() {
+		if (!this.doc?.name) {
+			frappe.msgprint(__("Please save the document first."));
+			return;
+		}
+		if (cint(this.doc.docstatus) !== 1) {
+			frappe.msgprint(__("Only a submitted Course Assessor Checklist can be cancelled."));
+			return;
+		}
+		frappe.confirm(
+			__("Cancel this Course Assessor Checklist? Use Amend afterwards to create an editable copy."),
+			() => {
+				frappe.call({
+					method:
+						"numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.cancel",
+					args: { docname: this.doc.name },
+					freeze: true,
+					freeze_message: __("Cancelling..."),
+					callback: (r) => {
+						if (r.exc) return;
+						frappe.show_alert({ message: __("Cancelled"), indicator: "orange" });
+						this.loading_key = null;
+						this.fetch_form({ docname: this.doc.name });
+					},
+				});
+			}
+		);
+	}
+
+	amend_doc() {
+		if (!this.doc?.name) {
+			frappe.msgprint(__("Please save the document first."));
+			return;
+		}
+		if (cint(this.doc.docstatus) !== 2) {
+			frappe.msgprint(__("Cancel the Course Assessor Checklist first, then Amend."));
+			return;
+		}
+		frappe.confirm(__("Create an editable copy with the same data and signatures?"), () => {
+			frappe.call({
+				method: "numerouno.numerouno.page.course_assessor_checklist_form.course_assessor_checklist_form_api.amend",
+				args: { docname: this.doc.name },
+				freeze: true,
+				freeze_message: __("Creating amended copy..."),
+				callback: (r) => {
+					if (r.exc) return;
+					const name = r.message?.name;
+					if (!name) {
+						frappe.msgprint(__("Amend did not return a new document."));
+						return;
+					}
+					frappe.show_alert({ message: __("Amended as {0}", [name]), indicator: "green" });
+					this.loading_key = null;
+					frappe.set_route("course-assessor-checklist-form", name);
+				},
 			});
 		});
 	}

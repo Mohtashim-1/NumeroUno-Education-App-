@@ -62,7 +62,7 @@ def _serialize_row(row, student_group=None):
 	names = row.get("learner_names") or ""
 	surname = row.get("learner_surname") or ""
 	if row.get("student"):
-		names, surname = _split_name(row.get("student"), names or surname)
+		names, surname = _split_name(row.get("student"))
 	return {
 		"sr_no": row.get("sr_no"),
 		"student": row.get("student") or "",
@@ -106,7 +106,7 @@ def _ensure_learner_names(doc):
 	for row in doc.learners or []:
 		if not row.get("student"):
 			continue
-		names, surname = _split_name(row.get("student"), row.get("learner_names") or "")
+		names, surname = _split_name(row.get("student"))
 		if (row.get("learner_names") or "") == names and (row.get("learner_surname") or "") == surname:
 			continue
 		row.learner_names = names

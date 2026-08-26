@@ -6,6 +6,8 @@ import frappe
 from frappe import _
 from frappe.utils import cint, cstr
 
+from numerouno.numerouno.utils.course_form_flags import catalog_key_allowed, row_catalog_key_allowed
+
 
 # scope: student = one doc per student; group = one doc per student group
 PDF_CATALOG = [
@@ -297,6 +299,8 @@ def find_pdfs(student_group=None, student=None):
 	items = []
 	seen = set()
 	for source in PDF_CATALOG:
+		if not catalog_key_allowed(source["key"], student_group=student_group, student=student):
+			continue
 		if not frappe.db.exists("DocType", source["doctype"]):
 			continue
 		if not _print_format_enabled(source.get("print_format")):
@@ -309,6 +313,9 @@ def find_pdfs(student_group=None, student=None):
 			found = _find_student_docs(source, student_group=student_group, student=student)
 		for row in found:
 			if row["id"] in seen:
+				continue
+			row_group = row.get("student_group") or student_group
+			if not row_catalog_key_allowed(source["key"], student_group=row_group):
 				continue
 			seen.add(row["id"])
 			items.append(row)

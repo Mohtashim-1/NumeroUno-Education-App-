@@ -124,7 +124,7 @@ def group_defaults(student_group):
 	students = frappe.get_all(
 		"Student Group Student",
 		filters={"parent": student_group},
-		fields=["student", "student_name"],
+		fields=["student", "student_name"],	
 		order_by="idx",
 	)
 	learners = [

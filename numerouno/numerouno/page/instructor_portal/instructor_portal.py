@@ -2,6 +2,14 @@ import frappe
 from frappe import _
 
 from numerouno.numerouno.permissions import ADNOC_CERTIFICATE_VIEW_ROLE
+from numerouno.numerouno.utils.course_form_flags import (
+    FLAG_ROSPA,
+    FLAG_SAFETY_BRIEFING,
+    FORM_KEY_TO_FLAG,
+    filter_group_rows_by_flag,
+    filter_student_groups_by_flag,
+    resolve_form_flags,
+)
 
 
 def _has_adnoc_certificate_view_role(roles):
@@ -671,6 +679,7 @@ def _build_instructor_form_filters(
     student=None,
     course=None,
     student_filter=False,
+    form_key=None,
 ):
     instructor = (instructor or "").strip()
     student_group = (student_group or "").strip()
@@ -682,6 +691,9 @@ def _build_instructor_form_filters(
         return None
 
     scoped_names = _scope_student_group_names(student_group_names, student_group, course)
+    flag_field = FORM_KEY_TO_FLAG.get(form_key)
+    if flag_field:
+        scoped_names = filter_student_groups_by_flag(scoped_names, flag_field)
     filters = {"docstatus": ["in", [0, 1]]}
     if not _apply_scoped_student_group_filter(filters, scoped_names):
         return None
@@ -731,6 +743,7 @@ def _get_instructor_form_records(
         student=student,
         course=course,
         student_filter=config.get("student_filter"),
+        form_key=form_key,
     )
     if filters is None:
         return {"records": [], "total": 0}
@@ -817,15 +830,21 @@ def get_instructor_portal_data(
 
     student_group_names = _resolve_student_group_names(user, roles, instructor)
 
+    form_flags = resolve_form_flags(
+        course=course,
+        student_group=student_group,
+        student_group_names=student_group_names,
+    )
+
     if student_group_names == []:
-        return {"attendance": [], "cards": []}
+        return {"attendance": [], "cards": [], "form_flags": form_flags}
 
     scoped_names = _scope_student_group_names(student_group_names, student_group, course)
     attendance_filters = {"docstatus": ["in", [0, 1]]}
     card_filters = {"docstatus": ["in", [0, 1]]}
 
     if not _apply_scoped_student_group_filter(attendance_filters, scoped_names):
-        return {"attendance": [], "cards": []}
+        return {"attendance": [], "cards": [], "form_flags": form_flags}
     _apply_scoped_student_group_filter(card_filters, scoped_names)
 
     if student:
@@ -895,6 +914,7 @@ def get_instructor_portal_data(
         "attendance_offset": attendance_offset,
         "card_limit": card_limit,
         "card_offset": card_offset,
+        "form_flags": form_flags,
     }
 
 
@@ -1596,6 +1616,14 @@ def get_safety_briefing_group_status(student_group=None, course=None, instructor
             "briefing_types": SAFETY_BRIEFING_TYPES,
         }
 
+    groups = filter_group_rows_by_flag(groups, FLAG_SAFETY_BRIEFING)
+    if not groups:
+        return {
+            "groups": [],
+            "summary": {"total": 0, "submitted": 0, "draft": 0, "pending": 0},
+            "briefing_types": SAFETY_BRIEFING_TYPES,
+        }
+
     group_names = [row.name for row in groups]
     briefing_rows = frappe.get_all(
         "Safety Briefing",
@@ -1911,6 +1939,10 @@ def get_rospa_practical_group_status(student_group=None, course=None, instructor
     if not groups:
         return empty_response
 
+    groups = filter_group_rows_by_flag(groups, FLAG_ROSPA)
+    if not groups:
+        return empty_response
+
     group_names = [row.name for row in groups]
     learner_counts = {
         row.parent: cint(row.total)
@@ -2019,6 +2051,10 @@ def get_rospa_learning_outcome_group_status(student_group=None, course=None, ins
         order_by="modified desc",
         limit=300,
     )
+    if not groups:
+        return empty_response
+
+    groups = filter_group_rows_by_flag(groups, FLAG_ROSPA)
     if not groups:
         return empty_response
 

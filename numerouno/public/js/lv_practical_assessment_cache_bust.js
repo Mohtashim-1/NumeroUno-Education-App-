@@ -7,6 +7,7 @@
 		localStorage.removeItem("_page:instructor-portal");
 		localStorage.removeItem("_page:habc2-examination-form");
 		localStorage.removeItem("_page:habc1-assessment-form");
+		localStorage.removeItem("_page:course-assessor-checklist-form");
 	} catch (e) {
 		// ignore
 	}

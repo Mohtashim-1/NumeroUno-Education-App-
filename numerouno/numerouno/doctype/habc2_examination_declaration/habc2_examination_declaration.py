@@ -14,11 +14,13 @@ DEFAULT_CENTRE_NO = "12043"
 
 class HABC2ExaminationDeclaration(Document):
 	def before_print(self, settings=None):
+		self._sync_learner_names()
 		self._sync_learner_signatures()
 		self.learner_pages = paginate_learners(self.learners)
 
 	def validate(self):
 		self._sync_tutor()
+		self._sync_learner_names()
 		self._sync_learner_signatures()
 		self._number_learners()
 		self._number_rows()
@@ -45,6 +47,15 @@ class HABC2ExaminationDeclaration(Document):
 		for idx, row in enumerate(self.learners or [], start=1):
 			row.sr_no = idx
 
+	def _sync_learner_names(self):
+		for row in self.learners or []:
+			if not row.student:
+				continue
+			names, surname = _split_name(row.student)
+			if names or surname:
+				row.learner_names = names
+				row.learner_surname = surname
+
 	def _sync_learner_signatures(self):
 		from numerouno.numerouno.utils.signatures import is_empty_signature, resolve_learner_signature
 
@@ -69,44 +80,59 @@ def get_group_instructor(student_group):
 
 def _strip_name_suffix(value):
 	value = (value or "").strip()
-	return re.sub(r"\s+-\s+[A-Za-z]{2,}[-0-9A-Za-z]*$", "", value).strip()
+	value = re.sub(r"\s+-\s+[A-Za-z0-9][-0-9A-Za-z]*$", "", value).strip()
+	return re.sub(r"\s+", " ", value)
 
 
 def _split_full_name(full):
-	parts = [part for part in _strip_name_suffix(full).split() if part]
+	"""First word → given name(s); remainder → family / second name.
+
+	``FAMILY, Given Names`` (comma) is treated as surname, then given names.
+	"""
+	full = _strip_name_suffix(full)
+	if "," in full:
+		left, right = full.split(",", 1)
+		surname, given = left.strip(" ,"), right.strip(" ,")
+		if surname and given:
+			return given, surname
+		full = f"{given} {surname}".strip()
+
+	parts = [part for part in full.replace(",", " ").split() if part]
 	if not parts:
 		return "", ""
 	if len(parts) == 1:
 		return parts[0], ""
-	return " ".join(parts[:-1]), parts[-1]
+	return parts[0], " ".join(parts[1:])
 
 
 def _split_name(student, student_name=""):
-	"""Use Student First/Last Name when filled; otherwise split the full name."""
-	values = frappe.db.get_value(
-		"Student",
-		student,
-		["first_name", "middle_name", "last_name", "student_name", "custom_full_name_english"],
-		as_dict=True,
-	) or frappe._dict()
+	"""Split Student.student_name (or first_name) into given name + family name."""
+	values = frappe._dict()
+	if student:
+		values = frappe.db.get_value(
+			"Student",
+			student,
+			["first_name", "middle_name", "last_name", "student_name", "custom_full_name_english"],
+			as_dict=True,
+		) or frappe._dict()
 	first = (values.get("first_name") or "").strip()
 	middle = (values.get("middle_name") or "").strip()
 	last = (values.get("last_name") or "").strip()
-	if last:
+	full = (
+		(values.get("student_name") or "").strip()
+		or (values.get("custom_full_name_english") or "").strip()
+		or " ".join(part for part in (first, middle, last) if part).strip()
+		or (student_name or "").strip()
+	)
+
+	# Dedicated Last Name only when it is not the whole student name.
+	if last and last.upper() != full.upper() and last.upper() not in (first or "").upper():
 		given = " ".join(part for part in (first, middle) if part).strip()
-		given_u = given.upper()
-		last_u = last.upper()
-		if given_u.endswith(" " + last_u):
+		if given.upper().endswith(" " + last.upper()):
 			given = given[: -len(last)].strip()
 		return given or first, last
 
-	source = (
-		(values.get("custom_full_name_english") or "").strip()
-		or (student_name or "").strip()
-		or " ".join(part for part in (first, middle) if part).strip()
-		or (values.get("student_name") or "").strip()
-	)
-	return _split_full_name(source)
+	return _split_full_name(full)
 
 
 def _gender_code(value):

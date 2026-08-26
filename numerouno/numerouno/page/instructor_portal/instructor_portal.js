@@ -210,6 +210,10 @@ function _instructor_portal_boot(page) {
 				color: #ffffff;
 			}
 
+			.portal-tab[hidden] {
+				display: none !important;
+			}
+
 			.portal-section[hidden] {
 				display: none;
 			}
@@ -550,12 +554,12 @@ function _instructor_portal_boot(page) {
 					<button type="button" class="portal-tab" data-target="result-section">Result</button>
 					<button type="button" class="portal-tab" data-target="bulk-assessment-section">Bulk Assessment</button>
 					<button type="button" class="portal-tab" data-target="resit-section">Resit</button>
-					<button type="button" class="portal-tab" data-target="assessor-checklist-section">Course Assessor Checklist</button>
-					<button type="button" class="portal-tab" data-target="safety-briefing-section">Safety Briefing</button>
+					<button type="button" class="portal-tab" hidden data-form-flag="assessor_checklist" data-target="assessor-checklist-section">Course Assessor Checklist</button>
+					<button type="button" class="portal-tab" hidden data-form-flag="safety_briefing" data-target="safety-briefing-section">Safety Briefing</button>
 					<button type="button" class="portal-tab" data-target="lv-practical-section">LV Practical Assessment</button>
 					<button type="button" class="portal-tab" data-target="off-road-practical-section">Off Road Practical Assessment</button>
-					<button type="button" class="portal-tab" data-target="rospa-practical-section">ROSPA Practical Assessment</button>
-					<button type="button" class="portal-tab" data-target="rospa-learning-outcome-section">ROSPA Learning Outcome</button>
+					<button type="button" class="portal-tab" hidden data-form-flag="rospa" data-target="rospa-practical-section">ROSPA Practical Assessment</button>
+					<button type="button" class="portal-tab" hidden data-form-flag="rospa" data-target="rospa-learning-outcome-section">ROSPA Learning Outcome</button>
 					<button type="button" class="portal-tab" data-target="wms-pretest-section">WMS Pretest</button>
 					<button type="button" class="portal-tab" data-target="adsd-pretest-section">ADSD Pretest</button>
 				</div>
@@ -1170,6 +1174,11 @@ function _instructor_portal_boot(page) {
 	var pageSize = 50;
 	var isAdnocInstructor = false;
 	var safetyBriefingTypes = [];
+	var formFlags = {
+		safety_briefing: 0,
+		assessor_checklist: 0,
+		rospa: 0
+	};
 	var filterState = {
 		instructor: "",
 		course: "",
@@ -1212,6 +1221,7 @@ function _instructor_portal_boot(page) {
 			},
 			callback: function (r) {
 				var message = r.message || {};
+				apply_form_flags(message.form_flags);
 				render_attendance(message.attendance || [], attendanceOffset > 0);
 				render_cards(message.cards || [], cardsOffset > 0);
 				if (attendanceOffset === 0 && cardsOffset === 0) {
@@ -1225,6 +1235,7 @@ function _instructor_portal_boot(page) {
 				}
 			},
 			error: function () {
+				apply_form_flags({});
 				render_attendance([]);
 				render_cards([]);
 				render_metrics([], []);
@@ -1235,12 +1246,40 @@ function _instructor_portal_boot(page) {
 
 	function init_tabs() {
 		$('.portal-tab').off('click').on('click', function () {
+			if (this.hidden) {
+				return;
+			}
 			var target = $(this).data('target');
 			$('.portal-tab').removeClass('active');
 			$(this).addClass('active');
 			$('.portal-section').attr('hidden', true);
 			$(`#${target}`).removeAttr('hidden');
 		});
+	}
+
+	function apply_form_flags(flags) {
+		formFlags = {
+			safety_briefing: flags && flags.safety_briefing ? 1 : 0,
+			assessor_checklist: flags && flags.assessor_checklist ? 1 : 0,
+			rospa: flags && flags.rospa ? 1 : 0
+		};
+		var activeWasHidden = false;
+		$(".portal-tab[data-form-flag]").each(function () {
+			var $tab = $(this);
+			var show = !!formFlags[$tab.data("form-flag")];
+			if (show) {
+				$tab.removeAttr("hidden");
+			} else {
+				if ($tab.hasClass("active")) {
+					activeWasHidden = true;
+				}
+				$tab.attr("hidden", true).removeClass("active");
+				$("#" + $tab.data("target")).attr("hidden", true);
+			}
+		});
+		if (activeWasHidden) {
+			$('.portal-tab[data-target="attendance-section"]').trigger("click");
+		}
 	}
 
 	function init_filters() {

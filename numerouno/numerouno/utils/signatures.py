@@ -47,7 +47,14 @@ def resolve_learner_signature(student, student_group=None, learner_signature=Non
 	if sig:
 		return sig
 
-	return frappe.db.get_value("Student Card", {"student": student}, "student_signature") or ""
+	card_sig = frappe.db.get_value("Student Card", {"student": student}, "student_signature") or ""
+	if not is_empty_signature(card_sig):
+		return card_sig
+
+	image = frappe.db.get_value("Student", student, "image") or ""
+	if not is_empty_signature(image):
+		return image
+	return ""
 
 
 def _attendance_signature(student, student_group=None):
@@ -57,21 +64,25 @@ def _attendance_signature(student, student_group=None):
 		group_sql = " and student_group = %s"
 		params.append(student_group)
 
-	row = frappe.db.sql(
+	rows = frappe.db.sql(
 		f"""
 		select custom_student_signature, custom_student_signature1
 		from `tabStudent Attendance`
 		where student = %s
+		  and docstatus < 2
 		  and (
-			ifnull(custom_student_signature, '') != ''
-			or ifnull(custom_student_signature1, '') != ''
+			ifnull(trim(custom_student_signature), '') != ''
+			or ifnull(trim(custom_student_signature1), '') != ''
 		  )
 		  {group_sql}
 		order by docstatus desc, date desc, modified desc
-		limit 1
+		limit 10
 		""",
 		tuple(params),
 	)
-	if not row:
-		return ""
-	return (row[0][0] or row[0][1] or "") or ""
+	for row in rows or []:
+		for value in row:
+			sig = (value or "").strip()
+			if not is_empty_signature(sig):
+				return sig
+	return ""

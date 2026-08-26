@@ -400,8 +400,11 @@ def submit_form(docname):
 @frappe.whitelist()
 def cancel_form(docname):
 	doc = frappe.get_doc("Assessor Checklist", docname)
-	if doc.docstatus == 1:
-		doc.cancel()
+	if doc.docstatus == 2:
+		return {"name": doc.name, "docstatus": doc.docstatus}
+	if doc.docstatus != 1:
+		frappe.throw("Only a submitted Course Assessor Checklist can be cancelled")
+	doc.cancel()
 	return {"name": doc.name, "docstatus": doc.docstatus}
 
 

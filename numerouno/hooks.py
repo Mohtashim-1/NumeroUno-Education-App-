@@ -44,7 +44,7 @@ portal_menu_items = [
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_js = "/assets/numerouno/js/lv_practical_assessment_cache_bust.js?v=habc2"
+app_include_js = "/assets/numerouno/js/lv_practical_assessment_cache_bust.js?v=cac-cancel"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/numerouno/css/numerouno.css"
@@ -371,4 +371,5 @@ after_migrate = [
     "numerouno.numerouno.training_schedule_setup.after_migrate",
     "numerouno.numerouno.habc2_setup.after_migrate",
     "numerouno.numerouno.habc1_setup.after_migrate",
+    "numerouno.numerouno.course_form_flags_setup.after_migrate",
 ]
