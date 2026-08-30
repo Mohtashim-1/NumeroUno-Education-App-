@@ -371,5 +371,7 @@ after_migrate = [
     "numerouno.numerouno.training_schedule_setup.after_migrate",
     "numerouno.numerouno.habc2_setup.after_migrate",
     "numerouno.numerouno.habc1_setup.after_migrate",
+    "numerouno.numerouno.habc_workspace.after_migrate",
     "numerouno.numerouno.course_form_flags_setup.after_migrate",
+    "numerouno.numerouno.sales_invoice_nutc_po_setup.after_migrate",
 ]

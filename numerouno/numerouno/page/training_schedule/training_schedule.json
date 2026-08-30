@@ -12,16 +12,7 @@
  "page_name": "training-schedule",
  "roles": [
   {
-   "role": "System Manager"
-  },
-  {
-   "role": "Instructor"
-  },
-  {
-   "role": "Academics User"
-  },
-  {
-   "role": "Trainer"
+   "role": "Training Schedule"
   }
  ],
  "script": null,

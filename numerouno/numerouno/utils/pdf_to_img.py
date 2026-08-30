@@ -1,3 +1,4 @@
+import os
 import base64
 from urllib.parse import unquote, urlparse
 
@@ -21,10 +22,18 @@ def _get_file_path(file_url):
         fields=["name"],
         limit=1,
     )
-    if not file_doc:
-        return None
+    if file_doc:
+        full_path = frappe.get_doc("File", file_doc[0].name).get_full_path()
+        return os.path.abspath(full_path) if full_path else None
 
-    return frappe.get_doc("File", file_doc[0].name).get_full_path()
+    fname = os.path.basename(normalized_url.split("?")[0])
+    if not fname:
+        return None
+    is_private = "/private/files/" in normalized_url
+    candidate = frappe.utils.get_files_path(fname, is_private=is_private)
+    if candidate and os.path.exists(candidate):
+        return os.path.abspath(candidate)
+    return None
 
 
 def _get_content_rect(page, padding=12):
@@ -55,30 +64,42 @@ def _get_content_rect(page, padding=12):
     content_rect.y1 = min(page.rect.y1, content_rect.y1 + padding)
     return content_rect
 
-@frappe.whitelist(allow_guest=True)
-def pdf_to_base64_image(file_url):
+def _page_to_data_uri(page, clip=False, scale=2):
+    kwargs = {"matrix": fitz.Matrix(scale, scale), "alpha": False}
+    if clip:
+        kwargs["clip"] = _get_content_rect(page)
+    pix = page.get_pixmap(**kwargs)
+    img_bytes = pix.tobytes("png")
+    b64 = base64.b64encode(img_bytes).decode("utf-8")
+    return f"data:image/png;base64,{b64}"
+
+
+def pdf_to_base64_images(file_url, max_pages=20, clip=False, scale=2):
+    """Convert every PDF page into a print-ready PNG data URI."""
     try:
         file_path = _get_file_path(file_url)
         if not file_path:
-            return None
+            return []
 
         pdf_doc = fitz.open(file_path)
         try:
-            page = pdf_doc[0]
-            clip_rect = _get_content_rect(page)
-
-            # Render only the visible content area for cleaner print output.
-            pix = page.get_pixmap(
-                matrix=fitz.Matrix(3, 3),
-                alpha=False,
-                clip=clip_rect,
-            )
-            img_bytes = pix.tobytes("png")
+            page_count = min(len(pdf_doc), int(max_pages or 20))
+            return [
+                _page_to_data_uri(pdf_doc[index], clip=clip, scale=scale)
+                for index in range(page_count)
+            ]
         finally:
             pdf_doc.close()
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "PDF to Images Conversion Error")
+        return []
 
-        b64 = base64.b64encode(img_bytes).decode("utf-8")
-        return f"data:image/png;base64,{b64}"
+
+@frappe.whitelist(allow_guest=True)
+def pdf_to_base64_image(file_url):
+    try:
+        pages = pdf_to_base64_images(file_url, max_pages=1, clip=True, scale=3)
+        return pages[0] if pages else None
     except Exception:
         frappe.log_error(frappe.get_traceback(), "PDF to Image Conversion Error")
         return None

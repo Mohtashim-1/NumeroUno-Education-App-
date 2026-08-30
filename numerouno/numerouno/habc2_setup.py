@@ -11,8 +11,9 @@ MODULE = "Numerouno"
 DOCTYPE = "HABC2 Examination Declaration"
 PRINT_NAME = "HABC2 Examination Declaration"
 WORKSPACE = "Forms"
-HEADER = "HABC2"
-SHORTCUT_LABEL = "HABC2 Examination Declaration"
+HEADER = "Fire Safety"
+SHORTCUT_LABEL = "Fire Safety"
+LIST_LABEL = "Fire Safety List"
 FORM_PAGE = "habc2-examination-form"
 
 
@@ -87,26 +88,30 @@ def _ensure_workspace():
 		return
 
 	workspace = frappe.get_doc("Workspace", WORKSPACE)
-	existing_links = {row.link_to for row in workspace.shortcuts}
-	if DOCTYPE not in existing_links:
+	existing_links = {row.link_to: row for row in workspace.shortcuts}
+	if DOCTYPE in existing_links:
+		existing_links[DOCTYPE].label = LIST_LABEL
+	else:
 		workspace.append(
 			"shortcuts",
 			{
 				"type": "DocType",
 				"link_to": DOCTYPE,
 				"doc_view": "List",
-				"label": SHORTCUT_LABEL,
+				"label": LIST_LABEL,
 				"color": "Blue",
 			},
 		)
-	if FORM_PAGE not in existing_links and frappe.db.exists("Page", FORM_PAGE):
+	if FORM_PAGE in existing_links:
+		existing_links[FORM_PAGE].label = SHORTCUT_LABEL
+	elif frappe.db.exists("Page", FORM_PAGE):
 		workspace.append(
 			"shortcuts",
 			{
 				"type": "Page",
 				"link_to": FORM_PAGE,
 				"label": SHORTCUT_LABEL,
-				"color": "Blue",
+				"color": "Orange",
 			},
 		)
 
@@ -135,6 +140,14 @@ def _ensure_workspace():
 				"id": frappe.generate_hash(length=10),
 				"type": "shortcut",
 				"data": {"shortcut_name": SHORTCUT_LABEL, "col": 3},
+			}
+		)
+	if LIST_LABEL not in existing_shortcut_names:
+		content.append(
+			{
+				"id": frappe.generate_hash(length=10),
+				"type": "shortcut",
+				"data": {"shortcut_name": LIST_LABEL, "col": 3},
 			}
 		)
 	workspace.content = json.dumps(content)

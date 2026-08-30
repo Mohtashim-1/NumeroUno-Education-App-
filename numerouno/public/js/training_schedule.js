@@ -9,7 +9,7 @@
 	async function call(method, args = {}) {
 		const payload = {};
 		Object.entries(args).forEach(([key, value]) => {
-			if (value !== null && value !== undefined && value !== "") {
+			if (value !== null && value !== undefined) {
 				payload[key] = value;
 			}
 		});
@@ -73,15 +73,22 @@
 				room: "",
 				status: "",
 				search: "",
+				search_by: "candidate",
 			});
 			const modalOpen = ref(false);
 			const detailOpen = ref(false);
 			const detail = ref(null);
 			const detailStudents = ref([]);
+			const detailPeople = ref([]);
 			const weekStudents = ref({ groups: [], student_total: 0 });
 			const saving = ref(false);
 			const form = ref(emptyForm());
-			const suggestions = ref({ StudentGroup: [], Instructor: [], Room: [] });
+			const suggestions = ref({ StudentGroup: [], Instructor: [], Room: [], Customer: [] });
+			const candidateOpen = ref(false);
+			const candidateSaving = ref(false);
+			const candidateForm = ref(emptyCandidate());
+			const datePicker = ref({ open: false, field: "", year: 2026, month: 0 });
+			const detailSearch = ref({ q: "", by: "candidate" });
 
 			function capacityText(row) {
 				const invited = row?.invited || row?.booked || row?.student_count || 0;
@@ -126,6 +133,20 @@
 				return "Invited";
 			}
 
+			function emptyCandidate() {
+				return {
+					candidate_name: "",
+					po_number: "",
+					customer: "",
+					customer_name: "",
+					date: "",
+					student_group: "",
+					course: "",
+					course_schedule: "",
+					create_student: false,
+				};
+			}
+
 			function emptyForm() {
 				return {
 					name: "",
@@ -161,17 +182,26 @@
 					if (room && s.room !== room) return false;
 					if (status && s.status !== status) return false;
 					if (q) {
-						const blob = [
-							s.instructor_name,
-							s.course,
-							s.student_group,
-							s.student_group_name,
-							s.customer_company,
-							s.room_name,
-						]
-							.join(" ")
-							.toLowerCase();
-						if (!blob.includes(q)) return false;
+						const by = filters.value.search_by || "candidate";
+						let blob = "";
+						if (by === "candidate") {
+							blob = [s.people_names, s.student_group_name].join(" ");
+						} else if (by === "customer") {
+							blob = [s.customer_company, s.customer].join(" ");
+						} else if (by === "course") {
+							blob = [s.course, s.student_group_name].join(" ");
+						} else {
+							blob = [
+								s.people_names,
+								s.instructor_name,
+								s.course,
+								s.student_group,
+								s.student_group_name,
+								s.customer_company,
+								s.room_name,
+							].join(" ");
+						}
+						if (!blob.toLowerCase().includes(q)) return false;
 					}
 					return true;
 				});
@@ -210,6 +240,37 @@
 					matchesSearch([r.name, r.room_name, r.room_number])
 				)
 			);
+
+			const detailSearchPlaceholder = computed(() => {
+				const by = detailSearch.value.by || "candidate";
+				if (by === "customer") return "Search by customer name";
+				if (by === "po") return "Search by PO number";
+				if (by === "course") return "Search by course name";
+				return "Search by candidate name";
+			});
+
+			const filteredDetailPeople = computed(() => {
+				const people = (detailPeople.value && detailPeople.value.length)
+					? detailPeople.value
+					: (detailStudents.value || []);
+				const q = (detailSearch.value.q || "").trim().toLowerCase();
+				if (!q) return people;
+				const by = detailSearch.value.by || "candidate";
+				const course = (detail.value && detail.value.course) || "";
+				return people.filter((st) => {
+					let blob = "";
+					if (by === "customer") {
+						blob = [st.company, st.customer_name].join(" ");
+					} else if (by === "po") {
+						blob = st.po_number || "";
+					} else if (by === "course") {
+						blob = [course, st.start_date, st.end_date].join(" ");
+					} else {
+						blob = [st.candidate_name, st.student_name, st.student].join(" ");
+					}
+					return blob.toLowerCase().includes(q);
+				});
+			});
 
 			async function loadBoot() {
 				boot.value = await call("get_boot");
@@ -260,10 +321,13 @@
 				detailOpen.value = true;
 				detail.value = session;
 				detailStudents.value = [];
+				detailPeople.value = [];
+				detailSearch.value = { q: "", by: "candidate" };
 				try {
 					const data = await call("get_session_detail", { name: session.name });
 					detail.value = data.session;
 					detailStudents.value = data.students || [];
+					detailPeople.value = data.people || data.students || [];
 				} catch (e) {
 					error.value = e.message;
 				}
@@ -302,6 +366,7 @@
 						instructor: filters.value.instructor || null,
 						student_group: filters.value.student_group || null,
 						search: filters.value.search || null,
+						search_by: filters.value.search_by || null,
 					});
 				} catch (e) {
 					error.value = e.message;
@@ -312,7 +377,7 @@
 				const rows = await call("search_links", {
 					doctype,
 					txt,
-					student_group: form.value.student_group || null,
+					student_group: candidateForm.value.student_group || form.value.student_group || null,
 				});
 				suggestions.value[key] = (rows || []).map((row) => ({
 					value: row[0],
@@ -354,6 +419,183 @@
 				form.value.room = item.value;
 				form.value.room_name = item.label;
 				suggestions.value.Room = [];
+			}
+
+			function pickCustomer(item) {
+				candidateForm.value.customer = item.value;
+				candidateForm.value.customer_name = item.label;
+				suggestions.value.Customer = [];
+			}
+
+			function formatDateLabel(iso) {
+				if (!iso) return "";
+				const d = new Date(String(iso).slice(0, 10) + "T00:00:00");
+				if (Number.isNaN(d.getTime())) return iso;
+				return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+			}
+
+			function calendarCells() {
+				const year = datePicker.value.year;
+				const month = datePicker.value.month;
+				const startDow = new Date(year, month, 1).getDay();
+				const daysInMonth = new Date(year, month + 1, 0).getDate();
+				const cells = [];
+				for (let i = 0; i < startDow; i++) cells.push(null);
+				for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+				return cells;
+			}
+
+			function calendarMonthLabel() {
+				return new Date(datePicker.value.year, datePicker.value.month, 1).toLocaleDateString(undefined, {
+					month: "long",
+					year: "numeric",
+				});
+			}
+
+			function openCalendar(field, current) {
+				const raw = String(current || "").slice(0, 10);
+				const d = raw ? new Date(raw + "T00:00:00") : new Date();
+				const valid = !Number.isNaN(d.getTime()) ? d : new Date();
+				datePicker.value = {
+					open: datePicker.value.field === field ? !datePicker.value.open : true,
+					field,
+					year: valid.getFullYear(),
+					month: valid.getMonth(),
+				};
+			}
+
+			function shiftCalendar(delta) {
+				let year = datePicker.value.year;
+				let month = datePicker.value.month + delta;
+				if (month < 0) {
+					month = 11;
+					year -= 1;
+				} else if (month > 11) {
+					month = 0;
+					year += 1;
+				}
+				datePicker.value.year = year;
+				datePicker.value.month = month;
+			}
+
+			function pickCalendarDay(day) {
+				if (!day) return;
+				const value = `${datePicker.value.year}-${String(datePicker.value.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+				if (datePicker.value.field === "candidate") candidateForm.value.date = value;
+				else form.value.date = value;
+				datePicker.value.open = false;
+			}
+
+			function isSelectedDay(day) {
+				if (!day) return false;
+				const current = datePicker.value.field === "candidate" ? candidateForm.value.date : form.value.date;
+				const value = `${datePicker.value.year}-${String(datePicker.value.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+				return String(current || "").slice(0, 10) === value;
+			}
+
+			function onCandidateOverlayClick() {
+				if (datePicker.value.open) {
+					datePicker.value.open = false;
+					return;
+				}
+				candidateOpen.value = false;
+			}
+
+			function openAddCandidate() {
+				if (!detail.value) return;
+				candidateForm.value = {
+					...emptyCandidate(),
+					date: detail.value.date,
+					student_group: detail.value.student_group,
+					course: detail.value.course,
+					course_schedule: detail.value.name,
+					customer: detail.value.customer || "",
+					customer_name: detail.value.customer_company || "",
+					create_student: false,
+				};
+				error.value = "";
+				datePicker.value.open = false;
+				candidateOpen.value = true;
+			}
+
+			async function saveCandidate() {
+				if (!candidateForm.value.candidate_name) {
+					error.value = "Candidate name is required.";
+					return;
+				}
+				if (!candidateForm.value.date) {
+					error.value = "Date is required.";
+					return;
+				}
+				candidateSaving.value = true;
+				error.value = "";
+				try {
+					await call("add_candidate", {
+						data: {
+							candidate_name: candidateForm.value.candidate_name,
+							po_number: candidateForm.value.po_number,
+							customer: candidateForm.value.customer,
+							customer_name: candidateForm.value.customer_name,
+							date: candidateForm.value.date,
+							student_group: candidateForm.value.student_group,
+							course: candidateForm.value.course,
+							course_schedule: candidateForm.value.course_schedule,
+							create_student: !!candidateForm.value.create_student,
+						},
+					});
+					candidateOpen.value = false;
+					if (detail.value?.name) await openDetail(detail.value);
+					await loadWeek();
+					if (view.value === "students") await loadStudentsView();
+				} catch (e) {
+					error.value = e.message;
+				} finally {
+					candidateSaving.value = false;
+				}
+			}
+
+			async function createStudent(person) {
+				if (!person?.candidate) return;
+				saving.value = true;
+				error.value = "";
+				try {
+					await call("create_student_from_candidate", { name: person.candidate });
+					if (detail.value?.name) await openDetail(detail.value);
+					await loadWeek();
+					if (view.value === "students") await loadStudentsView();
+				} catch (e) {
+					error.value = e.message;
+				} finally {
+					saving.value = false;
+				}
+			}
+
+			async function savePo(person, value) {
+				if (!boot.value.can_manage || !person) return;
+				const next = (value || "").trim();
+				if ((person.po_number || "") === next) return;
+				const previous = person.po_number || "";
+				person.po_number = next;
+				error.value = "";
+				try {
+					const data = await call("update_po_number", {
+						candidate: person.candidate || "",
+						student: person.student || "",
+						student_group: person.student_group || detail.value?.student_group || "",
+						po_number: next,
+					});
+					person.po_number = data.po_number || next;
+				} catch (e) {
+					person.po_number = previous;
+					error.value = e.message;
+				}
+			}
+
+			function searchPlaceholder() {
+				const by = filters.value.search_by;
+				if (by === "customer") return "Search by customer name";
+				if (by === "course") return "Search by course name";
+				return "Search by candidate name";
 			}
 
 			async function save() {
@@ -495,6 +737,13 @@
 			});
 
 			watch(
+				() => [filters.value.search, filters.value.search_by, view.value],
+				() => {
+					if (view.value === "students") loadStudentsView();
+				}
+			);
+
+			watch(
 				() => [form.value.date, form.value.student_group],
 				async () => {
 					if (!modalOpen.value || !form.value.student_group || !form.value.date) return;
@@ -540,10 +789,26 @@
 				detailOpen,
 				detail,
 				detailStudents,
+				detailPeople,
 				weekStudents,
 				saving,
 				form,
 				suggestions,
+				candidateOpen,
+				candidateSaving,
+				candidateForm,
+				datePicker,
+				detailSearch,
+				detailSearchPlaceholder,
+				filteredDetailPeople,
+				formatDateLabel,
+				calendarCells,
+				calendarMonthLabel,
+				openCalendar,
+				shiftCalendar,
+				pickCalendarDay,
+				isSelectedDay,
+				onCandidateOverlayClick,
 				formatWeek,
 				initials,
 				shiftWeek,
@@ -552,10 +817,16 @@
 				openCreate,
 				openDetail,
 				openEdit,
+				openAddCandidate,
+				saveCandidate,
+				createStudent,
+				savePo,
 				searchDoctype,
 				pickGroup,
 				pickInstructor,
 				pickRoom,
+				pickCustomer,
+				searchPlaceholder,
 				save,
 				saveCapacity,
 				removeSession,
@@ -637,7 +908,14 @@
 						<p v-else>Weekly planner linked to Student Group, Instructor, Customer and Room</p>
 					</div>
 					<div class="ts-top-right">
-						<input class="ts-search" v-model="filters.search" placeholder="Search trainers, programs...">
+						<div class="ts-search-wrap">
+							<select class="ts-select" v-model="filters.search_by">
+								<option value="candidate">Candidate name</option>
+								<option value="customer">Customer name</option>
+								<option value="course">Course name</option>
+							</select>
+							<input class="ts-search" v-model="filters.search" :placeholder="searchPlaceholder()">
+						</div>
 						<button class="ts-bell" title="This week">🔔<b v-if="week.stats.in_progress">{{ week.stats.in_progress }}</b></button>
 						<div class="ts-user">
 							<div class="ts-avatar">
@@ -764,13 +1042,22 @@
 							</div>
 							<table class="ts-table">
 								<thead>
-									<tr><th>#</th><th>Student</th><th>ID</th><th>Company</th><th>Course</th><th>Course dates</th></tr>
+									<tr><th>#</th><th>Candidate</th><th>PO Number</th><th>Customer</th><th>Course</th><th>Course dates</th></tr>
 								</thead>
 								<tbody>
-									<tr v-for="(st, idx) in g.students" :key="st.student">
+									<tr v-for="(st, idx) in (g.people || g.students || [])" :key="st.student || st.candidate || idx">
 										<td>{{ st.group_roll_number || (idx+1) }}</td>
-										<td><a :href="'/app/student/' + st.student">{{ st.student_name }}</a></td>
-										<td>{{ st.student }}</td>
+										<td>
+											<a v-if="st.student" :href="'/app/student/' + st.student">{{ st.candidate_name || st.student_name }}</a>
+											<span v-else>{{ st.candidate_name || st.student_name }}</span>
+										</td>
+										<td>
+											<input v-if="boot.can_manage" class="ts-po-input" :value="st.po_number"
+												placeholder="PO number"
+												@blur="savePo(st, $event.target.value)"
+												@keydown.enter.prevent="$event.target.blur()">
+											<span v-else>{{ st.po_number || '—' }}</span>
+										</td>
 										<td>{{ st.company || st.customer_name || '—' }}</td>
 										<td>{{ st.course_name || g.course || '—' }}</td>
 										<td>{{ st.start_date || '—' }} to {{ st.end_date || '—' }}</td>
@@ -962,22 +1249,53 @@
 					</div>
 					<div class="ts-detail-students">
 						<div class="ts-student-toolbar">
-							<strong>{{ (detailStudents || []).length }} students</strong>
-							<button v-if="boot.can_manage && detail" class="ts-btn primary" @click="openEdit(detail)">Edit Session</button>
+							<strong>{{ filteredDetailPeople.length }}{{ detailSearch.q ? ' of ' + (detailPeople || detailStudents || []).length : '' }} students</strong>
+							<div class="ts-toolbar-actions" v-if="boot.can_manage && detail">
+								<button class="ts-btn" @click="openAddCandidate">Add Candidate</button>
+								<button class="ts-btn primary" @click="openEdit(detail)">Edit Session</button>
+							</div>
 						</div>
-						<div v-if="!(detailStudents || []).length" class="ts-empty-students">No students on this student group.</div>
+						<div class="ts-detail-search">
+							<select class="ts-select" v-model="detailSearch.by">
+								<option value="candidate">Candidate name</option>
+								<option value="customer">Customer name</option>
+								<option value="po">PO number</option>
+								<option value="course">Course name</option>
+							</select>
+							<input class="ts-search" v-model="detailSearch.q" :placeholder="detailSearchPlaceholder">
+						</div>
+						<div v-if="!(detailPeople || detailStudents || []).length" class="ts-empty-students">No candidates on this session yet.</div>
+						<div v-else-if="!filteredDetailPeople.length" class="ts-empty-students">No candidates match this search.</div>
 						<table class="ts-table" v-else>
 							<thead>
-								<tr><th>#</th><th>Student</th><th>ID</th><th>Company</th><th>Status</th><th>Course dates</th></tr>
+								<tr><th>#</th><th>Candidate</th><th>PO Number</th><th>Customer</th><th>Status</th><th>Course dates</th><th></th></tr>
 							</thead>
 							<tbody>
-								<tr v-for="(st, idx) in detailStudents" :key="st.student">
+								<tr v-for="(st, idx) in filteredDetailPeople" :key="st.student || st.candidate || idx">
 									<td>{{ st.group_roll_number || (idx+1) }}</td>
-									<td><a :href="'/app/student/' + st.student">{{ st.student_name }}</a></td>
-									<td>{{ st.student }}</td>
+									<td>
+										<a v-if="st.student" :href="'/app/student/' + st.student">{{ st.candidate_name || st.student_name }}</a>
+										<span v-else>{{ st.candidate_name || st.student_name }}</span>
+									</td>
+									<td>
+										<input v-if="boot.can_manage" class="ts-po-input" :value="st.po_number"
+											placeholder="PO number"
+											@blur="savePo(st, $event.target.value)"
+											@keydown.enter.prevent="$event.target.blur()">
+										<span v-else>{{ st.po_number || '—' }}</span>
+									</td>
 									<td>{{ st.company || st.customer_name || '—' }}</td>
-									<td><span class="ts-att" :class="(st.attendance || 'invited').toLowerCase()">{{ attendanceLabel(st.attendance) }}</span></td>
+									<td>
+										<span class="ts-att" :class="st.can_create_student ? 'candidate' : (st.attendance || 'invited').toLowerCase()">
+											{{ st.can_create_student ? 'Invited' : attendanceLabel(st.attendance) }}
+										</span>
+									</td>
 									<td>{{ st.start_date || '—' }} to {{ st.end_date || '—' }}</td>
+									<td>
+										<button v-if="boot.can_manage && st.can_create_student" class="ts-btn create" :disabled="saving" @click="createStudent(st)">
+											{{ saving ? 'Creating…' : 'Create Student' }}
+										</button>
+									</td>
 								</tr>
 							</tbody>
 						</table>
@@ -991,7 +1309,23 @@
 					<div class="ts-form">
 						<div>
 							<label>Date</label>
-							<input type="date" v-model="form.date">
+							<div class="ts-datefield" @click.stop>
+								<input type="text" readonly :value="formatDateLabel(form.date)" placeholder="Select date"
+									@click="openCalendar('session', form.date)">
+								<button type="button" class="ts-cal-btn" @click="openCalendar('session', form.date)">📅</button>
+								<div class="ts-cal" v-if="datePicker.open && datePicker.field==='session'">
+									<div class="ts-cal-head">
+										<button type="button" @click="shiftCalendar(-1)">‹</button>
+										<strong>{{ calendarMonthLabel() }}</strong>
+										<button type="button" @click="shiftCalendar(1)">›</button>
+									</div>
+									<div class="ts-cal-dows"><span v-for="d in ['Su','Mo','Tu','We','Th','Fr','Sa']" :key="d">{{ d }}</span></div>
+									<div class="ts-cal-grid">
+										<button type="button" v-for="(day, i) in calendarCells()" :key="i" :disabled="!day"
+											:class="{selected: isSelectedDay(day)}" @click="pickCalendarDay(day)">{{ day || '' }}</button>
+									</div>
+								</div>
+							</div>
 						</div>
 						<div>
 							<label>From time</label>
@@ -1055,6 +1389,56 @@
 						<button class="ts-btn" v-if="form.name" @click="removeSession">Delete</button>
 						<button class="ts-btn" @click="modalOpen=false">Cancel</button>
 						<button class="ts-btn primary" :disabled="saving" @click="save">{{ saving ? 'Saving…' : 'Save Session' }}</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="ts-overlay ts-overlay-top" v-if="candidateOpen" @click.self="onCandidateOverlayClick">
+				<div class="ts-modal">
+					<h3>Add Candidate</h3>
+					<p class="ts-muted" style="margin:-6px 0 12px">Enter candidate details for this session date. Reception can create the Student when the candidate arrives.</p>
+					<div class="ts-form">
+						<div class="full">
+							<label>Candidate name</label>
+							<input v-model="candidateForm.candidate_name" placeholder="Full name" autofocus>
+						</div>
+						<div>
+							<label>PO Number</label>
+							<input v-model="candidateForm.po_number" placeholder="Customer PO">
+						</div>
+						<div>
+							<label>Date</label>
+							<div class="ts-datefield" @click.stop>
+								<input type="text" readonly :value="formatDateLabel(candidateForm.date)" placeholder="Select date"
+									@click="openCalendar('candidate', candidateForm.date)">
+								<button type="button" class="ts-cal-btn" @click="openCalendar('candidate', candidateForm.date)">📅</button>
+								<div class="ts-cal" v-if="datePicker.open && datePicker.field==='candidate'">
+									<div class="ts-cal-head">
+										<button type="button" @click="shiftCalendar(-1)">‹</button>
+										<strong>{{ calendarMonthLabel() }}</strong>
+										<button type="button" @click="shiftCalendar(1)">›</button>
+									</div>
+									<div class="ts-cal-dows"><span v-for="d in ['Su','Mo','Tu','We','Th','Fr','Sa']" :key="d">{{ d }}</span></div>
+									<div class="ts-cal-grid">
+										<button type="button" v-for="(day, i) in calendarCells()" :key="i" :disabled="!day"
+											:class="{selected: isSelectedDay(day)}" @click="pickCalendarDay(day)">{{ day || '' }}</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="full ts-suggest">
+							<label>Customer name</label>
+							<input :value="candidateForm.customer_name || candidateForm.customer" placeholder="Search customer"
+								@input="candidateForm.customer_name=$event.target.value; candidateForm.customer=''; searchDoctype('Customer', $event.target.value, 'Customer')">
+							<ul v-if="suggestions.Customer.length">
+								<li v-for="item in suggestions.Customer" :key="item.value" @click="pickCustomer(item)">{{ item.label }}</li>
+							</ul>
+						</div>
+						<p class="ts-error" v-if="error && candidateOpen">{{ error }}</p>
+					</div>
+					<div class="ts-modal-actions">
+						<button class="ts-btn" @click="candidateOpen=false">Cancel</button>
+						<button class="ts-btn primary" :disabled="candidateSaving" @click="saveCandidate">{{ candidateSaving ? 'Saving…' : 'Add Candidate' }}</button>
 					</div>
 				</div>
 			</div>

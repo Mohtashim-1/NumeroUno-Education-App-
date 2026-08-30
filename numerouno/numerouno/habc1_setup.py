@@ -11,9 +11,9 @@ MODULE = "Numerouno"
 DOCTYPE = "HABC1 Assessment Pack"
 PRINT_NAME = "HABC1 Assessment Pack"
 WORKSPACE = "Forms"
-HEADER = "HABC1"
-SHORTCUT_LABEL = "HABC1 Assessment Pack"
-LIST_LABEL = "HABC1 Pack List"
+HEADER = "First Aid"
+SHORTCUT_LABEL = "First Aid"
+LIST_LABEL = "First Aid List"
 FORM_PAGE = "habc1-assessment-form"
 
 
@@ -89,8 +89,10 @@ def _ensure_workspace():
 		return
 
 	workspace = frappe.get_doc("Workspace", WORKSPACE)
-	existing_links = {row.link_to for row in workspace.shortcuts}
-	if DOCTYPE not in existing_links:
+	existing_links = {row.link_to: row for row in workspace.shortcuts}
+	if DOCTYPE in existing_links:
+		existing_links[DOCTYPE].label = LIST_LABEL
+	else:
 		workspace.append(
 			"shortcuts",
 			{
@@ -101,7 +103,9 @@ def _ensure_workspace():
 				"color": "Blue",
 			},
 		)
-	if FORM_PAGE not in existing_links and frappe.db.exists("Page", FORM_PAGE):
+	if FORM_PAGE in existing_links:
+		existing_links[FORM_PAGE].label = SHORTCUT_LABEL
+	elif frappe.db.exists("Page", FORM_PAGE):
 		workspace.append(
 			"shortcuts",
 			{

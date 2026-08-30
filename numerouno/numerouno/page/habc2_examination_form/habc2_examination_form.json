@@ -11,6 +11,7 @@
  "owner": "Administrator",
  "page_name": "habc2-examination-form",
  "roles": [
+  {"role": "HABC"},
   {"role": "All"},
   {"role": "System Manager"},
   {"role": "Instructor"},
@@ -23,5 +24,5 @@
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "HABC2 Examination Declaration"
+ "title": "Fire Safety"
 }

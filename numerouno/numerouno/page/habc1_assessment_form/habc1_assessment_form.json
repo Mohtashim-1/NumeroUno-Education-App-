@@ -11,6 +11,7 @@
  "owner": "Administrator",
  "page_name": "habc1-assessment-form",
  "roles": [
+  {"role": "HABC"},
   {"role": "All"},
   {"role": "System Manager"},
   {"role": "Instructor"},
@@ -23,5 +24,5 @@
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "HABC1 Assessment Pack"
+ "title": "First Aid"
 }

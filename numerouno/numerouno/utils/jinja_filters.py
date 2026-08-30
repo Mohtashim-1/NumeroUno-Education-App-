@@ -38,3 +38,14 @@ def pdf_to_image(file_url):
     except Exception as e:
         frappe.log_error(f"PDF image filter error: {str(e)}", "PDF Image Filter")
         return ""
+
+
+def pdf_to_images(file_url):
+    """Convert every PDF page into base64 PNGs so print/PDF can embed the full file."""
+    try:
+        from numerouno.numerouno.utils.pdf_to_img import pdf_to_base64_images
+
+        return pdf_to_base64_images(file_url) or []
+    except Exception as e:
+        frappe.log_error(f"PDF images filter error: {str(e)}", "PDF Image Filter")
+        return []

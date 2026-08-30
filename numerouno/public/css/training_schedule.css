@@ -329,13 +329,81 @@ body.ts-body {
 	position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
 	display: grid; place-items: center; z-index: 50; padding: 16px;
 }
+.ts-overlay-top { z-index: 80; }
 .ts-modal {
 	width: min(560px, 100%);
 	background: #fff;
 	border-radius: 18px;
 	padding: 20px;
 	box-shadow: 0 24px 60px rgba(15,23,42,0.2);
+	overflow: visible;
 }
+.ts-datefield {
+	position: relative;
+}
+.ts-datefield input {
+	width: 100%;
+	padding-right: 40px;
+	cursor: pointer;
+	background: #fff;
+}
+.ts-cal-btn {
+	position: absolute;
+	right: 6px;
+	top: 50%;
+	transform: translateY(-50%);
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	font-size: 16px;
+	line-height: 1;
+	padding: 4px;
+}
+.ts-cal {
+	position: absolute;
+	right: 0;
+	top: calc(100% + 6px);
+	z-index: 90;
+	width: 260px;
+	background: #fff;
+	border: 1px solid var(--ts-line);
+	border-radius: 12px;
+	box-shadow: 0 12px 30px rgba(15,23,42,0.18);
+	padding: 10px;
+}
+.ts-cal-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+.ts-cal-head button {
+	border: 1px solid var(--ts-line);
+	background: #fff;
+	border-radius: 8px;
+	width: 28px;
+	height: 28px;
+	cursor: pointer;
+}
+.ts-cal-head strong { font-size: 13px; }
+.ts-cal-dows, .ts-cal-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 2px;
+	text-align: center;
+}
+.ts-cal-dows span { font-size: 10px; color: var(--ts-muted); font-weight: 700; padding: 4px 0; }
+.ts-cal-grid button {
+	border: 0;
+	background: transparent;
+	border-radius: 8px;
+	height: 30px;
+	font-size: 12px;
+	cursor: pointer;
+}
+.ts-cal-grid button:disabled { cursor: default; }
+.ts-cal-grid button:hover:not(:disabled) { background: #f3f0ff; }
+.ts-cal-grid button.selected { background: var(--ts-purple); color: #fff; font-weight: 700; }
 .ts-modal h3 { margin: 0 0 14px; }
 .ts-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .ts-form .full { grid-column: 1 / -1; }
@@ -354,6 +422,45 @@ body.ts-body {
 .ts-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .ts-error { color: #b91c1c; font-size: 12px; grid-column: 1 / -1; }
 .ts-readonly { background: #f8fafc; }
+
+.ts-toolbar-actions { display: flex; gap: 8px; align-items: center; }
+.ts-btn.create {
+	background: #dc2626;
+	border-color: #dc2626;
+	color: #fff;
+	padding: 5px 10px;
+	font-size: 12px;
+}
+.ts-btn.create:hover { filter: brightness(1.05); }
+.ts-att.candidate { background: #ede9fe; color: #5b21b6; }
+.ts-search-wrap {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+.ts-search-wrap .ts-select { min-width: 150px; }
+.ts-search-wrap .ts-search { min-width: 220px; }
+.ts-detail-search {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin: 0 0 12px;
+}
+.ts-detail-search .ts-select { min-width: 160px; }
+.ts-detail-search .ts-search { flex: 1; min-width: 0; }
+.ts-po-input {
+	width: 100%;
+	min-width: 110px;
+	border: 1px solid var(--ts-line);
+	border-radius: 8px;
+	padding: 6px 8px;
+	font-size: 13px;
+	background: #fff;
+}
+.ts-po-input:focus {
+	outline: none;
+	border-color: #7c3aed;
+}
 
 .ts-student-panel { min-width: 0; padding: 16px 18px 20px; }
 .ts-student-toolbar {
