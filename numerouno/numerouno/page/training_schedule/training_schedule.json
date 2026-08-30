@@ -12,6 +12,9 @@
  "page_name": "training-schedule",
  "roles": [
   {
+   "role": "Training Portal"
+  },
+  {
    "role": "Training Schedule"
   }
  ],

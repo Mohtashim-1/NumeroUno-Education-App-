@@ -41,10 +41,20 @@
 		return data.message;
 	}
 
+	function ymd(d) {
+		const y = d.getFullYear();
+		const m = String(d.getMonth() + 1).padStart(2, "0");
+		const day = String(d.getDate()).padStart(2, "0");
+		return `${y}-${m}-${day}`;
+	}
+
 	function formatWeek(start, end) {
-		if (!start || !end) return "";
+		if (!start) return "";
 		const a = new Date(start + "T00:00:00");
-		const b = new Date(end + "T00:00:00");
+		const b = new Date((end || start) + "T00:00:00");
+		if (start === end) {
+			return a.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+		}
 		const opts = { month: "short", day: "numeric" };
 		return `${a.toLocaleDateString(undefined, opts)} – ${b.toLocaleDateString(undefined, { ...opts, year: "numeric" })}`;
 	}
@@ -64,6 +74,7 @@
 			const boot = ref({ user: {}, can_manage: false, categories: [] });
 			const week = ref({ days: [], slots: [], sessions: [], stats: {}, trainers: [] });
 			const weekStart = ref("");
+			const rangeDays = ref(1);
 			const loading = ref(true);
 			const error = ref("");
 			const view = ref("dashboard");
@@ -151,8 +162,9 @@
 				return {
 					name: "",
 					date: "",
+					period: "morning",
 					from_time: "08:00",
-					to_time: "10:00",
+					to_time: "12:00",
 					student_group: "",
 					student_group_name: "",
 					customer_company: "",
@@ -210,7 +222,7 @@
 			const sessionsByCell = computed(() => {
 				const map = {};
 				visibleSessions.value.forEach((s) => {
-					const key = `${s.date}|${s.time_start}|${s.time_end}`;
+					const key = `${s.date}|${s.period || "morning"}`;
 					map[key] = map[key] || [];
 					map[key].push(s);
 				});
@@ -274,7 +286,7 @@
 
 			async function loadBoot() {
 				boot.value = await call("get_boot");
-				weekStart.value = boot.value.week_start;
+				weekStart.value = boot.value.today || boot.value.week_start;
 			}
 
 			async function loadWeek() {
@@ -283,6 +295,7 @@
 				try {
 					week.value = await call("get_week", {
 						week_start: weekStart.value,
+						days: rangeDays.value,
 					});
 					weekStart.value = week.value.week_start;
 					if (view.value === "students") {
@@ -295,15 +308,27 @@
 				}
 			}
 
-			function shiftWeek(days) {
+			function shiftWeek(dir) {
+				const step = rangeDays.value <= 1 ? 1 : 7;
 				const d = new Date(weekStart.value + "T00:00:00");
-				d.setDate(d.getDate() + days);
-				weekStart.value = d.toISOString().slice(0, 10);
+				d.setDate(d.getDate() + dir * step);
+				weekStart.value = ymd(d);
+				loadWeek();
+			}
+
+			function setRange(days) {
+				if (days === rangeDays.value) return;
+				if (days === 1) {
+					const todayStr = boot.value.today || ymd(new Date());
+					const inView = (week.value.days || []).some((d) => d.date === todayStr);
+					weekStart.value = inView ? todayStr : (week.value.days?.[0]?.date || weekStart.value);
+				}
+				rangeDays.value = days;
 				loadWeek();
 			}
 
 			function sessionsAt(day, slot) {
-				return sessionsByCell.value[`${day.date}|${slot.from_time}|${slot.to_time}`] || [];
+				return sessionsByCell.value[`${day.date}|${slot.key || slot.label?.toLowerCase() || "morning"}`] || [];
 			}
 
 			function openCreate(day, slot) {
@@ -311,8 +336,9 @@
 				form.value = {
 					...emptyForm(),
 					date: day?.date || weekStart.value,
+					period: slot?.key || "morning",
 					from_time: slot?.from_time || "08:00",
-					to_time: slot?.to_time || "10:00",
+					to_time: slot?.to_time || "12:00",
 				};
 				modalOpen.value = true;
 			}
@@ -338,6 +364,7 @@
 				form.value = {
 					name: src.name,
 					date: src.date,
+					period: src.period || "morning",
 					from_time: src.time_start,
 					to_time: src.time_end,
 					student_group: src.student_group,
@@ -363,6 +390,7 @@
 				try {
 					weekStudents.value = await call("get_week_students", {
 						week_start: weekStart.value,
+						days: rangeDays.value,
 						instructor: filters.value.instructor || null,
 						student_group: filters.value.student_group || null,
 						search: filters.value.search || null,
@@ -599,6 +627,14 @@
 			}
 
 			async function save() {
+				if (!form.value.date) {
+					error.value = "Date is required.";
+					return;
+				}
+				if (!form.value.instructor) {
+					error.value = "Instructor is required.";
+					return;
+				}
 				saving.value = true;
 				error.value = "";
 				try {
@@ -640,17 +676,15 @@
 
 			function exportCsv() {
 				const rows = [
-					["Date", "From", "To", "Student Group", "Customer/Company", "Instructor", "Room", "Course", "Hours", "Booked", "Max Strength", "Remaining", "Status"],
+					["Date", "Schedule", "Student Group", "Customer/Company", "Instructor", "Room", "Course", "Booked", "Max Strength", "Remaining", "Status"],
 					...visibleSessions.value.map((s) => [
 						s.date,
-						s.time_start,
-						s.time_end,
+						s.period_label || s.period,
 						s.student_group_name,
 						s.customer_company,
 						s.instructor_name,
 						s.room_name,
 						s.course,
-						s.hours,
 						s.booked || s.student_count,
 						s.max_strength,
 						s.remaining,
@@ -781,6 +815,8 @@
 				boot,
 				week,
 				weekStart,
+				rangeDays,
+				setRange,
 				loading,
 				error,
 				view,
@@ -905,7 +941,7 @@
 						<p v-else-if="view==='groups'">Student groups scheduled this week</p>
 						<p v-else-if="view==='schedules'">Course schedules this week. Times may be planning times, not classroom clock time.</p>
 						<p v-else-if="view==='rooms'">Rooms used for this week's training</p>
-						<p v-else>Weekly planner linked to Student Group, Instructor, Customer and Room</p>
+						<p v-else>Planner for Morning, Afternoon and Evening sessions</p>
 					</div>
 					<div class="ts-top-right">
 						<div class="ts-search-wrap">
@@ -932,9 +968,13 @@
 
 				<section class="ts-filters">
 					<div class="ts-week-nav">
-						<button @click="shiftWeek(-7)">‹</button>
+						<button @click="shiftWeek(-1)">‹</button>
 						<div class="ts-week-label">{{ formatWeek(week.week_start, week.week_end) }}</div>
-						<button @click="shiftWeek(7)">›</button>
+						<button @click="shiftWeek(1)">›</button>
+						<div class="ts-range-toggle">
+							<button :class="{active: rangeDays===1}" @click="setRange(1)">Day</button>
+							<button :class="{active: rangeDays===7}" @click="setRange(7)">Week</button>
+						</div>
 					</div>
 					<div class="ts-filter-actions">
 						<select class="ts-select" v-model="filters.instructor">
@@ -965,23 +1005,23 @@
 				<p v-if="loading" style="padding:0 24px;color:#6b7280">Loading schedule…</p>
 
 				<section class="ts-grid-wrap" v-show="view==='dashboard'">
-					<div class="ts-grid">
+					<div class="ts-grid" :style="{'--ts-days': (week.days || []).length || 1}" :class="{oneDay: (week.days || []).length === 1}">
 						<div class="ts-grid-head">
-							<div class="ts-head">Time</div>
+							<div class="ts-head">Schedule</div>
 							<div class="ts-head" v-for="day in week.days" :key="day.date" :class="{today: day.is_today}">
 								{{ day.label }}
 								<b>{{ day.day_num }}</b>
 							</div>
 						</div>
-						<div class="ts-grid-row" v-for="slot in week.slots" :key="slot.from_time + slot.to_time">
-							<div class="ts-time">{{ slot.label || (slot.from_time + ' - ' + slot.to_time) }}</div>
-							<div class="ts-cell" v-for="day in week.days" :key="day.date + slot.from_time" @dblclick="openCreate(day, slot)">
+						<div class="ts-grid-row" v-for="slot in week.slots" :key="slot.key || slot.label">
+							<div class="ts-time">{{ slot.label }}</div>
+							<div class="ts-cell" v-for="day in week.days" :key="day.date + (slot.key || slot.label)" @dblclick="openCreate(day, slot)">
 								<template v-if="sessionsAt(day, slot).length">
 									<div class="ts-card" v-for="s in sessionsAt(day, slot)" :key="s.name" :class="s.tone" @click="openDetail(s)">
 										<div class="ts-card-top">
 											<div class="ts-card-avatar">{{ initials(s.instructor_name) }}</div>
 											<div>
-												<strong>{{ s.customer_company || s.course || 'Session' }}</strong>
+												<strong>{{ s.customer_company || s.course || s.instructor_name || 'Session' }}</strong>
 												<em>{{ s.instructor_name }}</em>
 											</div>
 										</div>
@@ -1035,7 +1075,7 @@
 									<div class="ts-muted">{{ g.customer_company }} · {{ g.instructor_name }} · {{ g.room_name }}</div>
 									<div class="ts-muted">{{ g.student_group }}</div>
 									<div class="ts-session-chips">
-										<span v-for="sess in (g.sessions || [])" :key="sess.name" @click="openDetail(sess)">{{ sess.date }} {{ sess.time_start }}–{{ sess.time_end }}</span>
+										<span v-for="sess in (g.sessions || [])" :key="sess.name" @click="openDetail(sess)">{{ sess.date }} · {{ sess.period_label || 'Morning' }}</span>
 									</div>
 								</div>
 								<span :class="'ts-cap '+capacityClass(g)">{{ capacityText(g) }}</span>
@@ -1120,7 +1160,7 @@
 				<section class="ts-grid-wrap" v-show="view==='schedules'">
 					<div class="ts-grid ts-list-panel">
 						<div class="ts-student-toolbar">
-							<p class="ts-student-help">Course schedules this week. Click a row for student details.</p>
+							<p class="ts-student-help">Course schedules in this view. Click a row for student details.</p>
 							<strong>{{ visibleSessions.length }} sessions · {{ week.stats.hours || 0 }} hrs</strong>
 						</div>
 						<div v-if="!visibleSessions.length" class="ts-empty-students">No course schedules in this week.</div>
@@ -1128,7 +1168,7 @@
 							<thead>
 								<tr>
 									<th>Date</th>
-									<th>Time</th>
+									<th>Schedule</th>
 									<th>Course</th>
 									<th>Instructor</th>
 									<th>Student Group</th>
@@ -1136,13 +1176,12 @@
 									<th>Room</th>
 									<th>Came / Invited / Max</th>
 									<th>Remaining</th>
-									<th>Hours</th>
 								</tr>
 							</thead>
 							<tbody>
 								<tr v-for="s in visibleSessions" :key="s.name" class="ts-click-row" @click="openDetail(s)">
 									<td>{{ s.date }}</td>
-									<td>{{ s.time_start }}–{{ s.time_end }}</td>
+									<td>{{ s.period_label || 'Morning' }}</td>
 									<td>{{ s.course || '—' }}</td>
 									<td>{{ s.instructor_name || '—' }}</td>
 									<td>{{ s.student_group_name || s.student_group || '—' }}</td>
@@ -1158,7 +1197,6 @@
 										{{ s.came || 0 }} / {{ s.invited || s.booked || 0 }} / {{ s.max_strength || '—' }}
 									</td>
 									<td>{{ s.max_strength ? (s.remaining || 0) : '—' }}</td>
-									<td>{{ s.hours || 0 }}</td>
 								</tr>
 							</tbody>
 						</table>
@@ -1203,8 +1241,8 @@
 				<div class="ts-modal ts-detail-modal">
 					<div class="ts-detail-head">
 						<div>
-							<h3>{{ (detail && (detail.course || detail.customer_company)) || 'Session' }}</h3>
-							<p class="ts-muted" v-if="detail">{{ detail.date }} · {{ detail.time_start }}–{{ detail.time_end }}</p>
+							<h3>{{ (detail && (detail.course || detail.customer_company || detail.instructor_name)) || 'Session' }}</h3>
+							<p class="ts-muted" v-if="detail">{{ detail.date }} · {{ detail.period_label || 'Morning' }}</p>
 						</div>
 						<button class="ts-btn" @click="detailOpen=false">Close</button>
 					</div>
@@ -1308,7 +1346,7 @@
 					<h3>{{ form.name ? 'Edit Session' : 'Add Session' }}</h3>
 					<div class="ts-form">
 						<div>
-							<label>Date</label>
+							<label>Date <span class="ts-req">*</span></label>
 							<div class="ts-datefield" @click.stop>
 								<input type="text" readonly :value="formatDateLabel(form.date)" placeholder="Select date"
 									@click="openCalendar('session', form.date)">
@@ -1327,17 +1365,17 @@
 								</div>
 							</div>
 						</div>
-						<div>
-							<label>From time</label>
-							<input type="time" v-model="form.from_time">
-						</div>
-						<div>
-							<label>To time</label>
-							<input type="time" v-model="form.to_time">
+						<div class="full">
+							<label>Schedule</label>
+							<select class="ts-select" v-model="form.period">
+								<option value="morning">Morning</option>
+								<option value="afternoon">Afternoon</option>
+								<option value="evening">Evening</option>
+							</select>
 						</div>
 						<div class="full ts-suggest">
-							<label>Student Group</label>
-							<input :value="form.student_group_name || form.student_group" placeholder="Search student group"
+							<label>Student Group <span class="ts-optional">(optional)</span></label>
+							<input :value="form.student_group_name || form.student_group" placeholder="Add after candidates arrive"
 								@input="searchDoctype('Student Group', $event.target.value, 'StudentGroup')">
 							<ul v-if="suggestions.StudentGroup.length">
 								<li v-for="item in suggestions.StudentGroup" :key="item.value" @click="pickGroup(item)">
@@ -1368,7 +1406,7 @@
 							</div>
 						</div>
 						<div class="ts-suggest">
-							<label>Instructor</label>
+							<label>Instructor <span class="ts-req">*</span></label>
 							<input :value="form.instructor_name || form.instructor" placeholder="Search instructor"
 								@input="searchDoctype('Instructor', $event.target.value, 'Instructor')">
 							<ul v-if="suggestions.Instructor.length">

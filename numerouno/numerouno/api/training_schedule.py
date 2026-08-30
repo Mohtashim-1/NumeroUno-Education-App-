@@ -19,11 +19,16 @@ INITIAL_USERS = (
 )
 
 DEFAULT_SLOTS = [
-	("08:00:00", "10:00:00"),
-	("10:15:00", "12:15:00"),
-	("12:30:00", "14:30:00"),
-	("14:45:00", "16:45:00"),
+	("08:00:00", "12:00:00"),
+	("13:00:00", "17:00:00"),
+	("18:00:00", "22:00:00"),
 ]
+
+PERIODS = (
+	{"key": "morning", "label": "Morning", "from_time": "08:00:00", "to_time": "12:00:00"},
+	{"key": "afternoon", "label": "Afternoon", "from_time": "13:00:00", "to_time": "17:00:00"},
+	{"key": "evening", "label": "Evening", "from_time": "18:00:00", "to_time": "22:00:00"},
+)
 
 COURSE_COLORS = [
 	{"key": "leadership", "label": "Leadership", "tone": "blue"},
@@ -99,6 +104,42 @@ def _week_bounds(week_start=None):
 	return monday, sunday
 
 
+def _range_bounds(start=None, days=7):
+	days = cint(days) or 7
+	if days <= 1:
+		day = getdate(start) if start else getdate()
+		return day, day, 1
+	monday, sunday = _week_bounds(start)
+	return monday, sunday, 7
+
+
+def _hour_from_time(value):
+	text = _fmt_time(value)
+	if not text:
+		return 8
+	try:
+		return int(text.split(":")[0])
+	except Exception:
+		return 8
+
+
+def _period_from_time(from_time):
+	hour = _hour_from_time(from_time)
+	if hour < 12:
+		return PERIODS[0]
+	if hour < 17:
+		return PERIODS[1]
+	return PERIODS[2]
+
+
+def _period_by_key(key):
+	key = (key or "").strip().lower()
+	for period in PERIODS:
+		if period["key"] == key:
+			return period
+	return PERIODS[0]
+
+
 def _room_label(room, room_name=None, room_number=None):
 	return room_name or room_number or room or ""
 
@@ -135,14 +176,17 @@ def _time_hours(from_time, to_time):
 
 def _serialize_session(row):
 	color = _color_for_course(row.course)
+	period = _period_from_time(row.from_time)
 	return {
 		"name": row.name,
 		"date": str(row.schedule_date),
-		"time_start": _fmt_time(row.from_time),
-		"time_end": _fmt_time(row.to_time),
-		"from_time": _fmt_time(row.from_time),
-		"to_time": _fmt_time(row.to_time),
-		"hours": _time_hours(row.from_time, row.to_time),
+		"time_start": _fmt_time(period["from_time"]),
+		"time_end": _fmt_time(period["to_time"]),
+		"from_time": _fmt_time(period["from_time"]),
+		"to_time": _fmt_time(period["to_time"]),
+		"period": period["key"],
+		"period_label": period["label"],
+		"hours": _time_hours(period["from_time"], period["to_time"]),
 		"instructor": row.instructor,
 		"instructor_name": row.instructor_name or row.instructor,
 		"instructor_image": "",
@@ -188,15 +232,33 @@ def get_boot():
 		"can_manage": _can_manage(),
 		"week_start": str(monday),
 		"week_end": str(sunday),
-		"slots": [{"from_time": a[:5], "to_time": b[:5]} for a, b in DEFAULT_SLOTS],
+		"today": str(getdate(today())),
+		"periods": [
+			{
+				"key": p["key"],
+				"label": p["label"],
+				"from_time": p["from_time"][:5],
+				"to_time": p["to_time"][:5],
+			}
+			for p in PERIODS
+		],
+		"slots": [
+			{
+				"key": p["key"],
+				"label": p["label"],
+				"from_time": p["from_time"][:5],
+				"to_time": p["to_time"][:5],
+			}
+			for p in PERIODS
+		],
 		"categories": COURSE_COLORS,
 	}
 
 
 @frappe.whitelist()
-def get_week(week_start=None, instructor=None, student_group=None, status=None, search=None):
+def get_week(week_start=None, instructor=None, student_group=None, status=None, search=None, days=7):
 	_require_view()
-	monday, sunday = _week_bounds(week_start)
+	start, end, day_count = _range_bounds(week_start, days)
 	rows = frappe.db.sql(
 		"""
 		select
@@ -214,7 +276,7 @@ def get_week(week_start=None, instructor=None, student_group=None, status=None, 
 		  and cs.schedule_date between %(start)s and %(end)s
 		order by cs.schedule_date asc, cs.from_time asc
 		""",
-		{"start": monday, "end": sunday},
+		{"start": start, "end": end},
 		as_dict=True,
 	)
 
@@ -225,23 +287,27 @@ def get_week(week_start=None, instructor=None, student_group=None, status=None, 
 	_attach_attendance(sessions)
 	_attach_people_search(sessions)
 
-	days = []
-	for offset in range(7):
-		day = add_days(monday, offset)
-		days.append(
+	days_out = []
+	for offset in range(day_count):
+		day = add_days(start, offset)
+		days_out.append(
 			{
 				"date": str(day),
-				"label": format_date(day, "ddd"),
+				"label": day.strftime("%a"),
 				"day_num": day.day,
 				"is_today": str(day) == today(),
 			}
 		)
 
-	slot_keys = {(_fmt_time(a), _fmt_time(b)) for a, b in DEFAULT_SLOTS}
-	for row in sessions:
-		slot_keys.add((row["time_start"], row["time_end"]))
-	slots = sorted(slot_keys, key=lambda item: item[0] or "99:99")
-	slot_rows = [{"from_time": a, "to_time": b, "label": f"{a} - {b}"} for a, b in slots]
+	slot_rows = [
+		{
+			"key": p["key"],
+			"label": p["label"],
+			"from_time": p["from_time"][:5],
+			"to_time": p["to_time"][:5],
+		}
+		for p in PERIODS
+	]
 
 	trainers = _trainer_cards(sessions)
 	rooms = _room_cards(sessions)
@@ -250,9 +316,10 @@ def get_week(week_start=None, instructor=None, student_group=None, status=None, 
 	student_total = sum(cint(g.get("student_count")) for g in groups)
 
 	return {
-		"week_start": str(monday),
-		"week_end": str(sunday),
-		"days": days,
+		"week_start": str(start),
+		"week_end": str(end),
+		"days_count": day_count,
+		"days": days_out,
 		"slots": slot_rows,
 		"sessions": sessions,
 		"stats": {
@@ -270,7 +337,7 @@ def get_week(week_start=None, instructor=None, student_group=None, status=None, 
 			"capacity": sum(cint(g.get("max_strength")) for g in groups),
 			"remaining": sum(cint(g.get("remaining") or 0) for g in groups if cint(g.get("max_strength"))),
 			"invited": student_total,
-			"came": _unique_came([g.get("student_group") for g in groups], monday, sunday),
+			"came": _unique_came([g.get("student_group") for g in groups], start, end),
 		},
 		"trainers": trainers,
 		"rooms": rooms,
@@ -419,45 +486,60 @@ def save_session(data):
 	student_group = (payload.get("student_group") or "").strip()
 	instructor = (payload.get("instructor") or "").strip()
 	schedule_date = payload.get("date") or payload.get("schedule_date")
-	from_time = _as_sql_time(payload.get("from_time") or payload.get("time_start"))
-	to_time = _as_sql_time(payload.get("to_time") or payload.get("time_end"))
+	period = _period_by_key(payload.get("period"))
+	if not payload.get("period"):
+		period = _period_from_time(payload.get("from_time") or payload.get("time_start"))
+	from_time = period["from_time"]
+	to_time = period["to_time"]
 	room = (payload.get("room") or "").strip()
 	course = (payload.get("course") or "").strip()
 	name = (payload.get("name") or "").strip()
 
-	if not student_group:
-		frappe.throw(_("Student Group is required."))
 	if not instructor:
 		frappe.throw(_("Instructor is required."))
 	if not schedule_date:
 		frappe.throw(_("Date is required."))
-	if not room:
+	if student_group and not room:
 		defaults = get_student_group_defaults(student_group)
 		room = defaults.get("room") or ""
-	if not room:
-		frappe.throw(_("Room is required."))
-	if not course:
-		course = frappe.db.get_value("Student Group", student_group, "course")
-	if not course:
-		frappe.throw(_("Course is missing on the Student Group."))
+	if student_group and not course:
+		course = frappe.db.get_value("Student Group", student_group, "course") or ""
 
 	if name:
 		doc = frappe.get_doc("Course Schedule", name)
 	else:
 		doc = frappe.new_doc("Course Schedule")
 
-	doc.student_group = student_group
+	doc.student_group = student_group or None
 	doc.instructor = instructor
 	doc.schedule_date = getdate(schedule_date)
 	doc.from_time = from_time
 	doc.to_time = to_time
-	doc.room = room
-	doc.course = course
+	doc.room = room or None
+	doc.course = course or None
 	doc.flags.ignore_permissions = True
+	doc.flags.ignore_mandatory = True
+	if not student_group:
+		doc.validate = lambda: _validate_session_without_group(doc)
 	doc.save()
-	if payload.get("max_strength") not in (None, ""):
+	if student_group and payload.get("max_strength") not in (None, ""):
 		_set_group_max_strength(student_group, payload.get("max_strength"))
 	return {"name": doc.name}
+
+
+def _validate_session_without_group(doc):
+	if doc.instructor:
+		doc.instructor_name = frappe.db.get_value("Instructor", doc.instructor, "instructor_name")
+	label = doc.course or "Training Session"
+	doc.title = f"{label} by {(doc.instructor_name or doc.instructor)}"
+	doc.validate_time()
+	from education.education.utils import validate_overlap_for
+
+	validate_overlap_for(doc, "Course Schedule", "instructor")
+	if doc.room:
+		validate_overlap_for(doc, "Course Schedule", "room")
+		validate_overlap_for(doc, "Assessment Plan", "room")
+	validate_overlap_for(doc, "Assessment Plan", "supervisor", doc.instructor)
 
 
 @frappe.whitelist()
@@ -963,9 +1045,9 @@ def get_session_detail(name):
 
 
 @frappe.whitelist()
-def get_week_students(week_start=None, instructor=None, student_group=None, search=None, search_by=None):
+def get_week_students(week_start=None, instructor=None, student_group=None, search=None, search_by=None, days=7):
 	_require_view()
-	payload = get_week(week_start=week_start)
+	payload = get_week(week_start=week_start, days=days)
 	sessions = payload.get("sessions") or []
 	if instructor:
 		sessions = [row for row in sessions if row.get("instructor") == instructor]
@@ -1018,8 +1100,8 @@ def get_week_students(week_start=None, instructor=None, student_group=None, sear
 			{
 				"name": session.get("name"),
 				"date": session.get("date"),
-				"time_start": session.get("time_start"),
-				"time_end": session.get("time_end"),
+				"period": session.get("period"),
+				"period_label": session.get("period_label"),
 				"instructor_name": session.get("instructor_name"),
 				"room_name": session.get("room_name"),
 				"course": session.get("course"),
@@ -1113,8 +1195,26 @@ def _open_candidate_counts(groups):
 def _apply_candidate_invite_counts(sessions):
 	groups = list({row.get("student_group") for row in sessions if row.get("student_group")})
 	counts = _open_candidate_counts(groups)
+	schedule_counts = {}
+	if _candidate_table_exists():
+		names = [row.get("name") for row in sessions if row.get("name") and not row.get("student_group")]
+		if names:
+			rows = frappe.db.sql(
+				"""
+				select course_schedule, count(*) as cnt
+				from `tabTraining Candidate`
+				where course_schedule in %(names)s
+				  and ifnull(student, '') = ''
+				group by course_schedule
+				""",
+				{"names": names},
+				as_dict=True,
+			)
+			schedule_counts = {row.course_schedule: cint(row.cnt) for row in rows}
 	for session in sessions:
 		extra = cint(counts.get(session.get("student_group")))
+		if not session.get("student_group"):
+			extra = cint(schedule_counts.get(session.get("name")))
 		session["open_candidates"] = extra
 		invited = cint(session.get("booked") or session.get("student_count")) + extra
 		session["invited"] = invited
@@ -1163,12 +1263,20 @@ def _attach_people_search(sessions):
 
 
 def _group_candidates(student_group, date=None, course_schedule=None):
-	if not student_group or not _candidate_table_exists():
+	if not _candidate_table_exists():
 		return []
-	conditions = ["student_group = %(student_group)s"]
-	values = {"student_group": student_group}
-	if course_schedule:
-		conditions.append("(ifnull(course_schedule, '') = '' or course_schedule = %(course_schedule)s)")
+	if not student_group and not course_schedule:
+		return []
+	conditions = []
+	values = {}
+	if student_group:
+		conditions.append("student_group = %(student_group)s")
+		values["student_group"] = student_group
+		if course_schedule:
+			conditions.append("(ifnull(course_schedule, '') = '' or course_schedule = %(course_schedule)s)")
+			values["course_schedule"] = course_schedule
+	else:
+		conditions.append("course_schedule = %(course_schedule)s")
 		values["course_schedule"] = course_schedule
 	if date:
 		conditions.append("(date is null or date = %(date)s)")
@@ -1282,8 +1390,9 @@ def add_candidate(data):
 	if not candidate_name:
 		frappe.throw(_("Candidate name is required."))
 	student_group = (payload.get("student_group") or "").strip()
-	if not student_group:
-		frappe.throw(_("Student Group is required."))
+	course_schedule = (payload.get("course_schedule") or "").strip()
+	if not student_group and not course_schedule:
+		frappe.throw(_("Save the session first, then add the candidate."))
 	schedule_date = payload.get("date") or today()
 	customer, customer_name = _resolve_customer(payload.get("customer"), payload.get("customer_name"))
 	doc = frappe.new_doc("Training Candidate")
@@ -1292,11 +1401,14 @@ def add_candidate(data):
 	doc.customer = customer
 	doc.customer_name = customer_name
 	doc.date = getdate(schedule_date)
-	doc.student_group = student_group
-	doc.course = payload.get("course") or frappe.db.get_value("Student Group", student_group, "course")
-	doc.course_schedule = payload.get("course_schedule") or ""
+	doc.student_group = student_group or None
+	doc.course = payload.get("course") or (
+		frappe.db.get_value("Student Group", student_group, "course") if student_group else ""
+	)
+	doc.course_schedule = course_schedule
 	doc.status = "Invited"
 	doc.flags.ignore_permissions = True
+	doc.flags.ignore_mandatory = True
 	doc.insert()
 	if payload.get("create_student"):
 		return create_student_from_candidate(doc.name)
@@ -1327,6 +1439,8 @@ def create_student_from_candidate(name):
 	doc = frappe.get_doc("Training Candidate", name)
 	if doc.student:
 		return {"name": doc.name, "student": doc.student, "candidate": _candidate_payload(doc)}
+	if not doc.student_group:
+		frappe.throw(_("Add a Student Group on this session before creating the Student."))
 
 	customer, customer_name = _ensure_customer(doc.customer, doc.customer_name)
 	doc.customer = customer
