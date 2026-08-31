@@ -144,6 +144,56 @@ def _room_label(room, room_name=None, room_number=None):
 	return room_name or room_number or room or ""
 
 
+def _course_title(course, course_name=None):
+	title = (course_name or "").strip()
+	if title:
+		return title
+	course = (course or "").strip()
+	if not course:
+		return ""
+	return frappe.db.get_value("Course", course, "course_name") or course
+
+
+def _resolve_course(course=None, course_name=None):
+	course = (course or "").strip()
+	course_name = (course_name or "").strip()
+	if course and frappe.db.exists("Course", course):
+		return course
+	text = course_name or course
+	if not text:
+		return ""
+	found = frappe.db.sql(
+		"""
+		select name
+		from `tabCourse`
+		where name = %(t)s or ifnull(course_name, '') = %(t)s
+		limit 1
+		""",
+		{"t": text},
+	)
+	if found:
+		return found[0][0]
+	like = f"%{text}%"
+	code_clause = ""
+	if frappe.db.has_column("Course", "course_code"):
+		code_clause = " or ifnull(course_code, '') like %(like)s"
+	rows = frappe.db.sql(
+		f"""
+		select name
+		from `tabCourse`
+		where name like %(like)s or ifnull(course_name, '') like %(like)s{code_clause}
+		order by modified desc
+		limit 2
+		""",
+		{"like": like},
+	)
+	if len(rows) == 1:
+		return rows[0][0]
+	if len(rows) > 1:
+		frappe.throw(_("Select a training from the list."))
+	frappe.throw(_("Training “{0}” was not found. Search and pick it from the list.").format(text))
+
+
 def _color_for_course(course):
 	if not course:
 		return COURSE_COLORS[-1]
@@ -195,6 +245,7 @@ def _serialize_session(row):
 		"student_group": row.student_group,
 		"student_group_name": row.student_group_name or row.student_group,
 		"course": row.course,
+		"course_name": row.get("course_name") or row.course,
 		"customer": row.custom_customer or "",
 		"customer_company": row.customer_name or row.custom_customer or "",
 		"color": row.color or "",
@@ -267,11 +318,13 @@ def get_week(week_start=None, instructor=None, student_group=None, status=None, 
 			cs.student_group, cs.color,
 			sg.student_group_name, sg.custom_customer,
 			c.customer_name,
-			r.room_name, r.room_number
+			r.room_name, r.room_number,
+			co.course_name
 		from `tabCourse Schedule` cs
 		left join `tabStudent Group` sg on sg.name = cs.student_group
 		left join `tabCustomer` c on c.name = sg.custom_customer
 		left join `tabRoom` r on r.name = cs.room
+		left join `tabCourse` co on co.name = cs.course
 		where cs.docstatus < 2
 		  and cs.schedule_date between %(start)s and %(end)s
 		order by cs.schedule_date asc, cs.from_time asc
@@ -419,12 +472,26 @@ def search_links(doctype, txt="", student_group=None):
 		)
 
 	if doctype == "Course":
+		code_select = "ifnull(course_code, '')"
+		code_where = ""
+		if frappe.db.has_column("Course", "course_code"):
+			code_where = " or ifnull(course_code, '') like %(txt)s"
+		else:
+			code_select = "''"
 		return frappe.db.sql(
-			"""
-			select name, ifnull(course_name, name)
+			f"""
+			select
+				name,
+				case
+					when {code_select} != '' and {code_select} != ifnull(course_name, name)
+						then concat(ifnull(course_name, name), ' (', {code_select}, ')')
+					else ifnull(course_name, name)
+				end as description
 			from `tabCourse`
-			where name like %(txt)s or ifnull(course_name,'') like %(txt)s
-			order by modified desc
+			where name like %(txt)s
+			   or ifnull(course_name, '') like %(txt)s
+			   {code_where}
+			order by course_name
 			limit 20
 			""",
 			{"txt": like},
@@ -467,6 +534,7 @@ def get_student_group_defaults(student_group, date=None):
 		"student_group": sg.name,
 		"student_group_name": sg.student_group_name,
 		"course": sg.course,
+		"course_name": _course_title(sg.course),
 		"customer": sg.custom_customer,
 		"customer_company": customer_name or sg.custom_customer or "",
 		"room": sg.custom_coarse_location,
@@ -492,7 +560,7 @@ def save_session(data):
 	from_time = period["from_time"]
 	to_time = period["to_time"]
 	room = (payload.get("room") or "").strip()
-	course = (payload.get("course") or "").strip()
+	course = _resolve_course(payload.get("course"), payload.get("course_name"))
 	name = (payload.get("name") or "").strip()
 
 	if not instructor:
@@ -525,6 +593,64 @@ def save_session(data):
 	if student_group and payload.get("max_strength") not in (None, ""):
 		_set_group_max_strength(student_group, payload.get("max_strength"))
 	return {"name": doc.name}
+
+
+def _move_session_candidates(course_schedule, new_date):
+	if not course_schedule or not _candidate_table_exists():
+		return 0
+	if not frappe.db.has_column("Training Candidate", "date"):
+		return 0
+	count = cint(
+		frappe.db.count("Training Candidate", {"course_schedule": course_schedule})
+	)
+	if count:
+		frappe.db.sql(
+			"""
+			update `tabTraining Candidate`
+			set date = %(date)s
+			where course_schedule = %(course_schedule)s
+			""",
+			{"date": getdate(new_date), "course_schedule": course_schedule},
+		)
+	return count
+
+
+@frappe.whitelist()
+def reschedule_session(name, date, period=None):
+	_require_manage()
+	name = (name or "").strip()
+	if not name:
+		frappe.throw(_("Session is required."))
+	if not date:
+		frappe.throw(_("New date is required."))
+	if not frappe.db.exists("Course Schedule", name):
+		frappe.throw(_("Course Schedule {0} not found.").format(name))
+
+	doc = frappe.get_doc("Course Schedule", name)
+	new_date = getdate(date)
+	period_row = _period_by_key(period) if period else _period_from_time(doc.from_time)
+	old_date = doc.schedule_date
+	same_slot = str(old_date) == str(new_date) and _fmt_time(doc.from_time) == _fmt_time(period_row["from_time"])
+	if same_slot:
+		frappe.throw(_("Pick a different date or schedule."))
+
+	doc.schedule_date = new_date
+	doc.from_time = period_row["from_time"]
+	doc.to_time = period_row["to_time"]
+	doc.flags.ignore_permissions = True
+	doc.flags.ignore_mandatory = True
+	if not doc.student_group:
+		doc.validate = lambda: _validate_session_without_group(doc)
+	doc.save()
+	moved = _move_session_candidates(name, new_date)
+	return {
+		"name": doc.name,
+		"date": str(new_date),
+		"old_date": str(old_date),
+		"period": period_row["key"],
+		"period_label": period_row["label"],
+		"moved_candidates": moved,
+	}
 
 
 def _validate_session_without_group(doc):
@@ -1021,11 +1147,13 @@ def get_session_detail(name):
 			cs.student_group, cs.color,
 			sg.student_group_name, sg.custom_customer,
 			c.customer_name,
-			r.room_name, r.room_number
+			r.room_name, r.room_number,
+			co.course_name
 		from `tabCourse Schedule` cs
 		left join `tabStudent Group` sg on sg.name = cs.student_group
 		left join `tabCustomer` c on c.name = sg.custom_customer
 		left join `tabRoom` r on r.name = cs.room
+		left join `tabCourse` co on co.name = cs.course
 		where cs.name = %(name)s
 		""",
 		{"name": name},
@@ -1105,6 +1233,7 @@ def get_week_students(week_start=None, instructor=None, student_group=None, sear
 				"instructor_name": session.get("instructor_name"),
 				"room_name": session.get("room_name"),
 				"course": session.get("course"),
+				"course_name": session.get("course_name"),
 			}
 		)
 	return {
@@ -1157,6 +1286,7 @@ def _session_matches_search(row, needle, search_by=None):
 		blob = " ".join(
 			[
 				row.get("course") or "",
+				row.get("course_name") or "",
 				row.get("student_group_name") or "",
 			]
 		)
@@ -1380,15 +1510,27 @@ def _ensure_customer(customer=None, customer_name=None):
 	return doc.name, customer_name
 
 
-@frappe.whitelist()
-def add_candidate(data):
-	_require_manage()
-	if not _candidate_table_exists():
-		frappe.throw(_("Training Candidate is not installed yet. Please migrate the Numerouno app."))
-	payload = frappe.parse_json(data) if isinstance(data, str) else (data or {})
-	candidate_name = (payload.get("candidate_name") or "").strip()
-	if not candidate_name:
-		frappe.throw(_("Candidate name is required."))
+def _candidate_names_from_payload(payload):
+	chunks = []
+	if payload.get("candidate_names"):
+		chunks.append(payload.get("candidate_names"))
+	if payload.get("candidate_name"):
+		chunks.append(payload.get("candidate_name"))
+	names = []
+	seen = set()
+	for chunk in chunks:
+		items = chunk if isinstance(chunk, (list, tuple)) else [chunk]
+		for item in items:
+			for part in str(item or "").replace(";", "\n").splitlines():
+				name = part.strip()
+				key = name.lower()
+				if name and key not in seen:
+					seen.add(key)
+					names.append(name)
+	return names
+
+
+def _insert_candidate(payload, candidate_name):
 	student_group = (payload.get("student_group") or "").strip()
 	course_schedule = (payload.get("course_schedule") or "").strip()
 	if not student_group and not course_schedule:
@@ -1413,6 +1555,21 @@ def add_candidate(data):
 	if payload.get("create_student"):
 		return create_student_from_candidate(doc.name)
 	return {"name": doc.name, "candidate": _candidate_payload(doc)}
+
+
+@frappe.whitelist()
+def add_candidate(data):
+	_require_manage()
+	if not _candidate_table_exists():
+		frappe.throw(_("Training Candidate is not installed yet. Please migrate the Numerouno app."))
+	payload = frappe.parse_json(data) if isinstance(data, str) else (data or {})
+	names = _candidate_names_from_payload(payload)
+	if not names:
+		frappe.throw(_("Candidate name is required."))
+	created = [_insert_candidate(payload, name) for name in names]
+	if len(created) == 1:
+		return created[0]
+	return {"count": len(created), "candidates": created}
 
 
 def _candidate_payload(doc):

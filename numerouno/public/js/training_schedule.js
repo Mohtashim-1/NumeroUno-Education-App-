@@ -94,12 +94,15 @@
 			const weekStudents = ref({ groups: [], student_total: 0 });
 			const saving = ref(false);
 			const form = ref(emptyForm());
-			const suggestions = ref({ StudentGroup: [], Instructor: [], Room: [], Customer: [] });
+			const suggestions = ref({ StudentGroup: [], Instructor: [], Room: [], Customer: [], Course: [] });
 			const candidateOpen = ref(false);
 			const candidateSaving = ref(false);
 			const candidateForm = ref(emptyCandidate());
 			const datePicker = ref({ open: false, field: "", year: 2026, month: 0 });
 			const detailSearch = ref({ q: "", by: "candidate" });
+			const rescheduleOpen = ref(false);
+			const rescheduleSaving = ref(false);
+			const reschedule = ref({ date: "", period: "morning" });
 
 			function capacityText(row) {
 				const invited = row?.invited || row?.booked || row?.student_count || 0;
@@ -147,6 +150,7 @@
 			function emptyCandidate() {
 				return {
 					candidate_name: "",
+					names: [""],
 					po_number: "",
 					customer: "",
 					customer_name: "",
@@ -173,6 +177,7 @@
 					room: "",
 					room_name: "",
 					course: "",
+					course_name: "",
 					max_strength: 0,
 					booked: 0,
 					invited: 0,
@@ -201,7 +206,7 @@
 						} else if (by === "customer") {
 							blob = [s.customer_company, s.customer].join(" ");
 						} else if (by === "course") {
-							blob = [s.course, s.student_group_name].join(" ");
+							blob = [s.course, s.course_name, s.student_group_name].join(" ");
 						} else {
 							blob = [
 								s.people_names,
@@ -349,6 +354,8 @@
 				detailStudents.value = [];
 				detailPeople.value = [];
 				detailSearch.value = { q: "", by: "candidate" };
+				rescheduleOpen.value = false;
+				datePicker.value.open = false;
 				try {
 					const data = await call("get_session_detail", { name: session.name });
 					detail.value = data.session;
@@ -359,6 +366,42 @@
 				}
 			}
 
+			function openReschedule() {
+				if (!detail.value) return;
+				reschedule.value = {
+					date: detail.value.date,
+					period: detail.value.period || "morning",
+				};
+				error.value = "";
+				datePicker.value.open = false;
+				rescheduleOpen.value = true;
+			}
+
+			async function saveReschedule() {
+				if (!detail.value?.name) return;
+				if (!reschedule.value.date) {
+					error.value = "New date is required.";
+					return;
+				}
+				rescheduleSaving.value = true;
+				error.value = "";
+				try {
+					const data = await call("reschedule_session", {
+						name: detail.value.name,
+						date: reschedule.value.date,
+						period: reschedule.value.period || "morning",
+					});
+					rescheduleOpen.value = false;
+					weekStart.value = data.date;
+					await loadWeek();
+					await openDetail({ name: data.name });
+					if (view.value === "students") await loadStudentsView();
+				} catch (e) {
+					error.value = e.message;
+				} finally {
+					rescheduleSaving.value = false;
+				}
+			}
 			function openEdit(session) {
 				const src = session || detail.value || {};
 				form.value = {
@@ -375,6 +418,7 @@
 					room: src.room,
 					room_name: src.room_name,
 					course: src.course,
+					course_name: src.course_name || src.course,
 					max_strength: src.max_strength || 0,
 					booked: src.booked || src.student_count || 0,
 					invited: src.invited || src.booked || src.student_count || 0,
@@ -422,6 +466,7 @@
 					date: form.value.date || null,
 				});
 				form.value.course = defaults.course || "";
+				form.value.course_name = defaults.course_name || defaults.course || "";
 				form.value.customer_company = defaults.customer_company || "";
 				form.value.room = defaults.room || form.value.room;
 				form.value.room_name = defaults.room_name || form.value.room_name;
@@ -447,6 +492,12 @@
 				form.value.room = item.value;
 				form.value.room_name = item.label;
 				suggestions.value.Room = [];
+			}
+
+			function pickCourse(item) {
+				form.value.course = item.value;
+				form.value.course_name = item.label;
+				suggestions.value.Course = [];
 			}
 
 			function pickCustomer(item) {
@@ -510,13 +561,16 @@
 				if (!day) return;
 				const value = `${datePicker.value.year}-${String(datePicker.value.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 				if (datePicker.value.field === "candidate") candidateForm.value.date = value;
+				else if (datePicker.value.field === "reschedule") reschedule.value.date = value;
 				else form.value.date = value;
 				datePicker.value.open = false;
 			}
 
 			function isSelectedDay(day) {
 				if (!day) return false;
-				const current = datePicker.value.field === "candidate" ? candidateForm.value.date : form.value.date;
+				let current = form.value.date;
+				if (datePicker.value.field === "candidate") current = candidateForm.value.date;
+				else if (datePicker.value.field === "reschedule") current = reschedule.value.date;
 				const value = `${datePicker.value.year}-${String(datePicker.value.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 				return String(current || "").slice(0, 10) === value;
 			}
@@ -531,14 +585,18 @@
 
 			function openAddCandidate() {
 				if (!detail.value) return;
+				const people = detailPeople.value || detailStudents.value || [];
+				const last = [...people].reverse().find((p) => p.po_number || p.customer || p.customer_name) || {};
 				candidateForm.value = {
 					...emptyCandidate(),
+					names: [""],
 					date: detail.value.date,
 					student_group: detail.value.student_group,
 					course: detail.value.course,
 					course_schedule: detail.value.name,
-					customer: detail.value.customer || "",
-					customer_name: detail.value.customer_company || "",
+					customer: last.customer || detail.value.customer || "",
+					customer_name: last.customer_name || last.company || detail.value.customer_company || "",
+					po_number: last.po_number || "",
 					create_student: false,
 				};
 				error.value = "";
@@ -546,8 +604,32 @@
 				candidateOpen.value = true;
 			}
 
+			function addCandidateName() {
+				candidateForm.value.names = [...(candidateForm.value.names || [""]), ""];
+			}
+
+			function removeCandidateName(idx) {
+				const names = [...(candidateForm.value.names || [""])];
+				if (names.length <= 1) {
+					names[0] = "";
+					candidateForm.value.names = names;
+					return;
+				}
+				names.splice(idx, 1);
+				candidateForm.value.names = names;
+			}
+
+			function candidateNamesToSave() {
+				const names = candidateForm.value.names || [];
+				const extra = candidateForm.value.candidate_name || "";
+				return [...names, extra]
+					.map((n) => String(n || "").trim())
+					.filter((n, i, all) => n && all.findIndex((x) => x.toLowerCase() === n.toLowerCase()) === i);
+			}
+
 			async function saveCandidate() {
-				if (!candidateForm.value.candidate_name) {
+				const names = candidateNamesToSave();
+				if (!names.length) {
 					error.value = "Candidate name is required.";
 					return;
 				}
@@ -560,7 +642,7 @@
 				try {
 					await call("add_candidate", {
 						data: {
-							candidate_name: candidateForm.value.candidate_name,
+							candidate_names: names,
 							po_number: candidateForm.value.po_number,
 							customer: candidateForm.value.customer,
 							customer_name: candidateForm.value.customer_name,
@@ -684,7 +766,7 @@
 						s.customer_company,
 						s.instructor_name,
 						s.room_name,
-						s.course,
+						s.course_name || s.course,
 						s.booked || s.student_count,
 						s.max_strength,
 						s.remaining,
@@ -835,6 +917,9 @@
 				candidateForm,
 				datePicker,
 				detailSearch,
+				rescheduleOpen,
+				rescheduleSaving,
+				reschedule,
 				detailSearchPlaceholder,
 				filteredDetailPeople,
 				formatDateLabel,
@@ -853,7 +938,12 @@
 				openCreate,
 				openDetail,
 				openEdit,
+				openReschedule,
+				saveReschedule,
 				openAddCandidate,
+				addCandidateName,
+				removeCandidateName,
+				candidateNamesToSave,
 				saveCandidate,
 				createStudent,
 				savePo,
@@ -861,6 +951,7 @@
 				pickGroup,
 				pickInstructor,
 				pickRoom,
+				pickCourse,
 				pickCustomer,
 				searchPlaceholder,
 				save,
@@ -1021,7 +1112,7 @@
 										<div class="ts-card-top">
 											<div class="ts-card-avatar">{{ initials(s.instructor_name) }}</div>
 											<div>
-												<strong>{{ s.customer_company || s.course || s.instructor_name || 'Session' }}</strong>
+												<strong>{{ s.course_name || s.course || s.customer_company || s.instructor_name || 'Session' }}</strong>
 												<em>{{ s.instructor_name }}</em>
 											</div>
 										</div>
@@ -1182,7 +1273,7 @@
 								<tr v-for="s in visibleSessions" :key="s.name" class="ts-click-row" @click="openDetail(s)">
 									<td>{{ s.date }}</td>
 									<td>{{ s.period_label || 'Morning' }}</td>
-									<td>{{ s.course || '—' }}</td>
+									<td>{{ s.course_name || s.course || '—' }}</td>
 									<td>{{ s.instructor_name || '—' }}</td>
 									<td>{{ s.student_group_name || s.student_group || '—' }}</td>
 									<td>{{ s.customer_company || '—' }}</td>
@@ -1241,12 +1332,52 @@
 				<div class="ts-modal ts-detail-modal">
 					<div class="ts-detail-head">
 						<div>
-							<h3>{{ (detail && (detail.course || detail.customer_company || detail.instructor_name)) || 'Session' }}</h3>
+							<h3>{{ (detail && (detail.course_name || detail.course || detail.customer_company || detail.instructor_name)) || 'Session' }}</h3>
 							<p class="ts-muted" v-if="detail">{{ detail.date }} · {{ detail.period_label || 'Morning' }}</p>
 						</div>
-						<button class="ts-btn" @click="detailOpen=false">Close</button>
+						<div class="ts-toolbar-actions">
+							<button v-if="boot.can_manage && detail" class="ts-btn" @click="openReschedule">Reschedule</button>
+							<button class="ts-btn" @click="detailOpen=false">Close</button>
+						</div>
 					</div>
+						<div class="ts-reschedule" v-if="rescheduleOpen && boot.can_manage">
+						<div>
+							<label>New date</label>
+							<div class="ts-datefield" @click.stop>
+								<input type="text" readonly :value="formatDateLabel(reschedule.date)" placeholder="Select date"
+									@click="openCalendar('reschedule', reschedule.date)">
+								<button type="button" class="ts-cal-btn" @click="openCalendar('reschedule', reschedule.date)">📅</button>
+								<div class="ts-cal" v-if="datePicker.open && datePicker.field==='reschedule'">
+									<div class="ts-cal-head">
+										<button type="button" @click="shiftCalendar(-1)">‹</button>
+										<strong>{{ calendarMonthLabel() }}</strong>
+										<button type="button" @click="shiftCalendar(1)">›</button>
+									</div>
+									<div class="ts-cal-dows"><span v-for="d in ['Su','Mo','Tu','We','Th','Fr','Sa']" :key="d">{{ d }}</span></div>
+									<div class="ts-cal-grid">
+										<button type="button" v-for="(day, i) in calendarCells()" :key="i" :disabled="!day"
+											:class="{selected: isSelectedDay(day)}" @click="pickCalendarDay(day)">{{ day || '' }}</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div>
+							<label>Schedule</label>
+							<select class="ts-select" v-model="reschedule.period">
+								<option value="morning">Morning</option>
+								<option value="afternoon">Afternoon</option>
+								<option value="evening">Evening</option>
+							</select>
+						</div>
+						<div class="ts-reschedule-actions">
+							<button class="ts-btn" @click="rescheduleOpen=false">Cancel</button>
+							<button class="ts-btn primary" :disabled="rescheduleSaving" @click="saveReschedule">{{ rescheduleSaving ? 'Moving…' : 'Move session' }}</button>
+						</div>
+						<p class="ts-muted" style="grid-column:1/-1;margin:0">Candidates on this session move with it.</p>
+					</div>
+					<p class="ts-error" v-if="error && detailOpen && rescheduleOpen" style="margin:0 0 12px">{{ error }}</p>
 					<div class="ts-detail-meta" v-if="detail">
+						<div><span>Name of training</span><b>{{ detail.course_name || detail.course || '—' }}</b></div>
 						<div><span>Instructor</span><b>{{ detail.instructor_name || '—' }}</b></div>
 						<div><span>Customer</span><b>{{ detail.customer_company || '—' }}</b></div>
 						<div><span>Room</span><b>{{ detail.room_name || '—' }}</b></div>
@@ -1374,6 +1505,15 @@
 							</select>
 						</div>
 						<div class="full ts-suggest">
+							<label>Name of training</label>
+							<input :value="form.course_name || form.course" placeholder="Search training / course"
+								@focus="searchDoctype('Course', form.course_name || form.course || '', 'Course')"
+								@input="form.course_name=$event.target.value; form.course=''; searchDoctype('Course', $event.target.value, 'Course')">
+							<ul v-if="suggestions.Course.length">
+								<li v-for="item in suggestions.Course" :key="item.value" @click="pickCourse(item)">{{ item.label }}</li>
+							</ul>
+						</div>
+						<div class="full ts-suggest">
 							<label>Student Group <span class="ts-optional">(optional)</span></label>
 							<input :value="form.student_group_name || form.student_group" placeholder="Add after candidates arrive"
 								@input="searchDoctype('Student Group', $event.target.value, 'StudentGroup')">
@@ -1434,11 +1574,15 @@
 			<div class="ts-overlay ts-overlay-top" v-if="candidateOpen" @click.self="onCandidateOverlayClick">
 				<div class="ts-modal">
 					<h3>Add Candidate</h3>
-					<p class="ts-muted" style="margin:-6px 0 12px">Enter candidate details for this session date. Reception can create the Student when the candidate arrives.</p>
+					<p class="ts-muted" style="margin:-6px 0 12px">Same company and PO for everyone. Add more names below, then save once. Reception can create the Student when they arrive.</p>
 					<div class="ts-form">
-						<div class="full">
-							<label>Candidate name</label>
-							<input v-model="candidateForm.candidate_name" placeholder="Full name" autofocus>
+						<div class="full ts-suggest">
+							<label>Customer name</label>
+							<input :value="candidateForm.customer_name || candidateForm.customer" placeholder="Search customer"
+								@input="candidateForm.customer_name=$event.target.value; candidateForm.customer=''; searchDoctype('Customer', $event.target.value, 'Customer')">
+							<ul v-if="suggestions.Customer.length">
+								<li v-for="item in suggestions.Customer" :key="item.value" @click="pickCustomer(item)">{{ item.label }}</li>
+							</ul>
 						</div>
 						<div>
 							<label>PO Number</label>
@@ -1464,19 +1608,19 @@
 								</div>
 							</div>
 						</div>
-						<div class="full ts-suggest">
-							<label>Customer name</label>
-							<input :value="candidateForm.customer_name || candidateForm.customer" placeholder="Search customer"
-								@input="candidateForm.customer_name=$event.target.value; candidateForm.customer=''; searchDoctype('Customer', $event.target.value, 'Customer')">
-							<ul v-if="suggestions.Customer.length">
-								<li v-for="item in suggestions.Customer" :key="item.value" @click="pickCustomer(item)">{{ item.label }}</li>
-							</ul>
+						<div class="full ts-name-list">
+							<label>Candidate names</label>
+							<div class="ts-name-row" v-for="(name, idx) in candidateForm.names" :key="idx">
+								<input v-model="candidateForm.names[idx]" :placeholder="idx === 0 ? 'Full name' : 'Another candidate'" :autofocus="idx===0">
+								<button type="button" class="ts-name-remove" v-if="candidateForm.names.length > 1" @click="removeCandidateName(idx)" title="Remove">×</button>
+							</div>
+							<button type="button" class="ts-btn ts-add-name" @click="addCandidateName">+ Add another candidate (same company &amp; PO)</button>
 						</div>
 						<p class="ts-error" v-if="error && candidateOpen">{{ error }}</p>
 					</div>
 					<div class="ts-modal-actions">
 						<button class="ts-btn" @click="candidateOpen=false">Cancel</button>
-						<button class="ts-btn primary" :disabled="candidateSaving" @click="saveCandidate">{{ candidateSaving ? 'Saving…' : 'Add Candidate' }}</button>
+						<button class="ts-btn primary" :disabled="candidateSaving" @click="saveCandidate">{{ candidateSaving ? 'Saving…' : (candidateNamesToSave().length > 1 ? 'Add ' + candidateNamesToSave().length + ' Candidates' : 'Add Candidate') }}</button>
 					</div>
 				</div>
 			</div>
