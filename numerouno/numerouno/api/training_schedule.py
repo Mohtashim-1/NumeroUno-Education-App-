@@ -1616,43 +1616,33 @@ def create_student_from_candidate(name):
 	doc = frappe.get_doc("Training Candidate", name)
 	if doc.student:
 		return {"name": doc.name, "student": doc.student, "candidate": _candidate_payload(doc)}
-	if not doc.student_group:
-		frappe.throw(_("Add a Student Group on this session before creating the Student."))
+	if not (doc.candidate_name or "").strip():
+		frappe.throw(_("Candidate name is required."))
 
-	customer, customer_name = _ensure_customer(doc.customer, doc.customer_name)
-	doc.customer = customer
+	customer, customer_name = _resolve_customer(doc.customer, doc.customer_name)
+	doc.customer = customer or None
 	doc.customer_name = customer_name
 
 	first_name, last_name = _split_person_name(doc.candidate_name)
 	student = frappe.new_doc("Student")
 	student.first_name = first_name
-	student.last_name = last_name
+	if last_name:
+		student.last_name = last_name
 	student.naming_series = "EDU-STU-.YYYY.-"
 	student.joining_date = doc.date or today()
-	student.customer_name = customer
+	if customer:
+		student.customer_name = customer
+	if frappe.get_meta("Student").has_field("custom_contact_type"):
+		student.custom_contact_type = "Without Email"
+	if frappe.get_meta("Student").has_field("custom_mode_of_payment"):
+		student.custom_mode_of_payment = "Purchase Order" if (doc.po_number or "").strip() else "Cash"
 	if frappe.get_meta("Student").has_field("custom_customer_purchase_order"):
 		student.custom_customer_purchase_order = doc.po_number
 	if frappe.get_meta("Student").has_field("custom_student_company_name"):
-		student.custom_student_company_name = doc.customer_name
+		student.custom_student_company_name = customer_name
 	student.flags.ignore_permissions = True
+	student.flags.ignore_mandatory = True
 	student.insert()
-
-	group = frappe.get_doc("Student Group", doc.student_group)
-	if not any(row.student == student.name for row in group.students):
-		row = group.append("students", {})
-		row.student = student.name
-		row.customer_name = customer
-		if frappe.get_meta("Student Group Student").has_field("customer_purchase_order"):
-			row.customer_purchase_order = doc.po_number
-		if frappe.get_meta("Student Group Student").has_field("custom_start_date"):
-			row.custom_start_date = doc.date
-		if frappe.get_meta("Student Group Student").has_field("custom_end_date"):
-			end = frappe.db.get_value("Student Group", doc.student_group, "custom_to_date") or frappe.db.get_value(
-				"Student Group", doc.student_group, "to_date"
-			)
-			row.custom_end_date = end or doc.date
-		group.flags.ignore_permissions = True
-		group.save()
 
 	doc.student = student.name
 	doc.status = "Student Created"

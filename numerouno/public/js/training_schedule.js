@@ -1494,7 +1494,7 @@
 						</div>
 						<p class="ts-muted" style="grid-column:1/-1;margin:0">Candidates on this session move with it.</p>
 					</div>
-					<p class="ts-error" v-if="error && detailOpen && rescheduleOpen" style="margin:0 0 12px">{{ error }}</p>
+					<p class="ts-error" v-if="error && detailOpen" style="margin:0 0 12px">{{ error }}</p>
 					<div class="ts-detail-meta" v-if="detail">
 						<div><span>Name of training</span><b>{{ detail.course_name || detail.course || '—' }}</b></div>
 						<div><span>Instructor</span><b>{{ detail.instructor_name || '—' }}</b></div>
@@ -1587,7 +1587,7 @@
 									<td class="ts-row-actions">
 										<button v-if="boot.can_manage && st.candidate" class="ts-btn" @click="openEditCandidate(st)">Edit</button>
 										<button v-if="boot.can_manage && st.candidate" class="ts-btn" @click="deleteCandidate(st)">Delete</button>
-										<button v-if="boot.can_manage && st.can_create_student" class="ts-btn create" :disabled="saving" @click="createStudent(st)">
+										<button v-if="boot.can_manage && st.can_create_student" class="ts-btn primary" :disabled="saving" @click="createStudent(st)">
 											{{ saving ? 'Creating…' : 'Create Student' }}
 										</button>
 									</td>
