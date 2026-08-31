@@ -780,12 +780,20 @@
 				if (!person?.candidate) return;
 				saving.value = true;
 				error.value = "";
+				const tab = window.open("about:blank", "_blank");
 				try {
-					await call("create_student_from_candidate", { name: person.candidate });
+					const data = await call("create_student_from_candidate", { name: person.candidate });
+					const student = data.student || data.name;
+					if (student && tab) {
+						tab.location.href = "/app/student/" + encodeURIComponent(student);
+					} else if (tab) {
+						tab.close();
+					}
 					if (detail.value?.name) await openDetail(detail.value);
 					await loadWeek();
 					if (view.value === "students") await loadStudentsView();
 				} catch (e) {
+					if (tab && !tab.closed) tab.close();
 					error.value = e.message;
 				} finally {
 					saving.value = false;
@@ -1298,7 +1306,7 @@
 									<tr v-for="(st, idx) in (g.people || g.students || [])" :key="st.student || st.candidate || idx">
 										<td>{{ st.group_roll_number || (idx+1) }}</td>
 										<td>
-											<a v-if="st.student" :href="'/app/student/' + st.student">{{ st.candidate_name || st.student_name }}</a>
+											<a v-if="st.student" :href="'/app/student/' + st.student" target="_blank" rel="noopener">{{ st.candidate_name || st.student_name }}</a>
 											<span v-else>{{ st.candidate_name || st.student_name }}</span>
 										</td>
 										<td>
@@ -1566,7 +1574,7 @@
 								<tr v-for="(st, idx) in filteredDetailPeople" :key="st.student || st.candidate || idx">
 									<td>{{ st.group_roll_number || (idx+1) }}</td>
 									<td>
-										<a v-if="st.student" :href="'/app/student/' + st.student">{{ st.candidate_name || st.student_name }}</a>
+										<a v-if="st.student" :href="'/app/student/' + st.student" target="_blank" rel="noopener">{{ st.candidate_name || st.student_name }}</a>
 										<span v-else>{{ st.candidate_name || st.student_name }}</span>
 									</td>
 									<td>
