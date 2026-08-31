@@ -466,7 +466,10 @@ body.ts-body {
 .ts-error { color: #b91c1c; font-size: 12px; grid-column: 1 / -1; }
 .ts-readonly { background: #f8fafc; }
 
-.ts-toolbar-actions { display: flex; gap: 8px; align-items: center; }
+.ts-row-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.ts-row-actions .ts-btn { padding: 4px 8px; font-size: 12px; }
+.ts-file-hidden { display: none; }
+.ts-toolbar-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .ts-btn.create {
 	background: #dc2626;
 	border-color: #dc2626;

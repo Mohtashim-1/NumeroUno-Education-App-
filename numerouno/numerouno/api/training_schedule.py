@@ -1,4 +1,6 @@
 from datetime import timedelta
+import csv
+import io
 
 import frappe
 from frappe import _
@@ -1411,11 +1413,15 @@ def _group_candidates(student_group, date=None, course_schedule=None):
 	if date:
 		conditions.append("(date is null or date = %(date)s)")
 		values["date"] = date
+	lunch_select = ""
+	if frappe.db.has_column("Training Candidate", "lunch"):
+		lunch_select = ", lunch"
 	rows = frappe.db.sql(
 		f"""
 		select
 			name, candidate_name, po_number, customer, customer_name,
 			date, student_group, course, course_schedule, student, status
+			{lunch_select}
 		from `tabTraining Candidate`
 		where {" and ".join(conditions)}
 		order by creation asc
@@ -1429,6 +1435,7 @@ def _group_candidates(student_group, date=None, course_schedule=None):
 		row["end_date"] = row["date"]
 		row["company"] = row.get("customer_name") or row.get("customer") or ""
 		row["po_number"] = row.get("po_number") or ""
+		row["lunch"] = row.get("lunch") or "No"
 	return rows
 
 
@@ -1451,6 +1458,7 @@ def _merge_people(students, candidates, student_group=None):
 				"group_roll_number": row.get("group_roll_number") or (idx + 1),
 				"student_group": student_group or row.get("student_group") or "",
 				"can_create_student": 0,
+				"lunch": row.get("lunch") or "No",
 			}
 		)
 	for row in candidates or []:
@@ -1464,6 +1472,7 @@ def _merge_people(students, candidates, student_group=None):
 				"candidate": row.get("name"),
 				"candidate_name": row.get("candidate_name"),
 				"po_number": row.get("po_number") or "",
+				"customer": row.get("customer") or "",
 				"company": row.get("company") or row.get("customer_name") or "",
 				"attendance": "",
 				"start_date": row.get("date") or "",
@@ -1471,6 +1480,7 @@ def _merge_people(students, candidates, student_group=None):
 				"group_roll_number": len(people) + 1,
 				"student_group": student_group or row.get("student_group") or "",
 				"can_create_student": 0 if row.get("student") else 1,
+				"lunch": row.get("lunch") or "No",
 			}
 		)
 	return people
@@ -1508,6 +1518,13 @@ def _ensure_customer(customer=None, customer_name=None):
 	doc.flags.ignore_permissions = True
 	doc.insert()
 	return doc.name, customer_name
+
+
+def _lunch_value(value):
+	text = str(value or "").strip().lower()
+	if text in ("1", "yes", "y", "true"):
+		return "Yes"
+	return "No"
 
 
 def _candidate_names_from_payload(payload):
@@ -1549,6 +1566,8 @@ def _insert_candidate(payload, candidate_name):
 	)
 	doc.course_schedule = course_schedule
 	doc.status = "Invited"
+	if frappe.get_meta("Training Candidate").has_field("lunch"):
+		doc.lunch = _lunch_value(payload.get("lunch"))
 	doc.flags.ignore_permissions = True
 	doc.flags.ignore_mandatory = True
 	doc.insert()
@@ -1585,6 +1604,7 @@ def _candidate_payload(doc):
 		"course_schedule": doc.course_schedule,
 		"student": doc.student,
 		"status": doc.status,
+		"lunch": getattr(doc, "lunch", None) or "No",
 	}
 
 
@@ -1679,4 +1699,111 @@ def update_po_number(candidate=None, student=None, student_group=None, po_number
 				frappe.db.set_value("Training Candidate", name, "po_number", po_number)
 
 	return {"ok": 1, "po_number": po_number}
+
+
+def _csv_header_key(header):
+	return "".join(ch for ch in (header or "").lower() if ch.isalnum())
+
+
+def _parse_candidate_csv(content):
+	if content is None:
+		return []
+	if isinstance(content, bytes):
+		content = content.decode("utf-8-sig")
+	text = str(content).replace("\ufeff", "").strip()
+	if not text:
+		return []
+	reader = csv.DictReader(io.StringIO(text))
+	key_map = {
+		"candidatename": "candidate_name",
+		"name": "candidate_name",
+		"candidate": "candidate_name",
+		"fullname": "candidate_name",
+		"ponumber": "po_number",
+		"po": "po_number",
+		"customerponumber": "po_number",
+		"customer": "customer_name",
+		"customername": "customer_name",
+		"company": "customer_name",
+		"companyname": "customer_name",
+		"lunch": "lunch",
+	}
+	rows = []
+	for raw in reader:
+		mapped = {}
+		for header, value in (raw or {}).items():
+			field = key_map.get(_csv_header_key(header))
+			if field:
+				mapped[field] = (value or "").strip()
+		name = mapped.get("candidate_name") or ""
+		if not name:
+			continue
+		mapped["lunch"] = _lunch_value(mapped.get("lunch"))
+		rows.append(mapped)
+	return rows
+
+
+@frappe.whitelist()
+def update_candidate(data):
+	_require_manage()
+	if not _candidate_table_exists():
+		frappe.throw(_("Training Candidate is not installed yet. Please migrate the Numerouno app."))
+	payload = frappe.parse_json(data) if isinstance(data, str) else (data or {})
+	name = (payload.get("name") or payload.get("candidate") or "").strip()
+	if not name:
+		frappe.throw(_("Candidate is required."))
+	doc = frappe.get_doc("Training Candidate", name)
+	names = _candidate_names_from_payload(payload)
+	if names:
+		doc.candidate_name = names[0]
+	if "po_number" in payload:
+		doc.po_number = (payload.get("po_number") or "").strip()
+	if payload.get("date"):
+		doc.date = getdate(payload.get("date"))
+	customer, customer_name = _resolve_customer(payload.get("customer"), payload.get("customer_name"))
+	if customer or customer_name:
+		doc.customer = customer or doc.customer
+		doc.customer_name = customer_name or doc.customer_name
+	if frappe.get_meta("Training Candidate").has_field("lunch") and payload.get("lunch") is not None:
+		doc.lunch = _lunch_value(payload.get("lunch"))
+	doc.flags.ignore_permissions = True
+	doc.save()
+	return {"name": doc.name, "candidate": _candidate_payload(doc)}
+
+
+@frappe.whitelist()
+def delete_candidate(name):
+	_require_manage()
+	name = (name or "").strip()
+	if not name:
+		frappe.throw(_("Candidate is required."))
+	if not frappe.db.exists("Training Candidate", name):
+		frappe.throw(_("Candidate {0} not found.").format(name))
+	frappe.delete_doc("Training Candidate", name, ignore_permissions=True)
+	return {"ok": 1, "name": name}
+
+
+@frappe.whitelist()
+def import_candidates_csv(data):
+	_require_manage()
+	if not _candidate_table_exists():
+		frappe.throw(_("Training Candidate is not installed yet. Please migrate the Numerouno app."))
+	payload = frappe.parse_json(data) if isinstance(data, str) else (data or {})
+	rows = _parse_candidate_csv(payload.get("csv_content") or payload.get("csv"))
+	if not rows:
+		frappe.throw(_("No candidates found in the CSV. Use columns: Candidate Name, PO Number, Customer, Lunch."))
+	created = []
+	for row in rows:
+		row_payload = {
+			"student_group": payload.get("student_group"),
+			"course_schedule": payload.get("course_schedule"),
+			"course": payload.get("course"),
+			"date": payload.get("date"),
+			"po_number": row.get("po_number") or payload.get("po_number"),
+			"customer": row.get("customer") or payload.get("customer"),
+			"customer_name": row.get("customer_name") or payload.get("customer_name"),
+			"lunch": row.get("lunch") or payload.get("lunch"),
+		}
+		created.append(_insert_candidate(row_payload, row["candidate_name"]))
+	return {"count": len(created), "candidates": created}
 

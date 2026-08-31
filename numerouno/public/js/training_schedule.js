@@ -98,6 +98,7 @@
 			const candidateOpen = ref(false);
 			const candidateSaving = ref(false);
 			const candidateForm = ref(emptyCandidate());
+			const csvInput = ref(null);
 			const datePicker = ref({ open: false, field: "", year: 2026, month: 0 });
 			const detailSearch = ref({ q: "", by: "candidate" });
 			const rescheduleOpen = ref(false);
@@ -149,11 +150,13 @@
 
 			function emptyCandidate() {
 				return {
+					name: "",
 					candidate_name: "",
 					names: [""],
 					po_number: "",
 					customer: "",
 					customer_name: "",
+					lunch: "No",
 					date: "",
 					student_group: "",
 					course: "",
@@ -597,6 +600,28 @@
 					customer: last.customer || detail.value.customer || "",
 					customer_name: last.customer_name || last.company || detail.value.customer_company || "",
 					po_number: last.po_number || "",
+					lunch: last.lunch || "No",
+					create_student: false,
+				};
+				error.value = "";
+				datePicker.value.open = false;
+				candidateOpen.value = true;
+			}
+
+			function openEditCandidate(person) {
+				if (!person?.candidate) return;
+				candidateForm.value = {
+					...emptyCandidate(),
+					name: person.candidate,
+					names: [person.candidate_name || ""],
+					date: person.start_date || detail.value?.date || "",
+					student_group: person.student_group || detail.value?.student_group || "",
+					course: detail.value?.course || "",
+					course_schedule: detail.value?.name || "",
+					customer: person.customer || "",
+					customer_name: person.company || person.customer_name || "",
+					po_number: person.po_number || "",
+					lunch: person.lunch === "Yes" ? "Yes" : "No",
 					create_student: false,
 				};
 				error.value = "";
@@ -640,20 +665,107 @@
 				candidateSaving.value = true;
 				error.value = "";
 				try {
-					await call("add_candidate", {
+					const payload = {
+						name: candidateForm.value.name || "",
+						candidate_names: names,
+						po_number: candidateForm.value.po_number,
+						customer: candidateForm.value.customer,
+						customer_name: candidateForm.value.customer_name,
+						lunch: candidateForm.value.lunch || "No",
+						date: candidateForm.value.date,
+						student_group: candidateForm.value.student_group,
+						course: candidateForm.value.course,
+						course_schedule: candidateForm.value.course_schedule,
+						create_student: !!candidateForm.value.create_student,
+					};
+					if (candidateForm.value.name) {
+						await call("update_candidate", { data: payload });
+					} else {
+						await call("add_candidate", { data: payload });
+					}
+					candidateOpen.value = false;
+					if (detail.value?.name) await openDetail(detail.value);
+					await loadWeek();
+					if (view.value === "students") await loadStudentsView();
+				} catch (e) {
+					error.value = e.message;
+				} finally {
+					candidateSaving.value = false;
+				}
+			}
+
+			async function deleteCandidate(person) {
+				if (!boot.value.can_manage || !person?.candidate) return;
+				const label = person.candidate_name || "this candidate";
+				if (!confirm(`Delete ${label}?`)) return;
+				saving.value = true;
+				error.value = "";
+				try {
+					await call("delete_candidate", { name: person.candidate });
+					if (detail.value?.name) await openDetail(detail.value);
+					await loadWeek();
+					if (view.value === "students") await loadStudentsView();
+				} catch (e) {
+					error.value = e.message;
+				} finally {
+					saving.value = false;
+				}
+			}
+
+			function downloadCandidateCsvTemplate() {
+				const csv = "Candidate Name,PO Number,Customer,Lunch\nJohn Smith,PO-123,Acme LLC,Yes\n";
+				const blob = new Blob([csv], { type: "text/csv" });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = "candidates-template.csv";
+				a.click();
+				URL.revokeObjectURL(url);
+			}
+
+			function exportSessionCandidatesCsv() {
+				const rows = [
+					["Candidate Name", "PO Number", "Customer", "Lunch", "Date", "Status"],
+					...(filteredDetailPeople.value || []).map((p) => [
+						p.candidate_name || p.student_name || "",
+						p.po_number || "",
+						p.company || p.customer_name || "",
+						p.lunch || "No",
+						p.start_date || "",
+						p.can_create_student ? "Invited" : (p.attendance || "Student"),
+					]),
+				];
+				const csv = rows.map((r) => r.map((v) => `"${String(v || "").replace(/"/g, '""')}"`).join(",")).join("\n");
+				const blob = new Blob([csv], { type: "text/csv" });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = `candidates-${(detail.value && detail.value.date) || "session"}.csv`;
+				a.click();
+				URL.revokeObjectURL(url);
+			}
+
+			function pickCandidateCsv() {
+				csvInput.value && csvInput.value.click();
+			}
+
+			async function importCandidateCsv(event) {
+				const file = event.target.files && event.target.files[0];
+				event.target.value = "";
+				if (!file || !detail.value?.name) return;
+				candidateSaving.value = true;
+				error.value = "";
+				try {
+					const csv_content = await file.text();
+					const data = await call("import_candidates_csv", {
 						data: {
-							candidate_names: names,
-							po_number: candidateForm.value.po_number,
-							customer: candidateForm.value.customer,
-							customer_name: candidateForm.value.customer_name,
-							date: candidateForm.value.date,
-							student_group: candidateForm.value.student_group,
-							course: candidateForm.value.course,
-							course_schedule: candidateForm.value.course_schedule,
-							create_student: !!candidateForm.value.create_student,
+							csv_content,
+							date: detail.value.date,
+							student_group: detail.value.student_group,
+							course: detail.value.course,
+							course_schedule: detail.value.name,
 						},
 					});
-					candidateOpen.value = false;
 					if (detail.value?.name) await openDetail(detail.value);
 					await loadWeek();
 					if (view.value === "students") await loadStudentsView();
@@ -915,6 +1027,7 @@
 				candidateOpen,
 				candidateSaving,
 				candidateForm,
+				csvInput,
 				datePicker,
 				detailSearch,
 				rescheduleOpen,
@@ -941,10 +1054,16 @@
 				openReschedule,
 				saveReschedule,
 				openAddCandidate,
+				openEditCandidate,
 				addCandidateName,
 				removeCandidateName,
 				candidateNamesToSave,
 				saveCandidate,
+				deleteCandidate,
+				downloadCandidateCsvTemplate,
+				exportSessionCandidatesCsv,
+				pickCandidateCsv,
+				importCandidateCsv,
 				createStudent,
 				savePo,
 				searchDoctype,
@@ -1417,10 +1536,14 @@
 						</div>
 					</div>
 					<div class="ts-detail-students">
+						<input ref="csvInput" type="file" accept=".csv,text/csv" class="ts-file-hidden" @change="importCandidateCsv">
 						<div class="ts-student-toolbar">
 							<strong>{{ filteredDetailPeople.length }}{{ detailSearch.q ? ' of ' + (detailPeople || detailStudents || []).length : '' }} students</strong>
 							<div class="ts-toolbar-actions" v-if="boot.can_manage && detail">
 								<button class="ts-btn" @click="openAddCandidate">Add Candidate</button>
+								<button class="ts-btn" @click="pickCandidateCsv">Import CSV</button>
+								<button class="ts-btn" @click="downloadCandidateCsvTemplate">CSV template</button>
+								<button class="ts-btn" @click="exportSessionCandidatesCsv">Export CSV</button>
 								<button class="ts-btn primary" @click="openEdit(detail)">Edit Session</button>
 							</div>
 						</div>
@@ -1437,7 +1560,7 @@
 						<div v-else-if="!filteredDetailPeople.length" class="ts-empty-students">No candidates match this search.</div>
 						<table class="ts-table" v-else>
 							<thead>
-								<tr><th>#</th><th>Candidate</th><th>PO Number</th><th>Customer</th><th>Status</th><th>Course dates</th><th></th></tr>
+								<tr><th>#</th><th>Candidate</th><th>PO Number</th><th>Customer</th><th>Lunch</th><th>Status</th><th>Course dates</th><th></th></tr>
 							</thead>
 							<tbody>
 								<tr v-for="(st, idx) in filteredDetailPeople" :key="st.student || st.candidate || idx">
@@ -1454,13 +1577,16 @@
 										<span v-else>{{ st.po_number || '—' }}</span>
 									</td>
 									<td>{{ st.company || st.customer_name || '—' }}</td>
-									<td>
+									<td>{{ st.lunch || 'No' }}</td>
+										<td>
 										<span class="ts-att" :class="st.can_create_student ? 'candidate' : (st.attendance || 'invited').toLowerCase()">
 											{{ st.can_create_student ? 'Invited' : attendanceLabel(st.attendance) }}
 										</span>
 									</td>
 									<td>{{ st.start_date || '—' }} to {{ st.end_date || '—' }}</td>
-									<td>
+									<td class="ts-row-actions">
+										<button v-if="boot.can_manage && st.candidate" class="ts-btn" @click="openEditCandidate(st)">Edit</button>
+										<button v-if="boot.can_manage && st.candidate" class="ts-btn" @click="deleteCandidate(st)">Delete</button>
 										<button v-if="boot.can_manage && st.can_create_student" class="ts-btn create" :disabled="saving" @click="createStudent(st)">
 											{{ saving ? 'Creating…' : 'Create Student' }}
 										</button>
@@ -1573,8 +1699,8 @@
 
 			<div class="ts-overlay ts-overlay-top" v-if="candidateOpen" @click.self="onCandidateOverlayClick">
 				<div class="ts-modal">
-					<h3>Add Candidate</h3>
-					<p class="ts-muted" style="margin:-6px 0 12px">Same company and PO for everyone. Add more names below, then save once. Reception can create the Student when they arrive.</p>
+					<h3>{{ candidateForm.name ? 'Edit Candidate' : 'Add Candidate' }}</h3>
+					<p class="ts-muted" style="margin:-6px 0 12px">{{ candidateForm.name ? 'Update this candidate. Lunch is Yes or No.' : 'Same company, PO and lunch for everyone. Add more names below, or import a CSV.' }}</p>
 					<div class="ts-form">
 						<div class="full ts-suggest">
 							<label>Customer name</label>
@@ -1587,6 +1713,13 @@
 						<div>
 							<label>PO Number</label>
 							<input v-model="candidateForm.po_number" placeholder="Customer PO">
+						</div>
+						<div>
+							<label>Lunch</label>
+							<select class="ts-select" v-model="candidateForm.lunch">
+								<option value="Yes">Yes</option>
+								<option value="No">No</option>
+							</select>
 						</div>
 						<div>
 							<label>Date</label>
@@ -1614,13 +1747,13 @@
 								<input v-model="candidateForm.names[idx]" :placeholder="idx === 0 ? 'Full name' : 'Another candidate'" :autofocus="idx===0">
 								<button type="button" class="ts-name-remove" v-if="candidateForm.names.length > 1" @click="removeCandidateName(idx)" title="Remove">×</button>
 							</div>
-							<button type="button" class="ts-btn ts-add-name" @click="addCandidateName">+ Add another candidate (same company &amp; PO)</button>
+							<button type="button" class="ts-btn ts-add-name" v-if="!candidateForm.name" @click="addCandidateName">+ Add another candidate (same company &amp; PO)</button>
 						</div>
 						<p class="ts-error" v-if="error && candidateOpen">{{ error }}</p>
 					</div>
 					<div class="ts-modal-actions">
 						<button class="ts-btn" @click="candidateOpen=false">Cancel</button>
-						<button class="ts-btn primary" :disabled="candidateSaving" @click="saveCandidate">{{ candidateSaving ? 'Saving…' : (candidateNamesToSave().length > 1 ? 'Add ' + candidateNamesToSave().length + ' Candidates' : 'Add Candidate') }}</button>
+						<button class="ts-btn primary" :disabled="candidateSaving" @click="saveCandidate">{{ candidateSaving ? 'Saving…' : (candidateForm.name ? 'Save Candidate' : (candidateNamesToSave().length > 1 ? 'Add ' + candidateNamesToSave().length + ' Candidates' : 'Add Candidate')) }}</button>
 					</div>
 				</div>
 			</div>
