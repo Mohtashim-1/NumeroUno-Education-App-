@@ -14,7 +14,7 @@ frappe.pages["habc2-examination-form"].on_page_load = function (wrapper) {
 	try {
 		if (!$("#habc2-examination-css").length) {
 			$(
-				'<link id="habc2-examination-css" rel="stylesheet" type="text/css" href="/assets/numerouno/css/habc2_examination_form.css?v=4">'
+				'<link id="habc2-examination-css" rel="stylesheet" type="text/css" href="/assets/numerouno/css/habc2_examination_form.css?v=5">'
 			).appendTo("head");
 		}
 		const page =
@@ -77,6 +77,14 @@ numerouno.habc2.Form = class {
 		this.$root.on("click", ".h2-submit-btn", (e) => {
 			e.preventDefault();
 			this.submit_doc();
+		});
+		this.$root.on("click", ".h2-cancel-btn", (e) => {
+			e.preventDefault();
+			this.cancel_doc();
+		});
+		this.$root.on("click", ".h2-amend-btn", (e) => {
+			e.preventDefault();
+			this.amend_doc();
 		});
 		this.$root.on("click", ".h2-back-btn", (e) => {
 			e.preventDefault();
@@ -193,11 +201,30 @@ numerouno.habc2.Form = class {
 
 	render(html) {
 		this.page.clear_primary_action();
+		this.page.clear_secondary_action();
+		this.page.clear_inner_toolbar();
 		this.page.set_title(this.doc.name || __("HABC2 Examination Declaration"));
-		this.page.set_primary_action(__("Save"), () => this.save());
-		this.page.set_secondary_action(__("Print"), () => this.print_doc());
-		const submitted = h2Cint(this.doc.docstatus) === 1;
+		const docstatus = h2Cint(this.doc.docstatus);
+		const isDraft = docstatus === 0;
+		const isSubmitted = docstatus === 1;
+		const isCancelled = docstatus === 2;
+		const isReadonly = !isDraft;
+
+		if (isDraft) {
+			this.page.set_primary_action(__("Save"), () => this.save());
+			this.page.set_secondary_action(__("Print"), () => this.print_doc());
+		} else {
+			this.page.set_primary_action(__("Print"), () => this.print_doc());
+			if (isSubmitted) {
+				this.page.add_inner_button(__("Cancel"), () => this.cancel_doc(), __("Actions"));
+			}
+			if (isCancelled) {
+				this.page.add_inner_button(__("Amend"), () => this.amend_doc(), __("Actions"));
+			}
+		}
+
 		this.$root.html(`
+			${this.status_banner(docstatus)}
 			<div class="h2-form-bar">
 				<button type="button" class="h2-btn h2-back-btn">${__("Change Group")}</button>
 				<div class="h2-form-bar-meta">
@@ -205,15 +232,48 @@ numerouno.habc2.Form = class {
 					<span>${h2Escape(this.doc.name || "")}</span>
 				</div>
 				<button type="button" class="h2-btn h2-print-btn">${__("Print")}</button>
-				<button type="button" class="h2-btn h2-submit-btn" ${submitted ? "disabled" : ""}>${__("Submit")}</button>
-				<button type="button" class="h2-btn h2-btn-primary h2-save-btn" ${submitted ? "disabled" : ""}>${__("Save")}</button>
+				${isSubmitted ? `<button type="button" class="h2-btn h2-cancel-btn">${__("Cancel")}</button>` : ""}
+				${isCancelled ? `<button type="button" class="h2-btn h2-amend-btn">${__("Amend")}</button>` : ""}
+				<button type="button" class="h2-btn h2-submit-btn" ${isDraft ? "" : "disabled"}>${__("Submit")}</button>
+				<button type="button" class="h2-btn h2-btn-primary h2-save-btn" ${isDraft ? "" : "disabled"}>${__("Save")}</button>
 			</div>
-			<div class="h2-paper-wrap ${submitted ? "is-readonly" : ""}">${html}</div>
+			<div class="h2-paper-wrap ${isReadonly ? "is-readonly" : ""}">${html}</div>
 		`);
 		this.init_signature_canvases();
-		if (submitted) {
+		if (isReadonly) {
 			this.$root.find("input, textarea, button.h2-sign-clear").prop("disabled", true);
 		}
+	}
+
+	status_info(docstatus) {
+		const ds = h2Cint(docstatus);
+		if (ds === 1) {
+			return {
+				label: __("Submitted"),
+				cls: "is-submitted",
+				note: __("Submitted (read-only). Cancel, then Amend to edit."),
+			};
+		}
+		if (ds === 2) {
+			return {
+				label: __("Cancelled"),
+				cls: "is-cancelled",
+				note: __("Cancelled. Use Amend to create an editable copy."),
+			};
+		}
+		return {
+			label: __("Draft"),
+			cls: "is-draft",
+			note: __("Draft — save and submit when complete."),
+		};
+	}
+
+	status_banner(docstatus) {
+		const info = this.status_info(docstatus);
+		return `<div class="h2-status-banner ${info.cls}" role="status">
+			<strong>${h2Escape(info.label)}</strong>
+			<span>${h2Escape(info.note)}</span>
+		</div>`;
 	}
 
 	collect() {
@@ -250,7 +310,7 @@ numerouno.habc2.Form = class {
 	}
 
 	save() {
-		if (h2Cint(this.doc.docstatus) === 1) {
+		if (h2Cint(this.doc.docstatus) !== 0) {
 			frappe.msgprint(__("Submitted form cannot be edited"));
 			return;
 		}
@@ -307,12 +367,72 @@ numerouno.habc2.Form = class {
 		});
 	}
 
+	cancel_doc() {
+		if (!this.doc?.name) {
+			frappe.msgprint(__("Please save the form first."));
+			return;
+		}
+		if (h2Cint(this.doc.docstatus) !== 1) {
+			frappe.msgprint(__("Only a submitted HABC2 Examination Declaration can be cancelled."));
+			return;
+		}
+		frappe.confirm(
+			__("Cancel this HABC2 Examination Declaration? Use Amend afterwards to create an editable copy."),
+			() => {
+				frappe.call({
+					method: "numerouno.numerouno.page.habc2_examination_form.habc2_examination_form.cancel_form",
+					args: { docname: this.doc.name },
+					freeze: true,
+					freeze_message: __("Cancelling..."),
+					callback: (r) => {
+						if (r.exc) {
+							return;
+						}
+						frappe.show_alert({ message: __("Cancelled"), indicator: "orange" });
+						this.fetch_form({ docname: this.doc.name });
+					},
+				});
+			}
+		);
+	}
+
+	amend_doc() {
+		if (!this.doc?.name) {
+			frappe.msgprint(__("Please save the form first."));
+			return;
+		}
+		if (h2Cint(this.doc.docstatus) !== 2) {
+			frappe.msgprint(__("Cancel the HABC2 Examination Declaration first, then Amend."));
+			return;
+		}
+		frappe.confirm(__("Create an editable copy with the same data?"), () => {
+			frappe.call({
+				method: "numerouno.numerouno.page.habc2_examination_form.habc2_examination_form.amend_form",
+				args: { docname: this.doc.name },
+				freeze: true,
+				freeze_message: __("Creating amended copy..."),
+				callback: (r) => {
+					if (r.exc) {
+						return;
+					}
+					const name = r.message?.name;
+					if (!name) {
+						frappe.msgprint(__("Amend did not return a new document."));
+						return;
+					}
+					frappe.show_alert({ message: __("Amended as {0}", [name]), indicator: "green" });
+					frappe.set_route("habc2-examination-form", name);
+				},
+			});
+		});
+	}
+
 	print_doc() {
 		if (!this.doc || !this.doc.name) {
 			frappe.msgprint(__("Save the form before printing"));
 			return;
 		}
-		this.save_then(() => {
+		const open_print = () => {
 			window.open(
 				frappe.urllib.get_full_url(
 					"/printview?doctype=" +
@@ -324,9 +444,13 @@ numerouno.habc2.Form = class {
 						"&no_letterhead=1"
 				),
 				"_blank"
-
 			);
-		});
+		};
+		if (h2Cint(this.doc.docstatus) === 1) {
+			open_print();
+			return;
+		}
+		this.save_then(open_print);
 	}
 
 	init_signature_canvases() {

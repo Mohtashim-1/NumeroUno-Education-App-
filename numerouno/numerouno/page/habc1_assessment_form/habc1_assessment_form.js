@@ -14,7 +14,7 @@ frappe.pages["habc1-assessment-form"].on_page_load = function (wrapper) {
 	try {
 		if (!$("#habc1-assessment-css").length) {
 			$(
-				'<link id="habc1-assessment-css" rel="stylesheet" type="text/css" href="/assets/numerouno/css/habc1_assessment_form.css?v=3">'
+				'<link id="habc1-assessment-css" rel="stylesheet" type="text/css" href="/assets/numerouno/css/habc1_assessment_form.css?v=4">'
 			).appendTo("head");
 		}
 		const page =
@@ -77,6 +77,14 @@ numerouno.habc1.Form = class {
 		this.$root.on("click", ".h1-submit-btn", (e) => {
 			e.preventDefault();
 			this.submit_doc();
+		});
+		this.$root.on("click", ".h1-cancel-btn", (e) => {
+			e.preventDefault();
+			this.cancel_doc();
+		});
+		this.$root.on("click", ".h1-amend-btn", (e) => {
+			e.preventDefault();
+			this.amend_doc();
 		});
 		this.$root.on("click", ".h1-back-btn", (e) => {
 			e.preventDefault();
@@ -193,11 +201,30 @@ numerouno.habc1.Form = class {
 
 	render(html) {
 		this.page.clear_primary_action();
+		this.page.clear_secondary_action();
+		this.page.clear_inner_toolbar();
 		this.page.set_title(this.doc.name || __("HABC1 Assessment Pack"));
-		this.page.set_primary_action(__("Save"), () => this.save());
-		this.page.set_secondary_action(__("Print"), () => this.print_doc());
-		const submitted = h1Cint(this.doc.docstatus) === 1;
+		const docstatus = h1Cint(this.doc.docstatus);
+		const isDraft = docstatus === 0;
+		const isSubmitted = docstatus === 1;
+		const isCancelled = docstatus === 2;
+		const isReadonly = !isDraft;
+
+		if (isDraft) {
+			this.page.set_primary_action(__("Save"), () => this.save());
+			this.page.set_secondary_action(__("Print"), () => this.print_doc());
+		} else {
+			this.page.set_primary_action(__("Print"), () => this.print_doc());
+			if (isSubmitted) {
+				this.page.add_inner_button(__("Cancel"), () => this.cancel_doc(), __("Actions"));
+			}
+			if (isCancelled) {
+				this.page.add_inner_button(__("Amend"), () => this.amend_doc(), __("Actions"));
+			}
+		}
+
 		this.$root.html(`
+			${this.status_banner(docstatus)}
 			<div class="h1-form-bar">
 				<button type="button" class="h1-btn h1-back-btn">${__("Change Group")}</button>
 				<div class="h1-form-bar-meta">
@@ -205,15 +232,48 @@ numerouno.habc1.Form = class {
 					<span>${h1Escape(this.doc.name || "")}</span>
 				</div>
 				<button type="button" class="h1-btn h1-print-btn">${__("Print")}</button>
-				<button type="button" class="h1-btn h1-submit-btn" ${submitted ? "disabled" : ""}>${__("Submit")}</button>
-				<button type="button" class="h1-btn h1-btn-primary h1-save-btn" ${submitted ? "disabled" : ""}>${__("Save")}</button>
+				${isSubmitted ? `<button type="button" class="h1-btn h1-cancel-btn">${__("Cancel")}</button>` : ""}
+				${isCancelled ? `<button type="button" class="h1-btn h1-amend-btn">${__("Amend")}</button>` : ""}
+				<button type="button" class="h1-btn h1-submit-btn" ${isDraft ? "" : "disabled"}>${__("Submit")}</button>
+				<button type="button" class="h1-btn h1-btn-primary h1-save-btn" ${isDraft ? "" : "disabled"}>${__("Save")}</button>
 			</div>
-			<div class="h1-paper-wrap ${submitted ? "is-readonly" : ""}">${html}</div>
+			<div class="h1-paper-wrap ${isReadonly ? "is-readonly" : ""}">${html}</div>
 		`);
 		this.init_signature_canvases();
-		if (submitted) {
+		if (isReadonly) {
 			this.$root.find("input, textarea, button.h1-sign-clear").prop("disabled", true);
 		}
+	}
+
+	status_info(docstatus) {
+		const ds = h1Cint(docstatus);
+		if (ds === 1) {
+			return {
+				label: __("Submitted"),
+				cls: "is-submitted",
+				note: __("Submitted (read-only). Cancel, then Amend to edit."),
+			};
+		}
+		if (ds === 2) {
+			return {
+				label: __("Cancelled"),
+				cls: "is-cancelled",
+				note: __("Cancelled. Use Amend to create an editable copy."),
+			};
+		}
+		return {
+			label: __("Draft"),
+			cls: "is-draft",
+			note: __("Draft — save and submit when complete."),
+		};
+	}
+
+	status_banner(docstatus) {
+		const info = this.status_info(docstatus);
+		return `<div class="h1-status-banner ${info.cls}" role="status">
+			<strong>${h1Escape(info.label)}</strong>
+			<span>${h1Escape(info.note)}</span>
+		</div>`;
 	}
 
 	collect() {
@@ -265,7 +325,7 @@ numerouno.habc1.Form = class {
 	}
 
 	save() {
-		if (h1Cint(this.doc.docstatus) === 1) {
+		if (h1Cint(this.doc.docstatus) !== 0) {
 			frappe.msgprint(__("Submitted form cannot be edited"));
 			return;
 		}
@@ -322,12 +382,72 @@ numerouno.habc1.Form = class {
 		});
 	}
 
+	cancel_doc() {
+		if (!this.doc?.name) {
+			frappe.msgprint(__("Please save the form first."));
+			return;
+		}
+		if (h1Cint(this.doc.docstatus) !== 1) {
+			frappe.msgprint(__("Only a submitted HABC1 Assessment Pack can be cancelled."));
+			return;
+		}
+		frappe.confirm(
+			__("Cancel this HABC1 Assessment Pack? Use Amend afterwards to create an editable copy."),
+			() => {
+				frappe.call({
+					method: "numerouno.numerouno.page.habc1_assessment_form.habc1_assessment_form.cancel_form",
+					args: { docname: this.doc.name },
+					freeze: true,
+					freeze_message: __("Cancelling..."),
+					callback: (r) => {
+						if (r.exc) {
+							return;
+						}
+						frappe.show_alert({ message: __("Cancelled"), indicator: "orange" });
+						this.fetch_form({ docname: this.doc.name });
+					},
+				});
+			}
+		);
+	}
+
+	amend_doc() {
+		if (!this.doc?.name) {
+			frappe.msgprint(__("Please save the form first."));
+			return;
+		}
+		if (h1Cint(this.doc.docstatus) !== 2) {
+			frappe.msgprint(__("Cancel the HABC1 Assessment Pack first, then Amend."));
+			return;
+		}
+		frappe.confirm(__("Create an editable copy with the same data?"), () => {
+			frappe.call({
+				method: "numerouno.numerouno.page.habc1_assessment_form.habc1_assessment_form.amend_form",
+				args: { docname: this.doc.name },
+				freeze: true,
+				freeze_message: __("Creating amended copy..."),
+				callback: (r) => {
+					if (r.exc) {
+						return;
+					}
+					const name = r.message?.name;
+					if (!name) {
+						frappe.msgprint(__("Amend did not return a new document."));
+						return;
+					}
+					frappe.show_alert({ message: __("Amended as {0}", [name]), indicator: "green" });
+					frappe.set_route("habc1-assessment-form", name);
+				},
+			});
+		});
+	}
+
 	print_doc() {
 		if (!this.doc || !this.doc.name) {
 			frappe.msgprint(__("Save the form before printing"));
 			return;
 		}
-		this.save_then(() => {
+		const open_print = () => {
 			window.open(
 				frappe.urllib.get_full_url(
 					"/printview?doctype=" +
@@ -339,9 +459,13 @@ numerouno.habc1.Form = class {
 						"&no_letterhead=1"
 				),
 				"_blank"
-
 			);
-		});
+		};
+		if (h1Cint(this.doc.docstatus) === 1) {
+			open_print();
+			return;
+		}
+		this.save_then(open_print);
 	}
 
 	init_signature_canvases() {

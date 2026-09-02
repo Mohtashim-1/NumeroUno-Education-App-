@@ -75,6 +75,32 @@
 	color: #667;
 	font-size: 12px;
 }
+.h2-status-banner {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 12px;
+	padding: 10px 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	border: 1px solid #d0d7de;
+	background: #fff;
+}
+.h2-status-banner.is-draft {
+	border-color: #f5c26b;
+	background: #fff8eb;
+}
+.h2-status-banner.is-submitted {
+	border-color: #9fd4a7;
+	background: #eefbf0;
+}
+.h2-status-banner.is-cancelled {
+	border-color: #f1a8a8;
+	background: #fff0f0;
+}
+.h2-status-banner span {
+	color: #5b6570;
+}
 .h2-paper-wrap {
 	background: #fff;
 	border: 1px solid #bbb;

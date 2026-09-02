@@ -233,3 +233,25 @@ def submit_form(docname):
 	if doc.docstatus == 0:
 		doc.submit()
 	return {"name": doc.name, "docstatus": doc.docstatus}
+
+
+@frappe.whitelist()
+def cancel_form(docname):
+	doc = frappe.get_doc(DOCTYPE, docname)
+	if doc.docstatus == 2:
+		return {"name": doc.name, "docstatus": doc.docstatus}
+	if doc.docstatus != 1:
+		frappe.throw("Only a submitted HABC1 Assessment Pack can be cancelled")
+	doc.cancel()
+	return {"name": doc.name, "docstatus": doc.docstatus}
+
+
+@frappe.whitelist()
+def amend_form(docname):
+	doc = frappe.get_doc(DOCTYPE, docname)
+	if doc.docstatus != 2:
+		frappe.throw("Only cancelled HABC1 Assessment Packs can be amended")
+	amended = frappe.copy_doc(doc)
+	amended.amended_from = doc.name
+	amended.insert()
+	return _serialize_doc(amended)

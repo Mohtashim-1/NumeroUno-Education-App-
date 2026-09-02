@@ -1,8 +1,51 @@
-import frappe
-from frappe.utils import add_days, getdate
+import re
 from urllib.parse import urlencode
 
+import frappe
+from frappe.utils import add_days, getdate
+
 PUBLIC_VERIFICATION_BASE_URL = "https://nutc.ae/verify"
+
+
+def collapse_name_whitespace(value):
+	return " ".join((value or "").split())
+
+
+def normalize_person_name(value):
+	"""Lowercase, strip punctuation, and collapse extra spaces for name matching."""
+	text = re.sub(r"[^a-z0-9]+", " ", (value or "").lower())
+	return " ".join(text.split())
+
+
+def names_match(entered_name, expected_names):
+	entered = normalize_person_name(entered_name)
+	if not entered:
+		return False
+
+	entered_tokens = entered.split()
+	entered_set = set(entered_tokens)
+
+	for expected in expected_names:
+		expected_normalized = normalize_person_name(expected)
+		if not expected_normalized:
+			continue
+
+		if entered == expected_normalized:
+			return True
+
+		expected_tokens = expected_normalized.split()
+		expected_set = set(expected_tokens)
+		if entered_set == expected_set:
+			return True
+
+		# Same first and last name, with overlapping middle names.
+		# Covers extra/missing middle names and duplicated tokens.
+		if len(entered_tokens) >= 2 and len(expected_tokens) >= 2:
+			if entered_tokens[0] == expected_tokens[0] and entered_tokens[-1] == expected_tokens[-1]:
+				if len(entered_set & expected_set) >= 2:
+					return True
+
+	return False
 
 
 def get_public_verification_url(certificate_number=None, student_name=None):
@@ -11,9 +54,6 @@ def get_public_verification_url(certificate_number=None, student_name=None):
 
 	if certificate_number:
 		params["certNumber"] = (certificate_number or "").strip()
-
-	if student_name:
-		params["name"] = (student_name or "").strip()
 
 	if not params:
 		return PUBLIC_VERIFICATION_BASE_URL
@@ -173,15 +213,37 @@ def get_verifiable_document(document_number):
 
 def validate_document_name_match(doctype, document, student_name):
     expected_names = get_document_name_candidates(doctype, document)
-    entered_name = (student_name or "").strip().lower()
 
-    if not entered_name:
+    if not normalize_person_name(student_name):
         frappe.throw("Student name is required")
 
-    if not expected_names or entered_name not in expected_names:
+    if not expected_names or not names_match(student_name, expected_names):
         if doctype == "Driving Card":
             frappe.throw("Student name does not match driving card")
         frappe.throw("Student name does not match certificate")
+
+
+def add_student_name_candidates(names, student_id):
+    if not student_id:
+        return
+
+    student_values = frappe.db.get_value(
+        "Student",
+        student_id,
+        ["student_name", "first_name", "last_name"],
+        as_dict=True,
+    ) or {}
+
+    for fieldname in ("student_name", "first_name", "last_name"):
+        value = student_values.get(fieldname)
+        if value:
+            names.add(value)
+
+    first_name = student_values.get("first_name") or ""
+    last_name = student_values.get("last_name") or ""
+    combined = collapse_name_whitespace(f"{first_name} {last_name}")
+    if combined:
+        names.add(combined)
 
 
 def get_document_name_candidates(doctype, document):
@@ -189,21 +251,12 @@ def get_document_name_candidates(doctype, document):
 
     if doctype == "Assessment Result":
         if document.student_name:
-            names.add(document.student_name.strip().lower())
+            names.add(document.student_name)
+        add_student_name_candidates(names, getattr(document, "student", None))
         return names
 
-    if doctype == "Driving Card" and document.student:
-        student_values = frappe.db.get_value(
-            "Student",
-            document.student,
-            ["student_name", "first_name"],
-            as_dict=True,
-        ) or {}
-
-        for fieldname in ("student_name", "first_name"):
-            value = student_values.get(fieldname)
-            if value:
-                names.add(value.strip().lower())
+    if doctype == "Driving Card":
+        add_student_name_candidates(names, getattr(document, "student", None))
 
     return names
 
