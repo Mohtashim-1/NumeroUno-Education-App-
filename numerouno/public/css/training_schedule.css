@@ -198,6 +198,7 @@ body.ts-body {
 	min-height: 112px;
 	padding: 8px;
 }
+.ts-cell { display: flex; flex-direction: column; align-items: stretch; }
 .ts-head { min-height: 58px; text-align: center; font-size: 12px; color: var(--ts-muted); }
 .ts-head b { display: block; color: var(--ts-text); font-size: 14px; }
 .ts-head.today { background: #efeaff; color: var(--ts-purple-2); }
@@ -213,6 +214,24 @@ body.ts-body {
 	font-weight: 700;
 }
 .ts-cell.empty { color: #c5cad6; display: grid; place-items: center; }
+.ts-cell-trainers {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-bottom: 6px;
+	padding-bottom: 6px;
+	border-bottom: 1px dashed var(--ts-line);
+}
+.ts-trainer-chip {
+	background: #eef2ff;
+	color: #3730a3;
+	border: 1px solid #c7d2fe;
+	border-radius: 999px;
+	padding: 2px 8px;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 1.4;
+}
 
 .ts-card {
 	border-radius: 10px;
@@ -223,7 +242,25 @@ body.ts-body {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
+	position: relative;
 }
+.ts-card-edit {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	border: 0;
+	background: rgba(255,255,255,0.92);
+	color: #475569;
+	border-radius: 6px;
+	width: 22px;
+	height: 22px;
+	font-size: 12px;
+	cursor: pointer;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+.ts-card:hover .ts-card-edit { opacity: 1; }
+.ts-trainer-row .ts-btn { margin-left: 8px; flex-shrink: 0; }
 .ts-card.blue { background: #eff6ff; border-color: #bfdbfe; border-left: 4px solid var(--blue); }
 .ts-card.green { background: #f0fdf4; border-color: #bbf7d0; border-left: 4px solid var(--green); }
 .ts-card.purple { background: #f5f3ff; border-color: #ddd6fe; border-left: 4px solid var(--purple); }

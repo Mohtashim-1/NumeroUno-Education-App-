@@ -104,6 +104,9 @@
 			const rescheduleOpen = ref(false);
 			const rescheduleSaving = ref(false);
 			const reschedule = ref({ date: "", period: "morning" });
+			const roomOpen = ref(false);
+			const roomSaving = ref(false);
+			const roomForm = ref(emptyRoom());
 
 			function capacityText(row) {
 				const invited = row?.invited || row?.booked || row?.student_count || 0;
@@ -146,6 +149,14 @@
 				if (value === "present") return "Came";
 				if (value === "absent") return "No show";
 				return "Invited";
+			}
+
+			function roomDisplay(row) {
+				return row?.room_label || row?.room_name || row?.room || "—";
+			}
+
+			function emptyRoom() {
+				return { name: "", room_name: "", room_number: "", seating_capacity: 0 };
 			}
 
 			function emptyCandidate() {
@@ -339,6 +350,13 @@
 				return sessionsByCell.value[`${day.date}|${slot.key || slot.label?.toLowerCase() || "morning"}`] || [];
 			}
 
+			function instructorsAt(day, slot) {
+				const names = sessionsAt(day, slot)
+					.map((s) => s.instructor_name || s.instructor)
+					.filter(Boolean);
+				return [...new Set(names)];
+			}
+
 			function openCreate(day, slot) {
 				if (!boot.value.can_manage) return;
 				form.value = {
@@ -419,7 +437,7 @@
 					instructor: src.instructor,
 					instructor_name: src.instructor_name,
 					room: src.room,
-					room_name: src.room_name,
+					room_name: src.room_label || src.room_name,
 					course: src.course,
 					course_name: src.course_name || src.course,
 					max_strength: src.max_strength || 0,
@@ -452,7 +470,10 @@
 				const rows = await call("search_links", {
 					doctype,
 					txt,
-					student_group: candidateForm.value.student_group || form.value.student_group || null,
+					student_group:
+						doctype === "Instructor"
+							? null
+							: candidateForm.value.student_group || form.value.student_group || null,
 				});
 				suggestions.value[key] = (rows || []).map((row) => ({
 					value: row[0],
@@ -495,6 +516,44 @@
 				form.value.room = item.value;
 				form.value.room_name = item.label;
 				suggestions.value.Room = [];
+			}
+
+			function openRoomCreate() {
+				roomForm.value = emptyRoom();
+				roomOpen.value = true;
+			}
+
+			function openRoomEdit(room) {
+				if (!room) return;
+				roomForm.value = {
+					name: room.name,
+					room_name: room.room_name || "",
+					room_number: room.room_number || "",
+					seating_capacity: room.seating_capacity || 0,
+				};
+				roomOpen.value = true;
+			}
+
+			async function saveRoom() {
+				if (!roomForm.value.room_name && !roomForm.value.room_number) {
+					error.value = "Room name or room number is required.";
+					return;
+				}
+				roomSaving.value = true;
+				error.value = "";
+				try {
+					const data = await call("save_room", { data: roomForm.value });
+					roomOpen.value = false;
+					if (form.value.room === data.name || !form.value.room) {
+						form.value.room = data.name;
+						form.value.room_name = data.room_label || data.room_name;
+					}
+					await loadWeek();
+				} catch (e) {
+					error.value = e.message;
+				} finally {
+					roomSaving.value = false;
+				}
 			}
 
 			function pickCourse(item) {
@@ -1041,6 +1100,9 @@
 				rescheduleOpen,
 				rescheduleSaving,
 				reschedule,
+				roomOpen,
+				roomSaving,
+				roomForm,
 				detailSearchPlaceholder,
 				filteredDetailPeople,
 				formatDateLabel,
@@ -1053,9 +1115,11 @@
 				onCandidateOverlayClick,
 				formatWeek,
 				initials,
+				roomDisplay,
 				shiftWeek,
 				loadWeek,
 				sessionsAt,
+				instructorsAt,
 				openCreate,
 				openDetail,
 				openEdit,
@@ -1078,6 +1142,9 @@
 				pickGroup,
 				pickInstructor,
 				pickRoom,
+				openRoomCreate,
+				openRoomEdit,
+				saveRoom,
 				pickCourse,
 				pickCustomer,
 				searchPlaceholder,
@@ -1151,7 +1218,7 @@
 							<button class="ts-btn" style="margin-left:8px;padding:4px 8px" @click="clearGroup">Show all</button>
 						</p>
 						<p v-else-if="selectedRoom">
-							Room <b>{{ selectedRoom.room_name || selectedRoom.name }}</b>
+							Room <b>{{ roomDisplay(selectedRoom) }}</b>
 							<button class="ts-btn" style="margin-left:8px;padding:4px 8px" @click="clearRoom">Show all</button>
 						</p>
 						<p v-else-if="view==='students'">Student details for this week's course schedules</p>
@@ -1234,8 +1301,12 @@
 						<div class="ts-grid-row" v-for="slot in week.slots" :key="slot.key || slot.label">
 							<div class="ts-time">{{ slot.label }}</div>
 							<div class="ts-cell" v-for="day in week.days" :key="day.date + (slot.key || slot.label)" @dblclick="openCreate(day, slot)">
+								<div class="ts-cell-trainers" v-if="instructorsAt(day, slot).length">
+									<span class="ts-trainer-chip" v-for="name in instructorsAt(day, slot)" :key="name">{{ name }}</span>
+								</div>
 								<template v-if="sessionsAt(day, slot).length">
 									<div class="ts-card" v-for="s in sessionsAt(day, slot)" :key="s.name" :class="s.tone" @click="openDetail(s)">
+										<button v-if="boot.can_manage" class="ts-card-edit" type="button" title="Edit session" @click.stop="openEdit(s)">✎</button>
 										<div class="ts-card-top">
 											<div class="ts-card-avatar">{{ initials(s.instructor_name) }}</div>
 											<div>
@@ -1248,7 +1319,7 @@
 												<span class="came" :style="{width: funnel(s).cameW + '%'}"></span>
 												<span class="invited" :style="{width: funnel(s).invitedW + '%'}"></span>
 											</div>
-											<div class="meta">{{ s.room_name || 'Room' }} · {{ capacityText(s) }}</div>
+											<div class="meta">{{ roomDisplay(s) }} · {{ capacityText(s) }}</div>
 										</div>
 									</div>
 								</template>
@@ -1290,7 +1361,7 @@
 							<div class="ts-group-head">
 								<div>
 									<b>{{ g.course || g.student_group_name }}</b>
-									<div class="ts-muted">{{ g.customer_company }} · {{ g.instructor_name }} · {{ g.room_name }}</div>
+									<div class="ts-muted">{{ g.customer_company }} · {{ g.instructor_name }} · {{ roomDisplay(g) }}</div>
 									<div class="ts-muted">{{ g.student_group }}</div>
 									<div class="ts-session-chips">
 										<span v-for="sess in (g.sessions || [])" :key="sess.name" @click="openDetail(sess)">{{ sess.date }} · {{ sess.period_label || 'Morning' }}</span>
@@ -1356,7 +1427,7 @@
 									<td>{{ g.course || '—' }}</td>
 									<td>{{ g.customer_company || '—' }}</td>
 									<td>{{ g.instructor_name || '—' }}</td>
-									<td>{{ g.room_name || '—' }}</td>
+									<td>{{ roomDisplay(g) }}</td>
 									<td>
 										<div class="ts-funnel ts-funnel-sm">
 											<div class="ts-funnel-bar">
@@ -1394,6 +1465,7 @@
 									<th>Room</th>
 									<th>Came / Invited / Max</th>
 									<th>Remaining</th>
+									<th v-if="boot.can_manage"></th>
 								</tr>
 							</thead>
 							<tbody>
@@ -1404,7 +1476,7 @@
 									<td>{{ s.instructor_name || '—' }}</td>
 									<td>{{ s.student_group_name || s.student_group || '—' }}</td>
 									<td>{{ s.customer_company || '—' }}</td>
-									<td>{{ s.room_name || '—' }}</td>
+									<td>{{ roomDisplay(s) }}</td>
 									<td>
 										<div class="ts-funnel ts-funnel-sm">
 											<div class="ts-funnel-bar">
@@ -1415,6 +1487,9 @@
 										{{ s.came || 0 }} / {{ s.invited || s.booked || 0 }} / {{ s.max_strength || '—' }}
 									</td>
 									<td>{{ s.max_strength ? (s.remaining || 0) : '—' }}</td>
+									<td v-if="boot.can_manage" class="ts-row-actions">
+										<button class="ts-btn" @click.stop="openEdit(s)">Edit</button>
+									</td>
 								</tr>
 							</tbody>
 						</table>
@@ -1425,20 +1500,24 @@
 					<div class="ts-grid ts-list-panel">
 						<div class="ts-student-toolbar">
 							<p class="ts-student-help">Rooms in the portal. Click a room to see its sessions this week.</p>
-							<strong>{{ week.stats.rooms_used || 0 }} used / {{ (week.rooms || []).length }} rooms</strong>
+							<div class="ts-toolbar-actions">
+								<strong>{{ week.stats.rooms_used || 0 }} used / {{ (week.rooms || []).length }} rooms</strong>
+								<button v-if="boot.can_manage" class="ts-btn primary" @click="openRoomCreate">+ Add Room</button>
+							</div>
 						</div>
 						<div v-if="!filteredRooms.length" class="ts-empty-students">No rooms found.</div>
 						<div v-for="r in filteredRooms" :key="r.name" class="ts-trainer-row ts-list-card"
 							:class="{active: filters.room===r.name}" @click="selectRoom(r)">
-							<div class="ts-avatar">{{ (r.room_name || r.name || 'R').slice(0,2).toUpperCase() }}</div>
+							<div class="ts-avatar">{{ (r.room_number || r.room_name || r.name || 'R').slice(0,2).toUpperCase() }}</div>
 							<div class="ts-list-main">
-								<b>{{ r.room_name || r.name }}</b>
-								<div class="ts-muted">{{ r.seating_capacity || 0 }} seats · {{ r.week_groups || 0 }} groups</div>
+								<b>{{ r.room_label || r.room_name || r.name }}</b>
+								<div class="ts-muted">{{ r.room_number ? ('Room ' + r.room_number + ' · ') : '' }}{{ r.seating_capacity || 0 }} seats · {{ r.week_groups || 0 }} groups</div>
 							</div>
 							<div class="ts-metrics">
 								<div><b>{{ r.week_sessions || 0 }}</b><span>sessions</span></div>
 								<div><b>{{ r.week_hours || 0 }}</b><span>hrs week</span></div>
 							</div>
+							<button v-if="boot.can_manage" class="ts-btn" @click.stop="openRoomEdit(r)">Edit</button>
 						</div>
 					</div>
 				</section>
@@ -1463,6 +1542,7 @@
 							<p class="ts-muted" v-if="detail">{{ detail.date }} · {{ detail.period_label || 'Morning' }}</p>
 						</div>
 						<div class="ts-toolbar-actions">
+							<button v-if="boot.can_manage && detail" class="ts-btn primary" @click="openEdit(detail)">Edit Session</button>
 							<button v-if="boot.can_manage && detail" class="ts-btn" @click="openReschedule">Reschedule</button>
 							<button class="ts-btn" @click="detailOpen=false">Close</button>
 						</div>
@@ -1507,7 +1587,7 @@
 						<div><span>Name of training</span><b>{{ detail.course_name || detail.course || '—' }}</b></div>
 						<div><span>Instructor</span><b>{{ detail.instructor_name || '—' }}</b></div>
 						<div><span>Customer</span><b>{{ detail.customer_company || '—' }}</b></div>
-						<div><span>Room</span><b>{{ detail.room_name || '—' }}</b></div>
+						<div><span>Room</span><b>{{ roomDisplay(detail) }}</b></div>
 						<div><span>Student Group</span><b>{{ detail.student_group_name || detail.student_group || '—' }}</b></div>
 					</div>
 					<div class="ts-capacity-box" v-if="detail">
@@ -1689,11 +1769,13 @@
 						</div>
 						<div class="ts-suggest">
 							<label>Room</label>
-							<input :value="form.room_name || form.room" placeholder="Search room"
-								@input="searchDoctype('Room', $event.target.value, 'Room')">
+							<input :value="form.room_name || form.room" placeholder="Search room by name or number"
+								@focus="searchDoctype('Room', form.room_name || form.room || '', 'Room')"
+								@input="form.room=''; form.room_name=$event.target.value; searchDoctype('Room', $event.target.value, 'Room')">
 							<ul v-if="suggestions.Room.length">
 								<li v-for="item in suggestions.Room" :key="item.value" @click="pickRoom(item)">{{ item.label }}</li>
 							</ul>
+							<button v-if="boot.can_manage" type="button" class="ts-btn ts-add-name" @click="openRoomCreate">+ Add / edit room</button>
 						</div>
 						<p class="ts-error" v-if="error && modalOpen">{{ error }}</p>
 					</div>
@@ -1701,6 +1783,31 @@
 						<button class="ts-btn" v-if="form.name" @click="removeSession">Delete</button>
 						<button class="ts-btn" @click="modalOpen=false">Cancel</button>
 						<button class="ts-btn primary" :disabled="saving" @click="save">{{ saving ? 'Saving…' : 'Save Session' }}</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="ts-overlay ts-overlay-top" v-if="roomOpen" @click.self="roomOpen=false">
+				<div class="ts-modal">
+					<h3>{{ roomForm.name ? 'Edit Room' : 'Add Room' }}</h3>
+					<div class="ts-form">
+						<div>
+							<label>Room name</label>
+							<input v-model="roomForm.room_name" placeholder="e.g. Classroom A">
+						</div>
+						<div>
+							<label>Room number</label>
+							<input v-model="roomForm.room_number" placeholder="e.g. 101">
+						</div>
+						<div>
+							<label>Seating capacity</label>
+							<input type="number" min="0" v-model.number="roomForm.seating_capacity" placeholder="e.g. 20">
+						</div>
+						<p class="ts-error" v-if="error && roomOpen">{{ error }}</p>
+					</div>
+					<div class="ts-modal-actions">
+						<button class="ts-btn" @click="roomOpen=false">Cancel</button>
+						<button class="ts-btn primary" :disabled="roomSaving" @click="saveRoom">{{ roomSaving ? 'Saving…' : 'Save Room' }}</button>
 					</div>
 				</div>
 			</div>

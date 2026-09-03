@@ -143,7 +143,16 @@ def _period_by_key(key):
 
 
 def _room_label(room, room_name=None, room_number=None):
-	return room_name or room_number or room or ""
+	parts = []
+	if room_name:
+		parts.append(str(room_name).strip())
+	if room_number:
+		number = str(room_number).strip()
+		if number and number not in parts:
+			parts.append(number)
+	if parts:
+		return " / ".join(parts)
+	return room or ""
 
 
 def _course_title(course, course_name=None):
@@ -243,7 +252,9 @@ def _serialize_session(row):
 		"instructor_name": row.instructor_name or row.instructor,
 		"instructor_image": "",
 		"room": row.room,
-		"room_name": _room_label(row.room, row.room_name, row.room_number),
+		"room_number": row.room_number or "",
+		"room_name": row.room_name or row.room or "",
+		"room_label": _room_label(row.room, row.room_name, row.room_number),
 		"student_group": row.student_group,
 		"student_group_name": row.student_group_name or row.student_group,
 		"course": row.course,
@@ -423,19 +434,6 @@ def search_links(doctype, txt="", student_group=None):
 		)
 
 	if doctype == "Instructor":
-		if student_group:
-			return frappe.db.sql(
-				"""
-				select i.name, i.instructor_name
-				from `tabStudent Group Instructor` sgi
-				inner join `tabInstructor` i on i.name = sgi.instructor
-				where sgi.parent = %(student_group)s
-				  and (i.name like %(txt)s or i.instructor_name like %(txt)s)
-				order by sgi.idx
-				limit 20
-				""",
-				{"student_group": student_group, "txt": like},
-			)
 		return frappe.db.sql(
 			"""
 			select name, instructor_name
@@ -519,8 +517,23 @@ def get_student_group_defaults(student_group, date=None):
 		frappe.db.get_value("Customer", sg.custom_customer, "customer_name") if sg.custom_customer else ""
 	)
 	room_name = ""
+	room_number = ""
 	if sg.custom_coarse_location:
-		room_name = frappe.db.get_value("Room", sg.custom_coarse_location, "room_name") or sg.custom_coarse_location
+		room_row = (
+			frappe.db.get_value(
+				"Room",
+				sg.custom_coarse_location,
+				["room_name", "room_number"],
+				as_dict=True,
+			)
+			or {}
+		)
+		room_name = _room_label(
+			sg.custom_coarse_location,
+			room_row.get("room_name"),
+			room_row.get("room_number"),
+		)
+		room_number = room_row.get("room_number") or ""
 	instructors = frappe.get_all(
 		"Student Group Instructor",
 		filters={"parent": student_group},
@@ -541,6 +554,7 @@ def get_student_group_defaults(student_group, date=None):
 		"customer_company": customer_name or sg.custom_customer or "",
 		"room": sg.custom_coarse_location,
 		"room_name": room_name,
+		"room_number": room_number,
 		"instructors": instructors,
 		"instructor": instructors[0].instructor if instructors else "",
 		"instructor_name": instructors[0].instructor_name if instructors else "",
@@ -589,8 +603,7 @@ def save_session(data):
 	doc.course = course or None
 	doc.flags.ignore_permissions = True
 	doc.flags.ignore_mandatory = True
-	if not student_group:
-		doc.validate = lambda: _validate_session_without_group(doc)
+	doc.validate = lambda: _validate_session_portal(doc)
 	doc.save()
 	if student_group and payload.get("max_strength") not in (None, ""):
 		_set_group_max_strength(student_group, payload.get("max_strength"))
@@ -641,8 +654,7 @@ def reschedule_session(name, date, period=None):
 	doc.to_time = period_row["to_time"]
 	doc.flags.ignore_permissions = True
 	doc.flags.ignore_mandatory = True
-	if not doc.student_group:
-		doc.validate = lambda: _validate_session_without_group(doc)
+	doc.validate = lambda: _validate_session_portal(doc)
 	doc.save()
 	moved = _move_session_candidates(name, new_date)
 	return {
@@ -655,19 +667,53 @@ def reschedule_session(name, date, period=None):
 	}
 
 
-def _validate_session_without_group(doc):
+def _validate_session_portal(doc):
+	"""Relaxed validation for the training portal — allows daily/multi-day trainer booking."""
 	if doc.instructor:
 		doc.instructor_name = frappe.db.get_value("Instructor", doc.instructor, "instructor_name")
 	label = doc.course or "Training Session"
 	doc.title = f"{label} by {(doc.instructor_name or doc.instructor)}"
 	doc.validate_time()
-	from education.education.utils import validate_overlap_for
-
-	validate_overlap_for(doc, "Course Schedule", "instructor")
 	if doc.room:
+		from education.education.utils import validate_overlap_for
+
 		validate_overlap_for(doc, "Course Schedule", "room")
-		validate_overlap_for(doc, "Assessment Plan", "room")
-	validate_overlap_for(doc, "Assessment Plan", "supervisor", doc.instructor)
+
+
+@frappe.whitelist()
+def save_room(data):
+	_require_manage()
+	payload = frappe.parse_json(data) if isinstance(data, str) else data
+	name = (payload.get("name") or "").strip()
+	room_name = (payload.get("room_name") or "").strip()
+	room_number = (payload.get("room_number") or "").strip()
+	seating_capacity = payload.get("seating_capacity")
+
+	if name and frappe.db.exists("Room", name):
+		doc = frappe.get_doc("Room", name)
+	else:
+		doc = frappe.new_doc("Room")
+
+	if not room_name and not room_number:
+		frappe.throw(_("Room name or room number is required."))
+
+	doc.room_name = room_name or room_number or doc.room_name
+	doc.room_number = room_number
+	if seating_capacity not in (None, ""):
+		doc.seating_capacity = str(seating_capacity)
+	doc.flags.ignore_permissions = True
+	doc.save()
+	return {
+		"name": doc.name,
+		"room_name": doc.room_name or doc.name,
+		"room_label": _room_label(doc.name, doc.room_name, doc.room_number),
+		"room_number": doc.room_number or "",
+		"seating_capacity": cint(doc.seating_capacity),
+	}
+
+
+def _validate_session_without_group(doc):
+	return _validate_session_portal(doc)
 
 
 @frappe.whitelist()
@@ -984,7 +1030,8 @@ def _room_cards(sessions):
 	by_id = {
 		row.name: {
 			"name": row.name,
-			"room_name": _room_label(row.name, row.room_name, row.room_number),
+			"room_name": row.room_name or row.name,
+			"room_label": _room_label(row.name, row.room_name, row.room_number),
 			"room_number": row.room_number,
 			"seating_capacity": cint(row.seating_capacity),
 			"week_sessions": 0,
@@ -1002,7 +1049,8 @@ def _room_cards(sessions):
 			by_id[rid] = {
 				"name": rid,
 				"room_name": session.get("room_name") or rid,
-				"room_number": "",
+				"room_label": session.get("room_label") or session.get("room_name") or rid,
+				"room_number": session.get("room_number") or "",
 				"seating_capacity": 0,
 				"week_sessions": 0,
 				"week_hours": 0,
@@ -1040,6 +1088,7 @@ def _group_cards(sessions):
 				"instructor_name": session.get("instructor_name"),
 				"room": session.get("room"),
 				"room_name": session.get("room_name"),
+				"room_label": session.get("room_label") or session.get("room_name"),
 				"student_count": cint(session.get("student_count")),
 				"booked": cint(session.get("booked") or session.get("student_count")),
 				"max_strength": cint(session.get("max_strength")),
@@ -1068,7 +1117,7 @@ def _group_cards(sessions):
 				"time_start": session.get("time_start"),
 				"time_end": session.get("time_end"),
 				"instructor_name": session.get("instructor_name"),
-				"room_name": session.get("room_name"),
+				"room_name": session.get("room_label") or session.get("room_name"),
 			}
 		)
 	cards = list(by_id.values())
