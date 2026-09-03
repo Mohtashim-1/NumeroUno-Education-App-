@@ -14,7 +14,7 @@ frappe.pages["habc2-examination-form"].on_page_load = function (wrapper) {
 	try {
 		if (!$("#habc2-examination-css").length) {
 			$(
-				'<link id="habc2-examination-css" rel="stylesheet" type="text/css" href="/assets/numerouno/css/habc2_examination_form.css?v=5">'
+				'<link id="habc2-examination-css" rel="stylesheet" type="text/css" href="/assets/numerouno/css/habc2_examination_form.css?v=6">'
 			).appendTo("head");
 		}
 		const page =
@@ -454,7 +454,7 @@ numerouno.habc2.Form = class {
 	}
 
 	init_signature_canvases() {
-		this.$root.find(".h2-sign-canvas").each((_, canvas) => {
+		this.$root.find(".h2-sign-canvas").not(".h2-sign-readonly .h2-sign-canvas").each((_, canvas) => {
 			this.bind_signature_canvas(canvas);
 		});
 	}

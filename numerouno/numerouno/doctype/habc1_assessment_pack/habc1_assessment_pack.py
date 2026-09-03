@@ -4,7 +4,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import cint, formatdate, getdate, today
 
-from numerouno.numerouno.utils.signatures import get_instructor_signature
+from numerouno.numerouno.utils.signatures import get_instructor_signature, resolve_signature_url
 
 
 ROWS_PER_PAGE = 12
@@ -19,6 +19,8 @@ DEFAULT_TITLE = "Highfield International Emergency First Aid, AED & CPR all Ages
 class HABC1AssessmentPack(Document):
 	def before_print(self, settings=None):
 		self._sync_tutor()
+		self.tutor_signature_url = resolve_signature_url(self.tutor_signature)
+		self.assessor_signature_url = resolve_signature_url(self.assessor_signature)
 		self.learner_pages = paginate_learners(self.learners)
 		self.referral_rows = pad_referrals(self.referrals)
 
@@ -33,8 +35,6 @@ class HABC1AssessmentPack(Document):
 			self.centre_number = DEFAULT_CENTRE_NO
 
 	def _sync_tutor(self):
-		from numerouno.numerouno.utils.signatures import get_instructor_signature, is_empty_signature
-
 		if not self.tutor and self.student_group:
 			self.tutor = get_group_instructor(self.student_group)
 		if self.tutor:
@@ -42,16 +42,16 @@ class HABC1AssessmentPack(Document):
 				frappe.db.get_value("Instructor", self.tutor, "instructor_name") or self.tutor_name
 			)
 			sig = get_instructor_signature(self.tutor)
-			if sig and (is_empty_signature(self.tutor_signature) or self.has_value_changed("tutor")):
+			if sig:
 				self.tutor_signature = sig
 		if self.assessor:
 			self.assessor_name = (
 				frappe.db.get_value("Instructor", self.assessor, "instructor_name") or self.assessor_name
 			)
 			sig = get_instructor_signature(self.assessor)
-			if sig and (is_empty_signature(self.assessor_signature) or self.has_value_changed("assessor")):
+			if sig:
 				self.assessor_signature = sig
-		elif is_empty_signature(self.assessor_signature) and self.tutor_signature:
+		elif self.tutor_signature:
 			self.assessor_signature = self.tutor_signature
 
 	def _number_rows(self):

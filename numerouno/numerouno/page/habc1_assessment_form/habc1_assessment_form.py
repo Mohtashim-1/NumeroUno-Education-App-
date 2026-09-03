@@ -66,6 +66,9 @@ def _serialize_ref(row):
 
 
 def _serialize_doc(doc):
+	from numerouno.numerouno.utils.signatures import resolve_signature_url
+
+	_ensure_instructor_signatures(doc)
 	learners = [_serialize_row(row) for row in (doc.learners or [])]
 	referrals = [_serialize_ref(row) for row in (doc.referrals or [])]
 	data = {field: doc.get(field) for field in PARENT_FIELDS}
@@ -73,6 +76,8 @@ def _serialize_doc(doc):
 		{
 			"name": doc.name,
 			"docstatus": doc.docstatus,
+			"tutor_signature_url": resolve_signature_url(doc.tutor_signature),
+			"assessor_signature_url": resolve_signature_url(doc.assessor_signature),
 			"blended_learning": cint(doc.blended_learning),
 			"course_start_date": _as_date(doc.course_start_date),
 			"course_finish_date": _as_date(doc.course_finish_date),
@@ -165,7 +170,7 @@ def get_form_data(docname=None, student_group=None):
 		doc = _get_or_create(student_group)
 	else:
 		frappe.throw("Select a student group to open the HABC1 form.")
-	_ensure_instructor_signatures(doc)
+	_ensure_instructor_signatures(doc, persist=True)
 	if not doc.centre_number:
 		doc.centre_number = DEFAULT_CENTRE_NO
 		if doc.name and cint(doc.docstatus) == 0:
@@ -173,31 +178,44 @@ def get_form_data(docname=None, student_group=None):
 	return _serialize_doc(doc)
 
 
-def _ensure_instructor_signatures(doc):
-	from numerouno.numerouno.utils.signatures import get_instructor_signature, is_empty_signature
+def _ensure_instructor_signatures(doc, persist=False):
+	from numerouno.numerouno.utils.signatures import get_instructor_signature, resolve_signature_url
 
 	changed = {}
-	if doc.tutor and is_empty_signature(doc.tutor_signature):
+	if doc.tutor:
+		if not doc.tutor_name:
+			doc.tutor_name = frappe.db.get_value("Instructor", doc.tutor, "instructor_name") or doc.tutor_name
 		sig = get_instructor_signature(doc.tutor)
-		if sig:
+		if sig and doc.tutor_signature != sig:
 			doc.tutor_signature = sig
 			changed["tutor_signature"] = sig
-	if doc.assessor and is_empty_signature(doc.assessor_signature):
+
+	if doc.assessor:
+		if not doc.assessor_name:
+			doc.assessor_name = frappe.db.get_value("Instructor", doc.assessor, "instructor_name") or doc.assessor_name
 		sig = get_instructor_signature(doc.assessor)
-		if sig:
+		if sig and doc.assessor_signature != sig:
 			doc.assessor_signature = sig
 			changed["assessor_signature"] = sig
-	elif is_empty_signature(doc.assessor_signature) and doc.tutor_signature:
+	elif doc.tutor_signature and doc.assessor_signature != doc.tutor_signature:
 		doc.assessor_signature = doc.tutor_signature
 		changed["assessor_signature"] = doc.tutor_signature
-	if changed and doc.name and cint(doc.docstatus) == 0:
+
+	if changed and persist and doc.name and cint(doc.docstatus) == 0:
 		for field, value in changed.items():
 			doc.db_set(field, value, update_modified=False)
+
+	doc.tutor_signature_url = resolve_signature_url(doc.tutor_signature)
+	doc.assessor_signature_url = resolve_signature_url(doc.assessor_signature)
 	return doc
 
 
 def _doc_for_template(data):
+	from numerouno.numerouno.utils.signatures import resolve_signature_url
+
 	doc = frappe._dict(data)
+	doc.tutor_signature_url = doc.get("tutor_signature_url") or resolve_signature_url(doc.get("tutor_signature"))
+	doc.assessor_signature_url = doc.get("assessor_signature_url") or resolve_signature_url(doc.get("assessor_signature"))
 	doc.learner_pages = [[frappe._dict(row) for row in page] for page in data.get("learner_pages") or []]
 	doc.learners = [frappe._dict(row) for row in data.get("learners") or []]
 	doc.referral_rows = [frappe._dict(row) for row in data.get("referral_rows") or []]
@@ -223,6 +241,7 @@ def save_form_data(data):
 	else:
 		doc = frappe.new_doc(DOCTYPE)
 	_apply_payload(doc, data)
+	_ensure_instructor_signatures(doc)
 	doc.save()
 	return _serialize_doc(doc)
 

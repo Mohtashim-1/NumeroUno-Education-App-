@@ -157,6 +157,20 @@
 .h1-sign-wrap img.h1-sign-img + .h1-sign-canvas {
 	display: none;
 }
+.h1-sign-img {
+	max-height: 48px;
+	max-width: 220px;
+}
+.h1-sign-wrap.h1-sign-readonly {
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+}
+.h1-sign-missing {
+	color: #a61b1b;
+	font-size: 11px;
+	font-style: italic;
+}
 @media (max-width: 720px) {
 	.h1-group-picker { grid-template-columns: 1fr; }
 	.h1-paper-wrap { padding: 10px; }

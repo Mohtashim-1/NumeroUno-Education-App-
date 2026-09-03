@@ -167,6 +167,12 @@
 <img class="h1-mark" src="/files/highfield_approved_centre.jpg" alt="Highfield Qualifications Approved Centre">
 {% endmacro %}
 
+{% macro signature_img(url) %}
+	{% if url %}
+		<img src="{{ frappe.utils.get_url(url) if not (url.startswith('http') or url.startswith('data:')) else url }}" class="h1-sign-img" alt="Signature">
+	{% endif %}
+{% endmacro %}
+
 {% macro input(name, value, extra="") %}
 	{% if editable %}
 		<input class="h1-input" data-field="{{ name }}" value="{{ value or '' }}" {{ extra }}>
@@ -267,18 +273,14 @@
 			<tr class="h1-sign-row">
 				<td class="h1-lab">Tutor’s Signature:</td>
 				<td class="h1-val">
-					{% if editable %}
-						<div class="h1-sign-wrap">
-							{% if doc.tutor_signature %}<img src="{{ doc.tutor_signature }}" class="h1-sign-img">{% endif %}
-							<canvas class="h1-sign-canvas" width="260" height="70"></canvas>
-							<input type="hidden" class="h1-input" data-field="tutor_signature" value="{{ doc.tutor_signature or '' }}">
-							<button type="button" class="h1-sign-clear">Clear</button>
-						</div>
-					{% elif doc.tutor_signature %}
-						<img src="{{ doc.tutor_signature }}" class="h1-sign-img">
-					{% else %}
-						<span class="h1-uline">&nbsp;</span>
-					{% endif %}
+					<div class="h1-sign-wrap h1-sign-readonly">
+						{{ signature_img(doc.tutor_signature_url or doc.tutor_signature) }}
+						{% if editable and not (doc.tutor_signature_url or doc.tutor_signature) %}
+							<span class="h1-sign-missing">Add signature on Instructor profile</span>
+						{% elif not editable and not (doc.tutor_signature_url or doc.tutor_signature) %}
+							<span class="h1-uline">&nbsp;</span>
+						{% endif %}
+					</div>
 				</td>
 				<td class="h1-lab-sm">Date:</td>
 				<td class="h1-val-sm">
@@ -292,18 +294,14 @@
 			<tr class="h1-sign-row">
 				<td class="h1-lab">Assessor’s Signature*:</td>
 				<td class="h1-val">
-					{% if editable %}
-						<div class="h1-sign-wrap">
-							{% if doc.assessor_signature %}<img src="{{ doc.assessor_signature }}" class="h1-sign-img">{% endif %}
-							<canvas class="h1-sign-canvas" width="260" height="70"></canvas>
-							<input type="hidden" class="h1-input" data-field="assessor_signature" value="{{ doc.assessor_signature or '' }}">
-							<button type="button" class="h1-sign-clear">Clear</button>
-						</div>
-					{% elif doc.assessor_signature %}
-						<img src="{{ doc.assessor_signature }}" class="h1-sign-img">
-					{% else %}
-						<span class="h1-uline">&nbsp;</span>
-					{% endif %}
+					<div class="h1-sign-wrap h1-sign-readonly">
+						{{ signature_img(doc.assessor_signature_url or doc.assessor_signature) }}
+						{% if editable and not (doc.assessor_signature_url or doc.assessor_signature) %}
+							<span class="h1-sign-missing">Add signature on Instructor profile</span>
+						{% elif not editable and not (doc.assessor_signature_url or doc.assessor_signature) %}
+							<span class="h1-uline">&nbsp;</span>
+						{% endif %}
+					</div>
 				</td>
 				<td class="h1-lab-sm">Date:</td>
 				<td class="h1-val-sm">

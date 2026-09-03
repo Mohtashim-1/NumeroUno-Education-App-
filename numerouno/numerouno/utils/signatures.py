@@ -20,6 +20,16 @@ def get_instructor_signature(instructor):
 	return image
 
 
+def resolve_signature_url(value):
+	"""Return an absolute URL for signature images in forms and PDF print."""
+	url = (value or "").strip()
+	if not url or is_empty_signature(url):
+		return ""
+	if url.startswith(("http://", "https://", "data:")):
+		return url
+	return frappe.utils.get_url(url)
+
+
 def get_student_attendance_signature(student, student_group=None):
 	"""Latest Student Attendance signature for this student, preferring the same group."""
 	student = (student or "").strip()

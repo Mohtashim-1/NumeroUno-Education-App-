@@ -6,6 +6,8 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import cint, formatdate, getdate, today
 
+from numerouno.numerouno.utils.signatures import get_instructor_signature, resolve_signature_url
+
 
 ROWS_PER_PAGE = 20
 DEFAULT_CENTRE = "Numero Uno Training and Consulting LLC"
@@ -14,6 +16,8 @@ DEFAULT_CENTRE_NO = "12043"
 
 class HABC2ExaminationDeclaration(Document):
 	def before_print(self, settings=None):
+		self._sync_tutor()
+		self.invigilator_signature_url = resolve_signature_url(self.invigilator_signature)
 		self._sync_learner_names()
 		self._sync_learner_signatures()
 		self.learner_pages = paginate_learners(self.learners)
@@ -33,10 +37,16 @@ class HABC2ExaminationDeclaration(Document):
 		if not self.nominated_tutor and self.student_group:
 			self.nominated_tutor = get_group_instructor(self.student_group)
 		if self.nominated_tutor:
-			self.nominated_tutor_name = (
+			instructor_name = (
 				frappe.db.get_value("Instructor", self.nominated_tutor, "instructor_name")
 				or self.nominated_tutor_name
 			)
+			self.nominated_tutor_name = instructor_name
+			if not self.invigilator_name:
+				self.invigilator_name = instructor_name
+			sig = get_instructor_signature(self.nominated_tutor)
+			if sig:
+				self.invigilator_signature = sig
 
 	def _number_learners(self):
 		filled = [row for row in (self.learners or []) if (row.learner_names or row.learner_surname or row.student)]
@@ -203,6 +213,7 @@ def group_defaults(student_group):
 	instructor_name = (
 		frappe.db.get_value("Instructor", instructor, "instructor_name") if instructor else ""
 	)
+	invigilator_signature = get_instructor_signature(instructor) if instructor else ""
 
 	students = frappe.get_all(
 		"Student Group Student",
@@ -222,6 +233,8 @@ def group_defaults(student_group):
 		"centre_number": DEFAULT_CENTRE_NO,
 		"nominated_tutor": instructor or "",
 		"nominated_tutor_name": instructor_name or "",
+		"invigilator_name": instructor_name or "",
+		"invigilator_signature": invigilator_signature,
 		"examination_venue": sg.get("custom_course_location_name") or "",
 		"course_exam_id": student_group,
 		"number_of_learners": len(learners),

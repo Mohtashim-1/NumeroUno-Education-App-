@@ -7,7 +7,12 @@ from numerouno.numerouno.doctype.habc2_examination_declaration.habc2_examination
 	group_defaults,
 	paginate_learners,
 )
-from numerouno.numerouno.utils.signatures import is_empty_signature, resolve_learner_signature
+from numerouno.numerouno.utils.signatures import (
+	get_instructor_signature,
+	is_empty_signature,
+	resolve_learner_signature,
+	resolve_signature_url,
+)
 
 DOCTYPE = "HABC2 Examination Declaration"
 TEMPLATE = "numerouno/numerouno/print_format/habc2_examination_declaration/habc2_examination_declaration.html"
@@ -78,6 +83,7 @@ def _serialize_row(row, student_group=None):
 
 
 def _serialize_doc(doc):
+	_ensure_invigilator_signature(doc)
 	_ensure_learner_signatures(doc)
 	_ensure_learner_names(doc)
 	learners = [_serialize_row(row, doc.student_group) for row in (doc.learners or [])]
@@ -87,6 +93,8 @@ def _serialize_doc(doc):
 		{
 			"name": doc.name,
 			"docstatus": doc.docstatus,
+			"nominated_tutor": doc.get("nominated_tutor"),
+			"invigilator_signature_url": resolve_signature_url(doc.invigilator_signature),
 			"examination_date": _as_date(doc.examination_date),
 			"invigilator_date": _as_date(doc.invigilator_date),
 			"course_from": _as_date(doc.course_from),
@@ -132,6 +140,41 @@ def _ensure_learner_signatures(doc):
 			if row.get("name") and cint(doc.docstatus) == 0:
 				frappe.db.set_value("HABC2 Learner", row.name, "signature", sig, update_modified=False)
 	return changed
+
+
+def _ensure_invigilator_signature(doc, persist=False):
+	if not doc.get("nominated_tutor") and doc.get("student_group"):
+		from numerouno.numerouno.doctype.habc2_examination_declaration.habc2_examination_declaration import (
+			get_group_instructor,
+		)
+
+		doc.nominated_tutor = get_group_instructor(doc.student_group)
+
+	changed = {}
+	if doc.get("nominated_tutor"):
+		instructor_name = (
+			frappe.db.get_value("Instructor", doc.nominated_tutor, "instructor_name")
+			or doc.get("nominated_tutor_name")
+			or doc.get("invigilator_name")
+		)
+		if instructor_name and doc.get("invigilator_name") != instructor_name:
+			doc.invigilator_name = instructor_name
+			changed["invigilator_name"] = instructor_name
+		if instructor_name and doc.get("nominated_tutor_name") != instructor_name:
+			doc.nominated_tutor_name = instructor_name
+			changed["nominated_tutor_name"] = instructor_name
+
+		sig = get_instructor_signature(doc.nominated_tutor)
+		if sig and doc.get("invigilator_signature") != sig:
+			doc.invigilator_signature = sig
+			changed["invigilator_signature"] = sig
+
+	if changed and persist and doc.name and cint(doc.docstatus) == 0:
+		for field, value in changed.items():
+			doc.db_set(field, value, update_modified=False)
+
+	doc.invigilator_signature_url = resolve_signature_url(doc.get("invigilator_signature"))
+	return doc
 
 
 def _apply_payload(doc, data):
@@ -230,11 +273,15 @@ def get_form_data(docname=None, student_group=None):
 		doc.centre_number = DEFAULT_CENTRE_NO
 		if doc.name and cint(doc.docstatus) == 0:
 			doc.db_set("centre_number", DEFAULT_CENTRE_NO, update_modified=False)
+	_ensure_invigilator_signature(doc, persist=True)
 	return _serialize_doc(doc)
 
 
 def _doc_for_template(data):
 	doc = frappe._dict(data)
+	doc.invigilator_signature_url = doc.get("invigilator_signature_url") or resolve_signature_url(
+		doc.get("invigilator_signature")
+	)
 	pages = []
 	for page in data.get("learner_pages") or []:
 		pages.append([frappe._dict(row) for row in page])
@@ -262,6 +309,7 @@ def save_form_data(data):
 	else:
 		doc = frappe.new_doc(DOCTYPE)
 	_apply_payload(doc, data)
+	_ensure_invigilator_signature(doc)
 	doc.save()
 	return _serialize_doc(doc)
 

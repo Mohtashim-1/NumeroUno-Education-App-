@@ -197,6 +197,12 @@
 <img class="h2-mark" src="/files/highfield_approved_centre.jpg" alt="Highfield Qualifications Approved Centre">
 {% endmacro %}
 
+{% macro signature_img(url, css_class="h2-inv-sign") %}
+	{% if url %}
+		<img src="{{ frappe.utils.get_url(url) if not (url.startswith('http') or url.startswith('data:')) else url }}" class="{{ css_class }}" alt="Signature">
+	{% endif %}
+{% endmacro %}
+
 {% macro input(name, value, extra="") %}
 	{% if editable %}
 		<input class="h2-input" data-field="{{ name }}" value="{{ value or '' }}" {{ extra }}>
@@ -309,16 +315,12 @@
 		<tr>
 			<td class="h2-label h2-sign-cell">Signature:</td>
 			<td class="h2-value h2-sign-cell">
-				{% if editable %}
-					<div class="h2-sign-wrap" data-field="invigilator_signature">
-						{% if doc.invigilator_signature %}<img src="{{ doc.invigilator_signature }}" class="h2-inv-sign">{% endif %}
-						<canvas class="h2-sign-canvas h2-inv-canvas" width="280" height="80"></canvas>
-						<input type="hidden" class="h2-input" data-field="invigilator_signature" value="{{ doc.invigilator_signature or '' }}">
-						<button type="button" class="h2-sign-clear" data-target="invigilator_signature">Clear</button>
-					</div>
-				{% elif doc.invigilator_signature %}
-					<img src="{{ doc.invigilator_signature }}" class="h2-inv-sign">
-				{% endif %}
+				<div class="h2-sign-wrap h2-sign-readonly" data-field="invigilator_signature">
+					{{ signature_img(doc.invigilator_signature_url or doc.invigilator_signature) }}
+					{% if editable and not (doc.invigilator_signature_url or doc.invigilator_signature) %}
+						<span class="h2-sign-missing">Add signature on Instructor profile</span>
+					{% endif %}
+				</div>
 			</td>
 			<td class="h2-label">Date:</td>
 			<td class="h2-value">
