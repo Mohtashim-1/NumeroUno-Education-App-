@@ -285,7 +285,8 @@ doc_events = {
 scheduler_events = {
 	"daily": [
 		"numerouno.numerouno.doctype.student_group.student_group.send_daily_unpaid_notifications",
-        "numerouno.numerouno.asset_management.send_asset_maintenance_reminders",
+		"numerouno.numerouno.asset_management.send_asset_maintenance_reminders",
+		"numerouno.numerouno.hr.leave_accrual.accrue_nutc_annual_leave_daily",
 	]
 }
 

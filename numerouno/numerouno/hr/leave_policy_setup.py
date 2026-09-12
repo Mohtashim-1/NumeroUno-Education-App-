@@ -29,6 +29,9 @@ ANNUAL_LEAVE = "Annual Leave"
 SICK_FULL = "Sick Leave"
 SICK_HALF = "Sick Leave - Half Pay"
 SICK_UNPAID = "Sick Leave - Unpaid"
+PATERNITY_LEAVE = "Paternity Leave"
+BEREAVEMENT_SPOUSE = "Bereavement Leave - Spouse"
+BEREAVEMENT_FAMILY = "Bereavement Leave - Family"
 POLICY_NAME = "NUTC Leave Policy 2026"
 BALANCE_AS_ON = "2026-07-14"
 ALLOCATE_TO = "2026-12-31"
@@ -59,7 +62,8 @@ def configure_leave_types():
 	al.allow_negative = 1
 	al.allow_over_allocation = 1
 	al.include_holiday = 1
-	al.is_earned_leave = 0  # enable after Leave Policy Assignments are rolled out
+	# Accrual via numerouno.numerouno.hr.leave_accrual (daily pro-rata), not HRMS earned-leave scheduler
+	al.is_earned_leave = 0
 	al.earned_leave_frequency = "Monthly"
 	al.allocate_on_day = "Last Day"
 	al.rounding = "0.5"
@@ -113,6 +117,44 @@ def configure_leave_types():
 		lwp.include_holiday = 1
 		lwp.save(ignore_permissions=True)
 
+	_configure_event_leave_type(
+		PATERNITY_LEAVE,
+		max_days=5,
+		applicable_after=0,
+		description="5 paid days paternity leave per NUTC HR policy",
+	)
+	_configure_event_leave_type(
+		BEREAVEMENT_SPOUSE,
+		max_days=5,
+		applicable_after=0,
+		description="5 paid days for death of spouse",
+	)
+	_configure_event_leave_type(
+		BEREAVEMENT_FAMILY,
+		max_days=3,
+		applicable_after=0,
+		description="3 paid days for death of parent, child, sibling, grandchild, or grandparent",
+	)
+
+
+def _configure_event_leave_type(name: str, max_days: int, applicable_after: int = 0, description: str = ""):
+	if not frappe.db.exists("Leave Type", name):
+		doc = frappe.new_doc("Leave Type")
+		doc.leave_type_name = name
+	else:
+		doc = frappe.get_doc("Leave Type", name)
+	doc.max_leaves_allowed = max_days
+	doc.applicable_after = applicable_after
+	doc.is_carry_forward = 0
+	doc.allow_encashment = 0
+	doc.allow_negative = 0
+	doc.include_holiday = 1
+	doc.is_lwp = 0
+	doc.is_ppl = 0
+	if description and hasattr(doc, "description"):
+		doc.description = description
+	doc.save(ignore_permissions=True)
+
 
 def configure_leave_period():
 	existing = frappe.db.get_value(
@@ -137,12 +179,11 @@ def configure_leave_period():
 
 
 def configure_leave_policy():
-	"""Annual 30 + sick tiers. Monthly earned leave uses annual allocation / 12."""
+	"""Annual 30 + sick tiers (+ special leaves on new policies)."""
 	existing = frappe.db.get_value("Leave Policy", {"title": POLICY_NAME, "docstatus": 1}, "name")
 	if existing:
 		return existing
 
-	# Reuse draft named by title if present
 	draft = frappe.db.get_value("Leave Policy", {"title": POLICY_NAME, "docstatus": 0}, "name")
 	if draft:
 		doc = frappe.get_doc("Leave Policy", draft)
@@ -156,6 +197,9 @@ def configure_leave_policy():
 		(SICK_FULL, 15),
 		(SICK_HALF, 30),
 		(SICK_UNPAID, 45),
+		(PATERNITY_LEAVE, 5),
+		(BEREAVEMENT_SPOUSE, 5),
+		(BEREAVEMENT_FAMILY, 3),
 	):
 		doc.append(
 			"leave_policy_details",
@@ -513,8 +557,51 @@ def allocate_sick_leave_entitlements():
 	return created
 
 
+def allocate_special_leave_entitlements():
+	"""Annual pool for paternity and bereavement leave types (per calendar year)."""
+	as_on = getdate(today())
+	year_start = getdate(f"{as_on.year}-01-01")
+	year_end = getdate(f"{as_on.year}-12-31")
+	created = []
+	for leave_type, days in (
+		(PATERNITY_LEAVE, 5),
+		(BEREAVEMENT_SPOUSE, 5),
+		(BEREAVEMENT_FAMILY, 3),
+	):
+		if not frappe.db.exists("Leave Type", leave_type):
+			continue
+		for emp in frappe.get_all(
+			"Employee",
+			filters={"status": "Active"},
+			fields=["name", "date_of_joining"],
+		):
+			from_date = max(getdate(emp.date_of_joining or year_start), year_start)
+			if frappe.db.exists(
+				"Leave Allocation",
+				{
+					"employee": emp.name,
+					"leave_type": leave_type,
+					"docstatus": 1,
+					"from_date": ("<=", year_end),
+					"to_date": (">=", from_date),
+				},
+			):
+				continue
+			alloc = frappe.new_doc("Leave Allocation")
+			alloc.employee = emp.name
+			alloc.leave_type = leave_type
+			alloc.from_date = from_date
+			alloc.to_date = year_end
+			alloc.new_leaves_allocated = days
+			alloc.description = f"{as_on.year} entitlement — {leave_type}"
+			alloc.insert(ignore_permissions=True)
+			alloc.submit()
+			created.append(alloc.name)
+	return created
+
+
 @frappe.whitelist()
-def setup_nutc_leave_policy(import_balances: int = 1, allocate_sick: int = 1):
+def setup_nutc_leave_policy(import_balances: int = 1, allocate_sick: int = 1, allocate_special: int = 1):
 	"""Configure leave policy artifacts and optionally import opening balances."""
 	frappe.only_for(("System Manager", "HR Manager"))
 	configure_leave_types()
@@ -525,7 +612,15 @@ def setup_nutc_leave_policy(import_balances: int = 1, allocate_sick: int = 1):
 	result = {
 		"leave_period": period,
 		"leave_policy": policy,
-		"leave_types": [ANNUAL_LEAVE, SICK_FULL, SICK_HALF, SICK_UNPAID],
+		"leave_types": [
+			ANNUAL_LEAVE,
+			SICK_FULL,
+			SICK_HALF,
+			SICK_UNPAID,
+			PATERNITY_LEAVE,
+			BEREAVEMENT_SPOUSE,
+			BEREAVEMENT_FAMILY,
+		],
 	}
 	if cint(import_balances):
 		result["balances"] = import_opening_balances(replace_existing=True)
@@ -537,5 +632,45 @@ def setup_nutc_leave_policy(import_balances: int = 1, allocate_sick: int = 1):
 	if cint(allocate_sick):
 		result["sick_allocations"] = allocate_sick_leave_entitlements()
 		result["sick_allocations_count"] = len(result["sick_allocations"])
+	if cint(allocate_special):
+		result["special_allocations"] = allocate_special_leave_entitlements()
+		result["special_allocations_count"] = len(result["special_allocations"])
 	frappe.db.commit()
 	return result
+
+
+@frappe.whitelist()
+def get_nutc_hr_leave_summary():
+	"""Summary for HR (what was configured) — callable from desk."""
+	frappe.only_for(("System Manager", "HR Manager", "HR User"))
+	types = frappe.get_all(
+		"Leave Type",
+		filters={
+			"name": [
+				"in",
+				[
+					ANNUAL_LEAVE,
+					SICK_FULL,
+					SICK_HALF,
+					SICK_UNPAID,
+					PATERNITY_LEAVE,
+					BEREAVEMENT_SPOUSE,
+					BEREAVEMENT_FAMILY,
+				],
+			]
+		},
+		fields=["name", "max_leaves_allowed", "applicable_after", "is_lwp", "is_ppl"],
+	)
+	return {
+		"company": COMPANY,
+		"leave_policy": POLICY_NAME,
+		"annual_accrual": "Daily pro-rata via scheduler (2 or 2.5 days/month by tenure)",
+		"opening_balances_as_of": BALANCE_AS_ON,
+		"paternity_leave_days": 5,
+		"bereavement_spouse_days": 5,
+		"bereavement_family_days": 3,
+		"leave_types": types,
+		"active_annual_allocations": frappe.db.count(
+			"Leave Allocation", {"leave_type": ANNUAL_LEAVE, "docstatus": 1}
+		),
+	}
