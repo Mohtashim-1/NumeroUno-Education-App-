@@ -874,9 +874,18 @@ naturally at a page boundary.
     <b>Sheet No :</b>
     {{ attendance_sheet_no or "" }}
 </p>
+                      {% set attendance_date = frappe.db.get_value(
+                          "Student Attendance",
+                          {"student_group": sg_doc.name, "docstatus": 1},
+                          "date",
+                          order_by="date asc"
+                      ) %}
+                      {% if not attendance_date %}
+                        {% set attendance_date = start_raw %}
+                      {% endif %}
                       <p>
                         <b>Date :</b>
-                        {{ frappe.utils.formatdate(doc.creation) if doc.creation else "" }}
+                        {{ frappe.utils.formatdate(attendance_date) if attendance_date else "" }}
                       </p>
                       <p>
                         <b>Course Start Date :</b>
