@@ -72,6 +72,7 @@ doctype_js = {
     "Assessment Result" : "public/js/assesment_result.js",
     }
 doctype_list_js = {
+    "Sales Invoice Tracking": "public/js/sales_invoice_tracking_list.js",
     "Assessment Result": "public/js/assessment_result_list.js",
     "Safety Briefing": "public/js/safety_briefing_list.js",
     "Assessor Checklist": "public/js/assessor_checklist_list.js",
@@ -375,4 +376,5 @@ after_migrate = [
     "numerouno.numerouno.habc_workspace.after_migrate",
     "numerouno.numerouno.course_form_flags_setup.after_migrate",
     "numerouno.numerouno.sales_invoice_nutc_po_setup.after_migrate",
+    "numerouno.numerouno.sales_invoice_tracking_setup.after_migrate",
 ]

@@ -1,0 +1,32 @@
+.sit-page .sit-toolbar {
+	margin-bottom: 12px;
+}
+
+.sit-page .sit-table th,
+.sit-page .sit-table td {
+	vertical-align: middle;
+	font-size: 12px;
+}
+
+.sit-page .sit-table .sit-remarks {
+	min-width: 140px;
+	height: 28px;
+}
+
+.sit-page .indicator-pill {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.sit-page .indicator-pill.green {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.sit-page .indicator-pill.orange {
+	background: #ffedd5;
+	color: #9a3412;
+}

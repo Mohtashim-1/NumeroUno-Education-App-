@@ -15,6 +15,9 @@
   "grand_total",
   "currency",
   "section_break_status",
+  "printed",
+  "printed_on",
+  "printed_by",
   "email_sent",
   "original_sent",
   "remarks",
@@ -77,6 +80,26 @@
    "fieldtype": "Link",
    "label": "Currency",
    "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "printed",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Printed"
+  },
+  {
+   "fieldname": "printed_on",
+   "fieldtype": "Datetime",
+   "label": "Printed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "printed_by",
+   "fieldtype": "Link",
+   "label": "Printed By",
+   "options": "User",
    "read_only": 1
   },
   {
