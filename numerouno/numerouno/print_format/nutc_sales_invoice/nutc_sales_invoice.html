@@ -861,20 +861,10 @@ naturally at a page boundary.
 
                   <div style="margin-top:2%; display:flex; gap:24px;">
                     <div class="col-1" style="width:50%;">
-                     {% set attendance_sheet_no = frappe.db.get_value(
-    "Student Attendance",
-    {
-        "student_group": sg_doc.name,
-        "docstatus": 1
-    },
-    "name",
-    order_by="date asc, name asc"
-) %}
-
-<p>
-    <b>Sheet No :</b>
-    {{ attendance_sheet_no or "" }}
-</p>
+                      <p>
+                        <b>Sheet No :</b>
+                        {{ sg_doc.name or "" }}
+                      </p>
                       {% set attendance_date = frappe.db.get_value(
                           "Student Attendance",
                           {"student_group": sg_doc.name, "docstatus": 1},
@@ -1101,8 +1091,17 @@ naturally at a page boundary.
                       <p>Date:</p>
                     </div>
 
-                    <div style="float:right; margin-top:5%; width:30%;">
+                    <div style="float:right; margin-top:5%; width:30%; text-align:center;">
                       <p>SIGNATURE:</p>
+                      {% if sg_doc.instructors and sg_doc.instructors[0].instructor %}
+                        {% set instructor_doc = frappe.get_doc("Instructor", sg_doc.instructors[0].instructor) %}
+                        {% set instructor_image = instructor_doc.signature_image or instructor_doc.image or instructor_doc.photo %}
+                        {% if instructor_image and "signature-placeholder" not in instructor_image %}
+                          <img src="{{ frappe.utils.get_url(instructor_image) }}"
+                               alt="Instructor Signature"
+                               style="max-width:150px; max-height:70px; object-fit:contain; display:block; margin:4px auto 0;" />
+                        {% endif %}
+                      {% endif %}
                     </div>
 
                   </div>
