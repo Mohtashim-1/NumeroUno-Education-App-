@@ -113,6 +113,7 @@ jinja = {
 	"filters": "numerouno.numerouno.utils.jinja_filters",
 	"methods": [
 		"numerouno.numerouno.api.certificate_verification.get_public_verification_url",
+		"numerouno.numerouno.utils.jinja_filters",
 	],
 }
 

@@ -49,3 +49,24 @@ def pdf_to_images(file_url):
     except Exception as e:
         frappe.log_error(f"PDF images filter error: {str(e)}", "PDF Image Filter")
         return []
+
+
+def get_attendance_sheet_print_data(student_group):
+    """Jinja global for Sales Invoice attendance print (batch DB reads)."""
+    from numerouno.numerouno.utils.attendance_print import (
+        get_attendance_sheet_print_data as _get_attendance_sheet_print_data,
+    )
+
+    return _get_attendance_sheet_print_data(student_group)
+
+
+def get_instructor_signature(instructor):
+    from numerouno.numerouno.utils.signatures import get_instructor_signature as _fn
+
+    return _fn(instructor)
+
+
+def resolve_signature_url(value):
+    from numerouno.numerouno.utils.signatures import resolve_signature_url as _fn
+
+    return _fn(value)

@@ -683,13 +683,8 @@ naturally at a page boundary.
 
   {%- from "templates/print_formats/standard_macros.html" import add_header -%}
 
-  {# ------------------------------------------------------------------ #}
-  {# IMPORTANT                                                          #}
-  {# - Process ALL rows in select_student_group, not only [0].          #}
-  {# - Use one controlled page break BETWEEN attendance sheets.         #}
-  {# - Do not use page-break-before:always on every attendance wrapper. #}
-  {# ------------------------------------------------------------------ #}
-
+  {# Batch DB reads via Python helper — avoids timeout on large invoices. #}
+  {% set attendance_letter_head = frappe.get_doc("Letter Head", "Letter Head New") %}
   {% set attendance_pages = [] %}
 
   {% if doc.select_student_group %}
@@ -700,6 +695,7 @@ naturally at a page boundary.
 
         {% set sg_name = selected_group.student_group %}
         {% set sg_doc  = frappe.get_doc("Student Group", sg_name) %}
+        {% set print_data = get_attendance_sheet_print_data(sg_name) %}
 
         {% if sg_doc and sg_doc.students %}
 
@@ -750,11 +746,8 @@ naturally at a page boundary.
 
             {% for k in sg_doc.students %}
               {% if (not customer) or (k.customer_name == customer) %}
-                {% set student_po = frappe.db.get_value(
-                    "Student",
-                    k.student,
-                    "custom_customer_purchase_order"
-                ) %}
+                {% set st_row = print_data.students.get(k.student) %}
+                {% set student_po = st_row.custom_customer_purchase_order if st_row else None %}
 
                 {% if student_po and student_po not in po_list %}
                   {% set _ = po_list.append(student_po) %}
@@ -766,11 +759,8 @@ naturally at a page boundary.
             {% set no_po_students = [] %}
             {% for k in sg_doc.students %}
               {% if (not customer) or (k.customer_name == customer) %}
-                {% set student_po_check = frappe.db.get_value(
-                    "Student",
-                    k.student,
-                    "custom_customer_purchase_order"
-                ) %}
+                {% set st_row = print_data.students.get(k.student) %}
+                {% set student_po_check = st_row.custom_customer_purchase_order if st_row else None %}
                 {% if not student_po_check %}
                   {% set _ = no_po_students.append(1) %}
                 {% endif %}
@@ -793,18 +783,11 @@ naturally at a page boundary.
               {% for k in sg_doc.students %}
                 {% if (not customer) or (k.customer_name == customer) %}
 
-                  {% set student_po = frappe.db.get_value(
-                      "Student",
-                      k.student,
-                      "custom_customer_purchase_order"
-                  ) %}
+                  {% set st_row = print_data.students.get(k.student) %}
+                  {% set student_po = st_row.custom_customer_purchase_order if st_row else None %}
 
                   {% if (po and student_po == po) or (not po and not student_po) %}
-                    {% set sc = frappe.db.get_value(
-                        "Student",
-                        k.student,
-                        "custom_secondary_customer"
-                    ) %}
+                    {% set sc = st_row.custom_secondary_customer if st_row else None %}
 
                     {% if sc %}
                       {% set _ = secondary_hits.append(1) %}
@@ -822,11 +805,8 @@ naturally at a page boundary.
               {% for k in sg_doc.students %}
                 {% if (not customer) or (k.customer_name == customer) %}
 
-                  {% set student_po = frappe.db.get_value(
-                      "Student",
-                      k.student,
-                      "custom_customer_purchase_order"
-                  ) %}
+                  {% set st_row = print_data.students.get(k.student) %}
+                  {% set student_po = st_row.custom_customer_purchase_order if st_row else None %}
 
                   {% if (po and student_po == po) or (not po and not student_po) %}
                     {% set _ = matched_students.append(k.student) %}
@@ -848,10 +828,9 @@ naturally at a page boundary.
                 {% set _ = attendance_pages.append(1) %}
 
                   {# ---------------- PAGE HEADER ---------------- #}
-                  {% set letter_head = frappe.get_doc("Letter Head", "Letter Head New") %}
-                  {% if letter_head %}
+                  {% if attendance_letter_head %}
                     <div class="letter-head">
-                      {{ letter_head.content }}
+                      {{ attendance_letter_head.content }}
                     </div>
                   {% endif %}
 
@@ -865,15 +844,7 @@ naturally at a page boundary.
                         <b>Sheet No :</b>
                         {{ sg_doc.name or "" }}
                       </p>
-                      {% set attendance_date = frappe.db.get_value(
-                          "Student Attendance",
-                          {"student_group": sg_doc.name, "docstatus": 1},
-                          "date",
-                          order_by="date asc"
-                      ) %}
-                      {% if not attendance_date %}
-                        {% set attendance_date = start_raw %}
-                      {% endif %}
+                      {% set attendance_date = print_data.attendance_date or start_raw %}
                       <p>
                         <b>Date :</b>
                         {{ frappe.utils.formatdate(attendance_date) if attendance_date else "" }}
@@ -955,11 +926,8 @@ naturally at a page boundary.
 
                         {% if (not customer) or (k.customer_name == customer) %}
 
-                          {% set student_po = frappe.db.get_value(
-                              "Student",
-                              k.student,
-                              "custom_customer_purchase_order"
-                          ) %}
+                          {% set st_row = print_data.students.get(k.student) %}
+                          {% set student_po = st_row.custom_customer_purchase_order if st_row else None %}
 
                           {% if (po and student_po == po) or (not po and not student_po) %}
 
@@ -980,62 +948,35 @@ naturally at a page boundary.
                               </td>
 
                               {% if show_secondary %}
-                                {% set secondary_customer = frappe.db.get_value(
-                                    "Student",
-                                    k.student,
-                                    "custom_secondary_customer"
-                                ) %}
                                 <td style="border:1px solid #000; padding:4px;">
-                                  {{ secondary_customer or "" }}
+                                  {{ st_row.custom_secondary_customer if st_row else "" }}
                                 </td>
                               {% endif %}
 
-                              {% set nationality = frappe.db.get_value(
-                                  "Student",
-                                  k.student,
-                                  "nationality"
-                              ) %}
                               <td style="border:1px solid #000; padding:4px;">
-                                {{ nationality or "" }}
+                                {{ st_row.nationality if st_row else "" }}
                               </td>
 
-                              {% set dob = frappe.db.get_value(
-                                  "Student",
-                                  k.student,
-                                  "date_of_birth"
-                              ) %}
                               <td style="border:1px solid #000; padding:4px;">
-                                {{ frappe.utils.formatdate(dob) if dob else "" }}
+                                {{ frappe.utils.formatdate(st_row.date_of_birth) if st_row and st_row.date_of_birth else "" }}
                               </td>
 
                               {# Attendance signatures per day #}
                               {% for d in dates %}
 
-                                {% set attendance = frappe.db.get_value(
-                                    "Student Attendance",
-                                    {
-                                      "date": d,
-                                      "student_group": sg_doc.name,
-                                      "student": k.student,
-                                      "docstatus": 1
-                                    },
-                                    [
-                                      "custom_student_signature1",
-                                      "custom_student_signature"
-                                    ],
-                                    as_dict=True
-                                ) %}
+                                {% set att_key = k.student ~ "|" ~ frappe.utils.formatdate(d, "yyyy-mm-dd") %}
+                                {% set att_row = print_data.attendance.get(att_key) %}
 
                                 <td style="border:1px solid #000; padding:4px; text-align:center;">
 
-                                  {% if attendance and attendance.custom_student_signature1 %}
+                                  {% if att_row and att_row.custom_student_signature1 %}
                                     <img
-                                      src="{{ attendance.custom_student_signature1 }}"
+                                      src="{{ att_row.custom_student_signature1 }}"
                                       style="width:60px; height:25px; object-fit:contain;"
                                     />
-                                  {% elif attendance and attendance.custom_student_signature %}
+                                  {% elif att_row and att_row.custom_student_signature %}
                                     <img
-                                      src="{{ attendance.custom_student_signature }}"
+                                      src="{{ att_row.custom_student_signature }}"
                                       style="width:60px; height:25px; object-fit:contain;"
                                     />
                                   {% endif %}
@@ -1047,15 +988,7 @@ naturally at a page boundary.
                               <td style="border:1px solid #000; padding:4px;"></td>
 
                               {# Card Received signature #}
-                              {% set card_sig = frappe.db.get_value(
-                                  "Student Card",
-                                  {
-                                    "student_group": sg_doc.name,
-                                    "student": k.student,
-                                    "docstatus": 1
-                                  },
-                                  "student_signature"
-                              ) %}
+                              {% set card_sig = print_data.cards.get(k.student) %}
 
                               <td style="border:1px solid #000; padding:4px; text-align:center;">
                                 {% if card_sig %}
@@ -1093,14 +1026,10 @@ naturally at a page boundary.
 
                     <div style="float:right; margin-top:5%; width:30%; text-align:center;">
                       <p>SIGNATURE:</p>
-                      {% if sg_doc.instructors and sg_doc.instructors[0].instructor %}
-                        {% set instructor_doc = frappe.get_doc("Instructor", sg_doc.instructors[0].instructor) %}
-                        {% set instructor_image = instructor_doc.signature_image or instructor_doc.image or instructor_doc.photo %}
-                        {% if instructor_image and "signature-placeholder" not in instructor_image %}
-                          <img src="{{ frappe.utils.get_url(instructor_image) }}"
-                               alt="Instructor Signature"
-                               style="max-width:150px; max-height:70px; object-fit:contain; display:block; margin:4px auto 0;" />
-                        {% endif %}
+                      {% if print_data.instructor_signature_url %}
+                        <img src="{{ print_data.instructor_signature_url }}"
+                             alt="Instructor Signature"
+                             style="max-width:150px; max-height:70px; object-fit:contain; display:block; margin:4px auto 0;" />
                       {% endif %}
                     </div>
 
