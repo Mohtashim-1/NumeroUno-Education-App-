@@ -15,6 +15,7 @@
   "dates",
   "trainee_info_section",
   "trainee_name",
+  "student_group",
   "email_id",
   "trainee_mobile",
   "column_break_coaf",
@@ -94,6 +95,13 @@
    "options": "Student"
   },
   {
+   "fieldname": "student_group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student Group",
+   "options": "Student Group"
+  },
+  {
    "fetch_from": "trainee_name.student_email_id",
    "fieldname": "email_id",
    "fieldtype": "Data",
@@ -117,21 +125,18 @@
   },
   {
    "fieldname": "joining_instructions_clear",
-   "fieldtype": "Select",
-   "label": "Joining instructions were clear",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Joining instructions were clear"
   },
   {
    "fieldname": "training_room_environment",
-   "fieldtype": "Select",
-   "label": "Training room, Learning environment (ambience, comfort) & facilities",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Training room, Learning environment (ambience, comfort) & facilities"
   },
   {
    "fieldname": "administration_support",
-   "fieldtype": "Select",
-   "label": "Administration support",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Administration support"
   },
   {
    "fieldname": "course_content_section",
@@ -140,27 +145,23 @@
   },
   {
    "fieldname": "objectives_clearly_defined",
-   "fieldtype": "Select",
-   "label": "Objectives were clearly defined",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Objectives were clearly defined"
   },
   {
    "fieldname": "content_organization",
-   "fieldtype": "Select",
-   "label": "Content organization & relevance",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Content organization & relevance"
   },
   {
    "fieldname": "materials_aligned",
-   "fieldtype": "Select",
-   "label": "Materials aligned with learning goals",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Materials aligned with learning goals"
   },
   {
    "fieldname": "course_pace",
-   "fieldtype": "Select",
-   "label": "Course pace was appropriate",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Course pace was appropriate"
   },
   {
    "fieldname": "instructor_performance_section",
@@ -169,27 +170,23 @@
   },
   {
    "fieldname": "presentation_skills",
-   "fieldtype": "Select",
-   "label": "Presentation skills",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Presentation skills"
   },
   {
    "fieldname": "teaching_effectiveness",
-   "fieldtype": "Select",
-   "label": "Teaching effectiveness",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Teaching effectiveness"
   },
   {
    "fieldname": "knowledge_accessibility",
-   "fieldtype": "Select",
-   "label": "Knowledge & accessibility",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Knowledge & accessibility"
   },
   {
    "fieldname": "assignments_exercises",
-   "fieldtype": "Select",
-   "label": "Assignments/exercises helpful",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Assignments/exercises helpful"
   },
   {
    "fieldname": "resources_technology_section",
@@ -198,15 +195,13 @@
   },
   {
    "fieldname": "handouts_tools_equipment",
-   "fieldtype": "Select",
-   "label": "Handouts/tools/equipment availability",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Handouts/tools/equipment availability"
   },
   {
    "fieldname": "technology_effectiveness",
-   "fieldtype": "Select",
-   "label": "Technology effectiveness (AV, screens)",
-   "options": "Excellent\nGood\nAverage\nPoor"
+   "fieldtype": "Rating",
+   "label": "Technology effectiveness (AV, screens)"
   },
   {
    "fieldname": "training_impact_section",
