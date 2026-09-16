@@ -7,6 +7,25 @@ class CourseEvaluation(Document):
 	pass
 
 
+def _can_use_course_evaluation_api():
+	"""Allow prefill/link helpers for anyone who can use Course Evaluation (Desk or web form)."""
+	if frappe.session.user == "Guest":
+		return True
+	return frappe.has_permission("Course Evaluation", "create") or frappe.has_permission(
+		"Course Evaluation", "write"
+	)
+
+
+def _student_group_db_fields():
+	"""Only columns that exist on Student Group (customizations vary by site)."""
+	meta = frappe.get_meta("Student Group")
+	fields = ["name", "course"]
+	for fname in ("from_date", "custom_customer", "company"):
+		if meta.has_field(fname):
+			fields.append(fname)
+	return fields
+
+
 RATING_FIELDS = (
 	"joining_instructions_clear",
 	"training_room_environment",
@@ -24,10 +43,13 @@ RATING_FIELDS = (
 )
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 @frappe.validate_and_sanitize_search_inputs
 def get_trainee_query(doctype, txt, searchfield, start, page_len, filters):
 	"""Link query: Students in the selected student group (or all students if no group)."""
+	if not _can_use_course_evaluation_api():
+		frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
 	student_group = (filters or {}).get("student_group")
 	txt = f"%{txt or ''}%"
 	limit = page_len or 20
@@ -64,10 +86,13 @@ def get_trainee_query(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 @frappe.validate_and_sanitize_search_inputs
 def get_student_group_query(doctype, txt, searchfield, start, page_len, filters):
 	"""Link query: Student Groups that include the selected student."""
+	if not _can_use_course_evaluation_api():
+		frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
 	student = (filters or {}).get("student")
 	txt = f"%{txt or ''}%"
 	limit = page_len or 20
@@ -99,38 +124,53 @@ def get_student_group_query(doctype, txt, searchfield, start, page_len, filters)
 	)
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def apply_student_group_details(student_group, student=None):
 	"""Desk / web form helper: prefill course evaluation from Student Group."""
+	if not _can_use_course_evaluation_api():
+		frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
 	if not student_group:
 		frappe.throw("Student Group is required")
 
-	sg = frappe.get_doc("Student Group", student_group)
+	if not frappe.db.exists("Student Group", student_group):
+		frappe.throw("Invalid Student Group")
 
-	if student:
-		in_group = frappe.db.exists(
-			"Student Group Student",
-			{"parent": student_group, "student": student},
-		)
-		if not in_group:
-			frappe.throw("Selected student is not in this student group.")
+	if student and not frappe.db.exists(
+		"Student Group Student",
+		{"parent": student_group, "student": student},
+	):
+		frappe.throw("Selected student is not in this student group.")
+
+	sg = frappe.db.get_value(
+		"Student Group",
+		student_group,
+		_student_group_db_fields(),
+		as_dict=True,
+	) or {}
 
 	instructor_name = ""
-	if getattr(sg, "instructors", None):
-		first_instructor = sg.instructors[0]
+	instructor_row = frappe.db.sql(
+		"""
+		SELECT instructor, instructor_name
+		FROM `tabStudent Group Instructor`
+		WHERE parent = %(parent)s
+		ORDER BY idx ASC
+		LIMIT 1
+		""",
+		{"parent": student_group},
+		as_dict=True,
+	)
+	if instructor_row:
 		instructor_name = (
-			getattr(first_instructor, "instructor", None)
-			or getattr(first_instructor, "instructor_name", None)
-			or ""
+			instructor_row[0].get("instructor") or instructor_row[0].get("instructor_name") or ""
 		)
 
 	company = ""
-	possible_company = getattr(sg, "custom_customer", None) or getattr(sg, "company", None)
-	if possible_company and frappe.db.exists("Company", possible_company):
-		company = possible_company
-	elif possible_company and frappe.db.exists("Customer", possible_company):
-		# Some groups store customer name; keep for display on course_name area if needed
-		pass
+	for candidate in (sg.get("company"), sg.get("custom_customer")):
+		if candidate and frappe.db.exists("Company", candidate):
+			company = candidate
+			break
 
 	email_id = ""
 	trainee_mobile = ""
@@ -145,19 +185,22 @@ def apply_student_group_details(student_group, student=None):
 		trainee_mobile = student_row.get("custom_phone") or ""
 
 	return {
-		"course_name": sg.course or "",
+		"course_name": sg.get("course") or "",
 		"company": company,
 		"instructor_name": instructor_name,
-		"dates": str(sg.from_date or today()),
+		"dates": str(sg.get("from_date") or today()),
 		"trainee_name": student or "",
 		"email_id": email_id,
 		"trainee_mobile": trainee_mobile,
-		"student_group": sg.name,
+		"student_group": sg.get("name"),
 	}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_student_groups_for_student(student):
+	if not _can_use_course_evaluation_api():
+		frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
 	if not student:
 		return []
 	return frappe.get_all(

@@ -86,36 +86,13 @@ frappe.ui.form.on("Course Evaluation", {
 	},
 
 	trainee_name(frm) {
-		if (frm.doc.student_group && frm.doc.trainee_name) {
-			frappe.db
-				.exists("Student Group Student", {
-					parent: frm.doc.student_group,
-					student: frm.doc.trainee_name,
-				})
-				.then((exists) => {
-					if (!exists) {
-						frm.set_value("student_group", "");
-					}
-				});
-		} else if (!frm.doc.trainee_name) {
+		if (!frm.doc.trainee_name) {
 			frm.set_value("student_group", "");
 		}
 		auto_select_single_student_group(frm);
 	},
 
 	student_group(frm) {
-		if (frm.doc.student_group && frm.doc.trainee_name) {
-			frappe.db
-				.exists("Student Group Student", {
-					parent: frm.doc.student_group,
-					student: frm.doc.trainee_name,
-				})
-				.then((exists) => {
-					if (!exists) {
-						frm.set_value("trainee_name", "");
-					}
-				});
-		}
 		apply_student_group_details(frm);
 	},
 });

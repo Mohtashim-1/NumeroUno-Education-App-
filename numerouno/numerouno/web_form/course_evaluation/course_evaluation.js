@@ -81,19 +81,5 @@ frappe.ready(function () {
 		});
 	});
 
-	form.on("student_group", () => {
-		if (form.doc.student_group && form.doc.trainee_name) {
-			frappe.db
-				.exists("Student Group Student", {
-					parent: form.doc.student_group,
-					student: form.doc.trainee_name,
-				})
-				.then((exists) => {
-					if (!exists) {
-						form.set_value("trainee_name", "");
-					}
-				});
-		}
-		apply_details();
-	});
+	form.on("student_group", apply_details);
 });
