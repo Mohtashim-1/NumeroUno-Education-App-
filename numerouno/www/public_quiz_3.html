@@ -1596,7 +1596,12 @@ async function reloadStudentGroups() {
     showLoading(true);
     hideMessages();
 
-    const url = `/api/method/numerouno.numerouno.api.quiz_api.get_quiz_questions_from_quiz?quiz_name=${encodeURIComponent(quizName)}&lang=${encodeURIComponent(currentLang)}`;
+    const url =
+      `/api/method/numerouno.numerouno.api.quiz_api.get_quiz_questions_from_quiz` +
+      `?quiz_name=${encodeURIComponent(quizName)}` +
+      `&lang=${encodeURIComponent(currentLang)}` +
+      `&student=${encodeURIComponent(student)}` +
+      `&student_group=${encodeURIComponent(studentGroup)}`;
     
     fetch(url, {
       method: "GET",

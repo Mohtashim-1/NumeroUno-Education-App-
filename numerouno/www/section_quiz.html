@@ -1210,7 +1210,8 @@
       hideMessage();
       const data = await apiGet("get_section_quiz_questions_from_quiz", {
         quiz_name: quizName,
-        student_group: studentGroup
+        student_group: studentGroup,
+        student: student,
       });
       showLoading(false);
 

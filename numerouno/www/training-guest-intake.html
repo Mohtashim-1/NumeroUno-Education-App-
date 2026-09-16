@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
+  <title>Training Guest Registration</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+    :root {
+      --bg: #eef4f7;
+      --panel: #ffffff;
+      --ink: #20313d;
+      --muted: #5f7380;
+      --line: #cfdde6;
+      --button: #155e75;
+      --button-hover: #0f4d60;
+      --danger: #b42318;
+      --success-bg: #e9f8ef;
+      --success-line: #b7e4c7;
+      --shadow: 0 22px 50px rgba(18, 38, 52, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(183, 221, 235, 0.6), rgba(238, 244, 247, 0.95)),
+        radial-gradient(circle at top right, rgba(124, 179, 199, 0.28), transparent 34%);
+      padding: 32px 16px;
+    }
+
+    .wrap { max-width: 640px; margin: 0 auto; }
+
+    .hero {
+      background: linear-gradient(135deg, #173647 0%, #27546c 100%);
+      color: #fff;
+      border-radius: 24px 24px 0 0;
+      padding: 24px 28px 28px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .brand-logo {
+      width: 88px;
+      height: 88px;
+      object-fit: contain;
+      border-radius: 16px;
+      background: #fff;
+      padding: 8px;
+      margin: 0 auto 16px;
+      display: block;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .hero h1 { margin: 0 0 8px; font-size: clamp(24px, 5vw, 32px); }
+    .hero p {
+      margin: 0 auto;
+      max-width: 480px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: 0 0 24px 24px;
+      border: 1px solid var(--line);
+      border-top: none;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    label { font-size: 14px; font-weight: 700; }
+    .req { color: var(--danger); }
+
+    input[type="text"] {
+      width: 100%;
+      border: 1.5px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: inherit;
+      background: #fff;
+      min-height: 46px;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #7cb3c7;
+      box-shadow: 0 0 0 3px rgba(124, 179, 199, 0.25);
+    }
+
+    /* Date picker (Flatpickr alt input) */
+    .date-wrap { width: 100%; }
+    .date-wrap input.flatpickr-input.altInput,
+    .date-wrap input.form-date-input {
+      width: 100%;
+      border: 1.5px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 44px 12px 14px;
+      font: inherit;
+      font-variant-numeric: tabular-nums;
+      min-height: 46px;
+      background-color: #fff;
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 20px 20px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%235f7380'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E");
+      cursor: pointer;
+    }
+
+    .date-wrap input.flatpickr-input:focus,
+    .date-wrap input.form-date-input:focus {
+      outline: none;
+      border-color: #7cb3c7;
+      box-shadow: 0 0 0 3px rgba(124, 179, 199, 0.25);
+    }
+
+    /* Photo upload dropzone */
+    .photo-drop {
+      border: 2px dashed var(--line);
+      border-radius: 16px;
+      padding: 24px 16px;
+      text-align: center;
+      background: #f8fbfd;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .photo-drop:hover,
+    .photo-drop.is-dragover {
+      border-color: #7cb3c7;
+      background: #eef7fb;
+    }
+
+    .photo-drop.has-file {
+      border-style: solid;
+      border-color: #b7e4c7;
+      background: #f6fdf9;
+      cursor: default;
+      padding: 16px;
+    }
+
+    .photo-drop__icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 10px;
+      color: var(--button);
+    }
+
+    .photo-drop__title {
+      font-weight: 700;
+      font-size: 15px;
+      margin: 0 0 4px;
+    }
+
+    .photo-drop__hint {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .photo-drop__browse {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: var(--button);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .photo-drop.has-file .photo-drop__browse { display: none; }
+
+    .photo-preview-wrap {
+      display: none;
+      align-items: center;
+      gap: 16px;
+      text-align: left;
+    }
+
+    .photo-drop.has-file .photo-empty { display: none; }
+    .photo-drop.has-file .photo-preview-wrap { display: flex; }
+
+    .photo-preview-wrap img {
+      width: 96px;
+      height: 96px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 2px solid #fff;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      flex-shrink: 0;
+    }
+
+    .photo-meta { flex: 1; min-width: 0; }
+    .photo-meta__name {
+      font-weight: 700;
+      font-size: 14px;
+      word-break: break-all;
+      margin: 0 0 4px;
+    }
+    .photo-meta__size {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .photo-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .photo-actions button {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 7px 12px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--ink);
+    }
+
+    .photo-actions button.btn-change { color: var(--button); border-color: #7cb3c7; }
+    .photo-actions button.btn-remove { color: var(--danger); border-color: #fecdca; }
+
+    input[type="file"].photo-input-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .actions { margin-top: 8px; }
+    button[type="submit"] {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font: inherit;
+      font-weight: 700;
+      color: #fff;
+      background: var(--button);
+      cursor: pointer;
+    }
+    button[type="submit"]:hover { background: var(--button-hover); }
+    button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .message {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      display: none;
+    }
+    .message.error { display: block; background: #fef3f2; border: 1px solid #fecdca; color: var(--danger); }
+    .message.success { display: block; background: var(--success-bg); border: 1px solid var(--success-line); color: #17663a; }
+
+    .success-shell {
+      display: none;
+      padding: 16px;
+      border-radius: 14px;
+      background: var(--success-bg);
+      border: 1px solid var(--success-line);
+      margin-bottom: 18px;
+    }
+    .success-shell.active { display: block; }
+
+    .flatpickr-calendar { z-index: 999999 !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <img
+        class="brand-logo"
+        src="/files/nutclogoeb50019ce5d2.jpg"
+        alt="Numero Uno Training &amp; Consulting"
+        onerror="this.onerror=null;this.src='https://erp.nutc.cloud/files/nutclogo.jpg';"
+      >
+      <h1>Training Guest Registration</h1>
+      <p>Please enter your details below. Your photo will be stored securely for training records.</p>
+    </div>
+
+    <div class="panel">
+      <div id="message" class="message"></div>
+
+      <div id="success-shell" class="success-shell">
+        <strong>Thank you — your details were saved.</strong>
+        <p style="margin:8px 0 0;">Reference: <span id="success-ref"></span></p>
+      </div>
+
+      <form id="guest-form" enctype="multipart/form-data" novalidate>
+        <div class="field">
+          <label for="participant_name">Name <span class="req">*</span></label>
+          <input type="text" id="participant_name" name="participant_name" required autocomplete="name" maxlength="140" placeholder="Full name">
+        </div>
+
+        <div class="field">
+          <label for="training_date">Date of training <span class="req">*</span></label>
+          <div class="date-wrap">
+            <input
+              type="text"
+              id="training_date"
+              name="training_date"
+              class="form-date-input"
+              required
+              placeholder="DD / MM / YYYY"
+              autocomplete="off"
+            >
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="company_name">Name of company <span class="req">*</span></label>
+          <input type="text" id="company_name" name="company_name" required autocomplete="organization" maxlength="140" placeholder="Company name">
+        </div>
+
+        <div class="field">
+          <label>Upload photo <span class="req">*</span></label>
+          <div id="photo-drop" class="photo-drop" role="button" tabindex="0" aria-label="Upload photo">
+            <input
+              type="file"
+              id="photo"
+              name="photo"
+              class="photo-input-hidden"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              required
+            >
+
+            <div class="photo-empty">
+              <svg class="photo-drop__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <p class="photo-drop__title">Tap to upload your photo</p>
+              <p class="photo-drop__hint">JPG, PNG, WEBP or GIF — max 5 MB</p>
+              <span class="photo-drop__browse">Choose file</span>
+            </div>
+
+            <div class="photo-preview-wrap">
+              <img id="photo-preview" alt="Photo preview">
+              <div class="photo-meta">
+                <p class="photo-meta__name" id="photo-filename"></p>
+                <p class="photo-meta__size" id="photo-size"></p>
+                <div class="photo-actions">
+                  <button type="button" class="btn-change" id="photo-change">Change photo</button>
+                  <button type="button" class="btn-remove" id="photo-remove">Remove</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" id="submit-btn">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+  <script>
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+    const form = document.getElementById("guest-form");
+    const messageBox = document.getElementById("message");
+    const successShell = document.getElementById("success-shell");
+    const successRef = document.getElementById("success-ref");
+    const photoInput = document.getElementById("photo");
+    const photoDrop = document.getElementById("photo-drop");
+    const photoPreview = document.getElementById("photo-preview");
+    const photoFilename = document.getElementById("photo-filename");
+    const photoSize = document.getElementById("photo-size");
+    const trainingDateInput = document.getElementById("training_date");
+
+    let previewObjectUrl = null;
+
+    const datePicker = flatpickr(trainingDateInput, {
+      static: true,
+      dateFormat: "Y-m-d",
+      altInput: true,
+      altFormat: "d/m/Y",
+      allowInput: false,
+      clickOpens: true,
+      disableMobile: true,
+      locale: { firstDayOfWeek: 1 },
+    });
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + " B";
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+    }
+
+    function clearPhotoPreview() {
+      if (previewObjectUrl) {
+        URL.revokeObjectURL(previewObjectUrl);
+        previewObjectUrl = null;
+      }
+      photoPreview.removeAttribute("src");
+      photoFilename.textContent = "";
+      photoSize.textContent = "";
+      photoDrop.classList.remove("has-file");
+      photoInput.value = "";
+    }
+
+    function setPhotoFile(file) {
+      if (!file) {
+        clearPhotoPreview();
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showMessage("error", "Photo must be smaller than 5 MB.");
+        return;
+      }
+      if (previewObjectUrl) {
+        URL.revokeObjectURL(previewObjectUrl);
+      }
+      previewObjectUrl = URL.createObjectURL(file);
+      photoPreview.src = previewObjectUrl;
+      photoFilename.textContent = file.name;
+      photoSize.textContent = formatBytes(file.size);
+      photoDrop.classList.add("has-file");
+
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      photoInput.files = dt.files;
+    }
+
+    function openFilePicker() {
+      photoInput.click();
+    }
+
+    photoDrop.addEventListener("click", (e) => {
+      if (e.target.closest(".photo-actions")) return;
+      if (!photoDrop.classList.contains("has-file")) openFilePicker();
+    });
+
+    photoDrop.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (!photoDrop.classList.contains("has-file")) openFilePicker();
+      }
+    });
+
+    document.getElementById("photo-change").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openFilePicker();
+    });
+
+    document.getElementById("photo-remove").addEventListener("click", (e) => {
+      e.stopPropagation();
+      clearPhotoPreview();
+    });
+
+    photoInput.addEventListener("change", () => {
+      setPhotoFile(photoInput.files?.[0] || null);
+    });
+
+    ["dragenter", "dragover"].forEach((ev) => {
+      photoDrop.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        photoDrop.classList.add("is-dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((ev) => {
+      photoDrop.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        photoDrop.classList.remove("is-dragover");
+      });
+    });
+
+    photoDrop.addEventListener("drop", (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file && file.type.startsWith("image/")) {
+        setPhotoFile(file);
+      } else if (file) {
+        showMessage("error", "Please upload an image file.");
+      }
+    });
+
+    function showMessage(type, text) {
+      messageBox.className = `message ${type}`;
+      messageBox.textContent = text;
+    }
+
+    function clearMessage() {
+      messageBox.className = "message";
+      messageBox.textContent = "";
+    }
+
+    function parseServerError(result) {
+      if (result.message?.message) return result.message.message;
+      if (typeof result.message === "string") return result.message;
+      if (result._server_messages) {
+        try {
+          const msgs = JSON.parse(result._server_messages);
+          const first = JSON.parse(msgs[0]);
+          return first.message || "Unable to submit.";
+        } catch (_) { /* ignore */ }
+      }
+      return "Unable to submit. Please try again.";
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearMessage();
+      successShell.classList.remove("active");
+
+      if (!photoInput.files?.[0]) {
+        showMessage("error", "Please upload a photo.");
+        return;
+      }
+
+      if (!form.reportValidity()) return;
+
+      const file = photoInput.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        showMessage("error", "Photo must be smaller than 5 MB.");
+        return;
+      }
+
+      const submitBtn = document.getElementById("submit-btn");
+      submitBtn.disabled = true;
+
+      const body = new FormData(form);
+
+      try {
+        const response = await fetch(
+          "/api/method/numerouno.numerouno.api.training_guest_intake.submit_training_guest_intake",
+          {
+            method: "POST",
+            headers: { "X-Frappe-CSRF-Token": csrfToken },
+            body,
+          }
+        );
+
+        const result = await response.json();
+        const message = result.message || {};
+
+        if (!response.ok || message.status !== "success") {
+          throw new Error(parseServerError(result));
+        }
+
+        successRef.textContent = message.name || "";
+        successShell.classList.add("active");
+        showMessage("success", message.message || "Submitted successfully.");
+        form.reset();
+        clearPhotoPreview();
+        datePicker.clear();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (error) {
+        showMessage("error", error.message || "Unable to submit right now.");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

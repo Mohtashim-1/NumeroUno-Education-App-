@@ -1,8 +1,11 @@
+import hashlib
+import json
+import random
+from datetime import timedelta
+
 import frappe
 from frappe import _
-from frappe.utils import today
-from datetime import timedelta
-import json
+from frappe.utils import cint, today
 import urllib.parse
 import urllib.request
 
@@ -1296,8 +1299,48 @@ def _tr_text(value, lang_code="en"):
     return _(text)
 
 
+def _shuffle_mcqs_enabled(student_group, quiz_name):
+	if not student_group or not quiz_name:
+		return False
+
+	shuffle = frappe.db.get_value(
+		"MCQS Assignment",
+		{"student_group": student_group, "mcqs": quiz_name},
+		"shuffle_mcqs",
+	)
+	if shuffle is None and frappe.db.exists("MCQS Assignment", student_group):
+		shuffle = frappe.db.get_value("MCQS Assignment", student_group, "shuffle_mcqs")
+	return cint(shuffle)
+
+
+def _shuffle_rng_for_student(student, quiz_name, student_group=None):
+	seed_material = "|".join(
+		part for part in (student or "", quiz_name or "", student_group or "") if part
+	)
+	seed = int(hashlib.sha256(seed_material.encode()).hexdigest()[:16], 16)
+	return random.Random(seed)
+
+
+def _shuffle_question_list(questions, rng):
+	shuffled = list(questions or [])
+	rng.shuffle(shuffled)
+	for question in shuffled:
+		options = list(question.get("options") or [])
+		if len(options) > 1:
+			rng.shuffle(options)
+			question["options"] = options
+	return shuffled
+
+
+def _apply_student_mcqs_shuffle(questions, student, quiz_name, student_group=None):
+	if not student or not questions:
+		return questions
+	rng = _shuffle_rng_for_student(student, quiz_name, student_group)
+	return _shuffle_question_list(questions, rng)
+
+
 @frappe.whitelist(allow_guest=True, methods=['GET', 'POST'])
-def get_quiz_questions_from_quiz(quiz_name, lang=None):
+def get_quiz_questions_from_quiz(quiz_name, lang=None, student=None, student_group=None):
     """Get quiz questions from Quiz doctype (Education module)"""
     previous_lang = getattr(frappe.local, "lang", None)
     try:
@@ -1390,6 +1433,12 @@ def get_quiz_questions_from_quiz(quiz_name, lang=None):
         
         if not questions:
             print(f"✗ WARNING: No questions were successfully loaded!")
+
+        shuffle_enabled = _shuffle_mcqs_enabled(student_group, quiz_name)
+        if shuffle_enabled and student:
+            questions = _apply_student_mcqs_shuffle(
+                questions, student, quiz_name, student_group
+            )
         
         # Calculate total marks (1 per question since QuizQuestion doesn't store marks)
         total_marks = len(questions)
@@ -1403,7 +1452,8 @@ def get_quiz_questions_from_quiz(quiz_name, lang=None):
                 "title": quiz_title,
                 "total_marks": total_marks,
                 "passing_percentage": quiz_doc.passing_score or 75,
-                "max_attempts": quiz_doc.max_attempts or 0
+                "max_attempts": quiz_doc.max_attempts or 0,
+                "shuffle_mcqs": shuffle_enabled,
             },
             "questions": questions
         }
@@ -1421,7 +1471,7 @@ def get_quiz_questions_from_quiz(quiz_name, lang=None):
 
 
 @frappe.whitelist(allow_guest=True, methods=["GET", "POST"])
-def get_section_quiz_questions_from_quiz(quiz_name, student_group=None, lang=None):
+def get_section_quiz_questions_from_quiz(quiz_name, student_group=None, lang=None, student=None):
     """Get Quiz questions grouped by Quiz Section Profile sections."""
     previous_lang = getattr(frappe.local, "lang", None)
     try:
@@ -1500,6 +1550,12 @@ def get_section_quiz_questions_from_quiz(quiz_name, student_group=None, lang=Non
 
             section["questions"].append(question_data)
 
+        shuffle_enabled = _shuffle_mcqs_enabled(student_group, quiz_name)
+        if shuffle_enabled and student:
+            rng = _shuffle_rng_for_student(student, quiz_name, student_group)
+            for section in sections:
+                section["questions"] = _shuffle_question_list(section.get("questions") or [], rng)
+
         questions = []
         for section in sections:
             questions.extend(section["questions"])
@@ -1524,6 +1580,7 @@ def get_section_quiz_questions_from_quiz(quiz_name, student_group=None, lang=Non
                 "quiz_section_profile": profile_doc.name,
                 "require_all_sections_pass": profile_doc.require_all_sections_pass,
                 "enforce_overall_percentage": profile_doc.enforce_overall_percentage,
+                "shuffle_mcqs": shuffle_enabled,
             },
             "sections": sections,
             "questions": questions,
