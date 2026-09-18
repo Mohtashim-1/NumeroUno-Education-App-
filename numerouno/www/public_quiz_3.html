@@ -2098,7 +2098,7 @@ async function reloadStudentGroups() {
             const missingActivityReason = result.activity_error
               ? ` ${result.activity_error}`
               : "";
-            showError(`Quiz submission could not be finalized because Quiz Activity was not created.${missingActivityReason}`);
+            showError(t("failed_submit_quiz") + missingActivityReason);
             setSubmitLoading(false);
             return;
           }

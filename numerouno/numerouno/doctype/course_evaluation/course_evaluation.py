@@ -7,6 +7,45 @@ class CourseEvaluation(Document):
 	pass
 
 
+def _submit_course_evaluation_from_web_form(doc):
+	"""Public web form saves draft only; finalize as submitted for trainees after quiz."""
+	if not getattr(frappe.flags, "in_web_form", False):
+		return
+	if doc.docstatus != 0:
+		return
+
+	flag_key = f"course_eval_web_submit:{doc.name}"
+	if frappe.flags.get(flag_key):
+		return
+	frappe.flags[flag_key] = True
+
+	previous_user = frappe.session.user
+	try:
+		frappe.set_user("Administrator")
+		submit_doc = frappe.get_doc("Course Evaluation", doc.name)
+		if submit_doc.docstatus != 0:
+			return
+		submit_doc.flags.ignore_permissions = True
+		submit_doc.submit()
+		frappe.db.commit()
+	except Exception:
+		frappe.log_error(
+			f"Course Evaluation web form auto-submit failed for {doc.name}: {frappe.get_traceback()}",
+			"Course Evaluation Web Form Submit",
+		)
+	finally:
+		frappe.set_user(previous_user)
+		frappe.flags[flag_key] = False
+
+
+def auto_submit_course_evaluation_after_web_form(doc, method=None):
+	try:
+		_submit_course_evaluation_from_web_form(doc)
+	except Exception:
+		# Keep draft if submit fails; web form already saved answers.
+		pass
+
+
 def _can_use_course_evaluation_api():
 	"""Allow prefill/link helpers for anyone who can use Course Evaluation (Desk or web form)."""
 	if frappe.session.user == "Guest":

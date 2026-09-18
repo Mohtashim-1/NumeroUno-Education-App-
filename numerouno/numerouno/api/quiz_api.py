@@ -1,6 +1,7 @@
 import hashlib
 import json
 import random
+from contextlib import contextmanager
 from datetime import timedelta
 
 import frappe
@@ -13,6 +14,51 @@ from numerouno.numerouno.utils.assessment_eligibility import (
 	ensure_assessment_eligible,
 	get_assessment_eligibility,
 )
+
+
+@contextmanager
+def _elevate_to_admin():
+	"""Public quiz runs as Guest; Education submits need system user."""
+	previous_user = frappe.session.user
+	try:
+		frappe.set_user("Administrator")
+		yield
+	finally:
+		frappe.set_user(previous_user)
+
+
+def _insert_doc_as_admin(doc):
+	with _elevate_to_admin():
+		doc.insert(ignore_permissions=True)
+		frappe.db.commit()
+	return doc
+
+
+def _submit_doc_as_admin(doc):
+	with _elevate_to_admin():
+		doc.reload()
+		doc.flags.ignore_permissions = True
+		doc.submit()
+		frappe.db.commit()
+	return doc
+
+
+def _add_quiz_activity_comment(reference_name, content):
+	try:
+		from frappe.desk.form.utils import add_comment
+
+		add_comment(
+			reference_doctype="Quiz Activity",
+			reference_name=reference_name,
+			content=content,
+			comment_email=frappe.session.user or "Guest",
+			comment_by=frappe.session.user or "Guest",
+		)
+	except Exception as comment_error:
+		frappe.log_error(
+			f"Failed to add Quiz Activity comment: {comment_error}",
+			"Quiz Activity Comment Error",
+		)
 
 
 def _log_public_quiz_audit(event_type, quiz_name=None, student=None, student_group=None, attempt_id=None, details=None):
@@ -1713,225 +1759,122 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
         print(f"Score: {display_score}/100 (raw: {raw_score}/{score_out_of}, {percentage:.1f}%) - {'Passed' if passed else 'Failed'}")
         print(f"{'='*80}\n")
         
-        # Try to find existing assessment plan for this student group and course
-        assessment_plan = None
-        if student_group_doc.course:
-            assessment_plans = frappe.get_all(
-                "Assessment Plan",
-                filters={
-                    "student_group": student_group,
-                    "course": student_group_doc.course,
-                    "docstatus": ["<", 2]
-                },
-                fields=["name"],
-                order_by="docstatus desc, modified desc",
-                limit=1
-            )
-            if assessment_plans:
-                assessment_plan = assessment_plans[0].get('name') if isinstance(assessment_plans[0], dict) else assessment_plans[0].name
-                print(f"[ASSESSMENT PLAN] Found: {assessment_plan}")
-            else:
-                print(f"[ASSESSMENT PLAN] No assessment plan found. Creating new one...")
-                
-                # Create Assessment Plan if it doesn't exist
-                try:
-                    # Get course details for defaults
-                    course_doc = frappe.get_doc("Course", student_group_doc.course)
-                    
-                    # Get or create Assessment Group (required field)
-                    assessment_group = None
-                    assessment_groups = frappe.get_all(
-                        "Assessment Group",
-                        fields=["name"],
-                        limit=1
-                    )
-                    if assessment_groups:
-                        assessment_group = assessment_groups[0].get('name') if isinstance(assessment_groups[0], dict) else assessment_groups[0].name
-                    else:
-                        # Create a default Assessment Group if none exists
-                        try:
-                            ag_doc = frappe.new_doc("Assessment Group")
-                            ag_doc.assessment_group_name = f"Default Assessment Group"
-                            ag_doc.insert(ignore_permissions=True)
-                            frappe.db.commit()
-                            assessment_group = ag_doc.name
-                            print(f"  ✓ Created Assessment Group: {assessment_group}")
-                        except Exception as e:
-                            print(f"  ✗ Error creating Assessment Group: {str(e)}")
-                            # Try to use a default name
-                            assessment_group = "Default"
-                    
-                    # Get grading scale from course or create default
-                    grading_scale = getattr(course_doc, 'default_grading_scale', None)
-                    if not grading_scale:
-                        # Try to find any grading scale
-                        grading_scales = frappe.get_all("Grading Scale", fields=["name"], limit=1)
-                        if grading_scales:
-                            grading_scale = grading_scales[0].get('name') if isinstance(grading_scales[0], dict) else grading_scales[0].name
-                        else:
-                            grading_scale = None  # Will try to create without it first
-                    
-                    # Create or get Assessment Criteria - use "Written Assessment"
-                    assessment_criteria_name = None
-                    criteria_name = "Written Assessment"
-                    criteria_list = frappe.get_all(
-                        "Assessment Criteria",
-                        filters={"assessment_criteria": criteria_name},
-                        fields=["name"],
-                        limit=1
-                    )
-                    if criteria_list:
-                        assessment_criteria_name = criteria_list[0].get('name') if isinstance(criteria_list[0], dict) else criteria_list[0].name
-                        print(f"  ✓ Found Assessment Criteria: {assessment_criteria_name}")
-                    else:
-                        # Create Assessment Criteria with name "Written Assessment"
-                        try:
-                            criteria_doc = frappe.new_doc("Assessment Criteria")
-                            criteria_doc.assessment_criteria = criteria_name
-                            criteria_doc.insert(ignore_permissions=True)
-                            frappe.db.commit()
-                            assessment_criteria_name = criteria_doc.name
-                            print(f"  ✓ Created Assessment Criteria: {assessment_criteria_name} ({criteria_name})")
-                        except Exception as e:
-                            print(f"  ✗ Error creating Assessment Criteria: {str(e)}")
-                            # Use criteria name directly
-                            assessment_criteria_name = criteria_name
-                    
-                    # Create Assessment Plan
-                    plan_doc = frappe.new_doc("Assessment Plan")
-                    plan_doc.student_group = student_group
-                    plan_doc.course = student_group_doc.course
-                    plan_doc.assessment_name = f"Quiz Assessment - {quiz_name}"
-                    plan_doc.assessment_group = assessment_group
-                    plan_doc.schedule_date = today()
-                    plan_doc.from_time = "09:00:00"  # Default time
-                    plan_doc.to_time = "17:00:00"    # Default time
-                    plan_doc.maximum_assessment_score = score_out_of
-                    
-                    if grading_scale:
-                        plan_doc.grading_scale = grading_scale
-                    
-                    # Add assessment criteria to the plan
-                    if assessment_criteria_name:
-                        plan_doc.append("assessment_criteria", {
-                            "assessment_criteria": assessment_criteria_name,
-                            "maximum_score": score_out_of
-                        })
-                    
-                    # Set program and academic year from student group if available
-                    if hasattr(student_group_doc, 'program') and student_group_doc.program:
-                        plan_doc.program = student_group_doc.program
-                    if hasattr(student_group_doc, 'academic_year') and student_group_doc.academic_year:
-                        plan_doc.academic_year = student_group_doc.academic_year
-                    if hasattr(student_group_doc, 'academic_term') and student_group_doc.academic_term:
-                        plan_doc.academic_term = student_group_doc.academic_term
-                    
-                    plan_doc.insert(ignore_permissions=True)
-                    plan_doc.submit()
-                    frappe.db.commit()
-                    assessment_plan = plan_doc.name
-                    print(f"  ✓ Created Assessment Plan: {assessment_plan}")
-                    
-                except Exception as e:
-                    error_msg = f"Error creating Assessment Plan: {str(e)}"
-                    print(f"  ✗ {error_msg}")
-                    frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Quiz Submission")
-                    assessment_plan = None
+        assessment_plan = _resolve_assessment_plan_for_quiz_submission(
+            student_group_doc, student_group, quiz_name, score_out_of, student
+        )
+        if assessment_plan:
+            print(f"[ASSESSMENT PLAN] Using: {assessment_plan}")
         else:
-            print(f"[ASSESSMENT PLAN] Skipped - No course found in student group")
+            print(f"[ASSESSMENT PLAN] No assessment plan available for this submission")
         
         # Create Assessment Result if assessment plan exists
         assessment_result_id = None
         assessment_result_error = None
         if assessment_plan:
             try:
-                print(f"\n[ASSESSMENT RESULT] Creating Assessment Result...")
-                assessment_result = frappe.new_doc("Assessment Result")
-                assessment_result.assessment_plan = assessment_plan
-                assessment_result.student = student
-                # Keep explicit student group context to satisfy validations/custom logic.
-                if hasattr(assessment_result, "student_group"):
-                    assessment_result.student_group = student_group
-                assessment_result.total_score = raw_score
-                
-                # Assessment Result requires details table with Assessment Result Detail
-                # Get criteria from the Assessment Plan's assessment_criteria table
-                plan_doc = frappe.get_doc("Assessment Plan", assessment_plan)
-                
-                if hasattr(plan_doc, 'assessment_criteria') and plan_doc.assessment_criteria:
-                    # Use the criteria from the plan - look for "Written Assessment"
-                    written_assessment_found = False
-                    for plan_criteria in plan_doc.assessment_criteria:
-                        criteria_name = plan_criteria.assessment_criteria
-                        criteria_max_score = plan_criteria.maximum_score
-                        
-                        # Prefer "Written Assessment" criteria
-                        if "Written Assessment" in criteria_name:
-                            assessment_result.append("details", {
-                                "assessment_criteria": criteria_name,
-                                "maximum_score": criteria_max_score,
-                                "score": raw_score if criteria_max_score >= raw_score else raw_score
-                            })
-                            print(f"    Added detail: {criteria_name} (max: {criteria_max_score}, score: {raw_score})")
-                            written_assessment_found = True
-                            break
-                    
-                    # If "Written Assessment" not found, use the first criteria
-                    if not written_assessment_found and plan_doc.assessment_criteria:
-                        first_criteria = plan_doc.assessment_criteria[0]
-                        assessment_result.append("details", {
-                            "assessment_criteria": first_criteria.assessment_criteria,
-                            "maximum_score": first_criteria.maximum_score,
-                            "score": raw_score
-                        })
-                        print(f"    Added first criteria: {first_criteria.assessment_criteria}")
+                existing_result = frappe.db.get_value(
+                    "Assessment Result",
+                    {
+                        "student": student,
+                        "assessment_plan": assessment_plan,
+                        "docstatus": ["<", 2],
+                    },
+                    "name",
+                )
+                if existing_result:
+                    assessment_result_id = existing_result
+                    print(f"\n[ASSESSMENT RESULT] Reusing existing: {assessment_result_id}")
                 else:
-                    print(f"  ✗ WARNING: Assessment Plan has no criteria. Cannot create Assessment Result without details.")
-                    assessment_result = None
-                
-                if assessment_result:
-                    # Set custom_company field (required)
-                    company = None
-                    try:
-                        # Try to get company from various sources
-                        # First try user default
-                        company = frappe.defaults.get_user_default("Company")
-                        if not company:
-                            # Try global default
-                            company = frappe.defaults.get_global_default("company")
-                        if not company:
-                            # Try system settings
-                            company = frappe.db.get_single_value("System Settings", "default_company")
-                        if not company:
-                            # Get first available company
-                            companies = frappe.get_all("Company", fields=["name"], limit=1)
-                            if companies:
-                                company = companies[0].get('name') if isinstance(companies[0], dict) else companies[0].name
-                        
-                        if company:
-                            assessment_result.custom_company = company
-                            print(f"    Set company: {company}")
-                        else:
-                            print(f"    ✗ WARNING: No company found. Assessment Result may fail validation.")
-                    except Exception as e:
-                        print(f"    ✗ WARNING: Error getting company: {str(e)}")
-                    
-                    assessment_result.insert(ignore_permissions=True)
-                    frappe.db.commit()
-                    assessment_result_id = assessment_result.name
-                    print(f"  ✓ Assessment Result created: {assessment_result_id}")
+                    print(f"\n[ASSESSMENT RESULT] Creating Assessment Result...")
+                    assessment_result = frappe.new_doc("Assessment Result")
+                    assessment_result.assessment_plan = assessment_plan
+                    assessment_result.student = student
+                    if hasattr(assessment_result, "student_group"):
+                        assessment_result.student_group = student_group
+                    assessment_result.total_score = raw_score
 
-                    # Submit by default for public quiz flow
-                    try:
-                        assessment_result.reload()
-                        assessment_result.submit()
-                        frappe.db.commit()
-                        print(f"  ✓ Assessment Result submitted: {assessment_result_id}")
-                    except Exception as submit_error:
-                        error_msg = f"Failed to submit Assessment Result {assessment_result_id}: {str(submit_error)}"
-                        print(f"  ✗ {error_msg}")
-                        frappe.log_error(f"{error_msg}\nTraceback: {frappe.get_traceback()}", "Quiz Submission")
-                        assessment_result_error = error_msg
+                    plan_doc = frappe.get_doc("Assessment Plan", assessment_plan)
+
+                    if hasattr(plan_doc, "assessment_criteria") and plan_doc.assessment_criteria:
+                        written_assessment_found = False
+                        for plan_criteria in plan_doc.assessment_criteria:
+                            criteria_name = plan_criteria.assessment_criteria
+                            criteria_max_score = plan_criteria.maximum_score
+
+                            if "Written Assessment" in criteria_name:
+                                assessment_result.append(
+                                    "details",
+                                    {
+                                        "assessment_criteria": criteria_name,
+                                        "maximum_score": criteria_max_score,
+                                        "score": raw_score,
+                                    },
+                                )
+                                print(
+                                    f"    Added detail: {criteria_name} (max: {criteria_max_score}, score: {raw_score})"
+                                )
+                                written_assessment_found = True
+                                break
+
+                        if not written_assessment_found and plan_doc.assessment_criteria:
+                            first_criteria = plan_doc.assessment_criteria[0]
+                            assessment_result.append(
+                                "details",
+                                {
+                                    "assessment_criteria": first_criteria.assessment_criteria,
+                                    "maximum_score": first_criteria.maximum_score,
+                                    "score": raw_score,
+                                },
+                            )
+                            print(f"    Added first criteria: {first_criteria.assessment_criteria}")
+                    else:
+                        print(
+                            "  ✗ WARNING: Assessment Plan has no criteria. Cannot create Assessment Result without details."
+                        )
+                        assessment_result = None
+
+                    if assessment_result:
+                        company = None
+                        try:
+                            company = frappe.defaults.get_user_default("Company")
+                            if not company:
+                                company = frappe.defaults.get_global_default("company")
+                            if not company:
+                                company = frappe.db.get_single_value("System Settings", "default_company")
+                            if not company:
+                                companies = frappe.get_all("Company", fields=["name"], limit=1)
+                                if companies:
+                                    company = (
+                                        companies[0].get("name")
+                                        if isinstance(companies[0], dict)
+                                        else companies[0].name
+                                    )
+
+                            if company:
+                                assessment_result.custom_company = company
+                                print(f"    Set company: {company}")
+                            else:
+                                print("    ✗ WARNING: No company found. Assessment Result may fail validation.")
+                        except Exception as e:
+                            print(f"    ✗ WARNING: Error getting company: {str(e)}")
+
+                        _insert_doc_as_admin(assessment_result)
+                        assessment_result_id = assessment_result.name
+                        print(f"  ✓ Assessment Result created: {assessment_result_id}")
+
+                        try:
+                            _submit_doc_as_admin(assessment_result)
+                            print(f"  ✓ Assessment Result submitted: {assessment_result_id}")
+                        except Exception as submit_error:
+                            error_msg = (
+                                f"Failed to submit Assessment Result {assessment_result_id}: {str(submit_error)}"
+                            )
+                            print(f"  ✗ {error_msg}")
+                            frappe.log_error(
+                                f"{error_msg}\nTraceback: {frappe.get_traceback()}",
+                                "Quiz Submission",
+                            )
+                            assessment_result_error = error_msg
             except Exception as e:
                 error_msg = f"Error creating Assessment Result: {str(e)}"
                 print(f"  ✗ {error_msg}")
@@ -1963,17 +1906,10 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
         activity_id = None
         activity_error = None
         try:
-            print(f"\n[QUIZ ACTIVITY] Creating/Updating Quiz Activity...")
+            print(f"\n[QUIZ ACTIVITY] Creating Quiz Activity...")
 
-            quiz_activity = None
-            existing_activity_name = _get_quiz_activity_for_attempt(attempt_id)
-            if existing_activity_name and frappe.db.exists("Quiz Activity", existing_activity_name):
-                existing_activity = frappe.get_doc("Quiz Activity", existing_activity_name)
-                if existing_activity.docstatus == 0:
-                    quiz_activity = existing_activity
-
-            if not quiz_activity:
-                quiz_activity = frappe.new_doc("Quiz Activity")
+            _delete_draft_quiz_activity_for_attempt(attempt_id)
+            quiz_activity = frappe.new_doc("Quiz Activity")
 
             if enrollment:
                 quiz_activity.enrollment = enrollment
@@ -2026,17 +1962,11 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
                     "quiz_result": "Correct" if is_correct else "Wrong"
                 })
 
-            quiz_activity = _save_quiz_activity_with_replaceable_results(
+            quiz_activity = _insert_and_submit_quiz_activity(
                 quiz_activity,
                 ignore_mandatory=not bool(enrollment),
             )
 
-            if enrollment and quiz_activity.docstatus == 0:
-                quiz_activity.reload()
-                quiz_activity._doc_before_save = None
-                quiz_activity.submit()
-
-            frappe.db.commit()
             activity_id = quiz_activity.name
             _set_quiz_activity_for_attempt(attempt_id, activity_id)
             print(f"  ✓ Quiz Activity created: {activity_id}")
@@ -2060,22 +1990,29 @@ def submit_quiz_from_mcqs(quiz_name, student, student_group, answers, attempt_id
                         f"Traceback: {frappe.get_traceback()}",
                         "Quiz Submission",
                     )
+
+                try:
+                    _update_assessment_result_from_quiz_activity(
+                        assessment_result_id, quiz_activity, raw_score, score_out_of
+                    )
+                    ar_doc = frappe.get_doc("Assessment Result", assessment_result_id)
+                    if ar_doc.docstatus == 0:
+                        _submit_doc_as_admin(ar_doc)
+                except Exception as sync_err:
+                    frappe.log_error(
+                        f"Failed to sync Assessment Result {assessment_result_id} from Quiz Activity {activity_id}: {str(sync_err)}\n"
+                        f"Traceback: {frappe.get_traceback()}",
+                        "Quiz Submission",
+                    )
             
             # Add error message to Quiz Activity comments if Assessment Result creation failed
             if assessment_result_error:
-                try:
-                    from frappe.desk.doctype.comment.comment import add_comment
-                    comment_text = f"⚠️ Assessment Result Creation Failed:\n{assessment_result_error}\n\nPlease use the 'Create Assessment Result' button to create it manually."
-                    add_comment(
-                        reference_doctype="Quiz Activity",
-                        reference_name=activity_id,
-                        content=comment_text,
-                        comment_email=frappe.session.user or "system",
-                        comment_by=frappe.session.user or "system"
-                    )
-                    print(f"  ✓ Error message added to Quiz Activity comments")
-                except Exception as comment_error:
-                    print(f"  ✗ Could not add comment: {str(comment_error)}")
+                comment_text = (
+                    f"⚠️ Assessment Result Creation Failed:\n{assessment_result_error}\n\n"
+                    "Please use the 'Create Assessment Result' button to create it manually."
+                )
+                _add_quiz_activity_comment(activity_id, comment_text)
+                print("  ✓ Error message added to Quiz Activity comments")
             
         except Exception as e:
             error_msg = f"Error creating Quiz Activity: {str(e)}"
@@ -2251,20 +2188,25 @@ def _times_overlap(start1, end1, start2, end2):
 
 
 def _find_reusable_assessment_plan(student_group, course, quiz_name=None):
-    if not student_group or not course:
+    if not student_group:
         return None
 
     candidate_filters = []
-    if quiz_name:
+    if quiz_name and course:
         candidate_filters.append({
             "student_group": student_group,
             "course": course,
             "assessment_name": f"Quiz Assessment - {quiz_name}",
             "docstatus": ["<", 2],
         })
+    if course:
+        candidate_filters.append({
+            "student_group": student_group,
+            "course": course,
+            "docstatus": ["<", 2],
+        })
     candidate_filters.append({
         "student_group": student_group,
-        "course": course,
         "docstatus": ["<", 2],
     })
 
@@ -2280,6 +2222,61 @@ def _find_reusable_assessment_plan(student_group, course, quiz_name=None):
             return plans[0].name
 
     return None
+
+
+def _resolve_assessment_plan_for_quiz_submission(student_group_doc, student_group, quiz_name, score_out_of, student):
+    """Find or create an Assessment Plan for MCQS public quiz submission."""
+    course = getattr(student_group_doc, "course", None)
+    assessment_plan = _find_reusable_assessment_plan(student_group, course, quiz_name)
+    if assessment_plan:
+        return assessment_plan
+
+    if not course:
+        return None
+
+    try:
+        return _auto_create_assessment_plan(
+            student_group_doc,
+            student_group,
+            quiz_name,
+            score_out_of,
+            quiz_activity_name=None,
+            student=student,
+        )
+    except Exception as e:
+        frappe.log_error(
+            f"Error creating Assessment Plan for quiz submission: {str(e)}\nTraceback: {frappe.get_traceback()}",
+            "Quiz Submission",
+        )
+        return None
+
+
+def _delete_draft_quiz_activity_for_attempt(attempt_id):
+    """Remove draft progress doc so final submit can insert once (Education set_only_once on Result)."""
+    if not attempt_id:
+        return
+    existing_activity_name = _get_quiz_activity_for_attempt(attempt_id)
+    if not existing_activity_name or not frappe.db.exists("Quiz Activity", existing_activity_name):
+        return
+    existing = frappe.get_doc("Quiz Activity", existing_activity_name)
+    if existing.docstatus != 0:
+        return
+    with _elevate_to_admin():
+        frappe.delete_doc("Quiz Activity", existing_activity_name, ignore_permissions=True, force=True)
+        frappe.db.commit()
+
+
+def _insert_and_submit_quiz_activity(quiz_activity, ignore_mandatory=False):
+    """Persist final Quiz Activity (Education: insert only, not submittable).
+
+    Quiz Activity has set_only_once on Result/score fields; a second save/submit
+    raises CannotChangeConstantError. Match core Education flow: one insert.
+    """
+    quiz_activity.flags.skip_assessment_auto_create = True
+    with _elevate_to_admin():
+        quiz_activity.insert(ignore_permissions=True, ignore_mandatory=ignore_mandatory)
+        frappe.db.commit()
+    return quiz_activity
 
 
 def _get_time_conflicts(doctype, student_group, schedule_date):
@@ -2324,6 +2321,8 @@ def _find_available_assessment_slot(student_group, start_date=None, max_days=10)
 
 
 def _update_quiz_activity_plan_link(quiz_activity_name, assessment_plan):
+    if not quiz_activity_name:
+        return
     try:
         quiz_activity_doc = frappe.get_doc("Quiz Activity", quiz_activity_name)
         if hasattr(quiz_activity_doc, "custom_assesment_plan"):
@@ -2407,14 +2406,12 @@ def _auto_create_assessment_plan(student_group_doc, student_group, quiz_name, to
     if getattr(student_group_doc, "academic_term", None):
         plan_doc.academic_term = student_group_doc.academic_term
 
-    plan_doc.insert(ignore_permissions=True)
-    frappe.db.commit()
+    _insert_doc_as_admin(plan_doc)
     assessment_plan = plan_doc.name
     frappe.logger().info(f"[ASSESSMENT PLAN] Auto-created Assessment Plan: {assessment_plan}")
 
     try:
-        plan_doc.submit()
-        frappe.db.commit()
+        _submit_doc_as_admin(plan_doc)
         frappe.logger().info(f"[ASSESSMENT PLAN] Auto-created plan submitted: {assessment_plan}")
     except frappe.ValidationError as submit_ve:
         frappe.logger().warning(
@@ -2424,7 +2421,7 @@ def _auto_create_assessment_plan(student_group_doc, student_group, quiz_name, to
     _update_quiz_activity_plan_link(quiz_activity_name, assessment_plan)
 
     try:
-        from frappe.desk.doctype.comment.comment import add_comment
+        from frappe.desk.form.utils import add_comment
         add_comment(
             reference_doctype="Quiz Activity",
             reference_name=quiz_activity_name,
@@ -2536,7 +2533,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
             
             # Add error to Quiz Activity comments
             try:
-                from frappe.desk.doctype.comment.comment import add_comment
+                from frappe.desk.form.utils import add_comment
                 comment_text = f"❌ {error_msg}"
                 add_comment(
                     reference_doctype="Quiz Activity",
@@ -2558,7 +2555,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
             
             # Add error to Quiz Activity comments
             try:
-                from frappe.desk.doctype.comment.comment import add_comment
+                from frappe.desk.form.utils import add_comment
                 comment_text = f"❌ {error_msg}"
                 add_comment(
                     reference_doctype="Quiz Activity",
@@ -2616,7 +2613,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
             
             # Add error to Quiz Activity comments
             try:
-                from frappe.desk.doctype.comment.comment import add_comment
+                from frappe.desk.form.utils import add_comment
                 comment_text = f"❌ {error_msg}"
                 add_comment(
                     reference_doctype="Quiz Activity",
@@ -2688,7 +2685,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
                     )
 
                     try:
-                        from frappe.desk.doctype.comment.comment import add_comment
+                        from frappe.desk.form.utils import add_comment
                         add_comment(
                             reference_doctype="Quiz Activity",
                             reference_name=quiz_activity_name,
@@ -2713,7 +2710,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
             
             # Add error to Quiz Activity comments
             try:
-                from frappe.desk.doctype.comment.comment import add_comment
+                from frappe.desk.form.utils import add_comment
                 comment_text = f"❌ {error_msg}"
                 add_comment(
                     reference_doctype="Quiz Activity",
@@ -2768,9 +2765,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
                 existing_result_doc = frappe.get_doc("Assessment Result", existing_result)
                 if existing_result_doc.docstatus == 0:
                     frappe.logger().info(f"[ASSESSMENT RESULT] Existing result is draft. Submitting: {existing_result}")
-                    existing_result_doc.flags.ignore_permissions = True
-                    existing_result_doc.submit()
-                    frappe.db.commit()
+                    _submit_doc_as_admin(existing_result_doc)
                     frappe.logger().info(f"[ASSESSMENT RESULT] ✓ Existing draft submitted: {existing_result}")
             except Exception as submit_existing_err:
                 error_msg = f"Failed to submit existing Assessment Result {existing_result}: {str(submit_existing_err)}"
@@ -2888,7 +2883,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
             
             # Add error to Quiz Activity comments
             try:
-                from frappe.desk.doctype.comment.comment import add_comment
+                from frappe.desk.form.utils import add_comment
                 comment_text = f"❌ {error_msg}\n\nPlease add Assessment Criteria to the Assessment Plan '{assessment_plan}'."
                 add_comment(
                     reference_doctype="Quiz Activity",
@@ -2912,18 +2907,13 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         
         # Insert Assessment Result
         frappe.logger().info(f"[ASSESSMENT RESULT] Inserting Assessment Result...")
-        assessment_result.insert(ignore_permissions=True)
-        frappe.db.commit()
+        _insert_doc_as_admin(assessment_result)
         frappe.logger().info(f"[ASSESSMENT RESULT] ✓ Assessment Result created: {assessment_result.name}")
         
         # Submit Assessment Result
         try:
             frappe.logger().info(f"[ASSESSMENT RESULT] Submitting Assessment Result: {assessment_result.name}...")
-            # Reload the document to ensure we have the latest version
-            assessment_result = frappe.get_doc("Assessment Result", assessment_result.name)
-            assessment_result.flags.ignore_permissions = True
-            assessment_result.submit()
-            frappe.db.commit()
+            _submit_doc_as_admin(assessment_result)
             frappe.logger().info(f"[ASSESSMENT RESULT] ✓ Assessment Result submitted successfully: {assessment_result.name}")
         except Exception as submit_error:
             # Log error but don't fail - Assessment Result is still created in draft
@@ -2933,7 +2923,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
             
             # Add warning comment to Quiz Activity
             try:
-                from frappe.desk.doctype.comment.comment import add_comment
+                from frappe.desk.form.utils import add_comment
                 comment_text = f"⚠️ Assessment Result created but could not be submitted automatically:\n\n" \
                               f"Assessment Result: {assessment_result.name} (Draft)\n" \
                               f"Error: {str(submit_error)}\n\n" \
@@ -3013,7 +3003,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         
         # Add success comment to Quiz Activity with clear details
         try:
-            from frappe.desk.doctype.comment.comment import add_comment
+            from frappe.desk.form.utils import add_comment
             # Check if Assessment Result is submitted
             assessment_result_doc = frappe.get_doc("Assessment Result", assessment_result.name)
             status_text = "Submitted" if assessment_result_doc.docstatus == 1 else "Draft"
@@ -3047,7 +3037,7 @@ def create_assessment_result_from_quiz_activity(quiz_activity_name):
         
         # Add error comment to Quiz Activity - ALWAYS add error to comments
         try:
-            from frappe.desk.doctype.comment.comment import add_comment
+            from frappe.desk.form.utils import add_comment
             comment_text = f"❌ Failed to create Assessment Result:\n\n{error_msg}\n\nPlease check the error logs for more details or contact support."
             add_comment(
                 reference_doctype="Quiz Activity",

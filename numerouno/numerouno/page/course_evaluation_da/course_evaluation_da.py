@@ -2,6 +2,66 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, today, add_days, date_diff
 import json
+from collections import defaultdict
+
+RATING_FIELDS = [
+	"joining_instructions_clear",
+	"training_room_environment",
+	"administration_support",
+	"objectives_clearly_defined",
+	"content_organization",
+	"materials_aligned",
+	"course_pace",
+	"presentation_skills",
+	"teaching_effectiveness",
+	"knowledge_accessibility",
+	"assignments_exercises",
+	"handouts_tools_equipment",
+	"technology_effectiveness",
+]
+
+LEGACY_RATING_SCORES = {"Excellent": 4, "Good": 3, "Average": 2, "Poor": 1}
+
+
+def rating_to_score_4(value):
+	if value is None or value == "":
+		return None
+	if isinstance(value, str):
+		if value in LEGACY_RATING_SCORES:
+			return float(LEGACY_RATING_SCORES[value])
+		value = flt(value)
+	else:
+		value = flt(value)
+	if value <= 0:
+		return None
+	if value <= 1:
+		return flt(value * 4, 4)
+	if value <= 5:
+		return flt(value * 4 / 5, 4)
+	return value
+
+
+def rating_performance_bucket(value):
+	score = rating_to_score_4(value)
+	if score is None:
+		return None
+	if score >= 3.5:
+		return "excellent"
+	if score >= 2.5:
+		return "good"
+	if score >= 1.5:
+		return "average"
+	return "poor"
+
+
+def document_average_rating_4(doc, fields=None):
+	fields = fields or RATING_FIELDS
+	scores = [rating_to_score_4(doc.get(field)) for field in fields]
+	scores = [s for s in scores if s is not None]
+	if not scores:
+		return None
+	return flt(sum(scores) / len(scores), 2)
+
 
 @frappe.whitelist()
 def get_course_evaluation_kpis():
@@ -37,7 +97,6 @@ def get_course_evaluation_kpis():
 		"handouts_tools_equipment", "technology_effectiveness"
 	]
 	
-	rating_scores = {"Excellent": 4, "Good": 3, "Average": 2, "Poor": 1}
 	total_ratings = 0
 	total_score = 0
 	excellent_count = 0
@@ -46,20 +105,21 @@ def get_course_evaluation_kpis():
 	poor_count = 0
 	
 	for eval in evaluations:
-		for field in rating_fields:
-			if eval.get(field):
-				rating = eval.get(field)
-				if rating in rating_scores:
-					total_score += rating_scores[rating]
-					total_ratings += 1
-					if rating == "Excellent":
-						excellent_count += 1
-					elif rating == "Good":
-						good_count += 1
-					elif rating == "Average":
-						average_count += 1
-					elif rating == "Poor":
-						poor_count += 1
+		for field in RATING_FIELDS:
+			score = rating_to_score_4(eval.get(field))
+			if score is None:
+				continue
+			total_score += score
+			total_ratings += 1
+			bucket = rating_performance_bucket(eval.get(field))
+			if bucket == "excellent":
+				excellent_count += 1
+			elif bucket == "good":
+				good_count += 1
+			elif bucket == "average":
+				average_count += 1
+			elif bucket == "poor":
+				poor_count += 1
 	
 	# Calculate averages
 	average_rating = flt(total_score / total_ratings, 2) if total_ratings > 0 else 0
@@ -152,18 +212,19 @@ def get_detailed_metrics():
 	total_ratings = 0
 	
 	for eval in evaluations:
-		for field in rating_fields:
-			if eval.get(field):
-				rating = eval.get(field)
-				total_ratings += 1
-				if rating == "Excellent":
-					excellent_count += 1
-				elif rating == "Good":
-					good_count += 1
-				elif rating == "Average":
-					average_count += 1
-				elif rating == "Poor":
-					poor_count += 1
+		for field in RATING_FIELDS:
+			if rating_to_score_4(eval.get(field)) is None:
+				continue
+			total_ratings += 1
+			bucket = rating_performance_bucket(eval.get(field))
+			if bucket == "excellent":
+				excellent_count += 1
+			elif bucket == "good":
+				good_count += 1
+			elif bucket == "average":
+				average_count += 1
+			elif bucket == "poor":
+				poor_count += 1
 	
 	excellent_percentage = flt((excellent_count / total_ratings * 100), 2) if total_ratings > 0 else 0
 	good_percentage = flt((good_count / total_ratings * 100), 2) if total_ratings > 0 else 0
@@ -222,15 +283,15 @@ def get_rating_distribution():
 	poor = 0
 	
 	for eval in evaluations:
-		for field in rating_fields:
-			rating = eval.get(field)
-			if rating == "Excellent":
+		for field in RATING_FIELDS:
+			bucket = rating_performance_bucket(eval.get(field))
+			if bucket == "excellent":
 				excellent += 1
-			elif rating == "Good":
+			elif bucket == "good":
 				good += 1
-			elif rating == "Average":
+			elif bucket == "average":
 				average += 1
-			elif rating == "Poor":
+			elif bucket == "poor":
 				poor += 1
 	
 	return {
@@ -275,27 +336,23 @@ def get_evaluations_over_time():
 @frappe.whitelist()
 def get_course_performance():
 	"""Get top performing courses"""
-	courses = frappe.db.sql("""
-		SELECT 
-			ce.course_name,
-			COUNT(*) as evaluation_count,
-			AVG(CASE 
-				WHEN ce.joining_instructions_clear = 'Excellent' THEN 4
-				WHEN ce.joining_instructions_clear = 'Good' THEN 3
-				WHEN ce.joining_instructions_clear = 'Average' THEN 2
-				WHEN ce.joining_instructions_clear = 'Poor' THEN 1
-				ELSE 0
-			END) as avg_rating
-		FROM `tabCourse Evaluation` ce
-		WHERE ce.docstatus = 1 
-			AND ce.course_name IS NOT NULL
-		GROUP BY ce.course_name
-		ORDER BY avg_rating DESC, evaluation_count DESC
-		LIMIT 10
-	""", as_dict=True)
-	
-	labels = [c.course_name or "Unknown" for c in courses]
-	values = [flt(c.avg_rating, 2) for c in courses]
+	evaluations = frappe.get_all(
+		"Course Evaluation",
+		filters={"docstatus": 1, "course_name": ["is", "set"]},
+		fields=["course_name", *RATING_FIELDS],
+	)
+	by_course = defaultdict(list)
+	for row in evaluations:
+		avg = document_average_rating_4(row)
+		if avg is not None:
+			by_course[row.course_name].append(avg)
+	courses = sorted(
+		[(name, flt(sum(scores) / len(scores), 2)) for name, scores in by_course.items()],
+		key=lambda item: item[1],
+		reverse=True,
+	)[:10]
+	labels = [c[0] or "Unknown" for c in courses]
+	values = [c[1] for c in courses]
 	
 	return {
 		"labels": labels,
@@ -309,40 +366,32 @@ def get_course_performance():
 @frappe.whitelist()
 def get_instructor_performance():
 	"""Get instructor performance ratings"""
-	instructors = frappe.db.sql("""
-		SELECT 
-			ce.instructor_name,
-			COUNT(*) as evaluation_count,
-			AVG(CASE 
-				WHEN ce.presentation_skills = 'Excellent' THEN 4
-				WHEN ce.presentation_skills = 'Good' THEN 3
-				WHEN ce.presentation_skills = 'Average' THEN 2
-				WHEN ce.presentation_skills = 'Poor' THEN 1
-				ELSE 0
-			END) as avg_presentation,
-			AVG(CASE 
-				WHEN ce.teaching_effectiveness = 'Excellent' THEN 4
-				WHEN ce.teaching_effectiveness = 'Good' THEN 3
-				WHEN ce.teaching_effectiveness = 'Average' THEN 2
-				WHEN ce.teaching_effectiveness = 'Poor' THEN 1
-				ELSE 0
-			END) as avg_teaching
-		FROM `tabCourse Evaluation` ce
-		WHERE ce.docstatus = 1 
-			AND ce.instructor_name IS NOT NULL
-		GROUP BY ce.instructor_name
-	""", as_dict=True)
-	
-	# Sort by average of both scores in Python
-	for inst in instructors:
-		inst['avg_combined'] = flt((flt(inst.avg_presentation) + flt(inst.avg_teaching)) / 2, 2)
-	
-	instructors.sort(key=lambda x: x.get('avg_combined', 0), reverse=True)
-	instructors = instructors[:10]  # Limit to top 10
-	
-	labels = [i.instructor_name or "Unknown" for i in instructors]
-	presentation_scores = [flt(i.avg_presentation, 2) for i in instructors]
-	teaching_scores = [flt(i.avg_teaching, 2) for i in instructors]
+	evaluations = frappe.get_all(
+		"Course Evaluation",
+		filters={"docstatus": 1, "instructor_name": ["is", "set"]},
+		fields=["instructor_name", "presentation_skills", "teaching_effectiveness"],
+	)
+	stats = defaultdict(lambda: {"presentation": [], "teaching": []})
+	for row in evaluations:
+		name = row.instructor_name
+		pres = rating_to_score_4(row.get("presentation_skills"))
+		teach = rating_to_score_4(row.get("teaching_effectiveness"))
+		if pres is not None:
+			stats[name]["presentation"].append(pres)
+		if teach is not None:
+			stats[name]["teaching"].append(teach)
+	instructors = []
+	for name, data in stats.items():
+		pres = data["presentation"]
+		teach = data["teaching"]
+		avg_p = flt(sum(pres) / len(pres), 2) if pres else 0
+		avg_t = flt(sum(teach) / len(teach), 2) if teach else 0
+		instructors.append({"name": name, "avg_p": avg_p, "avg_t": avg_t, "avg_c": flt((avg_p + avg_t) / 2, 2)})
+	instructors.sort(key=lambda x: x["avg_c"], reverse=True)
+	instructors = instructors[:10]
+	labels = [i["name"] or "Unknown" for i in instructors]
+	presentation_scores = [i["avg_p"] for i in instructors]
+	teaching_scores = [i["avg_t"] for i in instructors]
 	
 	return {
 		"labels": labels,
@@ -417,7 +466,6 @@ def get_category_ratings():
 		]
 	)
 	
-	rating_scores = {"Excellent": 4, "Good": 3, "Average": 2, "Poor": 1}
 	category_ratings = {}
 	
 	for category, fields in categories.items():
@@ -425,15 +473,11 @@ def get_category_ratings():
 		total_count = 0
 		for eval in evaluations:
 			for field in fields:
-				rating = eval.get(field)
-				if rating and rating in rating_scores:
-					total_score += rating_scores[rating]
+				score = rating_to_score_4(eval.get(field))
+				if score is not None:
+					total_score += score
 					total_count += 1
-		
-		if total_count > 0:
-			category_ratings[category] = flt(total_score / total_count, 2)
-		else:
-			category_ratings[category] = 0
+		category_ratings[category] = flt(total_score / total_count, 2) if total_count > 0 else 0
 	
 	labels = list(category_ratings.keys())
 	values = list(category_ratings.values())
@@ -620,23 +664,23 @@ def get_filtered_kpis(filters):
 		"handouts_tools_equipment", "technology_effectiveness"
 	]
 	
-	rating_scores = {"Excellent": 4, "Good": 3, "Average": 2, "Poor": 1}
 	total_ratings = 0
 	total_score = 0
 	excellent_count = 0
 	good_count = 0
 	
 	for eval in evaluations:
-		for field in rating_fields:
-			if eval.get(field):
-				rating = eval.get(field)
-				if rating in rating_scores:
-					total_score += rating_scores[rating]
-					total_ratings += 1
-					if rating == "Excellent":
-						excellent_count += 1
-					elif rating == "Good":
-						good_count += 1
+		for field in RATING_FIELDS:
+			score = rating_to_score_4(eval.get(field))
+			if score is None:
+				continue
+			total_score += score
+			total_ratings += 1
+			bucket = rating_performance_bucket(eval.get(field))
+			if bucket == "excellent":
+				excellent_count += 1
+			elif bucket == "good":
+				good_count += 1
 	
 	# Calculate averages
 	average_rating = flt(total_score / total_ratings, 2) if total_ratings > 0 else 0

@@ -213,6 +213,10 @@ doc_events = {
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_student_group_creation",
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_student_group_instructor_update"
 	},
+    "Course Evaluation": {
+        "after_insert": "numerouno.numerouno.doctype.course_evaluation.course_evaluation.auto_submit_course_evaluation_after_web_form",
+        "on_update": "numerouno.numerouno.doctype.course_evaluation.course_evaluation.auto_submit_course_evaluation_after_web_form",
+    },
     "Student": {
         "validate": "numerouno.numerouno.doctype.student.student.validate_student_contact_type",
         "on_update": [
