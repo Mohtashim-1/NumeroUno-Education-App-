@@ -17,6 +17,9 @@
 		"In stock": ["#dcf1e2", "#1e6b3a"],
 		"Below reorder": ["#fdf0cf", "#7a4f00"],
 		"Out of stock": ["#fde4e1", "#9a2419"],
+		Missing: ["#fde4e1", "#9a2419"],
+		Optional: ["#e6e9ee", "#4a5a70"],
+		"On file": ["#dcf1e2", "#1e6b3a"],
 	};
 
 	function csrf() {
@@ -106,16 +109,19 @@
 			const openPOs = ref([]);
 			const orders = ref([]);
 			const portal = ref({
-				name: "NUMEROUNO",
-				tagline: "SUPPLIER PORTAL",
+				name: "NumeroUNO",
+				company_name: "Numero Uno Training and Consulting LLC",
+				tagline: "Supplier Portal",
 				site_name: "numerouno",
+				logo: "/assets/numerouno/images/numero-logo.png",
 				url: "/supplier-invoice-portal",
+				registration_url: "/supplier-registration",
 			});
 			const vendor = ref({
-				display_name: "ACME Manufacturing",
-				contact_name: "Jessica Chen",
-				vendor_id: "V-004812",
-				ap_email: "ap@buyerco.com",
+				display_name: "",
+				contact_name: "",
+				vendor_id: "",
+				ap_email: "ap@nutc.cloud",
 			});
 			const requirePO = ref(true);
 			const done = ref(false);
@@ -124,9 +130,15 @@
 			const filter = ref("All");
 			const detail = ref(null);
 			const submitting = ref(false);
-			const demoMode = ref(true);
+			const authed = ref(false);
+			const authLoading = ref(true);
+			const loginBusy = ref(false);
+			const loginError = ref("");
+			const login = reactive({ email: "", password: "" });
+			const demoMode = ref(false);
 			const inventory = ref([]);
 			const complianceDocs = ref([]);
+			const complianceGate = ref({ allowed: false, blocking: [], message: "" });
 			const threads = ref([]);
 			const threadId = ref(1);
 			const messageDraft = ref("");
@@ -185,7 +197,13 @@
 			);
 
 			const attentionDocs = computed(() =>
-				complianceDocs.value.filter((d) => d.status === "Expiring soon" || d.status === "Overdue")
+				complianceDocs.value.filter(
+					(d) =>
+						d.status === "Expiring soon"
+						|| d.status === "Overdue"
+						|| d.status === "Missing"
+						|| d.status === "Under review"
+				)
 			);
 
 			const kpis = computed(() => [
@@ -266,6 +284,37 @@
 					};
 				})
 			);
+
+			const invoiceBlocked = computed(() => !complianceGate.value?.allowed);
+
+			const invoiceBlockReason = computed(() => {
+				if (!invoiceBlocked.value) return "";
+				return (
+					complianceGate.value?.message ||
+					"Trade License and ICV Certificate must be valid before you can submit invoices."
+				);
+			});
+
+			const refreshComplianceGate = () => {
+				const blocking = complianceDocs.value
+					.filter((d) => ["trade_license", "icv"].includes(d.id) && ["Missing", "Overdue"].includes(d.status))
+					.map((d) => ({
+						id: d.id,
+						name: d.name,
+						status: d.status,
+						valid_until: d.valid_until || "",
+						meta: d.meta || "",
+					}));
+				complianceGate.value = {
+					allowed: blocking.length === 0,
+					blocking,
+					message: blocking.length
+						? `Invoice submission is blocked until these documents are current: ${blocking
+								.map((b) => `${b.name} (${b.status})`)
+								.join(", ")}. Upload renewed files under Compliance.`
+						: "",
+				};
+			};
 
 			const complianceRows = computed(() =>
 				complianceDocs.value.map((d) => ({
@@ -444,6 +493,12 @@
 			};
 
 			const next = async () => {
+				refreshComplianceGate();
+				if (invoiceBlocked.value) {
+					alert(invoiceBlockReason.value);
+					go("compliance");
+					return;
+				}
 				if (!validate(step.value)) return;
 				if (step.value < 3) {
 					step.value += 1;
@@ -508,6 +563,12 @@
 			};
 
 			const invoicePo = (poId, amount) => {
+				refreshComplianceGate();
+				if (invoiceBlocked.value) {
+					alert(invoiceBlockReason.value);
+					go("compliance");
+					return;
+				}
 				Object.assign(f, EMPTY_FORM());
 				file.value = null;
 				dnFile.value = null;
@@ -548,26 +609,76 @@
 				}
 			};
 
+			const setDocValidUntil = (docId, value) => {
+				complianceDocs.value = complianceDocs.value.map((d) =>
+					d.id === docId ? { ...d, valid_until: value } : d
+				);
+			};
+
 			const triggerDocUpload = (docId) => {
+				const doc = complianceDocs.value.find((d) => d.id === docId);
+				if (doc?.requires_validity && !doc.valid_until) {
+					alert("Please enter the validity / expiry date before uploading.");
+					return;
+				}
 				docUploadTarget.value = docId;
 				docInput.value?.click();
 			};
 
-			const onDocFile = (e) => {
+			const onDocFile = async (e) => {
 				const fileObj = e.target.files?.[0];
 				e.target.value = "";
 				if (!fileObj || !docUploadTarget.value) return;
 				const id = docUploadTarget.value;
-				complianceDocs.value = complianceDocs.value.map((d) =>
-					d.id === id
-						? {
-								...d,
-								status: "Under review",
-								meta: `${fileObj.name} uploaded just now`,
-							}
-						: d
-				);
+				const doc = complianceDocs.value.find((d) => d.id === id);
 				docUploadTarget.value = null;
+
+				const fd = new FormData();
+				fd.append("file", fileObj);
+				fd.append("doc_id", id);
+				if (doc?.valid_until) fd.append("valid_until", doc.valid_until);
+
+				try {
+					const res = await fetch(`/api/method/${API}.upload_compliance_document`, {
+						method: "POST",
+						headers: {
+							Accept: "application/json",
+							"X-Frappe-CSRF-Token": csrf(),
+						},
+						credentials: "same-origin",
+						body: fd,
+					});
+					const data = await res.json();
+					if (!res.ok || data.exc) {
+						let message = "Upload failed";
+						try {
+							if (data._server_messages) {
+								const msgs = JSON.parse(data._server_messages);
+								message = JSON.parse(msgs[0]).message || message;
+							}
+						} catch (err) {
+							message = data.message || message;
+						}
+						throw new Error(message);
+					}
+					const out = data.message || {};
+					complianceDocs.value = complianceDocs.value.map((d) =>
+						d.id === id
+							? {
+									...d,
+									status: out.doc_status || "Under review",
+									meta: out.meta || `${fileObj.name} uploaded`,
+									file_name: out.file_name || fileObj.name,
+									file_url: out.file_url || "",
+									valid_until: out.valid_until || d.valid_until || "",
+								}
+							: d
+					);
+					if (out.compliance_gate) complianceGate.value = out.compliance_gate;
+					else refreshComplianceGate();
+				} catch (err) {
+					alert(err.message || "Upload failed");
+				}
 			};
 
 			const saveProfile = () => {
@@ -577,27 +688,79 @@
 				}, 2500);
 			};
 
+			const applyBootstrap = (boot) => {
+				if (boot.portal) portal.value = boot.portal;
+				if (!boot.authenticated) {
+					authed.value = false;
+					if (boot.message) loginError.value = boot.message;
+					return;
+				}
+				authed.value = true;
+				loginError.value = "";
+				if (boot.vendor) vendor.value = boot.vendor;
+				if (boot.open_pos) openPOs.value = boot.open_pos;
+				if (boot.submissions) subs.value = boot.submissions;
+				if (boot.orders) orders.value = boot.orders;
+				if (boot.inventory) inventory.value = boot.inventory;
+				if (boot.compliance_docs) complianceDocs.value = boot.compliance_docs;
+				if (boot.compliance_gate) complianceGate.value = boot.compliance_gate;
+				else refreshComplianceGate();
+				if (boot.message_threads) {
+					threads.value = boot.message_threads;
+					threadId.value = boot.message_threads[0]?.id || 1;
+				}
+				if (boot.help_articles) helpArticles.value = boot.help_articles;
+				if (boot.profile) Object.assign(profile, boot.profile);
+				requirePO.value = boot.require_po !== false;
+				demoMode.value = false;
+				f.currency = "AED";
+			};
+
+			const doLogin = async () => {
+				loginError.value = "";
+				if (!login.email.trim() || !login.password) {
+					loginError.value = "Enter email and password.";
+					return;
+				}
+				loginBusy.value = true;
+				try {
+					await call("login", { usr: login.email.trim(), pwd: login.password });
+					const boot = await call("get_bootstrap");
+					applyBootstrap(boot);
+					login.password = "";
+					view.value = "submit";
+				} catch (e) {
+					loginError.value = e.message || "Sign-in failed";
+					authed.value = false;
+				} finally {
+					loginBusy.value = false;
+				}
+			};
+
+			const doLogout = async () => {
+				try {
+					await call("logout");
+				} catch (e) {
+					/* ignore */
+				}
+				authed.value = false;
+				subs.value = [];
+				openPOs.value = [];
+				orders.value = [];
+				complianceDocs.value = [];
+				login.password = "";
+			};
+
 			onMounted(async () => {
+				authLoading.value = true;
 				try {
 					const boot = await call("get_bootstrap");
-					if (boot.portal) portal.value = boot.portal;
-					if (boot.vendor) vendor.value = boot.vendor;
-					if (boot.open_pos) openPOs.value = boot.open_pos;
-					if (boot.submissions) subs.value = boot.submissions;
-					if (boot.orders) orders.value = boot.orders;
-					if (boot.inventory) inventory.value = boot.inventory;
-					if (boot.compliance_docs) complianceDocs.value = boot.compliance_docs;
-					if (boot.message_threads) {
-						threads.value = boot.message_threads;
-						threadId.value = boot.message_threads[0]?.id || 1;
-					}
-					if (boot.help_articles) helpArticles.value = boot.help_articles;
-					if (boot.profile) Object.assign(profile, boot.profile);
-					requirePO.value = boot.require_po !== false;
-					demoMode.value = !!boot.demo_mode;
-					f.currency = "AED";
+					applyBootstrap(boot);
 				} catch (e) {
-					console.warn("Bootstrap failed, using client defaults", e);
+					authed.value = false;
+					console.warn("Bootstrap failed", e);
+				} finally {
+					authLoading.value = false;
 				}
 			});
 
@@ -620,6 +783,13 @@
 				filter,
 				detail,
 				submitting,
+				authed,
+				authLoading,
+				loginBusy,
+				loginError,
+				login,
+				doLogin,
+				doLogout,
 				demoMode,
 				portal,
 				vendor,
@@ -650,6 +820,10 @@
 				inventory,
 				inventoryRows,
 				complianceRows,
+				complianceGate,
+				invoiceBlocked,
+				invoiceBlockReason,
+				refreshComplianceGate,
 				helpArticles,
 				profile,
 				profileSaved,
@@ -666,24 +840,53 @@
 				docInput,
 				triggerDocUpload,
 				onDocFile,
+				setDocValidUntil,
 			};
 		},
 		template: `
 <div class="sip-shell">
   <header class="sip-header">
-    <div class="sip-brand"><strong>{{ portal.name }}</strong><span>{{ portal.tagline }}</span></div>
-    <nav class="sip-topnav">
+    <div class="sip-brand">
+      <img class="sip-brand-logo" :src="portal.logo" :alt="portal.company_name" />
+      <div class="sip-brand-text">
+        <strong>{{ portal.name }}</strong>
+        <span class="sip-company">{{ portal.company_name }}</span>
+        <span class="sip-tagline">{{ portal.tagline }}</span>
+      </div>
+    </div>
+    <nav v-if="authed" class="sip-topnav">
       <button v-for="n in topNav" :key="n.id" type="button" :class="{ active: n.active }" @click="go(n.id === 'submit' ? 'submit' : n.id)">{{ n.label }}</button>
     </nav>
     <div class="sip-header-user">
-      <button type="button" class="sip-bell" title="Messages" @click="go('messages')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
-        <span v-if="unreadCount" class="sip-bell-badge">{{ unreadCount }}</span>
-      </button>
-      <div>Welcome, <strong>{{ vendor.contact_name }}</strong><div class="muted">{{ vendor.display_name }}</div></div>
+      <template v-if="authed">
+        <button type="button" class="sip-bell" title="Messages" @click="go('messages')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+          <span v-if="unreadCount" class="sip-bell-badge">{{ unreadCount }}</span>
+        </button>
+        <div>Welcome, <strong>{{ vendor.contact_name }}</strong><div class="muted">{{ vendor.display_name }}</div></div>
+        <button type="button" class="sip-btn secondary sm" style="margin-left:8px" @click="doLogout">Sign out</button>
+      </template>
+      <a v-else :href="portal.registration_url || '/supplier-registration'" style="color:#fff;text-decoration:none;font-size:14px">New supplier? Register →</a>
     </div>
   </header>
-  <div class="sip-body">
+
+  <div v-if="authLoading" class="sip-main" style="padding:48px;text-align:center;color:#5a6b82">Loading portal…</div>
+
+  <div v-else-if="!authed" class="sip-main" style="max-width:440px;margin:40px auto;width:100%">
+    <section class="sip-card">
+      <h1 class="sip-title" style="font-size:22px">Supplier sign in</h1>
+      <p class="sip-sub">Use the email and password provided by NumeroUNO AP. Registration stays public; this portal is for approved suppliers only.</p>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-top:18px">
+        <div class="sip-field" style="grid-template-columns:1fr"><label>Email</label><input v-model="login.email" type="email" autocomplete="username" @keydown.enter="doLogin" /></div>
+        <div class="sip-field" style="grid-template-columns:1fr"><label>Password</label><input v-model="login.password" type="password" autocomplete="current-password" @keydown.enter="doLogin" /></div>
+        <div v-if="loginError" class="sip-err">{{ loginError }}</div>
+        <button type="button" class="sip-btn" :disabled="loginBusy" @click="doLogin">{{ loginBusy ? 'Signing in…' : 'Sign in' }}</button>
+        <p class="sip-sub" style="margin:0;text-align:center">New supplier? <a :href="portal.registration_url || '/supplier-registration'">Register here</a></p>
+      </div>
+    </section>
+  </div>
+
+  <div v-else class="sip-body">
     <aside class="sip-aside">
       <button v-for="s in sideNav" :key="s.id" type="button" :class="{ active: s.active }" @click="go(s.id === 'home' ? 'dashboard' : s.id)">{{ s.label }}</button>
       <div class="sip-aside-foot">Vendor ID <code>{{ vendor.vendor_id }}</code><br>AP contact: {{ vendor.ap_email }}</div>
@@ -691,12 +894,17 @@
     <main class="sip-main">
       <template v-if="view === 'submit'">
         <div v-if="!done">
+          <div v-if="invoiceBlocked" class="sip-card" style="margin-bottom:0;border-color:#f0b8b2;background:#fdf2f0">
+            <div style="font-weight:700;color:#9a2419;margin-bottom:6px">Invoice submission blocked</div>
+            <p class="sip-sub" style="margin:0;color:#7a2e28">{{ invoiceBlockReason }}</p>
+            <button type="button" class="sip-btn sm" style="margin-top:12px" @click="go('compliance')">Go to Compliance</button>
+          </div>
           <h1 class="sip-title">Invoice Submission Portal</h1>
           <p class="sip-sub">Submit invoices against open purchase orders in AED. After submit, NumeroUNO AP reviews within 2–3 business days. <a href="/supplier-registration">New supplier? Register here</a>.</p>
           <div class="sip-steps" style="margin-top:18px">
-            <button v-for="(st, i) in steps" :key="i" type="button" class="sip-step" :class="st.class" :disabled="!st.reach" @click="st.reach && (step = i + 1)">{{ st.label }}</button>
+            <button v-for="(st, i) in steps" :key="i" type="button" class="sip-step" :class="st.class" :disabled="!st.reach || invoiceBlocked" @click="!invoiceBlocked && st.reach && (step = i + 1)">{{ st.label }}</button>
           </div>
-          <section class="sip-card" style="margin-top:14px">
+          <section class="sip-card" style="margin-top:14px" :style="invoiceBlocked ? 'opacity:0.55;pointer-events:none' : ''">
             <div v-show="step === 1" class="sip-grid-2">
               <div>
                 <input ref="fileInput" type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" @change="e => takeFile(e.target.files[0])" />
@@ -764,7 +972,7 @@
             <div class="sip-actions">
               <button v-if="step > 1" type="button" class="sip-btn secondary" @click="step--">Back</button>
               <span v-else></span>
-              <button type="button" class="sip-btn" :disabled="submitting" @click="next">{{ step === 3 ? (submitting ? 'Submitting…' : 'Submit invoice') : 'Continue' }}</button>
+              <button type="button" class="sip-btn" :disabled="submitting || invoiceBlocked" @click="next">{{ step === 3 ? (submitting ? 'Submitting…' : 'Submit invoice') : 'Continue' }}</button>
             </div>
           </section>
         </div>
@@ -857,17 +1065,25 @@
 
       <template v-else-if="view === 'compliance'">
         <h1 class="sip-title">Compliance</h1>
-        <p class="sip-sub">Keep these documents current to stay eligible for payment</p>
+        <p class="sip-sub">Trade License and ICV Certificate must stay valid to submit invoices. Tax Registration, IBAN Letter, and Additional Documents do not block invoicing.</p>
         <input ref="docInput" type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" @change="onDocFile" />
         <section class="sip-card flush">
-          <div v-for="d in complianceRows" :key="d.id" style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 18px;border-top:1px solid #e3e8ef;flex-wrap:wrap">
-            <div style="min-width:0">
-              <div style="font-size:14px;font-weight:600">{{ d.name }}</div>
+          <div v-for="d in complianceRows" :key="d.id" style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:16px 18px;border-top:1px solid #e3e8ef;flex-wrap:wrap">
+            <div style="min-width:0;flex:1">
+              <div style="font-size:14px;font-weight:600">{{ d.name }}<span v-if="d.requires_validity" style="color:#9a2419"> *</span></div>
               <div style="font-size:13px;color:#5a6b82;margin-top:2px">{{ d.meta }}</div>
+              <div v-if="d.file_name" style="font-size:12px;margin-top:6px">
+                File: <strong>{{ d.file_name }}</strong>
+                <a v-if="d.file_url" :href="d.file_url" target="_blank" rel="noopener" style="margin-left:8px">View</a>
+              </div>
             </div>
-            <div style="display:flex;align-items:center;gap:12px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <div v-if="d.requires_validity" style="display:flex;flex-direction:column;gap:4px">
+                <label style="font-size:11px;color:#5a6b82;font-weight:600">Validity / Expiry</label>
+                <input type="date" :value="d.valid_until || ''" @change="setDocValidUntil(d.id, $event.target.value)" style="height:32px;padding:0 8px;border:1px solid #cfd6e0;border-radius:6px" />
+              </div>
               <span class="sip-pill" :style="d.pillStyle">{{ d.status }}</span>
-              <button type="button" class="sip-btn secondary sm" @click="triggerDocUpload(d.id)">Upload new</button>
+              <button type="button" class="sip-btn secondary sm" @click="triggerDocUpload(d.id)">{{ d.file_name ? 'Replace' : 'Upload' }}</button>
             </div>
           </div>
         </section>

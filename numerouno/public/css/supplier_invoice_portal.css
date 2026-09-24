@@ -29,12 +29,28 @@ button { cursor: pointer; }
 
 .sip-shell { min-height: 100vh; display: flex; flex-direction: column; }
 .sip-header {
-  height: 56px; background: var(--sip-top); color: #fff;
-  display: flex; align-items: center; gap: 20px; padding: 0 20px; flex-shrink: 0;
+  min-height: 64px; height: auto; background: var(--sip-top); color: #fff;
+  display: flex; align-items: center; gap: 16px; padding: 8px 20px; flex-shrink: 0;
 }
-.sip-brand { display: flex; flex-direction: column; line-height: 1.05; flex-shrink: 0; }
-.sip-brand strong { font-weight: 700; font-size: 14px; letter-spacing: 0.04em; }
-.sip-brand span { font-size: 11px; letter-spacing: 0.14em; color: #9fb0c8; }
+.sip-brand {
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0; max-width: 360px;
+}
+.sip-brand-logo {
+  width: 42px; height: 42px; object-fit: contain; border-radius: 6px;
+  background: #fff; padding: 3px; flex-shrink: 0;
+}
+.sip-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.sip-brand-text strong {
+  font-weight: 700; font-size: 13px; letter-spacing: 0.02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sip-brand-text .sip-company {
+  font-size: 11px; color: #c5d2e4; font-weight: 500; letter-spacing: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sip-brand-text .sip-tagline {
+  font-size: 10px; letter-spacing: 0.12em; color: #9fb0c8; text-transform: uppercase; margin-top: 1px;
+}
 .sip-topnav { display: flex; gap: 2px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .sip-topnav button {
   flex-shrink: 0; padding: 6px 10px; border: 0; border-radius: 4px;
@@ -195,4 +211,9 @@ button { cursor: pointer; }
   .sip-aside { display: none; }
   .sip-field { grid-template-columns: 1fr; }
   .sip-msg-layout { grid-template-columns: 1fr; }
+  .sip-header { flex-wrap: wrap; gap: 10px; padding: 10px 14px; }
+  .sip-brand { max-width: 100%; flex: 1; min-width: 0; }
+  .sip-brand-text .sip-company { white-space: normal; }
+  .sip-topnav { order: 3; width: 100%; }
+  .sip-main { padding: 16px 14px 32px; }
 }

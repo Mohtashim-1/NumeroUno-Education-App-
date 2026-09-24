@@ -53,11 +53,26 @@
 		payment_terms: "Net 30",
 		goods_services: "",
 		remarks: "",
+		trade_license_valid_until: "",
+		icv_valid_until: "",
 	});
 
 	createApp({
 		setup() {
+			const brand = reactive({
+				name: "NumeroUNO",
+				company_name: "Numero Uno Training and Consulting LLC",
+				tagline: "Supplier Registration",
+				logo: "/assets/numerouno/images/numero-logo.png",
+			});
 			const f = reactive(EMPTY());
+			const files = reactive({
+				trade_license_attachment: null,
+				tax_registration_certificate: null,
+				icv_certificate: null,
+				iban_letter: null,
+				additional_documents: null,
+			});
 			const errors = reactive({});
 			const submitting = ref(false);
 			const done = ref(false);
@@ -72,6 +87,10 @@
 				"Fujairah",
 			]);
 			const formError = ref("");
+
+			const onFile = (key, e) => {
+				files[key] = e.target.files?.[0] || null;
+			};
 
 			const validate = () => {
 				Object.keys(errors).forEach((k) => delete errors[k]);
@@ -90,6 +109,13 @@
 				if (f.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
 					errors.email = "Enter a valid email";
 				}
+				if (!files.trade_license_attachment) errors.trade_license_attachment = "Trade License is required";
+				if (!f.trade_license_valid_until) errors.trade_license_valid_until = "Validity date is required";
+				if (!files.tax_registration_certificate)
+					errors.tax_registration_certificate = "Tax Registration Certificate is required";
+				if (!files.icv_certificate) errors.icv_certificate = "ICV Certificate is required";
+				if (!f.icv_valid_until) errors.icv_valid_until = "Validity date is required";
+				if (!files.iban_letter) errors.iban_letter = "IBAN Letter is required";
 				return Object.keys(errors).length === 0;
 			};
 
@@ -98,8 +124,36 @@
 				submitting.value = true;
 				formError.value = "";
 				try {
-					const res = await call("submit_supplier_registration", { payload: { ...f } });
-					refName.value = res.name;
+					const fd = new FormData();
+					Object.entries(f).forEach(([k, v]) => {
+						if (v != null && v !== "") fd.append(k, v);
+					});
+					Object.entries(files).forEach(([k, file]) => {
+						if (file) fd.append(k, file, file.name);
+					});
+					const res = await fetch(`/api/method/${API}.submit_supplier_registration`, {
+						method: "POST",
+						headers: {
+							Accept: "application/json",
+							"X-Frappe-CSRF-Token": csrf(),
+						},
+						credentials: "same-origin",
+						body: fd,
+					});
+					const data = await res.json();
+					if (!res.ok || data.exc) {
+						let message = "Submission failed";
+						try {
+							if (data._server_messages) {
+								const msgs = JSON.parse(data._server_messages);
+								message = JSON.parse(msgs[0]).message || message;
+							}
+						} catch (e) {
+							message = data.message || message;
+						}
+						throw new Error(message);
+					}
+					refName.value = data.message?.name || "";
 					done.value = true;
 				} catch (e) {
 					formError.value = e.message || "Submission failed";
@@ -110,6 +164,7 @@
 
 			const reset = () => {
 				Object.assign(f, EMPTY());
+				Object.keys(files).forEach((k) => (files[k] = null));
 				done.value = false;
 				refName.value = "";
 				formError.value = "";
@@ -119,17 +174,28 @@
 				try {
 					const ctx = await call("get_registration_context");
 					if (ctx?.emirates?.length) emirates.value = ctx.emirates;
+					if (ctx?.portal_name) brand.name = ctx.portal_name;
+					if (ctx?.company_name) brand.company_name = ctx.company_name;
+					if (ctx?.tagline) brand.tagline = ctx.tagline;
+					if (ctx?.logo) brand.logo = ctx.logo;
 				} catch (e) {
 					/* defaults ok */
 				}
 			});
 
-			return { f, errors, submitting, done, refName, emirates, formError, submit, reset };
+			return { brand, f, files, errors, submitting, done, refName, emirates, formError, submit, reset, onFile };
 		},
 		template: `
 <div class="sip-shell" style="min-height:100vh">
   <header class="sip-header">
-    <div class="sip-brand"><strong>NUMEROUNO</strong><span>SUPPLIER REGISTRATION</span></div>
+    <div class="sip-brand">
+      <img class="sip-brand-logo" :src="brand.logo" :alt="brand.company_name" />
+      <div class="sip-brand-text">
+        <strong>{{ brand.name }}</strong>
+        <span class="sip-company">{{ brand.company_name }}</span>
+        <span class="sip-tagline">{{ brand.tagline }}</span>
+      </div>
+    </div>
     <div class="sip-header-user">
       <a href="/supplier-invoice-portal" style="color:#fff;text-decoration:none;font-size:14px">Invoice Portal →</a>
     </div>
@@ -138,7 +204,7 @@
     <div class="sr-topbar">
       <div>
         <h1 class="sip-title" style="margin:0">Register as a Supplier</h1>
-        <p class="sip-sub" style="margin:6px 0 0">Submit your company details. NumeroUNO AP will review and approve your account.</p>
+        <p class="sip-sub" style="margin:6px 0 0">Submit your company details to <strong>{{ brand.company_name }}</strong>. Our AP team will review and approve your account.</p>
       </div>
     </div>
 
@@ -226,6 +292,47 @@
           <input v-model="f.iban" class="mono" placeholder="AE…" />
         </div>
 
+        <div class="sr-section">Compliance Documents</div>
+        <div class="sr-field">
+          <label>Trade License <span class="req">*</span></label>
+          <input type="file" accept=".pdf,.png,.jpg,.jpeg" @change="onFile('trade_license_attachment', $event)" />
+          <div v-if="files.trade_license_attachment" class="sip-sub" style="margin-top:4px">{{ files.trade_license_attachment.name }}</div>
+          <div v-if="errors.trade_license_attachment" class="sr-err">{{ errors.trade_license_attachment }}</div>
+        </div>
+        <div class="sr-field">
+          <label>Trade License Validity <span class="req">*</span></label>
+          <input v-model="f.trade_license_valid_until" type="date" />
+          <div v-if="errors.trade_license_valid_until" class="sr-err">{{ errors.trade_license_valid_until }}</div>
+        </div>
+        <div class="sr-field sr-full">
+          <label>Tax Registration Certificate <span class="req">*</span></label>
+          <input type="file" accept=".pdf,.png,.jpg,.jpeg" @change="onFile('tax_registration_certificate', $event)" />
+          <div v-if="files.tax_registration_certificate" class="sip-sub" style="margin-top:4px">{{ files.tax_registration_certificate.name }}</div>
+          <div v-if="errors.tax_registration_certificate" class="sr-err">{{ errors.tax_registration_certificate }}</div>
+        </div>
+        <div class="sr-field">
+          <label>ICV Certificate <span class="req">*</span></label>
+          <input type="file" accept=".pdf,.png,.jpg,.jpeg" @change="onFile('icv_certificate', $event)" />
+          <div v-if="files.icv_certificate" class="sip-sub" style="margin-top:4px">{{ files.icv_certificate.name }}</div>
+          <div v-if="errors.icv_certificate" class="sr-err">{{ errors.icv_certificate }}</div>
+        </div>
+        <div class="sr-field">
+          <label>ICV Certificate Validity <span class="req">*</span></label>
+          <input v-model="f.icv_valid_until" type="date" />
+          <div v-if="errors.icv_valid_until" class="sr-err">{{ errors.icv_valid_until }}</div>
+        </div>
+        <div class="sr-field sr-full">
+          <label>IBAN Letter <span class="req">*</span></label>
+          <input type="file" accept=".pdf,.png,.jpg,.jpeg" @change="onFile('iban_letter', $event)" />
+          <div v-if="files.iban_letter" class="sip-sub" style="margin-top:4px">{{ files.iban_letter.name }}</div>
+          <div v-if="errors.iban_letter" class="sr-err">{{ errors.iban_letter }}</div>
+        </div>
+        <div class="sr-field sr-full">
+          <label>Additional Documents</label>
+          <input type="file" accept=".pdf,.png,.jpg,.jpeg" @change="onFile('additional_documents', $event)" />
+          <div v-if="files.additional_documents" class="sip-sub" style="margin-top:4px">{{ files.additional_documents.name }}</div>
+        </div>
+
         <div class="sr-section">Other</div>
         <div class="sr-field sr-full">
           <label>Goods / Services Supplied</label>
@@ -249,7 +356,7 @@
       <div class="sr-success-icon">✓</div>
       <h2 style="margin:0 0 8px">Registration submitted</h2>
       <p class="sip-sub">Reference <strong class="mono">{{ refName }}</strong> is with NumeroUNO for approval.</p>
-      <p class="sip-sub">You will be able to use the Supplier Invoice Portal once your account is approved.</p>
+      <p class="sip-sub">After approval, NumeroUNO AP will create your portal login so you can sign in at the Supplier Invoice Portal.</p>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
         <button type="button" class="sip-btn secondary" @click="reset">Register another</button>
         <a class="sip-btn" href="/supplier-invoice-portal" style="text-decoration:none;display:inline-flex;align-items:center">Invoice Portal</a>

@@ -73,6 +73,7 @@ doctype_js = {
     "Quotation" : "public/js/quotation.js",
     "Quiz Activity" : "public/js/quiz_activity.js",
     "Assessment Result" : "public/js/assesment_result.js",
+    "Supplier": "public/js/supplier.js",
     }
 doctype_list_js = {
     "Sales Invoice Tracking": "public/js/sales_invoice_tracking_list.js",
@@ -385,4 +386,5 @@ after_migrate = [
     "numerouno.numerouno.course_form_flags_setup.after_migrate",
     "numerouno.numerouno.sales_invoice_nutc_po_setup.after_migrate",
     "numerouno.numerouno.sales_invoice_tracking_setup.after_migrate",
+    "numerouno.numerouno.supplier_compliance_setup.after_migrate",
 ]

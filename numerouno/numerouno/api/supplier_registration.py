@@ -13,8 +13,10 @@ from frappe.utils import cint, validate_email_address
 @frappe.whitelist(allow_guest=True)
 def get_registration_context():
 	return {
-		"portal_name": "NUMEROUNO",
+		"portal_name": "NumeroUNO",
+		"company_name": "Numero Uno Training and Consulting LLC",
 		"tagline": "Supplier Registration",
+		"logo": "/assets/numerouno/images/numero-logo.png",
 		"invoice_portal_url": "/supplier-invoice-portal",
 		"countries": ["United Arab Emirates"],
 		"emirates": [
@@ -32,6 +34,9 @@ def get_registration_context():
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def submit_supplier_registration(payload=None):
 	"""Create a Supplier Registration document for NumeroUNO staff to approve."""
+	from frappe.utils import getdate, nowdate
+	from frappe.utils.file_manager import save_file
+
 	if isinstance(payload, str):
 		import json
 
@@ -68,14 +73,71 @@ def submit_supplier_registration(payload=None):
 			)
 		)
 
+	trade_valid = (payload.get("trade_license_valid_until") or "").strip() or None
+	icv_valid = (payload.get("icv_valid_until") or "").strip() or None
+	if trade_valid:
+		trade_valid = getdate(trade_valid)
+	if icv_valid:
+		icv_valid = getdate(icv_valid)
+
+	files = getattr(frappe.request, "files", None) or {}
+	required_files = {
+		"trade_license_attachment": _("Trade License"),
+		"tax_registration_certificate": _("Tax Registration Certificate"),
+		"icv_certificate": _("ICV Certificate"),
+		"iban_letter": _("IBAN Letter"),
+	}
+	for key, label in required_files.items():
+		upload = files.get(key)
+		if not upload or not getattr(upload, "filename", None):
+			frappe.throw(_("{0} attachment is required.").format(label))
+
+	if not trade_valid:
+		frappe.throw(_("Trade License validity date is required."))
+	if not icv_valid:
+		frappe.throw(_("ICV Certificate validity date is required."))
+	if trade_valid < getdate(nowdate()):
+		frappe.throw(_("Trade License validity cannot be in the past."))
+	if icv_valid < getdate(nowdate()):
+		frappe.throw(_("ICV Certificate validity cannot be in the past."))
+
 	doc = frappe.new_doc("Supplier Registration")
 	doc.update(data)
 	doc.status = "Pending Approval"
 	doc.country = data.get("country") or "United Arab Emirates"
+	doc.trade_license_valid_until = trade_valid
+	doc.icv_valid_until = icv_valid
 	doc.flags.ignore_permissions = True
 	doc.insert(ignore_permissions=True)
-	frappe.db.commit()
 
+	attach_map = {
+		"trade_license_attachment": "trade_license_attachment",
+		"tax_registration_certificate": "tax_registration_certificate",
+		"icv_certificate": "icv_certificate",
+		"iban_letter": "iban_letter",
+		"additional_documents": "additional_documents",
+	}
+	for form_key, fieldname in attach_map.items():
+		upload = files.get(form_key)
+		if not upload or not getattr(upload, "filename", None):
+			continue
+		content = upload.read()
+		if not content:
+			continue
+		if len(content) > 10 * 1024 * 1024:
+			frappe.throw(_("{0} must be smaller than 10 MB.").format(form_key.replace("_", " ").title()))
+		file_doc = save_file(
+			upload.filename,
+			content,
+			doc.doctype,
+			doc.name,
+			is_private=1,
+			df=fieldname,
+		)
+		doc.db_set(fieldname, file_doc.file_url, update_modified=False)
+
+	frappe.db.commit()
+	doc.reload()
 	_notify_internal(doc)
 
 	return {

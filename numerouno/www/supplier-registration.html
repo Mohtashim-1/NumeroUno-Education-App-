@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token or frappe.session.csrf_token }}">
-  <title>NumeroUNO Supplier Registration</title>
+  <title>Supplier Registration — Numero Uno Training and Consulting LLC</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/numerouno/css/supplier_invoice_portal.css?v=4">
+  <link rel="stylesheet" href="/assets/numerouno/css/supplier_invoice_portal.css?v=6">
   <style>
     .sr-wrap { max-width: 720px; margin: 0 auto; padding: 28px 16px 48px; }
     .sr-card { background: #fff; border: 1px solid #e3e8ef; border-radius: 10px; padding: 22px 20px; }
@@ -19,6 +19,7 @@
       width: 100%; padding: 9px 12px; border: 1px solid #cfd6e0; border-radius: 6px;
       font: inherit; background: #fff; box-sizing: border-box;
     }
+    .sr-field input[type=file] { padding: 8px; }
     .sr-field .req { color: #c0392b; }
     .sr-section { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5a6b82; margin: 18px 0 8px; grid-column: 1 / -1; }
     .sr-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
@@ -33,6 +34,6 @@
 </head>
 <body>
   <div id="supplier-registration"></div>
-  <script src="/assets/numerouno/js/supplier_registration.js?v=1"></script>
+  <script src="/assets/numerouno/js/supplier_registration.js?v=4"></script>
 </body>
 </html>

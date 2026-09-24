@@ -45,6 +45,9 @@ class SupplierRegistration(Document):
 		_ensure_can_approve()
 
 		supplier_name = self._create_supplier()
+		from numerouno.numerouno.supplier_compliance_setup import apply_registration_compliance_to_supplier
+
+		apply_registration_compliance_to_supplier(supplier_name, self)
 		self.db_set(
 			{
 				"status": "Approved",

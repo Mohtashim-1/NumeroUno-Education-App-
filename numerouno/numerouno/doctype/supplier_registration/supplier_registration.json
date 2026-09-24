@@ -34,6 +34,15 @@
   "column_break_bank",
   "account_name",
   "payment_terms",
+  "documents_section",
+  "trade_license_attachment",
+  "trade_license_valid_until",
+  "tax_registration_certificate",
+  "column_break_docs",
+  "icv_certificate",
+  "icv_valid_until",
+  "iban_letter",
+  "additional_documents",
   "other_section",
   "goods_services",
   "remarks",
@@ -209,6 +218,50 @@
    "fieldtype": "Select",
    "label": "Preferred Payment Terms",
    "options": "Net 30\nNet 45\nNet 60\nImmediate"
+  },
+  {
+   "fieldname": "documents_section",
+   "fieldtype": "Section Break",
+   "label": "Compliance Documents"
+  },
+  {
+   "fieldname": "trade_license_attachment",
+   "fieldtype": "Attach",
+   "label": "Trade License"
+  },
+  {
+   "fieldname": "trade_license_valid_until",
+   "fieldtype": "Date",
+   "label": "Trade License Validity"
+  },
+  {
+   "fieldname": "tax_registration_certificate",
+   "fieldtype": "Attach",
+   "label": "Tax Registration Certificate"
+  },
+  {
+   "fieldname": "column_break_docs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "icv_certificate",
+   "fieldtype": "Attach",
+   "label": "ICV Certificate"
+  },
+  {
+   "fieldname": "icv_valid_until",
+   "fieldtype": "Date",
+   "label": "ICV Certificate Validity"
+  },
+  {
+   "fieldname": "iban_letter",
+   "fieldtype": "Attach",
+   "label": "IBAN Letter"
+  },
+  {
+   "fieldname": "additional_documents",
+   "fieldtype": "Attach",
+   "label": "Additional Documents"
   },
   {
    "fieldname": "other_section",
