@@ -17,6 +17,7 @@ website_route_rules = [
     {"from_route": "/customer-code", "to_route": "customer-code"},
     {"from_route": "/training-schedule", "to_route": "training-schedule"},
     {"from_route": "/supplier-invoice-portal", "to_route": "supplier-invoice-portal"},
+    {"from_route": "/supplier-registration", "to_route": "supplier-registration"},
     {"from_route": "/guest-training", "to_route": "training-guest-intake"},
 ]
 

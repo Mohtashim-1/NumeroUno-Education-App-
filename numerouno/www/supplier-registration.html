@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token or frappe.session.csrf_token }}">
+  <title>NumeroUNO Supplier Registration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/numerouno/css/supplier_invoice_portal.css?v=4">
+  <style>
+    .sr-wrap { max-width: 720px; margin: 0 auto; padding: 28px 16px 48px; }
+    .sr-card { background: #fff; border: 1px solid #e3e8ef; border-radius: 10px; padding: 22px 20px; }
+    .sr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+    @media (max-width: 640px) { .sr-grid { grid-template-columns: 1fr; } }
+    .sr-field label { display: block; font-size: 12px; font-weight: 600; color: #3a4a60; margin-bottom: 5px; }
+    .sr-field input, .sr-field select, .sr-field textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid #cfd6e0; border-radius: 6px;
+      font: inherit; background: #fff; box-sizing: border-box;
+    }
+    .sr-field .req { color: #c0392b; }
+    .sr-section { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5a6b82; margin: 18px 0 8px; grid-column: 1 / -1; }
+    .sr-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+    .sr-err { color: #9a2419; font-size: 13px; margin-top: 6px; }
+    .sr-success { text-align: center; padding: 36px 16px; }
+    .sr-success-icon { width: 56px; height: 56px; border-radius: 50%; background: #dcf1e2; color: #1e6b3a; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+    .sr-full { grid-column: 1 / -1; }
+    .sr-topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    .sr-topbar a { color: #1d4f91; text-decoration: none; font-size: 14px; font-weight: 500; }
+  </style>
+  <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+</head>
+<body>
+  <div id="supplier-registration"></div>
+  <script src="/assets/numerouno/js/supplier_registration.js?v=1"></script>
+</body>
+</html>

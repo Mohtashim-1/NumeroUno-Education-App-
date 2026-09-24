@@ -56,8 +56,21 @@
 		return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
 	};
 
-	const money = (n, c = "USD") =>
-		new Intl.NumberFormat("en-US", { style: "currency", currency: c || "USD" }).format(n || 0);
+	const money = (n, c = "AED") =>
+		new Intl.NumberFormat("en-AE", { style: "currency", currency: c || "AED" }).format(n || 0);
+
+	const todayISO = () => {
+		const d = new Date();
+		d.setHours(0, 0, 0, 0);
+		return d.toISOString().slice(0, 10);
+	};
+
+	const daysAgoISO = (days) => {
+		const d = new Date();
+		d.setHours(0, 0, 0, 0);
+		d.setDate(d.getDate() - days);
+		return d.toISOString().slice(0, 10);
+	};
 
 	const EMPTY_FORM = () => ({
 		invoiceNumber: "",
@@ -65,11 +78,10 @@
 		invoiceDate: "",
 		dueDate: "",
 		amount: "",
-		currency: "USD",
-		method: "ACH",
-		remitName: "",
-		account: "chase-4417",
-		address: "1200 Industrial Pkwy, Dayton, OH 45404",
+		currency: "AED",
+		dnNumber: "",
+		dnSigned: "",
+		dnSignedDate: "",
 		terms: "Net 30",
 		note: "",
 		certify: false,
@@ -83,8 +95,13 @@
 			const f = reactive(EMPTY_FORM());
 			const file = ref(null);
 			const fileInput = ref(null);
+			const dnFile = ref(null);
+			const dnFileInput = ref(null);
 			const errors = reactive({});
 			const drag = ref(false);
+			const dnDrag = ref(false);
+			const invoiceDateMin = daysAgoISO(7);
+			const invoiceDateMax = todayISO();
 			const subs = ref([]);
 			const openPOs = ref([]);
 			const orders = ref([]);
@@ -118,7 +135,7 @@
 				email: "",
 				phone: "",
 				address: "",
-				payment_method: "ACH",
+				payment_method: "Bank transfer",
 				bank_account: "",
 				notify_email: true,
 				notify_status: true,
@@ -196,7 +213,7 @@
 				{
 					label: "Unread messages",
 					value: String(unreadCount.value),
-					note: "From BuyerCo",
+					note: "From NumeroUNO",
 					noteColor: "#5a6b82",
 					go: () => go("messages"),
 				},
@@ -307,7 +324,7 @@
 			const recent = computed(() => rows.value.slice(0, 3));
 
 			const steps = computed(() =>
-				["1. Invoice Details", "2. Payment Details", "3. Review & Submit"].map((label, i) => {
+				["1. Invoice Details", "2. Delivery Note", "3. Review & Submit"].map((label, i) => {
 					const n = i + 1;
 					const active = n === step.value;
 					const reach = n <= maxStep.value;
@@ -321,19 +338,24 @@
 			);
 
 			const review = computed(() => {
-				const methodLabel = { ACH: "ACH transfer", Wire: "Wire transfer", Check: "Paper check" };
-				const acct = f.account === "chase-4417" ? "Chase ····4417" : "BofA ····0932";
+				const signedLabel =
+					f.dnSigned === "yes"
+						? "Yes — signed by Numero employee"
+						: f.dnSigned === "no"
+							? "No — not signed"
+							: "—";
 				return [
 					{ k: "Invoice #", v: f.invoiceNumber || "—" },
 					{ k: "PO", v: f.po || "—" },
 					{ k: "Invoice date", v: fmtDate(f.invoiceDate) },
 					{ k: "Due date", v: fmtDate(f.dueDate) },
-					{ k: "Total", v: money(parseFloat(String(f.amount).replace(/[,$]/g, "")) || 0, f.currency) },
-					{ k: "Document", v: file.value ? file.value.name : "—" },
-					{
-						k: "Payment",
-						v: methodLabel[f.method] + (f.method === "Check" ? "" : " · " + acct),
-					},
+					{ k: "Total", v: money(parseFloat(String(f.amount).replace(/[,$]/g, "")) || 0, "AED") },
+					{ k: "Currency", v: "AED" },
+					{ k: "Invoice document", v: file.value ? file.value.name : "—" },
+					{ k: "Delivery note #", v: f.dnNumber || "—" },
+					{ k: "DN signed by Numero", v: signedLabel },
+					{ k: "DN signed date", v: fmtDate(f.dnSignedDate) },
+					{ k: "Signed DN document", v: dnFile.value ? dnFile.value.name : "—" },
 					{ k: "Terms", v: f.terms },
 				];
 			});
@@ -348,20 +370,44 @@
 				};
 			};
 
-			const takeFile = (blob) => {
+			const attachFile = (blob, target) => {
 				if (!blob) return;
+				const errKey = target === "dn" ? "dnFile" : "file";
 				if (blob.size > 10 * 1024 * 1024) {
-					errors.file = "File exceeds 10 MB.";
+					errors[errKey] = "File exceeds 10 MB.";
 					return;
 				}
 				const kb = blob.size / 1024;
-				file.value = {
+				const meta = {
 					name: blob.name,
 					size: kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : Math.max(1, Math.round(kb)) + " KB",
 					blob,
 				};
-				errors.file = undefined;
-				drag.value = false;
+				if (target === "dn") {
+					dnFile.value = meta;
+					dnDrag.value = false;
+				} else {
+					file.value = meta;
+					drag.value = false;
+				}
+				errors[errKey] = undefined;
+			};
+
+			const takeFile = (blob) => attachFile(blob, "invoice");
+			const takeDnFile = (blob) => attachFile(blob, "dn");
+
+			const validateInvoiceDate = () => {
+				if (!f.invoiceDate) {
+					errors.invoiceDate = "Required";
+					return;
+				}
+				const min = daysAgoISO(7);
+				const max = todayISO();
+				if (f.invoiceDate > max) {
+					errors.invoiceDate = "Future invoice dates are not allowed.";
+				} else if (f.invoiceDate < min) {
+					errors.invoiceDate = "Invoice date cannot be more than 7 days in the past.";
+				}
 			};
 
 			const validate = (s) => {
@@ -372,14 +418,27 @@
 					else if (subs.value.some((x) => x.num.toLowerCase() === f.invoiceNumber.trim().toLowerCase()))
 						errors.invoiceNumber = "This invoice number was already submitted.";
 					if (requirePO.value && !f.po) errors.po = "Select the PO this invoice bills against.";
-					if (!f.invoiceDate) errors.invoiceDate = "Required";
+					validateInvoiceDate();
 					if (!f.dueDate) errors.dueDate = "Required";
 					else if (f.invoiceDate && f.dueDate < f.invoiceDate)
 						errors.dueDate = "Due date must be after invoice date.";
 					const a = parseFloat(String(f.amount).replace(/[,$]/g, ""));
 					if (!(a > 0)) errors.amount = "Enter an amount greater than 0.";
+					f.currency = "AED";
 				}
-				if (s === 2 && !f.remitName.trim()) errors.remitName = "Required";
+				if (s === 2) {
+					if (!f.dnNumber.trim()) errors.dnNumber = "Delivery note number is required.";
+					if (!f.dnSigned) errors.dnSigned = "Confirm whether the DN is signed by a Numero employee.";
+					else if (f.dnSigned === "no")
+						errors.dnSigned =
+							"Delivery notes must be signed by a Numero employee before invoice submission.";
+					if (f.dnSigned === "yes") {
+						if (!f.dnSignedDate) errors.dnSignedDate = "Enter the date the DN was signed.";
+						else if (f.dnSignedDate > todayISO())
+							errors.dnSignedDate = "Signed date cannot be in the future.";
+						if (!dnFile.value) errors.dnFile = "Upload the signed delivery note document.";
+					}
+				}
 				if (s === 3 && !f.certify) errors.certify = "Please confirm before submitting.";
 				return Object.keys(errors).length === 0;
 			};
@@ -400,8 +459,13 @@
 							invoice_date: f.invoiceDate,
 							due_date: f.dueDate,
 							amount: parseFloat(String(f.amount).replace(/[,$]/g, "")),
-							currency: f.currency,
-							method: f.method,
+							currency: "AED",
+							dn_number: f.dnNumber.trim(),
+							dn_signed: f.dnSigned,
+							dn_signed_date: f.dnSignedDate,
+							dn_document_name: dnFile.value?.name || "",
+							invoice_document_name: file.value?.name || "",
+							terms: f.terms,
 							note: f.note,
 						},
 					});
@@ -416,10 +480,10 @@
 						date: today,
 						due: fmtDate(f.dueDate),
 						amount: parseFloat(String(f.amount).replace(/[,$]/g, "")),
-						currency: f.currency,
+						currency: "AED",
 						status: "Pending review",
 					});
-					lastRef.value = res.reference || "VS-DEMO";
+					lastRef.value = res.reference || "NU-DEMO";
 					done.value = true;
 				} catch (e) {
 					alert(e.message || "Submit failed");
@@ -430,8 +494,8 @@
 
 			const resetForm = () => {
 				Object.assign(f, EMPTY_FORM());
-				f.remitName = vendor.value.display_name + " LLC";
 				file.value = null;
+				dnFile.value = null;
 				step.value = 1;
 				maxStep.value = 1;
 				done.value = false;
@@ -445,8 +509,8 @@
 
 			const invoicePo = (poId, amount) => {
 				Object.assign(f, EMPTY_FORM());
-				f.remitName = vendor.value.display_name + " LLC";
 				file.value = null;
+				dnFile.value = null;
 				step.value = 1;
 				maxStep.value = 1;
 				f.po = poId;
@@ -531,7 +595,7 @@
 					if (boot.profile) Object.assign(profile, boot.profile);
 					requirePO.value = boot.require_po !== false;
 					demoMode.value = !!boot.demo_mode;
-					f.remitName = (boot.vendor?.display_name || "ACME") + " LLC";
+					f.currency = "AED";
 				} catch (e) {
 					console.warn("Bootstrap failed, using client defaults", e);
 				}
@@ -543,8 +607,13 @@
 				f,
 				file,
 				fileInput,
+				dnFile,
+				dnFileInput,
 				errors,
 				drag,
+				dnDrag,
+				invoiceDateMin,
+				invoiceDateMax,
 				done,
 				lastRef,
 				query,
@@ -568,12 +637,12 @@
 				resetForm,
 				openDetail,
 				takeFile,
+				takeDnFile,
 				invoicePo,
 				pillStyle,
 				fmtDate,
 				money,
 				filters: ["All", "Pending review", "Approved", "Needs info", "Paid"],
-				methods: ["ACH", "Wire", "Check"],
 				historyCount: computed(
 					() =>
 						`${subs.value.length} invoices · ${money(outstandingAmount.value)} outstanding`
@@ -623,7 +692,7 @@
       <template v-if="view === 'submit'">
         <div v-if="!done">
           <h1 class="sip-title">Invoice Submission Portal</h1>
-          <p class="sip-sub">Submit invoices against open purchase orders. Typical review time is 2–3 business days.</p>
+          <p class="sip-sub">Submit invoices against open purchase orders in AED. After submit, NumeroUNO AP reviews within 2–3 business days. <a href="/supplier-registration">New supplier? Register here</a>.</p>
           <div class="sip-steps" style="margin-top:18px">
             <button v-for="(st, i) in steps" :key="i" type="button" class="sip-step" :class="st.class" :disabled="!st.reach" @click="st.reach && (step = i + 1)">{{ st.label }}</button>
           </div>
@@ -648,26 +717,48 @@
               <div style="display:flex;flex-direction:column;gap:14px">
                 <div class="sip-field"><label>Invoice Number *</label><div><input v-model="f.invoiceNumber" placeholder="e.g. INV-2026-0418" /><div v-if="errors.invoiceNumber" class="sip-err">{{ errors.invoiceNumber }}</div></div></div>
                 <div class="sip-field"><label>PO Number<span v-if="requirePO"> *</span></label><div><select v-model="f.po"><option value="">Select open PO</option><option v-for="p in openPOs" :key="p.id" :value="p.id">{{ p.label }}</option></select><div v-if="errors.po" class="sip-err">{{ errors.po }}</div></div></div>
-                <div class="sip-field"><label>Invoice Date *</label><div><input v-model="f.invoiceDate" type="date" /><div v-if="errors.invoiceDate" class="sip-err">{{ errors.invoiceDate }}</div></div></div>
+                <div class="sip-field"><label>Invoice Date *</label><div><input v-model="f.invoiceDate" type="date" :min="invoiceDateMin" :max="invoiceDateMax" /><div class="sip-sub" style="margin-top:4px">Today or up to 7 days back · future dates blocked</div><div v-if="errors.invoiceDate" class="sip-err">{{ errors.invoiceDate }}</div></div></div>
                 <div class="sip-field"><label>Due Date *</label><div><input v-model="f.dueDate" type="date" /><div v-if="errors.dueDate" class="sip-err">{{ errors.dueDate }}</div></div></div>
-                <div class="sip-field"><label>Total Amount *</label><div style="display:flex;gap:8px"><select v-model="f.currency" style="width:84px"><option>USD</option><option>CAD</option><option>EUR</option></select><input v-model="f.amount" class="mono" placeholder="0.00" /><div v-if="errors.amount" class="sip-err">{{ errors.amount }}</div></div></div>
+                <div class="sip-field"><label>Total Amount (AED) *</label><div style="display:flex;gap:8px;align-items:flex-start"><span class="sip-chip active" style="pointer-events:none;min-width:64px;justify-content:center">AED</span><input v-model="f.amount" class="mono" placeholder="0.00" style="flex:1" /><div v-if="errors.amount" class="sip-err">{{ errors.amount }}</div></div></div>
               </div>
             </div>
             <div v-show="step === 2" style="max-width:640px;display:flex;flex-direction:column;gap:18px">
-              <div><div style="font-weight:600;margin-bottom:8px">Payment Method</div>
+              <p class="sip-sub" style="margin:0">Delivery notes must be signed by a Numero employee before the invoice is accepted for AP review.</p>
+              <div class="sip-field" style="grid-template-columns:180px 1fr"><label>Delivery Note # *</label><div><input v-model="f.dnNumber" placeholder="e.g. DN-2026-0124" /><div v-if="errors.dnNumber" class="sip-err">{{ errors.dnNumber }}</div></div></div>
+              <div>
+                <div style="font-weight:600;margin-bottom:8px">Signed by Numero employee? *</div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap">
-                  <button v-for="m in methods" :key="m" type="button" class="sip-chip" :class="{ active: f.method === m }" @click="f.method = m">{{ m }}</button>
+                  <button type="button" class="sip-chip" :class="{ active: f.dnSigned === 'yes' }" @click="f.dnSigned = 'yes'">Yes — signed</button>
+                  <button type="button" class="sip-chip" :class="{ active: f.dnSigned === 'no' }" @click="f.dnSigned = 'no'">Not signed</button>
+                </div>
+                <div v-if="errors.dnSigned" class="sip-err">{{ errors.dnSigned }}</div>
+              </div>
+              <div class="sip-field" style="grid-template-columns:180px 1fr"><label>Date signed *</label><div><input v-model="f.dnSignedDate" type="date" :max="invoiceDateMax" :disabled="f.dnSigned !== 'yes'" /><div v-if="errors.dnSignedDate" class="sip-err">{{ errors.dnSignedDate }}</div></div></div>
+              <div>
+                <input ref="dnFileInput" type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" @change="e => takeDnFile(e.target.files[0])" />
+                <div v-if="!dnFile" class="sip-upload" :class="{ drag: dnDrag }" @click="dnFileInput?.click()" @dragover.prevent="dnDrag = true" @dragleave="dnDrag = false" @drop.prevent="e => takeDnFile(e.dataTransfer.files[0])">
+                  <div class="sip-upload-title">UPLOAD SIGNED DELIVERY NOTE</div>
+                  <div class="sip-sub">Signed DN document · PDF, PNG or JPG · max 10 MB</div>
+                  <div v-if="errors.dnFile" class="sip-err">{{ errors.dnFile }}</div>
+                </div>
+                <div v-else class="sip-card" style="min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+                  <div style="font-weight:600">{{ dnFile.name }}</div>
+                  <div class="sip-sub">{{ dnFile.size }} · Uploaded</div>
+                  <div style="display:flex;gap:8px">
+                    <button type="button" class="sip-btn secondary sm" @click="dnFileInput?.click()">Replace</button>
+                    <button type="button" class="sip-btn secondary sm" @click="dnFile = null">Remove</button>
+                  </div>
                 </div>
               </div>
-              <div class="sip-field" style="grid-template-columns:150px 1fr"><label>Remit-to Name *</label><div><input v-model="f.remitName" /><div v-if="errors.remitName" class="sip-err">{{ errors.remitName }}</div></div></div>
-              <div class="sip-field" style="grid-template-columns:150px 1fr"><label>Payment Terms</label><select v-model="f.terms"><option>Net 30</option><option>Net 45</option><option>Net 60</option></select></div>
-              <div class="sip-field" style="grid-template-columns:150px 1fr;align-items:start"><label>Note to AP</label><textarea v-model="f.note" rows="3" style="padding:9px 12px;border:1px solid #cfd6e0;border-radius:6px;width:100%"></textarea></div>
+              <div class="sip-field" style="grid-template-columns:180px 1fr"><label>Payment Terms</label><select v-model="f.terms"><option>Net 30</option><option>Net 45</option><option>Net 60</option></select></div>
+              <div class="sip-field" style="grid-template-columns:180px 1fr;align-items:start"><label>Note to AP</label><textarea v-model="f.note" rows="3" style="padding:9px 12px;border:1px solid #cfd6e0;border-radius:6px;width:100%"></textarea></div>
             </div>
             <div v-show="step === 3">
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:#e3e8ef;border:1px solid #e3e8ef;border-radius:6px;overflow:hidden">
                 <div v-for="r in review" :key="r.k" style="background:#fff;padding:12px 14px"><div style="font-size:12px;color:#5a6b82;text-transform:uppercase">{{ r.k }}</div><div style="font-weight:600;margin-top:3px">{{ r.v }}</div></div>
               </div>
-              <label style="display:flex;gap:10px;margin-top:18px;font-size:14px;cursor:pointer"><input v-model="f.certify" type="checkbox" /> I certify this invoice is accurate and has not been submitted previously.</label>
+              <p class="sip-sub" style="margin-top:14px">After you submit, this invoice and signed delivery note go to <strong>NumeroUNO AP</strong> for review.</p>
+              <label style="display:flex;gap:10px;margin-top:12px;font-size:14px;cursor:pointer"><input v-model="f.certify" type="checkbox" /> I certify this invoice is accurate, the delivery note is signed by a Numero employee, and it has not been submitted previously.</label>
               <div v-if="errors.certify" class="sip-err">{{ errors.certify }}</div>
             </div>
             <div class="sip-actions">
@@ -679,8 +770,8 @@
         </div>
         <section v-else class="sip-card sip-success">
           <div class="sip-success-icon">✓</div>
-          <h2>Invoice submitted</h2>
-          <p class="sip-sub">Reference <strong class="mono">{{ lastRef }}</strong> is now in AP review.</p>
+          <h2>Invoice submitted to NumeroUNO</h2>
+          <p class="sip-sub">Reference <strong class="mono">{{ lastRef }}</strong> is now with NumeroUNO AP for review (typically 2–3 business days).</p>
           <div style="display:flex;gap:10px;margin-top:10px">
             <button type="button" class="sip-btn" @click="resetForm">+ Submit new invoice</button>
             <button type="button" class="sip-btn secondary" @click="go('history')">View submissions</button>
@@ -738,7 +829,7 @@
 
       <template v-else-if="view === 'inventory'">
         <h1 class="sip-title">Inventory</h1>
-        <p class="sip-sub">Your items stocked at BuyerCo warehouses (consignment view)</p>
+        <p class="sip-sub">Your items stocked at NumeroUNO warehouses (consignment view)</p>
         <section class="sip-card flush sip-table-wrap">
           <table class="sip-table" style="min-width:680px">
             <thead><tr><th>SKU</th><th>Item</th><th>Location</th><th style="text-align:right">On hand</th><th style="text-align:right">Reorder at</th><th>Stock</th></tr></thead>
@@ -838,7 +929,7 @@
             <div class="sip-field" style="grid-template-columns:140px 1fr"><label>Email</label><input v-model="profile.email" type="email" /></div>
             <div class="sip-field" style="grid-template-columns:140px 1fr"><label>Phone</label><input v-model="profile.phone" /></div>
             <div class="sip-field" style="grid-template-columns:140px 1fr;align-items:start"><label>Remit address</label><textarea v-model="profile.address" rows="2" style="padding:9px 12px;border:1px solid #cfd6e0;border-radius:6px;width:100%"></textarea></div>
-            <div class="sip-field" style="grid-template-columns:140px 1fr"><label>Payment method</label><select v-model="profile.payment_method"><option>ACH</option><option>Wire</option><option>Check</option></select></div>
+            <div class="sip-field" style="grid-template-columns:140px 1fr"><label>Payment method</label><select v-model="profile.payment_method"><option>Bank transfer</option><option>Cheque</option></select></div>
             <div class="sip-field" style="grid-template-columns:140px 1fr"><label>Bank on file</label><input v-model="profile.bank_account" /></div>
           </div>
           <label class="sip-check-row"><input v-model="profile.notify_email" type="checkbox" /> Email me when invoice status changes</label>

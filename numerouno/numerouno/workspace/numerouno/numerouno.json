@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"bmhPS3RFDV\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Third Party Certificate\",\"col\":3}},{\"id\":\"OkYnjFShG3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Invoice Portal\",\"col\":3}},{\"id\":\"SIPortal01\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Supplier Invoice Portal\",\"col\":3}},{\"id\":\"DC9AYDYjNC\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Lookup\",\"col\":3}},{\"id\":\"JVu8-FJZCu\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"0v94hVUW0R\",\"type\":\"card\",\"data\":{\"card_name\":\"Certificate\",\"col\":4}},{\"id\":\"_11CpcxewH\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"xjcB_ZeKiM\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Card\",\"col\":4}},{\"id\":\"AkiVGf1eS-\",\"type\":\"card\",\"data\":{\"card_name\":\"Quiz\",\"col\":4}},{\"id\":\"_hPf2KbGF4\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule Assignment\",\"col\":4}},{\"id\":\"oJijfYyTt3\",\"type\":\"card\",\"data\":{\"card_name\":\"Driving Card\",\"col\":4}},{\"id\":\"iDJzUI8HbM\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Invoice\",\"col\":4}},{\"id\":\"CXIrjSD2za\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"bmhPS3RFDV\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Third Party Certificate\",\"col\":3}},{\"id\":\"OkYnjFShG3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Invoice Portal\",\"col\":3}},{\"id\":\"SIPortal01\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Supplier Invoice Portal\",\"col\":3}},{\"id\":\"SRegForm01\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Supplier Registration Form\",\"col\":3}},{\"id\":\"SRegList01\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Supplier Registrations\",\"col\":3}},{\"id\":\"DC9AYDYjNC\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer Lookup\",\"col\":3}},{\"id\":\"JVu8-FJZCu\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"0v94hVUW0R\",\"type\":\"card\",\"data\":{\"card_name\":\"Certificate\",\"col\":4}},{\"id\":\"_11CpcxewH\",\"type\":\"card\",\"data\":{\"card_name\":\"Attendance\",\"col\":4}},{\"id\":\"xjcB_ZeKiM\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Card\",\"col\":4}},{\"id\":\"AkiVGf1eS-\",\"type\":\"card\",\"data\":{\"card_name\":\"Quiz\",\"col\":4}},{\"id\":\"_hPf2KbGF4\",\"type\":\"card\",\"data\":{\"card_name\":\"Schedule Assignment\",\"col\":4}},{\"id\":\"oJijfYyTt3\",\"type\":\"card\",\"data\":{\"card_name\":\"Driving Card\",\"col\":4}},{\"id\":\"iDJzUI8HbM\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Invoice\",\"col\":4}},{\"id\":\"CXIrjSD2za\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
  "creation": "2025-04-30 01:03:10.313208",
  "custom_blocks": [],
  "docstatus": 0,
@@ -432,6 +432,20 @@
    "label": "Supplier Invoice Portal",
    "type": "URL",
    "url": "https://erpnext.nutc.cloud/supplier-invoice-portal"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Supplier Registration Form",
+   "type": "URL",
+   "url": "https://erpnext.nutc.cloud/supplier-registration"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Supplier Registrations",
+   "link_to": "Supplier Registration",
+   "type": "DocType"
   },
   {
    "color": "Grey",

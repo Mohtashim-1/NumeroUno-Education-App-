@@ -9,7 +9,7 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import flt, formatdate, get_url, getdate, nowdate
+from frappe.utils import add_days, flt, formatdate, get_url, getdate, nowdate
 
 
 def _demo_seed():
@@ -22,9 +22,9 @@ def _demo_seed():
 			"supplier": None,
 		},
 		"open_pos": [
-			{"id": "PO-100251", "label": "PO-100251 · Machined brackets · $22,400.00", "amount": 22400},
-			{"id": "PO-100248", "label": "PO-100248 · Hydraulic fittings · $8,915.00", "amount": 8915},
-			{"id": "PO-100245", "label": "PO-100245 · Steel sheet stock · $18,420.50", "amount": 18420.5},
+			{"id": "PO-100251", "label": "PO-100251 · Machined brackets · AED 22,400.00", "amount": 22400, "currency": "AED"},
+			{"id": "PO-100248", "label": "PO-100248 · Hydraulic fittings · AED 8,915.00", "amount": 8915, "currency": "AED"},
+			{"id": "PO-100245", "label": "PO-100245 · Steel sheet stock · AED 18,420.50", "amount": 18420.5, "currency": "AED"},
 		],
 		"orders": [
 			{"id": "PO-100251", "desc": "Machined brackets, 6061-T6 (400 pcs)", "issued": "Sep 15, 2026", "value": 22400, "status": "Open"},
@@ -32,9 +32,9 @@ def _demo_seed():
 			{"id": "PO-100245", "desc": "Steel sheet stock, 12 ga", "issued": "Aug 28, 2026", "value": 18420.5, "status": "Invoiced"},
 		],
 		"submissions": [
-			{"num": "INV-2026-0412", "po": "PO-100245", "date": "Sep 18, 2026", "due": "Oct 18, 2026", "amount": 18420.5, "currency": "USD", "status": "Pending review"},
-			{"num": "INV-2026-0397", "po": "PO-100243", "date": "Sep 02, 2026", "due": "Oct 02, 2026", "amount": 6210, "currency": "USD", "status": "Approved"},
-			{"num": "INV-2026-0381", "po": "PO-100231", "date": "Aug 21, 2026", "due": "Sep 20, 2026", "amount": 2875.75, "currency": "USD", "status": "Needs info"},
+			{"num": "INV-2026-0412", "po": "PO-100245", "date": "Sep 18, 2026", "due": "Oct 18, 2026", "amount": 18420.5, "currency": "AED", "status": "Pending review"},
+			{"num": "INV-2026-0397", "po": "PO-100243", "date": "Sep 02, 2026", "due": "Oct 02, 2026", "amount": 6210, "currency": "AED", "status": "Approved"},
+			{"num": "INV-2026-0381", "po": "PO-100231", "date": "Aug 21, 2026", "due": "Sep 20, 2026", "amount": 2875.75, "currency": "AED", "status": "Needs info"},
 		],
 		"inventory": [
 			{"sku": "AC-BRK-0612", "name": "Machined bracket, 6\"", "loc": "Dayton DC", "qty": 1240, "reorder": 500},
@@ -97,27 +97,27 @@ def _demo_seed():
 		"help_articles": [
 			{
 				"title": "How do I submit an invoice?",
-				"body": "Go to Submit Invoice, upload your PDF, select the PO, enter dates and amount, then complete payment details and review.",
+				"body": "Go to Submit Invoice, upload the invoice PDF, select the PO, enter an invoice date (today or up to 7 days back, AED only), then add the delivery note signed by a Numero employee and review.",
 			},
 			{
-				"title": "What is 3-way match?",
-				"body": "AP compares your invoice to the purchase order and goods receipt. Line totals must align before approval.",
+				"title": "What invoice dates are allowed?",
+				"body": "Future invoice dates are blocked. Back-dated invoices are allowed only within the last 7 days.",
+			},
+			{
+				"title": "Do delivery notes need a Numero signature?",
+				"body": "Yes. Provide the DN number, confirm it was signed by a Numero employee, enter the signed date, and upload the signed DN document. Unsigned delivery notes are rejected.",
 			},
 			{
 				"title": "When will I get paid?",
-				"body": "Approved invoices pay per your terms (e.g. Net 30) from the approval date. Track status under Past Submissions.",
-			},
-			{
-				"title": "Why was my invoice returned?",
-				"body": "Common reasons: missing PO, wrong amount, or unclear line items. Check Messages for AP notes.",
+				"body": "After submit, NumeroUNO AP reviews the invoice (typically 2–3 business days). Approved invoices pay per your terms (e.g. Net 30) in AED.",
 			},
 		],
 		"profile": {
 			"email": "jessica.chen@acmemfg.com",
-			"phone": "+1 (937) 555-0142",
-			"address": "1200 Industrial Pkwy, Dayton, OH 45404",
-			"payment_method": "ACH",
-			"bank_account": "Chase Business ····4417",
+			"phone": "+971 50 555 0142",
+			"address": "Industrial Area, Abu Dhabi, UAE",
+			"payment_method": "Bank transfer",
+			"bank_account": "Emirates NBD ····4417",
 			"notify_email": True,
 			"notify_status": True,
 		},
@@ -164,7 +164,7 @@ def _open_pos_for_supplier(supplier: str) -> list[dict]:
 	out = []
 	for po in pos:
 		label = f"{po.name} · {formatdate(po.transaction_date)} · {po.grand_total}"
-		out.append({"id": po.name, "label": label, "amount": flt(po.grand_total), "currency": po.currency or "USD"})
+		out.append({"id": po.name, "label": label, "amount": flt(po.grand_total), "currency": po.currency or "AED"})
 	return out
 
 
@@ -197,7 +197,7 @@ def _submissions_for_supplier(supplier: str) -> list[dict]:
 				"date": formatdate(inv.posting_date) if inv.posting_date else "—",
 				"due": formatdate(inv.due_date) if inv.due_date else "—",
 				"amount": flt(inv.grand_total),
-				"currency": inv.currency or "USD",
+				"currency": inv.currency or "AED",
 				"status": st,
 				"pi_name": inv.name,
 			}
@@ -252,14 +252,38 @@ def submit_invoice(payload=None):
 	if amount <= 0:
 		frappe.throw(_("Total amount must be greater than zero"))
 
+	invoice_date = getdate(payload.get("invoice_date") or nowdate())
+	today = getdate(nowdate())
+	earliest = add_days(today, -7)
+	if invoice_date > today:
+		frappe.throw(_("Future invoice dates are not allowed."))
+	if invoice_date < earliest:
+		frappe.throw(_("Invoice date cannot be more than 7 days in the past."))
+
+	dn_number = (payload.get("dn_number") or "").strip()
+	if not dn_number:
+		frappe.throw(_("Delivery note number is required."))
+	if (payload.get("dn_signed") or "").lower() != "yes":
+		frappe.throw(_("Delivery notes must be signed by a Numero employee before submission."))
+	dn_signed_date = payload.get("dn_signed_date")
+	if not dn_signed_date:
+		frappe.throw(_("Delivery note signed date is required."))
+	if getdate(dn_signed_date) > today:
+		frappe.throw(_("Delivery note signed date cannot be in the future."))
+	if not (payload.get("dn_document_name") or "").strip():
+		frappe.throw(_("Upload the signed delivery note document."))
+
 	if not supplier:
 		from frappe.utils import random_string
 
-		ref = "VS-" + random_string(6).upper()
+		ref = "NU-" + random_string(6).upper()
 		return {
 			"status": "demo",
 			"reference": ref,
-			"message": _("Invoice recorded in demo mode. Sign in as a linked Supplier user to create ERP documents."),
+			"message": _(
+				"Invoice recorded in demo mode and queued for NumeroUNO AP review. "
+				"Sign in as a linked Supplier user to create ERP documents."
+			),
 		}
 
 	company = frappe.defaults.get_global_default("company") or frappe.db.get_single_value(
@@ -272,11 +296,11 @@ def submit_invoice(payload=None):
 	pi.supplier = supplier
 	pi.company = company
 	pi.bill_no = invoice_number
-	pi.bill_date = getdate(payload.get("invoice_date") or nowdate())
-	pi.posting_date = pi.bill_date
+	pi.bill_date = invoice_date
+	pi.posting_date = invoice_date
 	if payload.get("due_date"):
 		pi.due_date = getdate(payload.get("due_date"))
-	pi.currency = payload.get("currency") or frappe.db.get_value("Supplier", supplier, "default_currency") or "USD"
+	pi.currency = "AED"
 
 	po_name = (payload.get("po") or "").strip()
 	item_row = {"qty": 1, "rate": amount, "amount": amount}
@@ -293,8 +317,20 @@ def submit_invoice(payload=None):
 		item_row["description"] = _("Supplier portal invoice") + f" {invoice_number}"
 
 	pi.append("items", item_row)
+
+	remarks = []
 	if payload.get("note"):
-		pi.remarks = payload.get("note")
+		remarks.append(payload.get("note"))
+	remarks.append(
+		_("Delivery Note {0} · signed by Numero employee on {1} · file: {2}").format(
+			dn_number,
+			formatdate(getdate(dn_signed_date)),
+			payload.get("dn_document_name") or "—",
+		)
+	)
+	if payload.get("invoice_document_name"):
+		remarks.append(_("Invoice file: {0}").format(payload.get("invoice_document_name")))
+	pi.remarks = "\n".join(remarks)
 
 	pi.flags.ignore_permissions = True
 	pi.insert()
@@ -304,5 +340,5 @@ def submit_invoice(payload=None):
 		"status": "success",
 		"reference": pi.name,
 		"purchase_invoice": pi.name,
-		"message": _("Invoice submitted for AP review."),
+		"message": _("Invoice submitted to NumeroUNO AP for review."),
 	}
