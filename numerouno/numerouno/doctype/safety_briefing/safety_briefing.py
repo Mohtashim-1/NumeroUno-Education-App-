@@ -10,7 +10,19 @@ class SafetyBriefing(Document):
 	def validate(self):
 		if not self.attendees:
 			self._ensure_attendee_rows()
+		self._sync_thuet_signature_columns()
 		self._validate_unique_for_student_group()
+
+	def _sync_thuet_signature_columns(self):
+		"""THUET learner signatures: only OIS 81 and OIS 83 (no OIS 01–05)."""
+		if (self.briefing_type or "").strip().upper() != "THUET":
+			return
+		if self.docstatus != 0:
+			return
+		expected = "OIS 81,OIS 83"
+		if (self.signature_labels or "").strip() != expected:
+			self.signature_labels = expected
+		self.attendee_signature_mode = "Module Columns"
 
 	def _validate_unique_for_student_group(self):
 		from numerouno.numerouno.utils.form_duplicate_guard import throw_if_duplicate_course_form

@@ -668,16 +668,17 @@ def reschedule_session(name, date, period=None):
 
 
 def _validate_session_portal(doc):
-	"""Relaxed validation for the training portal — allows daily/multi-day trainer booking."""
+	"""Nominal validation for the training portal.
+
+	Trainer / room / group allocation is planning-only: do not enforce
+	overlap against other Course Schedule rows (or Assessment Plan).
+	"""
 	if doc.instructor:
 		doc.instructor_name = frappe.db.get_value("Instructor", doc.instructor, "instructor_name")
 	label = doc.course or "Training Session"
 	doc.title = f"{label} by {(doc.instructor_name or doc.instructor)}"
-	doc.validate_time()
-	if doc.room:
-		from education.education.utils import validate_overlap_for
-
-		validate_overlap_for(doc, "Course Schedule", "room")
+	if doc.from_time and doc.to_time and doc.from_time > doc.to_time:
+		frappe.throw(_("From Time cannot be greater than To Time."))
 
 
 @frappe.whitelist()

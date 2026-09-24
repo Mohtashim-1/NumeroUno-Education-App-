@@ -171,10 +171,14 @@
     "form_code": "NUTC-P11-F02.04",
     "title": "Safety Briefing - THUET",
     "attendee_mode": "modules",
-    "signature_labels": "OIS 01,OIS 02,OIS 03,OIS 04,OIS 05",
+    "signature_labels": "OIS 81,OIS 83",
     "module_dates": [],
     "instructor_mode": "table",
-    "instructor_rows": 4,
+    "instructor_rows": 2,
+    "instructor_modules": [
+      "OIS 81",
+      "OIS 83"
+    ],
     "discussion_points": [
       "The individual right of all those involved in the exercise to intervene and stop exercises if there is unsafe acts and conditions,",
       "Engagement to prevent reoccurrence and the right to raise the alarm with staff if someone is thought to be in distress",

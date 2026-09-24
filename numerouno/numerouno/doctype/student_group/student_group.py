@@ -156,6 +156,10 @@ def create_coarse_schedule(student_group, from_time, to_time):
                     cs.from_time = from_time
                     cs.to_time = to_time
                     cs.flags.ignore_permissions = True
+                    # Nominal allocation: skip Education overlap checks (instructor/room/group).
+                    from numerouno.numerouno.api.training_schedule import _validate_session_portal
+
+                    cs.validate = lambda d=cs: _validate_session_portal(d)
 
                     try:
                         cs.insert()
