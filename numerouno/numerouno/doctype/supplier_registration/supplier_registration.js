@@ -6,7 +6,9 @@ frappe.ui.form.on("Supplier Registration", {
 		if (frm.doc.status === "Pending Approval") {
 			frm.add_custom_button(__("Approve & Create Supplier"), () => {
 				frappe.confirm(
-					__("Create an ERPNext Supplier from this registration and mark it Approved?"),
+					__(
+						"Have you reviewed the supplier details and compliance documents (Trade License, Tax Registration, ICV, IBAN Letter)?<br><br>This will create the ERPNext Supplier and mark the registration as Approved."
+					),
 					() => {
 						frm.call({
 							doc: frm.doc,
@@ -16,6 +18,13 @@ frappe.ui.form.on("Supplier Registration", {
 							callback(r) {
 								if (!r.exc) {
 									frm.reload_doc();
+									frappe.msgprint({
+										title: __("Next step"),
+										message: __(
+											"Supplier created. Open the Supplier and use <b>Portal → Create Invoice Portal User</b> to give them login access."
+										),
+										indicator: "green",
+									});
 								}
 							},
 						});

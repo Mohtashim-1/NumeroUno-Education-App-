@@ -51,6 +51,7 @@
 		iban: "",
 		account_name: "",
 		payment_terms: "Net 30",
+		currency: "AED",
 		goods_services: "",
 		remarks: "",
 		trade_license_valid_until: "",
@@ -113,9 +114,10 @@
 				if (!f.trade_license_valid_until) errors.trade_license_valid_until = "Validity date is required";
 				if (!files.tax_registration_certificate)
 					errors.tax_registration_certificate = "Tax Registration Certificate is required";
-				if (!files.icv_certificate) errors.icv_certificate = "ICV Certificate is required";
-				if (!f.icv_valid_until) errors.icv_valid_until = "Validity date is required";
+				if (files.icv_certificate && !f.icv_valid_until)
+					errors.icv_valid_until = "Validity date is required when uploading ICV Certificate";
 				if (!files.iban_letter) errors.iban_letter = "IBAN Letter is required";
+				if (!["AED", "GBP", "USD"].includes(f.currency)) errors.currency = "Select AED, GBP, or USD";
 				return Object.keys(errors).length === 0;
 			};
 
@@ -204,7 +206,7 @@
     <div class="sr-topbar">
       <div>
         <h1 class="sip-title" style="margin:0">Register as a Supplier</h1>
-        <p class="sip-sub" style="margin:6px 0 0">Submit your company details to <strong>{{ brand.company_name }}</strong>. Our AP team will review and approve your account.</p>
+        <p class="sip-sub" style="margin:6px 0 0">Submit your company details and compliance documents to <strong>{{ brand.company_name }}</strong>. Our team will review everything and approve your account before portal access is given.</p>
       </div>
     </div>
 
@@ -231,6 +233,11 @@
         <div class="sr-field">
           <label>Preferred Payment Terms</label>
           <select v-model="f.payment_terms"><option>Net 30</option><option>Net 45</option><option>Net 60</option><option>Immediate</option></select>
+        </div>
+        <div class="sr-field">
+          <label>Currency <span class="req">*</span></label>
+          <select v-model="f.currency"><option>AED</option><option>GBP</option><option>USD</option></select>
+          <div v-if="errors.currency" class="sr-err">{{ errors.currency }}</div>
         </div>
 
         <div class="sr-section">Primary Contact</div>
@@ -278,7 +285,7 @@
           <input v-model="f.country" readonly />
         </div>
 
-        <div class="sr-section">Bank (AED)</div>
+        <div class="sr-section">Bank</div>
         <div class="sr-field">
           <label>Bank Name</label>
           <input v-model="f.bank_name" />
@@ -311,13 +318,13 @@
           <div v-if="errors.tax_registration_certificate" class="sr-err">{{ errors.tax_registration_certificate }}</div>
         </div>
         <div class="sr-field">
-          <label>ICV Certificate <span class="req">*</span></label>
+          <label>ICV Certificate</label>
           <input type="file" accept=".pdf,.png,.jpg,.jpeg" @change="onFile('icv_certificate', $event)" />
           <div v-if="files.icv_certificate" class="sip-sub" style="margin-top:4px">{{ files.icv_certificate.name }}</div>
-          <div v-if="errors.icv_certificate" class="sr-err">{{ errors.icv_certificate }}</div>
+          <div class="sip-sub" style="margin-top:4px">Optional</div>
         </div>
         <div class="sr-field">
-          <label>ICV Certificate Validity <span class="req">*</span></label>
+          <label>ICV Certificate Validity</label>
           <input v-model="f.icv_valid_until" type="date" />
           <div v-if="errors.icv_valid_until" class="sr-err">{{ errors.icv_valid_until }}</div>
         </div>
@@ -355,8 +362,8 @@
     <section v-else class="sr-card sr-success">
       <div class="sr-success-icon">✓</div>
       <h2 style="margin:0 0 8px">Registration submitted</h2>
-      <p class="sip-sub">Reference <strong class="mono">{{ refName }}</strong> is with NumeroUNO for approval.</p>
-      <p class="sip-sub">After approval, NumeroUNO AP will create your portal login so you can sign in at the Supplier Invoice Portal.</p>
+      <p class="sip-sub">Reference <strong class="mono">{{ refName }}</strong> is with NumeroUNO for review.</p>
+      <p class="sip-sub">We will check your details and documents (Trade License, Tax Registration, ICV, IBAN Letter). After approval, AP will create your portal login for the Supplier Invoice Portal.</p>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
         <button type="button" class="sip-btn secondary" @click="reset">Register another</button>
         <a class="sip-btn" href="/supplier-invoice-portal" style="text-decoration:none;display:inline-flex;align-items:center">Invoice Portal</a>

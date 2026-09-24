@@ -34,6 +34,7 @@
   "column_break_bank",
   "account_name",
   "payment_terms",
+  "currency",
   "documents_section",
   "trade_license_attachment",
   "trade_license_valid_until",
@@ -218,6 +219,15 @@
    "fieldtype": "Select",
    "label": "Preferred Payment Terms",
    "options": "Net 30\nNet 45\nNet 60\nImmediate"
+  },
+  {
+   "default": "AED",
+   "fieldname": "currency",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Currency",
+   "options": "AED\nGBP\nUSD",
+   "reqd": 1
   },
   {
    "fieldname": "documents_section",

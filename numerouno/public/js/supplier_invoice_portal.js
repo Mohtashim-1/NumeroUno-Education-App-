@@ -291,13 +291,13 @@
 				if (!invoiceBlocked.value) return "";
 				return (
 					complianceGate.value?.message ||
-					"Trade License and ICV Certificate must be valid before you can submit invoices."
+					"Trade License must be valid before you can submit invoices."
 				);
 			});
 
 			const refreshComplianceGate = () => {
 				const blocking = complianceDocs.value
-					.filter((d) => ["trade_license", "icv"].includes(d.id) && ["Missing", "Overdue"].includes(d.status))
+					.filter((d) => d.id === "trade_license" && ["Missing", "Overdue"].includes(d.status))
 					.map((d) => ({
 						id: d.id,
 						name: d.name,
@@ -309,9 +309,7 @@
 					allowed: blocking.length === 0,
 					blocking,
 					message: blocking.length
-						? `Invoice submission is blocked until these documents are current: ${blocking
-								.map((b) => `${b.name} (${b.status})`)
-								.join(", ")}. Upload renewed files under Compliance.`
+						? `Invoice submission is blocked until Trade License is current (${blocking[0].status}). Upload a renewed Trade License under Compliance.`
 						: "",
 				};
 			};
@@ -398,8 +396,8 @@
 					{ k: "PO", v: f.po || "—" },
 					{ k: "Invoice date", v: fmtDate(f.invoiceDate) },
 					{ k: "Due date", v: fmtDate(f.dueDate) },
-					{ k: "Total", v: money(parseFloat(String(f.amount).replace(/[,$]/g, "")) || 0, "AED") },
-					{ k: "Currency", v: "AED" },
+					{ k: "Total", v: money(parseFloat(String(f.amount).replace(/[,$]/g, "")) || 0, f.currency || "AED") },
+					{ k: "Currency", v: f.currency || "AED" },
 					{ k: "Invoice document", v: file.value ? file.value.name : "—" },
 					{ k: "Delivery note #", v: f.dnNumber || "—" },
 					{ k: "DN signed by Numero", v: signedLabel },
@@ -473,7 +471,7 @@
 						errors.dueDate = "Due date must be after invoice date.";
 					const a = parseFloat(String(f.amount).replace(/[,$]/g, ""));
 					if (!(a > 0)) errors.amount = "Enter an amount greater than 0.";
-					f.currency = "AED";
+					if (!["AED", "GBP", "USD"].includes(f.currency)) f.currency = "AED";
 				}
 				if (s === 2) {
 					if (!f.dnNumber.trim()) errors.dnNumber = "Delivery note number is required.";
@@ -514,7 +512,7 @@
 							invoice_date: f.invoiceDate,
 							due_date: f.dueDate,
 							amount: parseFloat(String(f.amount).replace(/[,$]/g, "")),
-							currency: "AED",
+							currency: f.currency || "AED",
 							dn_number: f.dnNumber.trim(),
 							dn_signed: f.dnSigned,
 							dn_signed_date: f.dnSignedDate,
@@ -535,7 +533,7 @@
 						date: today,
 						due: fmtDate(f.dueDate),
 						amount: parseFloat(String(f.amount).replace(/[,$]/g, "")),
-						currency: "AED",
+						currency: f.currency || "AED",
 						status: "Pending review",
 					});
 					lastRef.value = res.reference || "NU-DEMO";
@@ -900,7 +898,7 @@
             <button type="button" class="sip-btn sm" style="margin-top:12px" @click="go('compliance')">Go to Compliance</button>
           </div>
           <h1 class="sip-title">Invoice Submission Portal</h1>
-          <p class="sip-sub">Submit invoices against open purchase orders in AED. After submit, NumeroUNO AP reviews within 2–3 business days. <a href="/supplier-registration">New supplier? Register here</a>.</p>
+          <p class="sip-sub">Submit invoices against open purchase orders (AED / GBP / USD). After submit, NumeroUNO AP reviews the draft Purchase Invoice and proceeds with billing. <a href="/supplier-registration">New supplier? Register here</a>.</p>
           <div class="sip-steps" style="margin-top:18px">
             <button v-for="(st, i) in steps" :key="i" type="button" class="sip-step" :class="st.class" :disabled="!st.reach || invoiceBlocked" @click="!invoiceBlocked && st.reach && (step = i + 1)">{{ st.label }}</button>
           </div>
@@ -927,7 +925,7 @@
                 <div class="sip-field"><label>PO Number<span v-if="requirePO"> *</span></label><div><select v-model="f.po"><option value="">Select open PO</option><option v-for="p in openPOs" :key="p.id" :value="p.id">{{ p.label }}</option></select><div v-if="errors.po" class="sip-err">{{ errors.po }}</div></div></div>
                 <div class="sip-field"><label>Invoice Date *</label><div><input v-model="f.invoiceDate" type="date" :min="invoiceDateMin" :max="invoiceDateMax" /><div class="sip-sub" style="margin-top:4px">Today or up to 7 days back · future dates blocked</div><div v-if="errors.invoiceDate" class="sip-err">{{ errors.invoiceDate }}</div></div></div>
                 <div class="sip-field"><label>Due Date *</label><div><input v-model="f.dueDate" type="date" /><div v-if="errors.dueDate" class="sip-err">{{ errors.dueDate }}</div></div></div>
-                <div class="sip-field"><label>Total Amount (AED) *</label><div style="display:flex;gap:8px;align-items:flex-start"><span class="sip-chip active" style="pointer-events:none;min-width:64px;justify-content:center">AED</span><input v-model="f.amount" class="mono" placeholder="0.00" style="flex:1" /><div v-if="errors.amount" class="sip-err">{{ errors.amount }}</div></div></div>
+                <div class="sip-field"><label>Total Amount *</label><div style="display:flex;gap:8px;align-items:flex-start"><select v-model="f.currency" style="width:88px;height:38px;border:1px solid #cfd6e0;border-radius:6px"><option>AED</option><option>GBP</option><option>USD</option></select><input v-model="f.amount" class="mono" placeholder="0.00" style="flex:1" /><div v-if="errors.amount" class="sip-err">{{ errors.amount }}</div></div></div>
               </div>
             </div>
             <div v-show="step === 2" style="max-width:640px;display:flex;flex-direction:column;gap:18px">
@@ -1065,7 +1063,7 @@
 
       <template v-else-if="view === 'compliance'">
         <h1 class="sip-title">Compliance</h1>
-        <p class="sip-sub">Trade License and ICV Certificate must stay valid to submit invoices. Tax Registration, IBAN Letter, and Additional Documents do not block invoicing.</p>
+        <p class="sip-sub">Trade License must stay valid to submit invoices. ICV Certificate is optional. Tax Registration, IBAN Letter, and Additional Documents do not block invoicing.</p>
         <input ref="docInput" type="file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" @change="onDocFile" />
         <section class="sip-card flush">
           <div v-for="d in complianceRows" :key="d.id" style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:16px 18px;border-top:1px solid #e3e8ef;flex-wrap:wrap">
@@ -1078,8 +1076,12 @@
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-              <div v-if="d.requires_validity" style="display:flex;flex-direction:column;gap:4px">
+			<div v-if="d.requires_validity && (d.id === 'trade_license' || d.file_name || d.status !== 'Optional')" style="display:flex;flex-direction:column;gap:4px">
                 <label style="font-size:11px;color:#5a6b82;font-weight:600">Validity / Expiry</label>
+                <input type="date" :value="d.valid_until || ''" @change="setDocValidUntil(d.id, $event.target.value)" style="height:32px;padding:0 8px;border:1px solid #cfd6e0;border-radius:6px" />
+              </div>
+              <div v-else-if="d.id === 'icv'" style="display:flex;flex-direction:column;gap:4px">
+                <label style="font-size:11px;color:#5a6b82;font-weight:600">Validity (if uploading)</label>
                 <input type="date" :value="d.valid_until || ''" @change="setDocValidUntil(d.id, $event.target.value)" style="height:32px;padding:0 8px;border:1px solid #cfd6e0;border-radius:6px" />
               </div>
               <span class="sip-pill" :style="d.pillStyle">{{ d.status }}</span>

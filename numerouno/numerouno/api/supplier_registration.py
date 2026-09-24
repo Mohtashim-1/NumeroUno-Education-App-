@@ -17,6 +17,7 @@ def get_registration_context():
 		"company_name": "Numero Uno Training and Consulting LLC",
 		"tagline": "Supplier Registration",
 		"logo": "/assets/numerouno/images/numero-logo.png",
+		"currencies": ["AED", "GBP", "USD"],
 		"invoice_portal_url": "/supplier-invoice-portal",
 		"countries": ["United Arab Emirates"],
 		"emirates": [
@@ -84,7 +85,6 @@ def submit_supplier_registration(payload=None):
 	required_files = {
 		"trade_license_attachment": _("Trade License"),
 		"tax_registration_certificate": _("Tax Registration Certificate"),
-		"icv_certificate": _("ICV Certificate"),
 		"iban_letter": _("IBAN Letter"),
 	}
 	for key, label in required_files.items():
@@ -92,21 +92,30 @@ def submit_supplier_registration(payload=None):
 		if not upload or not getattr(upload, "filename", None):
 			frappe.throw(_("{0} attachment is required.").format(label))
 
+	icv_upload = files.get("icv_certificate")
+	has_icv = bool(icv_upload and getattr(icv_upload, "filename", None))
+
 	if not trade_valid:
 		frappe.throw(_("Trade License validity date is required."))
-	if not icv_valid:
-		frappe.throw(_("ICV Certificate validity date is required."))
 	if trade_valid < getdate(nowdate()):
 		frappe.throw(_("Trade License validity cannot be in the past."))
-	if icv_valid < getdate(nowdate()):
+	if has_icv and not icv_valid:
+		frappe.throw(_("ICV Certificate validity date is required when uploading an ICV Certificate."))
+	if icv_valid and icv_valid < getdate(nowdate()):
 		frappe.throw(_("ICV Certificate validity cannot be in the past."))
+
+	currency = (data.get("currency") or payload.get("currency") or "AED").upper()
+	if currency not in ("AED", "GBP", "USD"):
+		frappe.throw(_("Currency must be AED, GBP, or USD."))
+	data["currency"] = currency
 
 	doc = frappe.new_doc("Supplier Registration")
 	doc.update(data)
 	doc.status = "Pending Approval"
 	doc.country = data.get("country") or "United Arab Emirates"
 	doc.trade_license_valid_until = trade_valid
-	doc.icv_valid_until = icv_valid
+	if icv_valid:
+		doc.icv_valid_until = icv_valid
 	doc.flags.ignore_permissions = True
 	doc.insert(ignore_permissions=True)
 
@@ -168,6 +177,7 @@ def _clean(payload):
 		"iban",
 		"account_name",
 		"payment_terms",
+		"currency",
 		"goods_services",
 		"remarks",
 	]
@@ -183,6 +193,8 @@ def _clean(payload):
 		out["supplier_type"] = "Company"
 	if not out.get("payment_terms"):
 		out["payment_terms"] = "Net 30"
+	if not out.get("currency"):
+		out["currency"] = "AED"
 	return out
 
 

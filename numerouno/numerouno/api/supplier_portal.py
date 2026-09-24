@@ -14,7 +14,7 @@ from frappe.utils import add_days, cint, date_diff, flt, formatdate, get_fullnam
 from numerouno.numerouno.supplier_compliance_setup import ensure_supplier_compliance_fields
 
 
-GATE_DOC_IDS = ("trade_license", "icv")
+GATE_DOC_IDS = ("trade_license",)
 
 
 def _status_for_validity(valid_until, has_file: bool) -> tuple[str, str]:
@@ -100,9 +100,13 @@ def _compliance_docs_for_supplier(supplier: str | None) -> list[dict]:
 			d["file_url"] = row.get("custom_icv_certificate_file") or ""
 			d["file_name"] = (d["file_url"] or "").rsplit("/", 1)[-1] if d["file_url"] else ""
 			d["valid_until"] = str(row.get("custom_icv_valid_until") or "")
-			status, meta = _status_for_validity(row.get("custom_icv_valid_until"), bool(d["file_url"]))
-			d["status"] = status
-			d["meta"] = meta if not d["file_name"] else f"{d['file_name']} · {meta}"
+			if d["file_url"]:
+				status, meta = _status_for_validity(row.get("custom_icv_valid_until"), True)
+				d["status"] = status
+				d["meta"] = f"{d['file_name']} · {meta}" if d["file_name"] else meta
+			else:
+				d["status"] = "Optional"
+				d["meta"] = "Optional · upload if available"
 		elif d["id"] == "tax_registration":
 			url = row.get("custom_tax_registration_certificate") or ""
 			if url:
@@ -239,8 +243,8 @@ def _demo_seed():
 			{
 				"id": "icv",
 				"name": "ICV Certificate",
-				"meta": "In-Country Value certificate · set validity date",
-				"status": "Missing",
+				"meta": "Optional · upload if available · set validity when uploaded",
+				"status": "Optional",
 				"requires_validity": True,
 				"valid_until": "",
 				"file_name": "",
@@ -328,11 +332,15 @@ def _demo_seed():
 			},
 			{
 				"title": "Which compliance documents are required?",
-				"body": "Trade License and ICV Certificate must be uploaded with a future validity date. If either is missing or expired, you cannot submit invoices. Tax Registration Certificate, IBAN Letter, and Additional Documents are also collected but do not block invoicing.",
+				"body": "Trade License (with validity) is required to submit invoices. ICV Certificate is optional. Also upload Tax Registration Certificate, IBAN Letter, and any Additional Documents under Compliance.",
 			},
 			{
 				"title": "Why can't I submit an invoice?",
-				"body": "Invoice submission is blocked when your Trade License or ICV Certificate is missing or expired. Go to Compliance, enter the new validity date, upload the renewed file, then try again.",
+				"body": "Invoice submission is blocked when your Trade License is missing or expired. Go to Compliance, enter the new validity date, upload the renewed file, then try again.",
+			},
+			{
+				"title": "Where do my invoices go after submit?",
+				"body": "Submitted invoices create a draft Purchase Invoice for NumeroUNO AP. The AP team reviews and submits/approves it in ERPNext, then continues normal AP billing and payment.",
 			},
 		],
 		"profile": {
@@ -704,7 +712,7 @@ def submit_invoice(payload=None):
 	if not (payload.get("dn_document_name") or "").strip():
 		frappe.throw(_("Upload the signed delivery note document."))
 
-	# Trade License + ICV must be on file and not expired (other docs do not block invoices)
+	# Trade License must be on file and not expired (ICV is optional and does not block invoices)
 	assert_supplier_can_invoice(supplier)
 
 	company = frappe.defaults.get_global_default("company") or frappe.db.get_single_value(
@@ -721,7 +729,9 @@ def submit_invoice(payload=None):
 	pi.posting_date = invoice_date
 	if payload.get("due_date"):
 		pi.due_date = getdate(payload.get("due_date"))
-	pi.currency = "AED"
+	pi.currency = (payload.get("currency") or "AED").upper()
+	if pi.currency not in ALLOWED_CURRENCIES:
+		frappe.throw(_("Currency must be AED, GBP, or USD."))
 
 	po_name = (payload.get("po") or "").strip()
 	item_row = {"qty": 1, "rate": amount, "amount": amount}
@@ -773,7 +783,8 @@ COMPLIANCE_DOC_LABELS = {
 	"additional": "Additional Documents",
 }
 
-COMPLIANCE_REQUIRES_VALIDITY = {"trade_license", "icv"}
+COMPLIANCE_REQUIRES_VALIDITY = {"trade_license", "icv"}  # ICV validity only when file is uploaded
+ALLOWED_CURRENCIES = ("AED", "GBP", "USD")
 
 
 @frappe.whitelist(methods=["POST"])
