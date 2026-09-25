@@ -127,7 +127,7 @@
 			const done = ref(false);
 			const lastRef = ref("");
 			const query = ref("");
-			const filter = ref("All");
+			const filter = ref("Unpaid");
 			const detail = ref(null);
 			const submitting = ref(false);
 			const authed = ref(false);
@@ -361,11 +361,17 @@
 
 			const filtered = computed(() => {
 				const q = query.value.trim().toLowerCase();
-				return rows.value.filter(
-					(r) =>
-						(filter.value === "All" || r.status === filter.value) &&
-						(!q || r.num.toLowerCase().includes(q) || (r.po || "").toLowerCase().includes(q))
-				);
+				return rows.value.filter((r) => {
+					const statusMatch =
+						filter.value === "Unpaid"
+							? r.status !== "Paid"
+							: filter.value === "All" || r.status === filter.value;
+					const queryMatch =
+						!q ||
+						r.num.toLowerCase().includes(q) ||
+						(r.po || "").toLowerCase().includes(q);
+					return statusMatch && queryMatch;
+				});
 			});
 
 			const recent = computed(() => rows.value.slice(0, 3));
@@ -810,11 +816,17 @@
 				pillStyle,
 				fmtDate,
 				money,
-				filters: ["All", "Pending review", "Approved", "Needs info", "Paid"],
-				historyCount: computed(
-					() =>
-						`${subs.value.length} invoices · ${money(outstandingAmount.value)} outstanding`
-				),
+				filters: ["Unpaid", "All", "Pending review", "Approved", "Needs info", "Paid"],
+				historyCount: computed(() => {
+					const unpaidCount = subs.value.filter((s) => s.status !== "Paid").length;
+					const count =
+						filter.value === "Unpaid"
+							? unpaidCount
+							: filter.value === "All"
+								? subs.value.length
+								: filtered.value.length;
+					return `${count} invoices · ${money(outstandingAmount.value)} outstanding`;
+				}),
 				inventory,
 				inventoryRows,
 				complianceRows,
