@@ -1627,15 +1627,24 @@ function _instructor_portal_boot(page) {
 					`<a href="/app/quiz-activity/${frappe.utils.escape_html(row.activity)}">View</a>`
 				];
 
-				if (isAdnocInstructor && row.assessment_result && statusLabel !== "Fail") {
+				if ((row.theory_reports_enabled || isAdnocInstructor) && row.assessment_result) {
 					var pdfParams = new URLSearchParams();
 					pdfParams.append("assessment_result", row.assessment_result);
+					var qs = pdfParams.toString();
 					actionLinks.push(`
 						<a class="portal-btn portal-btn-primary"
-							href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_adnoc_theory_assessment?${pdfParams.toString()}"
+							href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_summary?${qs}"
 							target="_blank"
 							rel="noopener">
-							Download Theory Assesment
+							Download Summary
+						</a>
+					`);
+					actionLinks.push(`
+						<a class="portal-btn portal-btn-primary"
+							href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_questions?${qs}"
+							target="_blank"
+							rel="noopener">
+							Download With Questions
 						</a>
 					`);
 				}
@@ -1875,26 +1884,26 @@ function _instructor_portal_boot(page) {
 				`<a href="/app/assessment-result/${frappe.utils.escape_html(row.name || "")}">View</a>`
 			];
 
-			if (isAdnocInstructor && row.name) {
-				var gradeUpper = String(row.grade || "").trim().toUpperCase();
-				var isFailedGrade =
-					gradeUpper === "FAIL" ||
-					gradeUpper === "FAILED" ||
-					gradeUpper === "NYC" ||
-					gradeUpper.indexOf("FAIL") >= 0 ||
-					gradeUpper.indexOf("NYC") === 0;
-				if (!isFailedGrade) {
-					var pdfParams = new URLSearchParams();
-					pdfParams.append("assessment_result", row.name);
-					actionLinks.push(`
-						<a class="portal-btn portal-btn-primary"
-							href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_adnoc_theory_assessment?${pdfParams.toString()}"
-							target="_blank"
-							rel="noopener">
-							Download Theory Assesment
-						</a>
-					`);
-				}
+			if (row.theory_reports_enabled && row.name) {
+				var pdfParams = new URLSearchParams();
+				pdfParams.append("assessment_result", row.name);
+				var qs = pdfParams.toString();
+				actionLinks.push(`
+					<a class="portal-btn portal-btn-primary"
+						href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_summary?${qs}"
+						target="_blank"
+						rel="noopener">
+						Download Summary
+					</a>
+				`);
+				actionLinks.push(`
+					<a class="portal-btn portal-btn-primary"
+						href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_questions?${qs}"
+						target="_blank"
+						rel="noopener">
+						Download With Questions
+					</a>
+				`);
 			}
 
 			var makeModelCell = `<span class="data-meta">-</span>`;

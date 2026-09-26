@@ -22,6 +22,26 @@ frappe.ui.form.on('Assessment Result', {
 		}
 
 		patch_certificate_upload(frm);
+
+		const course = (frm.doc.course || "").toLowerCase();
+		const isRospa = course.indexOf("rospa") >= 0;
+		if (!isRospa && !frm.is_new()) {
+			frm.add_custom_button(__("Download Summary"), function () {
+				window.open(
+					"/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_summary?assessment_result="
+						+ encodeURIComponent(frm.doc.name),
+					"_blank"
+				);
+			}, __("Theory Assessment"));
+			frm.add_custom_button(__("Download With Questions"), function () {
+				window.open(
+					"/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_questions?assessment_result="
+						+ encodeURIComponent(frm.doc.name),
+					"_blank"
+				);
+			}, __("Theory Assessment"));
+		}
+
 		console.log('Assessment Result refresh called');
 		console.log('frm.doc.custom_certificate:', frm.doc.custom_certificate);
 		console.log('frm.doc.ocr_extracted_text:', frm.doc.ocr_extracted_text);

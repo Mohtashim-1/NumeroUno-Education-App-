@@ -103,6 +103,57 @@ def _is_rospa_course(course):
     return "rospa" in (course or "").strip().lower()
 
 
+def _can_download_theory_assessment_reports(assessment_result, user, roles):
+	"""All courses except ROSPA.
+
+	Any desk trainer/instructor/academics role may download — do not require
+	assignment to the specific Student Group (portal already scopes what they see).
+	"""
+	if not assessment_result or not frappe.db.exists("Assessment Result", assessment_result):
+		return False
+
+	course = frappe.db.get_value("Assessment Result", assessment_result, "course") or ""
+	if _is_rospa_course(course):
+		return False
+
+	if user == "Administrator" or "System Manager" in roles:
+		return True
+
+	allowed_roles = {
+		"Academics User",
+		"Education Manager",
+		"Instructor",
+		"Trainer",
+		"Certification",
+		"ADNOC Certificate View",
+		"Training Coordinator",
+		"Training Portal",
+	}
+	if allowed_roles.intersection(roles):
+		return True
+
+	# Fallback: instructor linked to this student group
+	student_group = frappe.db.get_value(
+		"Assessment Result", assessment_result, "student_group"
+	)
+	if student_group:
+		group_instructors = set(
+			frappe.get_all(
+				"Student Group Instructor",
+				filters={"parent": student_group},
+				pluck="instructor",
+			)
+		)
+		user_instructors = set(_get_instructor_names_for_user(user))
+		if user_instructors.intersection(group_instructors):
+			return True
+
+	return _can_download_adnoc_theory_assessment(assessment_result, user, roles)
+
+
+THEORY_SUMMARY_FORMAT = "Theory Assessment Summary"
+THEORY_QUESTIONS_FORMAT = "Theory Assesment"
+
 def _is_failed_assessment_result(assessment_result):
     """True when Assessment Result grade indicates fail (e.g. FAIL / NYC)."""
     grade = (
@@ -1065,6 +1116,12 @@ def get_instructor_quiz_status(
         else:
             row["status"] = "Pending"
 
+        course_name = group_course_map.get(row.get("student_group")) or ""
+        row["course"] = course_name
+        row["theory_reports_enabled"] = bool(
+            row.get("assessment_result") and not _is_rospa_course(course_name)
+        )
+
         _attach_nyc_retest_info(row)
 
         if row.get("bulk_result_enabled") and row.get("bulk_assessment_plan"):
@@ -1163,6 +1220,9 @@ def get_instructor_results(
             row["student_name"] = student_name_map.get(row.student)
 
     records = _attach_make_model_meta(records)
+
+    for row in records:
+        row["theory_reports_enabled"] = not _is_rospa_course(row.get("course"))
 
     return {
         "records": records,
@@ -2202,49 +2262,74 @@ def get_instructor_courses(doctype, txt, searchfield, start, page_len, filters):
     return [[row.name, row.course_name] for row in rows]
 
 
+def _download_theory_assessment_pdf(assessment_result, print_format, filename_suffix):
+	from frappe.utils import cint
+
+	assessment_result = (assessment_result or "").strip()
+	if not assessment_result:
+		frappe.throw(_("Assessment Result is required."))
+
+	user = frappe.session.user
+	roles = frappe.get_roles(user)
+
+	if not _can_download_theory_assessment_reports(assessment_result, user, roles):
+		frappe.throw(
+			_("You cannot download Theory Assessment reports for this record (ROSPA excluded)."),
+			frappe.PermissionError,
+		)
+
+	if not frappe.db.exists("Assessment Result", assessment_result):
+		frappe.throw(_("Assessment Result {0} not found.").format(assessment_result))
+
+	doc = frappe.get_doc("Assessment Result", assessment_result)
+
+	# Instructors often lack DocType print permission; cancelled results are also common.
+	# Allow this trusted download path only (role check already done above).
+	prev_ignore = getattr(frappe.flags, "ignore_print_permissions", False)
+	prev_docstatus = doc.docstatus
+	frappe.flags.ignore_print_permissions = True
+	if cint(doc.docstatus) == 2:
+		# printview blocks cancelled unless Print Settings allow it
+		doc.docstatus = 1
+	try:
+		pdf_file = frappe.get_print(
+			"Assessment Result",
+			assessment_result,
+			print_format,
+			doc=doc,
+			as_pdf=True,
+			no_letterhead=1,
+		)
+	finally:
+		doc.docstatus = prev_docstatus
+		frappe.flags.ignore_print_permissions = prev_ignore
+
+	safe_name = assessment_result.replace(" ", "-").replace("/", "-")
+	frappe.local.response.filename = f"{safe_name}-{filename_suffix}.pdf"
+	frappe.local.response.filecontent = pdf_file
+	frappe.local.response.type = "pdf"
+
+
+@frappe.whitelist()
+def download_theory_assessment_summary(assessment_result):
+    """Summary table report (question IDs) — all courses except ROSPA."""
+    return _download_theory_assessment_pdf(
+        assessment_result, THEORY_SUMMARY_FORMAT, "Theory-Assessment-Summary"
+    )
+
+
+@frappe.whitelist()
+def download_theory_assessment_questions(assessment_result):
+    """Full questions report — all courses except ROSPA."""
+    return _download_theory_assessment_pdf(
+        assessment_result, THEORY_QUESTIONS_FORMAT, "Theory-Assessment-Questions"
+    )
+
+
 @frappe.whitelist()
 def download_adnoc_theory_assessment(assessment_result):
-    assessment_result = (assessment_result or "").strip()
-    if not assessment_result:
-        frappe.throw(_("Assessment Result is required."))
-
-    user = frappe.session.user
-    roles = frappe.get_roles(user)
-
-    if not _can_download_adnoc_theory_assessment(assessment_result, user, roles):
-        frappe.throw(
-            _("Only System Managers or ADNOC instructors assigned to this student group can download this report."),
-            frappe.PermissionError,
-        )
-
-    course = frappe.db.get_value("Assessment Result", assessment_result, "course") or ""
-    is_failed = _is_failed_assessment_result(assessment_result) or _is_failed_quiz_for_assessment_result(
-        assessment_result
-    )
-    # Block theory download for failed candidates (ROSPA and general Fail/NYC)
-    if is_failed:
-        label = "ROSPA " if _is_rospa_course(course) else ""
-        frappe.throw(
-            _("Download Theory Assesment is not allowed for {0}failed candidates.").format(label),
-            frappe.PermissionError,
-        )
-
-    doc = frappe.get_doc("Assessment Result", assessment_result)
-    pdf_file = frappe.get_print(
-        "Assessment Result",
-        assessment_result,
-        "Theory Assesment",
-        doc=doc,
-        as_pdf=True,
-        no_letterhead=1,
-    )
-
-    frappe.local.response.filename = "{}-Theory-Assesment.pdf".format(
-        assessment_result.replace(" ", "-").replace("/", "-")
-    )
-    frappe.local.response.filecontent = pdf_file
-    frappe.local.response.type = "pdf"
-
+    """Backward-compatible alias → questions report (now for all non-ROSPA courses)."""
+    return download_theory_assessment_questions(assessment_result)
 
 @frappe.whitelist()
 def create_nyc_reassessment_checklist(quiz_activity=None, assessment_result=None):

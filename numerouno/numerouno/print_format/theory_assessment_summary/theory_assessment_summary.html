@@ -1,0 +1,169 @@
+{# Theory Assessment Summary — table layout (question IDs) on NUTC letterhead #}
+{% set student = frappe.get_doc("Student", doc.student) if doc.student and frappe.db.exists("Student", doc.student) else None %}
+{% set student_group = frappe.get_doc("Student Group", doc.student_group) if doc.student_group and frappe.db.exists("Student Group", doc.student_group) else None %}
+{% set group_instructor = student_group.instructors[0] if student_group and student_group.instructors else None %}
+{% set instructor = frappe.get_doc("Instructor", group_instructor.instructor) if group_instructor and group_instructor.instructor and frappe.db.exists("Instructor", group_instructor.instructor) else None %}
+
+{% set quiz_activities = frappe.get_all(
+	"Quiz Activity",
+	filters={"custom_assesment_result": doc.name},
+	fields=["name", "student", "custom_student_group", "custom_assesment_plan", "quiz", "status", "score", "activity_date", "creation"],
+	order_by="activity_date desc, creation desc",
+	limit_page_length=1
+) %}
+{% if not quiz_activities %}
+	{% set quiz_activities = frappe.get_all(
+		"Quiz Activity",
+		filters={
+			"student": doc.student,
+			"custom_student_group": doc.student_group,
+			"custom_assesment_plan": doc.assessment_plan
+		},
+		fields=["name", "student", "custom_student_group", "custom_assesment_plan", "quiz", "status", "score", "activity_date", "creation"],
+		order_by="activity_date desc, creation desc",
+		limit_page_length=1
+	) %}
+{% endif %}
+
+{% set activity = quiz_activities[0] if quiz_activities else None %}
+{% set qa_doc = frappe.get_doc("Quiz Activity", activity.name) if activity else None %}
+{% set candidate_name = doc.student_name or (student.student_name if student else "") or doc.student or "" %}
+{% set pass_fail = (activity.status if activity else "") or (doc.grade or "") %}
+{% set total_score = (activity.score if activity else "") or (
+	((doc.total_score|string) ~ "/" ~ (doc.maximum_score|string)) if doc.total_score is not none and doc.maximum_score else (doc.total_score or "")
+) %}
+{% set assess_date = (activity.activity_date if activity else None) or doc.course_start_date or doc.date %}
+
+<style>
+@page { size: A4; margin: 10mm 10mm 9mm; }
+.print-format { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #222; padding: 0 !important; }
+.print-heading, .print-format > .letter-head { display: none !important; }
+.print-format * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.ta-page { max-width: 190mm; margin: 0 auto; }
+.ta-lh { text-align: center; margin: 0 0 8px; }
+.ta-lh img { width: 100%; max-width: 100%; height: auto; display: block; margin: 0 auto; }
+.ta-title { color: #c73636; font-size: 22px; font-weight: 800; margin: 6px 0 10px; letter-spacing: 0.3px; }
+.info-table, .result-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.info-table td, .result-table th, .result-table td {
+	border: 1px solid #333; padding: 5px 6px; vertical-align: middle;
+}
+.blue { background: #00589c !important; color: #fff !important; font-weight: 700; width: 18%; }
+.orange { background: #e87522 !important; color: #fff !important; font-weight: 700; }
+.section-bar { background: #e87522 !important; color: #fff !important; font-weight: 800; padding: 5px 7px; margin-top: 10px; }
+.center { text-align: center; }
+.pass { color: #0a7a2f; font-weight: 800; }
+.fail { color: #c73636; font-weight: 800; }
+.footer-acc { margin-top: 14px; }
+.footer-acc img { width: 100%; height: auto; display: block; }
+</style>
+
+<div class="ta-page">
+	<div class="ta-lh">
+		<img src="/files/IMAGE_NUTC.png" alt="Numero Uno Training &amp; Consulting LLC (NUTC)" />
+	</div>
+
+	<h1 class="ta-title">THEORY ASSESSMENT</h1>
+
+	<table class="info-table">
+		<tr>
+			<td class="blue">Candidate Name</td>
+			<td>{{ candidate_name }}</td>
+			<td class="blue">Date</td>
+			<td>{{ frappe.utils.formatdate(assess_date, "dd-MM-yyyy") if assess_date else "" }}</td>
+		</tr>
+		<tr>
+			<td class="blue">Student Group</td>
+			<td>{{ doc.student_group or (activity.custom_student_group if activity else "") or "" }}</td>
+			<td class="blue">Assessment Plan</td>
+			<td>{{ doc.assessment_plan or (activity.custom_assesment_plan if activity else "") or "" }}</td>
+		</tr>
+		<tr>
+			<td class="blue">Assessment Result</td>
+			<td>{{ doc.name }}</td>
+			<td class="blue">Total Score</td>
+			<td><b>{{ total_score }}</b></td>
+		</tr>
+		<tr>
+			<td class="blue">Quiz</td>
+			<td>{{ (activity.quiz if activity else "") or doc.course or "" }}</td>
+			<td class="blue">Pass / Fail</td>
+			<td class="{% if (pass_fail or '')|lower == 'pass' %}pass{% elif (pass_fail or '')|lower in ['fail','failed','nyc'] %}fail{% endif %}">
+				<b>{{ pass_fail }}</b>
+			</td>
+		</tr>
+	</table>
+
+	<div class="section-bar">ASSESSMENT RESULT</div>
+	<table class="result-table">
+		<thead>
+			<tr class="orange">
+				<th style="width:6%;">No.</th>
+				<th>Question</th>
+				<th style="width:30%;">Selected Option</th>
+				<th style="width:14%;">Result</th>
+				<th style="width:10%;">Completed</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% if qa_doc and qa_doc.result %}
+				{% for row in qa_doc.result %}
+				<tr>
+					<td class="center">{{ row.idx }}</td>
+					<td>{{ row.question or "" }}</td>
+					<td>{{ row.selected_option or "" }}</td>
+					<td class="center">{{ row.quiz_result or "" }}</td>
+					<td class="center">{% if row.quiz_result == "Correct" %}☑{% else %}☐{% endif %}</td>
+				</tr>
+				{% endfor %}
+			{% else %}
+				<tr>
+					<td colspan="5" class="center">No quiz answers found for this Assessment Result.</td>
+				</tr>
+			{% endif %}
+		</tbody>
+	</table>
+
+	<div class="section-bar">CANDIDATE’S RECORDS</div>
+	<table class="result-table">
+		<tr class="orange">
+			<th>Quiz</th>
+			<th style="width:16%;">Status</th>
+			<th style="width:16%;">Score</th>
+			<th style="width:20%;">Source of Evidence</th>
+		</tr>
+		<tr>
+			<td>{{ (activity.quiz if activity else "") or "" }}</td>
+			<td class="center">{{ pass_fail }}</td>
+			<td class="center">{{ total_score }}</td>
+			<td class="center">Q</td>
+		</tr>
+	</table>
+
+	<br>
+	<p><b>Learner Name:</b> {{ candidate_name }}</p>
+	<p><b>Training and Development Needs:</b> {{ doc.comment or "" }}</p>
+	<br>
+
+	<table class="result-table">
+		<tr class="orange">
+			<th>Assessor’s Name</th>
+			<th>Signature</th>
+			<th>Date</th>
+		</tr>
+		<tr>
+			<td>
+				{{ instructor.instructor_name if instructor else (group_instructor.instructor_name if group_instructor else "") }}
+			</td>
+			<td class="center">
+				{% if instructor and instructor.image %}
+					<img src="{{ instructor.image }}" style="max-width:120px;max-height:40px;object-fit:contain;">
+				{% endif %}
+			</td>
+			<td>{{ frappe.utils.formatdate(assess_date, "dd-MM-yyyy") if assess_date else "" }}</td>
+		</tr>
+	</table>
+
+	<div class="footer-acc">
+		<img src="/files/FOOTER.png" alt="NUTC accreditations" />
+	</div>
+</div>
