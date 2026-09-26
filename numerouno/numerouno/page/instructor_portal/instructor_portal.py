@@ -2310,26 +2310,30 @@ def _download_theory_assessment_pdf(assessment_result, print_format, filename_su
 	frappe.local.response.type = "pdf"
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["GET", "POST"])
 def download_theory_assessment_summary(assessment_result):
-    """Summary table report (question IDs) — all courses except ROSPA."""
-    return _download_theory_assessment_pdf(
-        assessment_result, THEORY_SUMMARY_FORMAT, "Theory-Assessment-Summary"
-    )
+	"""Summary table report — delegates to api.theory_assessment."""
+	from numerouno.numerouno.api.theory_assessment import (
+		download_theory_assessment_summary as _download,
+	)
+
+	return _download(assessment_result)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["GET", "POST"])
 def download_theory_assessment_questions(assessment_result):
-    """Full questions report — all courses except ROSPA."""
-    return _download_theory_assessment_pdf(
-        assessment_result, THEORY_QUESTIONS_FORMAT, "Theory-Assessment-Questions"
-    )
+	"""Full questions report — delegates to api.theory_assessment."""
+	from numerouno.numerouno.api.theory_assessment import (
+		download_theory_assessment_questions as _download,
+	)
+
+	return _download(assessment_result)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["GET", "POST"])
 def download_adnoc_theory_assessment(assessment_result):
-    """Backward-compatible alias → questions report (now for all non-ROSPA courses)."""
-    return download_theory_assessment_questions(assessment_result)
+	"""Backward-compatible alias → questions report (now for all non-ROSPA courses)."""
+	return download_theory_assessment_questions(assessment_result)
 
 @frappe.whitelist()
 def create_nyc_reassessment_checklist(quiz_activity=None, assessment_result=None):

@@ -1633,7 +1633,7 @@ function _instructor_portal_boot(page) {
 					var qs = pdfParams.toString();
 					actionLinks.push(`
 						<a class="portal-btn portal-btn-primary"
-							href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_summary?${qs}"
+							href="/api/method/numerouno.numerouno.api.theory_assessment.download_theory_assessment_summary?${qs}"
 							target="_blank"
 							rel="noopener">
 							Download Summary
@@ -1641,7 +1641,7 @@ function _instructor_portal_boot(page) {
 					`);
 					actionLinks.push(`
 						<a class="portal-btn portal-btn-primary"
-							href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_questions?${qs}"
+							href="/api/method/numerouno.numerouno.api.theory_assessment.download_theory_assessment_questions?${qs}"
 							target="_blank"
 							rel="noopener">
 							Download With Questions
@@ -1890,7 +1890,7 @@ function _instructor_portal_boot(page) {
 				var qs = pdfParams.toString();
 				actionLinks.push(`
 					<a class="portal-btn portal-btn-primary"
-						href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_summary?${qs}"
+						href="/api/method/numerouno.numerouno.api.theory_assessment.download_theory_assessment_summary?${qs}"
 						target="_blank"
 						rel="noopener">
 						Download Summary
@@ -1898,7 +1898,7 @@ function _instructor_portal_boot(page) {
 				`);
 				actionLinks.push(`
 					<a class="portal-btn portal-btn-primary"
-						href="/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_questions?${qs}"
+						href="/api/method/numerouno.numerouno.api.theory_assessment.download_theory_assessment_questions?${qs}"
 						target="_blank"
 						rel="noopener">
 						Download With Questions

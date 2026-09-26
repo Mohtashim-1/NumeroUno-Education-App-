@@ -28,14 +28,14 @@ frappe.ui.form.on('Assessment Result', {
 		if (!isRospa && !frm.is_new()) {
 			frm.add_custom_button(__("Download Summary"), function () {
 				window.open(
-					"/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_summary?assessment_result="
+					"/api/method/numerouno.numerouno.api.theory_assessment.download_theory_assessment_summary?assessment_result="
 						+ encodeURIComponent(frm.doc.name),
 					"_blank"
 				);
 			}, __("Theory Assessment"));
 			frm.add_custom_button(__("Download With Questions"), function () {
 				window.open(
-					"/api/method/numerouno.numerouno.page.instructor_portal.instructor_portal.download_theory_assessment_questions?assessment_result="
+					"/api/method/numerouno.numerouno.api.theory_assessment.download_theory_assessment_questions?assessment_result="
 						+ encodeURIComponent(frm.doc.name),
 					"_blank"
 				);
