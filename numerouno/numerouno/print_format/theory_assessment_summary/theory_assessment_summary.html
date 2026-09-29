@@ -27,10 +27,21 @@
 
 {% set activity = quiz_activities[0] if quiz_activities else None %}
 {% set qa_doc = frappe.get_doc("Quiz Activity", activity.name) if activity else None %}
-{% set candidate_name = doc.student_name or (student.student_name if student else "") or doc.student or "" %}
-{% set pass_fail = (activity.status if activity else "") or (doc.grade or "") %}
+{% set candidate_name = (
+	doc.student_name
+	or (student.student_name if student else "")
+	or frappe.db.get_value("Student", doc.student, "student_name")
+	or doc.student
+	or ""
+) %}
+{% set raw_status = (activity.status if activity else "") or (doc.grade or "") %}
+{% set pass_fail = (
+	"Pass" if (raw_status or "")|lower in ["pass", "passed"]
+	else ("Fail" if (raw_status or "")|lower in ["fail", "failed", "nyc", "not yet competent"] or "fail" in (raw_status or "")|lower
+	else (raw_status or "—"))
+) %}
 {% set total_score = (activity.score if activity else "") or (
-	((doc.total_score|string) ~ "/" ~ (doc.maximum_score|string)) if doc.total_score is not none and doc.maximum_score else (doc.total_score or "")
+	((doc.total_score|string) ~ "/" ~ (doc.maximum_score|string)) if doc.total_score is not none and doc.maximum_score else (doc.total_score or "—")
 ) %}
 {% set assess_date = (activity.activity_date if activity else None) or doc.course_start_date or doc.date %}
 
@@ -64,10 +75,21 @@
 
 	<h1 class="ta-title">THEORY ASSESSMENT</h1>
 
+	<table class="info-table" style="margin-bottom:8px;">
+		<tr>
+			<td class="blue">Candidate Name</td>
+			<td><b>{{ candidate_name }}</b></td>
+			<td class="blue">Total Score</td>
+			<td><b>{{ total_score or "—" }}</b></td>
+			<td class="blue">Pass / Fail</td>
+			<td class="{% if (pass_fail or '')|lower == 'pass' %}pass{% elif (pass_fail or '')|lower == 'fail' %}fail{% endif %}"><b>{{ pass_fail }}</b></td>
+		</tr>
+	</table>
+
 	<table class="info-table">
 		<tr>
 			<td class="blue">Candidate Name</td>
-			<td>{{ candidate_name }}</td>
+			<td><b>{{ candidate_name }}</b></td>
 			<td class="blue">Date</td>
 			<td>{{ frappe.utils.formatdate(assess_date, "dd-MM-yyyy") if assess_date else "" }}</td>
 		</tr>

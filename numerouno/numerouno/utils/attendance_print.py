@@ -81,11 +81,19 @@ def _attendance_key(student, date):
 
 
 def _instructor_signature_url(instructor):
+	"""Resolve instructor signature URL.
+
+	Instructor has `image` (Attach Signature) and optionally `signature`.
+	There is no `photo` column — querying it breaks Sales Invoice NUTC print.
+	"""
 	image = get_instructor_signature(instructor)
 	if not image:
-		photo = (frappe.db.get_value("Instructor", instructor, "photo") or "").strip()
-		if photo and not is_empty_signature(photo):
-			image = photo
+		# fallback: signature field if present on this site
+		meta = frappe.get_meta("Instructor")
+		if meta.has_field("signature"):
+			sig = (frappe.db.get_value("Instructor", instructor, "signature") or "").strip()
+			if sig and not is_empty_signature(sig):
+				image = sig
 	return resolve_signature_url(image) if image else ""
 
 
