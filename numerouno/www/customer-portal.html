@@ -378,6 +378,7 @@
     }
     .status-paid { background: #e8f7ee; color: var(--ok); }
     .status-unpaid, .status-overdue { background: #fdecea; color: var(--danger); }
+    .status-draft { background: #eef2f6; color: #5d6f79; }
     .status-partly-paid { background: #fff4d6; color: var(--warn); }
     .status-default { background: var(--sand-2); color: var(--ink-soft); }
 
@@ -687,7 +688,24 @@
           filter.value === "paid" ||
           filter.value === "unpaid"
       );
-      const showInvoices = computed(() => filter.value !== "orders" && filter.value !== "requests");
+      const showInvoices = computed(
+        () => filter.value !== "orders" && filter.value !== "requests" && filter.value !== "training"
+      );
+      const showTraining = computed(() => filter.value === "training" || filter.value === "all");
+      const dateRequests = computed(() => dashboard.value?.date_requests || []);
+
+      const DATE_API = "numerouno.numerouno.api.training_date_request";
+      const courses = ref([]);
+      const showDateForm = ref(false);
+      const dateForm = ref({
+        course: "",
+        preferred_date: "",
+        participants: 1,
+        customer_notes: "",
+        contact_name: "",
+        contact_phone: "",
+      });
+      const dateBusy = ref(false);
 
       const filteredCustomerChoices = computed(() => {
         const q = (customerSearch.value || "").trim().toLowerCase();
@@ -789,6 +807,13 @@
         error.value = "";
         try {
           dashboard.value = await call(`${API}.get_dashboard`, {}, "GET");
+          if (!courses.value.length) {
+            try {
+              courses.value = await call(`${DATE_API}.get_courses_for_portal`, {}, "GET") || [];
+            } catch (_) {
+              courses.value = [];
+            }
+          }
         } catch (e) {
           error.value = e.message;
           if (/sign in/i.test(e.message)) {
@@ -797,6 +822,74 @@
         } finally {
           busy.value = false;
         }
+      }
+
+      async function submitDateRequest() {
+        dateBusy.value = true;
+        error.value = "";
+        info.value = "";
+        try {
+          await call(`${DATE_API}.submit_date_request`, {
+            course: dateForm.value.course,
+            preferred_date: dateForm.value.preferred_date,
+            participants: dateForm.value.participants,
+            customer_notes: dateForm.value.customer_notes,
+            contact_name: dateForm.value.contact_name,
+            contact_phone: dateForm.value.contact_phone,
+          });
+          info.value = "Training date request submitted. NUTC will review and confirm or propose another date.";
+          showDateForm.value = false;
+          dateForm.value = {
+            course: "",
+            preferred_date: "",
+            participants: 1,
+            customer_notes: "",
+            contact_name: "",
+            contact_phone: "",
+          };
+          await loadDashboard();
+          filter.value = "training";
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          dateBusy.value = false;
+        }
+      }
+
+      async function confirmProposedDate(name) {
+        dateBusy.value = true;
+        error.value = "";
+        try {
+          await call(`${DATE_API}.confirm_proposed_date`, { name });
+          info.value = "Date confirmed. Thank you.";
+          await loadDashboard();
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          dateBusy.value = false;
+        }
+      }
+
+      async function requestDateReview(name) {
+        const note = window.prompt("Optional note for NUTC (why you need another date):") || "";
+        dateBusy.value = true;
+        error.value = "";
+        try {
+          await call(`${DATE_API}.request_date_review`, { name, customer_notes: note });
+          info.value = "Sent back to NUTC for review.";
+          await loadDashboard();
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          dateBusy.value = false;
+        }
+      }
+
+      function dateStatusClass(status) {
+        if (status === "Confirmed") return "status-paid";
+        if (status === "Proposed") return "status-unpaid";
+        if (status === "Open") return "status-draft";
+        return "";
       }
 
       async function openInvoice(name) {
@@ -974,10 +1067,12 @@
         selectedCustomer, error, info, busy, dashboard, filter, detail, detailOpen,
         paying, otpInputs, filteredInvoices, filteredCustomerChoices,
         payableOrders, payablePortalRequests, visiblePortalRequests,
-        showOrders, showPortalRequests, showInvoices,
+        showOrders, showPortalRequests, showInvoices, showTraining, dateRequests,
+        courses, showDateForm, dateForm, dateBusy,
         checkoutOpen, checkout, cardholderName, payError, paySuccess, payBusy,
-        customerSearch, customerListTruncated, statusClass,
+        customerSearch, customerListTruncated, statusClass, dateStatusClass,
         sendOtp, verifyOtp, loadDashboard, openInvoice, payInvoice, payOrder, payPortalRequest,
+        submitDateRequest, confirmProposedDate, requestDateReview,
         closeCheckout, submitPortalPayment, logout,
         onOtpInput, onOtpKeydown, onOtpPaste,
       };
@@ -1071,7 +1166,7 @@
 
       <section class="hero">
         <h2>Welcome back, {{ (session.customer_name || '').split(' ')[0] }}</h2>
-        <p>Review open invoices and settle payments securely. Receipts update as soon as Stripe confirms.</p>
+        <p>Request training dates, review invoices, and pay securely online.</p>
         <div class="metrics" v-if="dashboard">
           <div class="metric">
             <div class="label">Outstanding</div>
@@ -1082,11 +1177,11 @@
             <div class="value">{{ dashboard.metrics.unpaid_count }}</div>
           </div>
           <div class="metric">
-            <div class="label">Orders to pay</div>
-            <div class="value">{{ dashboard.metrics.order_payable_count || 0 }}</div>
+            <div class="label">Training requests</div>
+            <div class="value">{{ dashboard.metrics.open_date_request_count || 0 }}</div>
           </div>
           <div class="metric">
-            <div class="label">Open requests</div>
+            <div class="label">Open payment requests</div>
             <div class="value">{{ dashboard.metrics.portal_request_count || 0 }}</div>
           </div>
         </div>
@@ -1100,12 +1195,108 @@
       <div class="toolbar">
         <div class="filters">
           <button class="chip" :class="{active: filter==='all'}" @click="filter='all'">All</button>
-          <button class="chip" :class="{active: filter==='requests'}" @click="filter='requests'">Requests</button>
+          <button class="chip" :class="{active: filter==='training'}" @click="filter='training'">Training dates</button>
+          <button class="chip" :class="{active: filter==='requests'}" @click="filter='requests'">Payment requests</button>
           <button class="chip" :class="{active: filter==='orders'}" @click="filter='orders'">Orders</button>
           <button class="chip" :class="{active: filter==='unpaid'}" @click="filter='unpaid'">Unpaid invoices</button>
           <button class="chip" :class="{active: filter==='paid'}" @click="filter='paid'">Paid</button>
         </div>
-        <button class="btn btn-ghost btn-sm" :disabled="busy" @click="loadDashboard">Refresh</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-sea btn-sm" @click="showDateForm = !showDateForm; filter='training'">
+            {{ showDateForm ? 'Close form' : 'Request training date' }}
+          </button>
+          <button class="btn btn-ghost btn-sm" :disabled="busy" @click="loadDashboard">Refresh</button>
+        </div>
+      </div>
+
+      <div v-if="info" class="alert alert-ok" style="margin-bottom:14px">{{ info }}</div>
+
+      <!-- Training date negotiation -->
+      <div v-if="showTraining" style="margin-bottom:22px">
+        <div v-if="showDateForm" class="invoice-card" style="display:block;margin-bottom:16px">
+          <div class="inv-name" style="margin-bottom:10px">Request a training date</div>
+          <p class="inv-meta" style="margin-bottom:14px">
+            Choose a course and preferred date. NUTC will accept it or propose an alternative.
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <div class="field" style="margin:0">
+              <label>Course</label>
+              <select v-model="dateForm.course">
+                <option value="">Select course</option>
+                <option v-for="c in courses" :key="c.name" :value="c.name">{{ c.course_name }}</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0">
+              <label>Preferred date</label>
+              <input type="date" v-model="dateForm.preferred_date" />
+            </div>
+            <div class="field" style="margin:0">
+              <label>Participants</label>
+              <input type="number" min="1" v-model.number="dateForm.participants" />
+            </div>
+            <div class="field" style="margin:0">
+              <label>Contact name</label>
+              <input type="text" v-model.trim="dateForm.contact_name" placeholder="Optional" />
+            </div>
+            <div class="field" style="margin:0">
+              <label>Contact phone</label>
+              <input type="tel" v-model.trim="dateForm.contact_phone" placeholder="Optional" />
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px">
+            <label>Notes</label>
+            <textarea v-model.trim="dateForm.customer_notes" rows="2" placeholder="Any scheduling preferences…" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit"></textarea>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px">
+            <button class="btn btn-primary" :disabled="dateBusy || !dateForm.course || !dateForm.preferred_date" @click="submitDateRequest">
+              <span v-if="dateBusy" class="spinner"></span>
+              <span>{{ dateBusy ? 'Submitting…' : 'Submit request' }}</span>
+            </button>
+            <button class="btn btn-ghost" @click="showDateForm=false">Cancel</button>
+          </div>
+        </div>
+
+        <div v-if="!dateRequests.length && !showDateForm" class="alert alert-info">
+          No training date requests yet.
+          <button class="btn btn-ghost btn-sm" style="margin-left:8px" @click="showDateForm=true">Request a date</button>
+        </div>
+
+        <div v-if="dateRequests.length" class="invoice-grid">
+          <article v-for="dr in dateRequests" :key="dr.name" class="invoice-card">
+            <div>
+              <div class="inv-name">{{ dr.course_name }}</div>
+              <div class="inv-meta">
+                {{ dr.name }} · Requested {{ dr.posting_date_fmt }}
+                <span v-if="dr.participants"> · {{ dr.participants }} participant(s)</span>
+              </div>
+              <div class="inv-meta" style="margin-top:6px">
+                Preferred: <strong>{{ dr.preferred_date_fmt }}</strong>
+                <span v-if="dr.proposed_date_fmt"> · Proposed: <strong>{{ dr.proposed_date_fmt }}</strong></span>
+                <span v-if="dr.confirmed_date_fmt"> · Confirmed: <strong>{{ dr.confirmed_date_fmt }}</strong></span>
+              </div>
+              <div v-if="dr.coordinator_notes" class="inv-meta" style="margin-top:4px">NUTC note: {{ dr.coordinator_notes }}</div>
+              <div style="margin-top:8px">
+                <span class="status" :class="dateStatusClass(dr.status)">{{ dr.status }}</span>
+              </div>
+            </div>
+            <div class="actions">
+              <button
+                v-if="dr.can_confirm_proposal"
+                class="btn btn-sea btn-sm"
+                :disabled="dateBusy"
+                @click="confirmProposedDate(dr.name)"
+              >Confirm proposed date</button>
+              <button
+                v-if="dr.can_request_review"
+                class="btn btn-ghost btn-sm"
+                :disabled="dateBusy"
+                @click="requestDateReview(dr.name)"
+              >Request another review</button>
+              <span v-if="dr.is_confirmed" class="inv-meta">Locked in training calendar</span>
+              <span v-else-if="dr.is_open" class="inv-meta">Awaiting NUTC review</span>
+            </div>
+          </article>
+        </div>
       </div>
 
       <div v-if="showPortalRequests && visiblePortalRequests.length" class="invoice-grid" style="margin-bottom:20px">

@@ -587,6 +587,16 @@ def get_dashboard():
 	ppr_due = sum(p["amount"] for p in payable_pprs)
 	ppr_paid_total = sum(p["amount"] for p in paid_pprs)
 
+	date_requests = []
+	if frappe.db.exists("DocType", "Training Date Request"):
+		from numerouno.numerouno.api.training_date_request import list_my_date_requests
+
+		try:
+			date_requests = list_my_date_requests()
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Customer Portal Date Requests")
+			date_requests = []
+
 	outstanding = sum(r["outstanding_amount"] for r in rows if r["can_pay"])
 	order_due = sum(o["amount_due"] for o in payable_orders)
 	paid_total = sum(r["paid_amount"] for r in rows) + ppr_paid_total
@@ -600,6 +610,10 @@ def get_dashboard():
 		)
 	)
 
+	open_date_requests = len(
+		[d for d in date_requests if d.get("status") in ("Open", "Proposed")]
+	)
+
 	return {
 		"customer": session.customer,
 		"customer_name": session.customer_name,
@@ -610,6 +624,8 @@ def get_dashboard():
 			"order_payable_count": len(payable_orders),
 			"portal_request_count": len(payable_pprs),
 			"portal_paid_count": len(paid_pprs),
+			"date_request_count": len(date_requests),
+			"open_date_request_count": open_date_requests,
 			"outstanding": outstanding,
 			"outstanding_fmt": fmt_money(outstanding, currency=currency),
 			"order_due": order_due,
@@ -623,6 +639,7 @@ def get_dashboard():
 		"invoices": rows,
 		"orders": order_rows,
 		"portal_requests": portal_requests,
+		"date_requests": date_requests,
 		"stripe_ready": _stripe_ready(),
 	}
 
