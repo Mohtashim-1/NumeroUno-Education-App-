@@ -384,11 +384,19 @@ def get_courses_for_portal(txt=None):
 	return [{"name": r.name, "course_name": r.course_name or r.name} for r in rows if r.name]
 
 
+def _normalize_id_number(value: str | None) -> str:
+	"""Normalize Emirates ID / Passport for matching (strip spaces, dashes, slashes)."""
+	if not value:
+		return ""
+	return "".join(ch for ch in str(value).strip().upper() if ch.isalnum())
+
+
 @frappe.whitelist()
 def list_saved_candidates(txt=None):
-	"""Distinct candidates previously submitted by this customer's date requests.
+	"""Previous candidates/students for this customer — pick from dropdown next booking.
 
-	Clients pick from a dropdown on the next booking instead of re-typing.
+	Identity key is Emirates ID / Passport Number (normalized). One person = one option.
+	Sources: prior Training Date Request candidates + Student records linked to customer.
 	"""
 	session = _require_requester_customer()
 	customers = session.customers or []
@@ -402,7 +410,8 @@ def list_saved_candidates(txt=None):
 		extra = " and (c.full_name like %(txt)s or ifnull(c.id_number,'') like %(txt)s)"
 		params["txt"] = f"%{txt}%"
 
-	rows = frappe.db.sql(
+	# From earlier date requests (portal-created candidates)
+	tdr_rows = frappe.db.sql(
 		f"""
 		select
 			c.full_name,
@@ -410,44 +419,112 @@ def list_saved_candidates(txt=None):
 			c.date_of_birth,
 			c.contact_number,
 			c.email,
-			max(c.id_attachment) as id_attachment,
-			max(p.modified) as last_used
+			c.id_attachment,
+			p.modified as last_used
 		from `tabTraining Date Request Candidate` c
 		inner join `tabTraining Date Request` p on p.name = c.parent
 		where p.customer in %(customers)s
 		  and ifnull(c.full_name, '') != ''
+		  and ifnull(c.id_number, '') != ''
 		  {extra}
-		group by
-			lower(trim(c.full_name)),
-			lower(trim(ifnull(c.id_number, ''))),
-			c.date_of_birth,
-			lower(trim(ifnull(c.contact_number, ''))),
-			lower(trim(ifnull(c.email, '')))
-		order by last_used desc
-		limit 100
+		order by p.modified desc
+		limit 500
 		""",
 		params,
 		as_dict=True,
 	)
-	out = []
-	for r in rows:
-		out.append(
-			{
-				"full_name": r.full_name or "",
-				"id_number": r.id_number or "",
-				"date_of_birth": str(r.date_of_birth) if r.date_of_birth else "",
-				"date_of_birth_fmt": formatdate(r.date_of_birth) if r.date_of_birth else "",
-				"contact_number": r.contact_number or "",
-				"email": r.email or "",
-				"id_attachment": r.id_attachment or "",
-				"label": (
-					f"{r.full_name}"
-					+ (f" · {r.id_number}" if r.id_number else "")
-					+ (f" · {formatdate(r.date_of_birth)}" if r.date_of_birth else "")
-				),
-			}
+
+	# From Student master (once staff/customer created them) — match by customer + EID
+	student_rows = []
+	if frappe.get_meta("Student").has_field("custom_eid_no") and frappe.get_meta("Student").has_field(
+		"customer_name"
+	):
+		stu_extra = ""
+		stu_params = {"customers": customers}
+		if txt:
+			stu_extra = """
+				and (
+					ifnull(s.student_name,'') like %(txt)s
+					or ifnull(s.first_name,'') like %(txt)s
+					or ifnull(s.custom_eid_no,'') like %(txt)s
+				)
+			"""
+			stu_params["txt"] = f"%{txt}%"
+		phone_expr = "s.student_mobile_number"
+		if frappe.get_meta("Student").has_field("custom_phone"):
+			phone_expr = "ifnull(nullif(s.student_mobile_number,''), s.custom_phone)"
+		student_rows = frappe.db.sql(
+			f"""
+			select
+				ifnull(nullif(s.student_name,''), trim(concat(ifnull(s.first_name,''),' ',ifnull(s.last_name,'')))) as full_name,
+				s.custom_eid_no as id_number,
+				s.date_of_birth,
+				{phone_expr} as contact_number,
+				s.student_email_id as email,
+				s.name as student,
+				s.modified as last_used
+			from `tabStudent` s
+			where s.customer_name in %(customers)s
+			  and ifnull(s.custom_eid_no, '') != ''
+			  and ifnull(s.enabled, 1) = 1
+			  {stu_extra}
+			order by s.modified desc
+			limit 500
+			""",
+			stu_params,
+			as_dict=True,
+		)
+
+	# Deduplicate by normalized Emirates ID / Passport — keep newest details
+	by_id: dict[str, dict] = {}
+	for r in list(tdr_rows) + list(student_rows):
+		norm = _normalize_id_number(r.get("id_number"))
+		if not norm:
+			continue
+		existing = by_id.get(norm)
+		last_used = r.get("last_used")
+		if existing and existing.get("_last_used") and last_used and last_used < existing["_last_used"]:
+			continue
+		by_id[norm] = {
+			"full_name": (r.get("full_name") or "").strip(),
+			"id_number": (r.get("id_number") or "").strip(),
+			"date_of_birth": str(r.date_of_birth) if r.get("date_of_birth") else "",
+			"date_of_birth_fmt": formatdate(r.date_of_birth) if r.get("date_of_birth") else "",
+			"contact_number": (r.get("contact_number") or "").strip(),
+			"email": (r.get("email") or "").strip(),
+			"id_attachment": (r.get("id_attachment") or "").strip(),
+			"student": (r.get("student") or "").strip(),
+			"_last_used": last_used,
+			"id_key": norm,
+		}
+
+	out = sorted(
+		by_id.values(),
+		key=lambda x: x.get("_last_used") or "",
+		reverse=True,
+	)[:100]
+
+	for row in out:
+		row.pop("_last_used", None)
+		name = row["full_name"] or "Candidate"
+		eid = row["id_number"]
+		row["label"] = f"{name} · ID/Passport: {eid}" + (
+			f" · {row['date_of_birth_fmt']}" if row.get("date_of_birth_fmt") else ""
 		)
 	return out
+
+
+@frappe.whitelist()
+def find_candidate_by_id(id_number=None):
+	"""Lookup one saved candidate/student by Emirates ID or Passport for auto-fill."""
+	session = _require_requester_customer()
+	needle = _normalize_id_number(id_number)
+	if not needle or not (session.customers or []):
+		return None
+	for row in list_saved_candidates():
+		if row.get("id_key") == needle or _normalize_id_number(row.get("id_number")) == needle:
+			return row
+	return None
 
 
 @frappe.whitelist()
