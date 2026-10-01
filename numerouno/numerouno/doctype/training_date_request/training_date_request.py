@@ -43,16 +43,25 @@ class TrainingDateRequest(Document):
 			frappe.throw(_("Confirmed date is required when status is Confirmed."))
 		if self.is_new() or self.has_value_changed("candidates"):
 			if not self.candidates:
-				frappe.throw(_("Please add at least one candidate with ID document attached."))
+				frappe.throw(_("Please add at least one candidate."))
 			for i, row in enumerate(self.candidates, start=1):
 				if not (row.full_name or "").strip():
 					frappe.throw(_("Candidate #{0}: Full Name is required.").format(i))
 				if not (row.id_number or "").strip():
-					frappe.throw(_("Candidate #{0}: Passport / Emirates ID No. is required.").format(i))
-				if not (row.id_attachment or "").strip():
-					frappe.throw(
-						_("Candidate #{0}: Please attach the ID document (file upload, not a link).").format(i)
-					)
+					frappe.throw(_("Candidate #{0}: Emirates ID / Passport No. is required.").format(i))
+				if not row.date_of_birth:
+					frappe.throw(_("Candidate #{0}: Date of Birth is required.").format(i))
+				if not (row.contact_number or "").strip():
+					frappe.throw(_("Candidate #{0}: Contact Number is required.").format(i))
+				if not (row.email or "").strip():
+					frappe.throw(_("Candidate #{0}: Email is required.").format(i))
+				if row.id_attachment:
+					att = (row.id_attachment or "").strip()
+					if att.startswith("http://") or att.startswith("https://"):
+						if "/files/" not in att and "/private/files/" not in att:
+							frappe.throw(
+								_("Candidate #{0}: Attach the ID file — do not paste an external link.").format(i)
+							)
 
 
 def _coordinator_emails():

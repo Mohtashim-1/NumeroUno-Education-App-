@@ -511,23 +511,52 @@
 				}
 				submitting.value = true;
 				try {
-					const res = await call("submit_invoice", {
-						payload: {
-							invoice_number: f.invoiceNumber.trim(),
-							po: f.po,
-							invoice_date: f.invoiceDate,
-							due_date: f.dueDate,
-							amount: parseFloat(String(f.amount).replace(/[,$]/g, "")),
-							currency: f.currency || "AED",
-							dn_number: f.dnNumber.trim(),
-							dn_signed: f.dnSigned,
-							dn_signed_date: f.dnSignedDate,
-							dn_document_name: dnFile.value?.name || "",
-							invoice_document_name: file.value?.name || "",
-							terms: f.terms,
-							note: f.note,
+					if (!file.value?.blob || !dnFile.value?.blob) {
+						throw new Error("Invoice and signed delivery note files are required.");
+					}
+					const payload = {
+						invoice_number: f.invoiceNumber.trim(),
+						po: f.po,
+						invoice_date: f.invoiceDate,
+						due_date: f.dueDate,
+						amount: parseFloat(String(f.amount).replace(/[,$]/g, "")),
+						currency: f.currency || "AED",
+						dn_number: f.dnNumber.trim(),
+						dn_signed: f.dnSigned,
+						dn_signed_date: f.dnSignedDate,
+						dn_document_name: dnFile.value?.name || "",
+						invoice_document_name: file.value?.name || "",
+						terms: f.terms,
+						note: f.note,
+					};
+					const fd = new FormData();
+					fd.append("payload", JSON.stringify(payload));
+					fd.append("invoice_file", file.value.blob, file.value.name);
+					fd.append("dn_file", dnFile.value.blob, dnFile.value.name);
+
+					const resHttp = await fetch(`/api/method/${API}.submit_invoice`, {
+						method: "POST",
+						headers: {
+							Accept: "application/json",
+							"X-Frappe-CSRF-Token": csrf(),
 						},
+						credentials: "same-origin",
+						body: fd,
 					});
+					const data = await resHttp.json();
+					if (!resHttp.ok || data.exc) {
+						let message = "Submit failed";
+						try {
+							if (data._server_messages) {
+								const msgs = JSON.parse(data._server_messages);
+								message = JSON.parse(msgs[0]).message || message;
+							}
+						} catch (e) {
+							message = data.message || message;
+						}
+						throw new Error(message);
+					}
+					const res = data.message || {};
 					const today = new Date().toLocaleDateString("en-US", {
 						month: "short",
 						day: "2-digit",
@@ -937,7 +966,7 @@
                 <div class="sip-field"><label>PO Number<span v-if="requirePO"> *</span></label><div><select v-model="f.po"><option value="">Select open PO</option><option v-for="p in openPOs" :key="p.id" :value="p.id">{{ p.label }}</option></select><div v-if="errors.po" class="sip-err">{{ errors.po }}</div></div></div>
                 <div class="sip-field"><label>Invoice Date *</label><div><input v-model="f.invoiceDate" type="date" :min="invoiceDateMin" :max="invoiceDateMax" /><div class="sip-sub" style="margin-top:4px">Today or up to 7 days back · future dates blocked</div><div v-if="errors.invoiceDate" class="sip-err">{{ errors.invoiceDate }}</div></div></div>
                 <div class="sip-field"><label>Due Date *</label><div><input v-model="f.dueDate" type="date" /><div v-if="errors.dueDate" class="sip-err">{{ errors.dueDate }}</div></div></div>
-                <div class="sip-field"><label>Total Amount *</label><div style="display:flex;gap:8px;align-items:flex-start"><select v-model="f.currency" style="width:88px;height:38px;border:1px solid #cfd6e0;border-radius:6px"><option>AED</option><option>GBP</option><option>USD</option></select><input v-model="f.amount" class="mono" placeholder="0.00" style="flex:1" /><div v-if="errors.amount" class="sip-err">{{ errors.amount }}</div></div></div>
+                <div class="sip-field"><label>Net amount excl. VAT *</label><div style="display:flex;gap:8px;align-items:flex-start"><select v-model="f.currency" style="width:88px;height:38px;border:1px solid #cfd6e0;border-radius:6px"><option>AED</option><option>GBP</option><option>USD</option></select><input v-model="f.amount" class="mono" placeholder="0.00" style="flex:1" /><div v-if="errors.amount" class="sip-err">{{ errors.amount }}</div></div><div class="sip-sub" style="margin-top:4px">VAT (e.g. UAE 5%) is applied automatically on the Purchase Invoice for AP.</div></div>
               </div>
             </div>
             <div v-show="step === 2" style="max-width:640px;display:flex;flex-direction:column;gap:18px">
@@ -1004,6 +1033,7 @@
           </div>
         </section>
       </template>
+
 
       <template v-else-if="view === 'history'">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">

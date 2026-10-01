@@ -240,7 +240,8 @@ doc_events = {
         "on_cancel": "numerouno.numerouno.utils.student_invoice_sync.clear_student_group_student_on_invoice_cancel",
     },
     "Quotation": {
-        "before_cancel": "numerouno.numerouno.utils.quotation_workflow.require_cancellation_reason"
+        "before_cancel": "numerouno.numerouno.utils.quotation_workflow.require_cancellation_reason",
+        "on_cancel": "numerouno.numerouno.utils.quotation_workflow.sync_workflow_state_on_cancel",
     },
     "Assessment Result": {
         "validate": [

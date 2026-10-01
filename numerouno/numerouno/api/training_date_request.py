@@ -137,7 +137,6 @@ def _serialize(doc) -> dict:
 		candidates.append(
 			{
 				"full_name": row.full_name,
-				"nationality": row.nationality or "",
 				"date_of_birth": row.date_of_birth,
 				"date_of_birth_fmt": formatdate(row.date_of_birth) if row.date_of_birth else "",
 				"id_number": row.id_number or "",
@@ -185,7 +184,7 @@ def _get_owned(name: str, session) -> "frappe.model.document.Document":
 	return doc
 
 
-def _parse_candidates(candidates) -> list[dict]:
+def _parse_candidates(candidates, require_attachment: bool = False) -> list[dict]:
 	if isinstance(candidates, str):
 		candidates = json.loads(candidates or "[]")
 	if not isinstance(candidates, list):
@@ -196,16 +195,24 @@ def _parse_candidates(candidates) -> list[dict]:
 			frappe.throw(_("Invalid candidate row #{0}.").format(i))
 		full_name = (raw.get("full_name") or "").strip()
 		id_number = (raw.get("id_number") or "").strip()
+		date_of_birth = raw.get("date_of_birth") or None
+		contact_number = (raw.get("contact_number") or "").strip()
+		email = (raw.get("email") or "").strip()
 		id_attachment = (raw.get("id_attachment") or "").strip()
 		if not full_name:
 			frappe.throw(_("Candidate #{0}: Full Name is required.").format(i))
 		if not id_number:
-			frappe.throw(_("Candidate #{0}: Passport / Emirates ID No. is required.").format(i))
-		if not id_attachment:
+			frappe.throw(_("Candidate #{0}: Emirates ID / Passport No. is required.").format(i))
+		if not date_of_birth:
+			frappe.throw(_("Candidate #{0}: Date of Birth is required.").format(i))
+		if not contact_number:
+			frappe.throw(_("Candidate #{0}: Contact Number is required.").format(i))
+		if not email:
+			frappe.throw(_("Candidate #{0}: Email is required.").format(i))
+		if require_attachment and not id_attachment:
 			frappe.throw(
 				_("Candidate #{0}: Please attach the ID document (upload a file, not a link).").format(i)
 			)
-		# Reject bare http(s) "photo links" — must be an uploaded File path
 		if id_attachment.startswith("http://") or id_attachment.startswith("https://"):
 			if "/files/" not in id_attachment and "/private/files/" not in id_attachment:
 				frappe.throw(
@@ -216,12 +223,11 @@ def _parse_candidates(candidates) -> list[dict]:
 		rows.append(
 			{
 				"full_name": full_name,
-				"nationality": (raw.get("nationality") or "").strip(),
-				"date_of_birth": raw.get("date_of_birth") or None,
+				"date_of_birth": date_of_birth,
 				"id_number": id_number,
-				"contact_number": (raw.get("contact_number") or "").strip(),
-				"email": (raw.get("email") or "").strip(),
-				"id_attachment": id_attachment,
+				"contact_number": contact_number,
+				"email": email,
+				"id_attachment": id_attachment or None,
 			}
 		)
 	if not rows:
@@ -252,7 +258,7 @@ def list_my_date_requests():
 	filters: dict = {"status": ("!=", "Cancelled")}
 	if not session.is_staff:
 		if not session.customers:
-			return []
+			return {"requests": [], "is_staff": False, "pending_open_count": None}
 		filters["customer"] = ("in", session.customers)
 
 	rows = frappe.get_all(
@@ -262,7 +268,21 @@ def list_my_date_requests():
 		order_by="modified desc",
 		limit_page_length=100,
 	)
-	return [_serialize(frappe.get_doc("Training Date Request", r.name)) for r in rows]
+	requests = [_serialize(frappe.get_doc("Training Date Request", r.name)) for r in rows]
+
+	pending_open_count = None
+	if session.is_staff:
+		# Staff-only: how many Open/Proposed across all customers
+		pending_open_count = frappe.db.count(
+			"Training Date Request",
+			{"status": ("in", ("Open", "Proposed"))},
+		)
+
+	return {
+		"requests": requests,
+		"is_staff": bool(session.is_staff),
+		"pending_open_count": pending_open_count,
+	}
 
 
 @frappe.whitelist()
@@ -287,7 +307,7 @@ def submit_date_request(
 	if not frappe.db.exists("Course", course):
 		frappe.throw(_("Invalid course."))
 
-	candidate_rows = _parse_candidates(candidates)
+	candidate_rows = _parse_candidates(candidates, require_attachment=True)
 
 	# Resolve customer
 	customer = (customer or "").strip() or session.customer
@@ -458,3 +478,244 @@ def cancel_request(name=None, coordinator_notes=None):
 		"Your training date request was cancelled by NUTC. Please contact us if you need a new booking.",
 	)
 	return _serialize(doc)
+
+
+CANDIDATE_CSV_HEADERS = (
+	"full_name",
+	"id_number",
+	"date_of_birth",
+	"contact_number",
+	"email",
+)
+
+
+@frappe.whitelist()
+def get_candidate_csv_template():
+	"""Sample CSV for Certificate Portal bulk candidate upload."""
+	_require_requester_customer()
+	import csv
+	from io import StringIO
+
+	buf = StringIO()
+	writer = csv.DictWriter(buf, fieldnames=CANDIDATE_CSV_HEADERS)
+	writer.writeheader()
+	writer.writerow(
+		{
+			"full_name": "Ahmed Ali",
+			"id_number": "784-1990-1234567-1",
+			"date_of_birth": "1990-05-15",
+			"contact_number": "+971500000000",
+			"email": "ahmed@example.com",
+		}
+	)
+	return {
+		"filename": "training_candidates_template.csv",
+		"content": buf.getvalue(),
+		"headers": list(CANDIDATE_CSV_HEADERS),
+		"instructions": [
+			"Columns: Full Name, Emirates ID / Passport No., Date of Birth (YYYY-MM-DD), Contact Number, Email.",
+			"Select course and preferred date on the portal, then upload this CSV.",
+            "Optional: after loading CSV into the form, upload each candidate ID one by one, then submit.",
+		],
+	}
+
+
+def _parse_candidate_csv(content: bytes | str) -> list[dict]:
+	import csv
+	from io import StringIO
+
+	if isinstance(content, bytes):
+		text = content.decode("utf-8-sig")
+	else:
+		text = content
+	reader = csv.DictReader(StringIO(text))
+	if not reader.fieldnames:
+		frappe.throw(_("CSV has no header row."))
+
+	norm_map = {}
+	for h in reader.fieldnames:
+		key = (h or "").strip().lower().replace(" ", "_")
+		key = key.replace("/", "_").replace("__", "_")
+		aliases = {
+			"emirates_id": "id_number",
+			"emirates_id_passport_no": "id_number",
+			"emirates_id_/_passport_no": "id_number",
+			"passport_no": "id_number",
+			"passport_number": "id_number",
+			"dob": "date_of_birth",
+			"phone": "contact_number",
+			"mobile": "contact_number",
+			"name": "full_name",
+			"candidate_name": "full_name",
+		}
+		key = aliases.get(key, key)
+		norm_map[key] = h
+
+	required = ("full_name", "id_number", "date_of_birth", "contact_number", "email")
+	missing = [h for h in required if h not in norm_map]
+	if missing:
+		frappe.throw(_("CSV is missing required columns: {0}").format(", ".join(missing)))
+
+	rows = []
+	for i, raw in enumerate(reader, start=2):
+		def g(key, _raw=raw):
+			src = norm_map.get(key)
+			return ((_raw.get(src) if src else "") or "").strip()
+
+		full_name = g("full_name")
+		if not full_name:
+			continue
+		rows.append(
+			{
+				"row": i,
+				"full_name": full_name,
+				"id_number": g("id_number"),
+				"date_of_birth": g("date_of_birth"),
+				"contact_number": g("contact_number"),
+				"email": g("email"),
+			}
+		)
+	if not rows:
+		frappe.throw(_("CSV has no candidate rows."))
+	if len(rows) > 200:
+		frappe.throw(_("Please upload at most 200 candidates per CSV."))
+	return rows
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_date_request_csv():
+	"""Create one Training Date Request from course/date + candidate CSV (Certificate Portal)."""
+	from frappe.utils.file_manager import save_file
+	from frappe.utils import now_datetime
+
+	session = _require_requester_customer()
+
+	course = (frappe.form_dict.get("course") or "").strip()
+	preferred_date = (frappe.form_dict.get("preferred_date") or "").strip()
+	customer_notes = (frappe.form_dict.get("customer_notes") or "").strip()
+	contact_name = (frappe.form_dict.get("contact_name") or "").strip()
+	contact_phone = (frappe.form_dict.get("contact_phone") or "").strip()
+	customer = (frappe.form_dict.get("customer") or "").strip()
+
+	if not course:
+		frappe.throw(_("Please select a course."))
+	if not preferred_date:
+		frappe.throw(_("Please choose a preferred date."))
+	if getdate(preferred_date) < getdate(today()):
+		frappe.throw(_("Preferred date cannot be in the past."))
+	if not frappe.db.exists("Course", course):
+		frappe.throw(_("Invalid course."))
+
+	files = getattr(frappe.request, "files", None) or {}
+	csv_upload = files.get("csv_file") or files.get("file")
+	if not csv_upload or not getattr(csv_upload, "filename", None):
+		frappe.throw(_("Please upload a candidates CSV file."))
+	if not csv_upload.filename.lower().endswith(".csv"):
+		frappe.throw(_("File must be a .csv"))
+
+	csv_rows = _parse_candidate_csv(csv_upload.read())
+
+	extra = []
+	if hasattr(files, "getlist"):
+		extra.extend([u for u in (files.getlist("id_files") or []) if u])
+		extra.extend([u for u in (files.getlist("attachments") or []) if u])
+	for key, upload in list(files.items()):
+		if key in ("csv_file", "file", "id_files", "attachments"):
+			continue
+		if upload and getattr(upload, "filename", None):
+			extra.append(upload)
+
+	def find_id_file(id_number: str):
+		needle = (id_number or "").lower().replace(" ", "").replace("/", "")
+		for up in extra:
+			base = (up.filename or "").rsplit(".", 1)[0].lower().replace(" ", "").replace("/", "")
+			if base == needle or base.startswith(needle) or needle in base:
+				return up
+		return None
+
+	if session.is_staff and customer:
+		pass
+	elif customer and customer in (session.customers or []):
+		pass
+	elif session.customer:
+		customer = session.customer
+	else:
+		frappe.throw(_("No customer account is linked to your user. Contact NUTC."))
+	if not frappe.db.exists("Customer", customer):
+		frappe.throw(_("Invalid customer."))
+
+	candidates = []
+	for row in csv_rows:
+		cand = {
+			"full_name": row["full_name"],
+			"id_number": row["id_number"],
+			"date_of_birth": row["date_of_birth"],
+			"contact_number": row["contact_number"],
+			"email": row["email"],
+		}
+		if not cand["id_number"] or not cand["date_of_birth"] or not cand["contact_number"] or not cand["email"]:
+			frappe.throw(
+				_("CSV row {0}: Full Name, Emirates ID/Passport No., Date of Birth, Contact Number and Email are required.").format(
+					row["row"]
+				)
+			)
+		try:
+			getdate(cand["date_of_birth"])
+		except Exception:
+			frappe.throw(_("CSV row {0}: invalid date_of_birth (use YYYY-MM-DD).").format(row["row"]))
+
+		up = find_id_file(cand["id_number"])
+		if up:
+			content = up.read()
+			if hasattr(up, "seek"):
+				try:
+					up.seek(0)
+				except Exception:
+					pass
+			if content:
+				stamp = now_datetime().strftime("%Y%m%d%H%M%S")
+				safe = f"candidate_id_{stamp}_{up.filename}"
+				fdoc = save_file(safe, content, None, None, is_private=1)
+				cand["id_attachment"] = fdoc.file_url
+				cand["_file_name"] = fdoc.name
+		candidates.append(cand)
+
+	doc = frappe.new_doc("Training Date Request")
+	doc.customer = customer
+	doc.customer_name = frappe.db.get_value("Customer", customer, "customer_name")
+	doc.contact_email = session.email
+	doc.contact_name = contact_name or session.full_name
+	doc.contact_phone = contact_phone
+	doc.course = course
+	doc.preferred_date = preferred_date
+	doc.customer_notes = customer_notes or _("Submitted via Certificate Portal CSV bulk upload")
+	doc.status = "Open"
+	for cand in candidates:
+		row = {k: v for k, v in cand.items() if not k.startswith("_")}
+		doc.append("candidates", row)
+	doc.participants = len(candidates)
+	doc.flags.ignore_permissions = True
+	doc.insert(ignore_permissions=True)
+
+	for cand in candidates:
+		fname = cand.get("_file_name")
+		if fname and frappe.db.exists("File", fname):
+			frappe.db.set_value(
+				"File",
+				fname,
+				{
+					"attached_to_doctype": "Training Date Request",
+					"attached_to_name": doc.name,
+				},
+				update_modified=False,
+			)
+
+	frappe.db.commit()
+	return {
+		"status": "success",
+		"request": _serialize(doc),
+		"candidate_count": len(candidates),
+		"message": _("Training date request {0} created with {1} candidate(s).").format(
+			doc.name, len(candidates)
+		),
+	}

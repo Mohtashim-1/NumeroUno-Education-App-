@@ -675,9 +675,16 @@ def get_compliance_status():
 	}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def submit_invoice(payload=None):
-	"""Create a draft Purchase Invoice for the logged-in supplier."""
+	"""Create a draft Purchase Invoice for the logged-in supplier (with file attachments + VAT)."""
+	from frappe.utils.file_manager import save_file
+
+	# Prefer JSON body; fall back to form field (multipart upload)
+	if payload is None:
+		raw = frappe.form_dict.get("payload")
+		if raw:
+			payload = json.loads(raw) if isinstance(raw, str) else raw
 	if isinstance(payload, str):
 		payload = json.loads(payload)
 	payload = payload or {}
@@ -689,7 +696,7 @@ def submit_invoice(payload=None):
 
 	amount = flt(payload.get("amount"))
 	if amount <= 0:
-		frappe.throw(_("Total amount must be greater than zero"))
+		frappe.throw(_("Net amount (excl. VAT) must be greater than zero"))
 
 	invoice_date = getdate(payload.get("invoice_date") or nowdate())
 	today = getdate(nowdate())
@@ -709,8 +716,17 @@ def submit_invoice(payload=None):
 		frappe.throw(_("Delivery note signed date is required."))
 	if getdate(dn_signed_date) > today:
 		frappe.throw(_("Delivery note signed date cannot be in the future."))
-	if not (payload.get("dn_document_name") or "").strip():
-		frappe.throw(_("Upload the signed delivery note document."))
+
+	files = getattr(frappe.request, "files", None) or {}
+	invoice_upload = files.get("invoice_file") or files.get("file")
+	dn_upload = files.get("dn_file")
+	if not invoice_upload or not getattr(invoice_upload, "filename", None):
+		# allow legacy JSON-only when filename was sent (still require file for new flow)
+		if not (payload.get("invoice_document_name") or "").strip():
+			frappe.throw(_("Upload the supplier invoice document."))
+	if not dn_upload or not getattr(dn_upload, "filename", None):
+		if not (payload.get("dn_document_name") or "").strip():
+			frappe.throw(_("Upload the signed delivery note document."))
 
 	# Trade License must be on file and not expired (ICV is optional and does not block invoices)
 	assert_supplier_can_invoice(supplier)
@@ -749,29 +765,148 @@ def submit_invoice(payload=None):
 
 	pi.append("items", item_row)
 
+	# Apply company default Purchase Tax template (UAE VAT 5% etc.)
+	_apply_purchase_taxes(pi, company, supplier)
+
 	remarks = []
 	if payload.get("note"):
 		remarks.append(payload.get("note"))
+	inv_name = (
+		getattr(invoice_upload, "filename", None)
+		or (payload.get("invoice_document_name") or "").strip()
+		or "—"
+	)
+	dn_name = (
+		getattr(dn_upload, "filename", None)
+		or (payload.get("dn_document_name") or "").strip()
+		or "—"
+	)
 	remarks.append(
 		_("Delivery Note {0} · signed by Numero employee on {1} · file: {2}").format(
 			dn_number,
 			formatdate(getdate(dn_signed_date)),
-			payload.get("dn_document_name") or "—",
+			dn_name,
 		)
 	)
-	if payload.get("invoice_document_name"):
-		remarks.append(_("Invoice file: {0}").format(payload.get("invoice_document_name")))
+	remarks.append(_("Invoice file: {0}").format(inv_name))
+	remarks.append(_("Submitted via Supplier Invoice Portal — see Attachments for invoice & DN files."))
 	pi.remarks = "\n".join(remarks)
 
 	pi.flags.ignore_permissions = True
 	pi.insert()
+
+	# Persist uploaded files on the Purchase Invoice (Attachments)
+	attached = []
+	try:
+		if invoice_upload and getattr(invoice_upload, "filename", None):
+			attached.append(
+				_attach_portal_file(invoice_upload, pi.doctype, pi.name, prefix="supplier_invoice")
+			)
+		if dn_upload and getattr(dn_upload, "filename", None):
+			attached.append(
+				_attach_portal_file(dn_upload, pi.doctype, pi.name, prefix="delivery_note")
+			)
+		if not attached:
+			frappe.throw(_("Invoice and delivery note files must be uploaded."))
+	except Exception:
+		# Don't leave a draft PI without the supplier documents
+		frappe.db.rollback()
+		try:
+			if frappe.db.exists("Purchase Invoice", pi.name):
+				frappe.delete_doc("Purchase Invoice", pi.name, force=1, ignore_permissions=True)
+				frappe.db.commit()
+		except Exception:
+			pass
+		raise
+
 	frappe.db.commit()
 
 	return {
 		"status": "success",
 		"reference": pi.name,
 		"purchase_invoice": pi.name,
-		"message": _("Invoice submitted to NumeroUNO AP for review."),
+		"grand_total": flt(pi.grand_total),
+		"total_taxes_and_charges": flt(pi.total_taxes_and_charges),
+		"taxes_and_charges": pi.taxes_and_charges,
+		"attachments": attached,
+		"message": _("Invoice submitted to NumeroUNO AP for review. Open Attachments on the Purchase Invoice to view the files."),
+	}
+
+
+def _apply_purchase_taxes(pi, company: str, supplier: str):
+	"""Set taxes_and_charges from supplier tax category or company default template."""
+	template = None
+	tax_category = frappe.db.get_value("Supplier", supplier, "tax_category")
+	if tax_category and frappe.db.exists("Tax Category", tax_category):
+		# Prefer a purchase tax template matching company + tax category title if present
+		template = frappe.db.get_value(
+			"Purchase Taxes and Charges Template",
+			{"company": company, "title": ["like", f"%{tax_category}%"]},
+			"name",
+		)
+	if not template:
+		template = frappe.db.get_value(
+			"Purchase Taxes and Charges Template",
+			{"company": company, "is_default": 1},
+			"name",
+		)
+	if not template:
+		template = frappe.db.get_value(
+			"Purchase Taxes and Charges Template",
+			{"company": company},
+			"name",
+		)
+	if not template:
+		return
+
+	pi.taxes_and_charges = template
+	if tax_category:
+		pi.tax_category = tax_category
+	try:
+		pi.set_taxes()
+	except Exception:
+		# Fallback: copy template rows manually
+		from erpnext.controllers.accounts_controller import get_taxes_and_charges
+
+		for tax in get_taxes_and_charges("Purchase Taxes and Charges Template", template):
+			pi.append("taxes", tax)
+	try:
+		pi.calculate_taxes_and_totals()
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Supplier Portal VAT calculate")
+
+
+def _attach_portal_file(upload, doctype: str, docname: str, prefix: str) -> dict:
+	from frappe.utils.file_manager import save_file
+	from frappe.utils import now_datetime
+
+	content = upload.read()
+	if hasattr(upload, "seek"):
+		try:
+			upload.seek(0)
+		except Exception:
+			pass
+	if not content:
+		frappe.throw(_("Uploaded file is empty."))
+	if len(content) > 10 * 1024 * 1024:
+		frappe.throw(_("File must be smaller than 10 MB."))
+	filename = upload.filename
+	ext = ("." + filename.rsplit(".", 1)[-1].lower()) if "." in filename else ""
+	if ext and ext not in {".pdf", ".png", ".jpg", ".jpeg"}:
+		frappe.throw(_("File must be PDF, PNG, or JPG."))
+
+	stamp = now_datetime().strftime("%Y%m%d%H%M%S")
+	safe_name = f"{prefix}_{stamp}_{filename}"
+	file_doc = save_file(
+		safe_name,
+		content,
+		doctype,
+		docname,
+		is_private=1,
+	)
+	return {
+		"file_name": file_doc.file_name,
+		"file_url": file_doc.file_url,
 	}
 
 
