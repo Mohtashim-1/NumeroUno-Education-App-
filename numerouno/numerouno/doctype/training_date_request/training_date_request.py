@@ -30,6 +30,8 @@ class TrainingDateRequest(Document):
 			self.course_name = (
 				frappe.db.get_value("Course", self.course, "course_name") or self.course
 			)
+		if self.candidates:
+			self.participants = len(self.candidates)
 
 	def _validate_dates(self):
 		if self.preferred_date and getdate(self.preferred_date) < getdate(today()):
@@ -39,6 +41,18 @@ class TrainingDateRequest(Document):
 			frappe.throw(_("Proposed date is required when status is Proposed."))
 		if self.status == "Confirmed" and not self.confirmed_date:
 			frappe.throw(_("Confirmed date is required when status is Confirmed."))
+		if self.is_new() or self.has_value_changed("candidates"):
+			if not self.candidates:
+				frappe.throw(_("Please add at least one candidate with ID document attached."))
+			for i, row in enumerate(self.candidates, start=1):
+				if not (row.full_name or "").strip():
+					frappe.throw(_("Candidate #{0}: Full Name is required.").format(i))
+				if not (row.id_number or "").strip():
+					frappe.throw(_("Candidate #{0}: Passport / Emirates ID No. is required.").format(i))
+				if not (row.id_attachment or "").strip():
+					frappe.throw(
+						_("Candidate #{0}: Please attach the ID document (file upload, not a link).").format(i)
+					)
 
 
 def _coordinator_emails():
@@ -81,7 +95,7 @@ def _send_mail(recipients, subject, html):
 
 
 def _portal_url():
-	return get_url("/customer-portal")
+	return get_url("/app/student-certificate")
 
 
 def _desk_url(name):
@@ -105,8 +119,8 @@ def _notify_coordinators_new_request(doc):
       <td style="padding:6px 0;">{frappe.utils.escape_html(doc.course_name or doc.course)}</td></tr>
   <tr><td style="padding:6px 0;color:#5d6f79;">Preferred date</td>
       <td style="padding:6px 0;"><strong>{formatdate(doc.preferred_date)}</strong></td></tr>
-  <tr><td style="padding:6px 0;color:#5d6f79;">Participants</td>
-      <td style="padding:6px 0;">{doc.participants or 1}</td></tr>
+  <tr><td style="padding:6px 0;color:#5d6f79;">Candidates</td>
+      <td style="padding:6px 0;">{len(doc.candidates or []) or doc.participants or 1}</td></tr>
 </table>
 <p style="margin:22px 0 0;">
   <a href="{_desk_url(doc.name)}"
@@ -149,7 +163,7 @@ def notify_customer_status(doc, title: str, message: str):
   <a href="{_portal_url()}"
      style="display:inline-block;background:#1f7a72;color:#fff;text-decoration:none;
             padding:12px 18px;border-radius:10px;font-weight:600;">
-    Open Customer Portal
+    Open Certificate Portal
   </a>
 </p>
 """

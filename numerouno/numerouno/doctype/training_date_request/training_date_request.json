@@ -27,6 +27,8 @@
   "proposed_date",
   "confirmed_date",
   "participants",
+  "section_candidates",
+  "candidates",
   "section_notes",
   "customer_notes",
   "coordinator_notes",
@@ -164,7 +166,21 @@
    "fieldname": "participants",
    "fieldtype": "Int",
    "label": "No. of Participants",
-   "non_negative": 1
+   "non_negative": 1,
+   "read_only": 1,
+   "description": "Auto-set from candidate rows"
+  },
+  {
+   "fieldname": "section_candidates",
+   "fieldtype": "Section Break",
+   "label": "Candidates"
+  },
+  {
+   "fieldname": "candidates",
+   "fieldtype": "Table",
+   "label": "Candidates",
+   "options": "Training Date Request Candidate",
+   "reqd": 1
   },
   {
    "fieldname": "section_notes",
