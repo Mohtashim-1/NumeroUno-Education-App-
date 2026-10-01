@@ -22,7 +22,9 @@ frappe.ui.form.on("Training Date Request", {
 								if (!r.exc) {
 									frm.reload_doc();
 									frappe.show_alert({
-										message: __("Date accepted and customer notified"),
+										message: __(
+											"Date accepted — added to Training Calendar (assign instructor later)"
+										),
 										indicator: "green",
 									});
 								}

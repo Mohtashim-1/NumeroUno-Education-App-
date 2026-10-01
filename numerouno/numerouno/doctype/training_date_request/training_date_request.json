@@ -34,6 +34,7 @@
   "coordinator_notes",
   "section_links",
   "student_group",
+  "course_schedule",
   "amended_from"
  ],
  "fields": [
@@ -207,7 +208,16 @@
    "fieldtype": "Link",
    "label": "Student Group",
    "options": "Student Group",
-   "description": "Optional — link when training calendar / group is created"
+   "description": "Created when the date is confirmed — Training Calendar uses this group",
+   "read_only": 1
+  },
+  {
+   "fieldname": "course_schedule",
+   "fieldtype": "Link",
+   "label": "Course Schedule",
+   "options": "Course Schedule",
+   "description": "Training calendar slot created on confirm (instructor assigned later)",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",

@@ -166,10 +166,134 @@ def _serialize(doc) -> dict:
 		"contact_name": doc.contact_name or "",
 		"contact_phone": doc.contact_phone or "",
 		"posting_date_fmt": formatdate(doc.posting_date) if doc.posting_date else "",
+		"student_group": doc.student_group or "",
+		"course_schedule": doc.course_schedule or "",
 		"can_confirm_proposal": doc.status == "Proposed" and bool(doc.proposed_date),
 		"can_request_review": doc.status == "Proposed",
 		"is_open": doc.status == "Open",
 		"is_confirmed": doc.status == "Confirmed",
+	}
+
+
+def _academic_year_for_date(schedule_date):
+	"""Pick Academic Year covering the confirmed date (fallback to Education Settings)."""
+	d = getdate(schedule_date)
+	rows = frappe.db.sql(
+		"""
+		select name from `tabAcademic Year`
+		where year_start_date <= %(d)s and year_end_date >= %(d)s
+		order by year_start_date desc
+		limit 1
+		""",
+		{"d": d},
+		as_dict=True,
+	)
+	if rows:
+		return rows[0].name
+	current = frappe.db.get_single_value("Education Settings", "current_academic_year")
+	if current and frappe.db.exists("Academic Year", current):
+		return current
+	latest = frappe.get_all("Academic Year", order_by="name desc", limit=1, pluck="name")
+	return latest[0] if latest else None
+
+
+def _unique_student_group_name(base: str) -> str:
+	name = (base or "Training Group").strip()[:120]
+	if not frappe.db.exists("Student Group", name):
+		return name
+	for i in range(2, 50):
+		candidate = f"{name} ({i})"[:140]
+		if not frappe.db.exists("Student Group", candidate):
+			return candidate
+	return f"{name}-{frappe.generate_hash(length=6)}"
+
+
+def _validate_calendar_session(cs_doc):
+	"""Light validation for calendar slots created from date requests (no instructor yet)."""
+	label = cs_doc.course or "Training Session"
+	cs_doc.title = f"{label} (instructor TBD)"
+	if cs_doc.from_time and cs_doc.to_time and cs_doc.from_time > cs_doc.to_time:
+		frappe.throw(_("From Time cannot be greater than To Time."))
+
+
+def _sync_confirmed_to_training_calendar(doc) -> dict:
+	"""Create Student Group + Course Schedule when a request is Confirmed.
+
+	Instructor and room are left blank — coordinator assigns them later on the
+	Training Calendar. Idempotent: skips if course_schedule already linked.
+	"""
+	if doc.course_schedule and frappe.db.exists("Course Schedule", doc.course_schedule):
+		return {
+			"student_group": doc.student_group,
+			"course_schedule": doc.course_schedule,
+			"created": False,
+		}
+
+	confirmed = doc.confirmed_date
+	if not confirmed:
+		frappe.throw(_("Confirmed date is required before adding to the training calendar."))
+	if not doc.course:
+		frappe.throw(_("Course is required before adding to the training calendar."))
+
+	academic_year = _academic_year_for_date(confirmed)
+	if not academic_year:
+		frappe.throw(_("No Academic Year found. Please create one before confirming dates."))
+
+	sg_name = doc.student_group
+	if not sg_name or not frappe.db.exists("Student Group", sg_name):
+		course_label = (doc.course_name or doc.course or "Course").strip()
+		cust_label = (doc.customer_name or doc.customer or "").strip()
+		base = f"{course_label} — {formatdate(confirmed)}"
+		if cust_label:
+			base = f"{base} — {cust_label}"
+		base = f"{base} [{doc.name}]"
+
+		sg = frappe.new_doc("Student Group")
+		sg.student_group_name = _unique_student_group_name(base)
+		sg.academic_year = academic_year
+		sg.group_based_on = "Course"
+		sg.course = doc.course
+		sg.max_strength = cint(doc.participants) or len(doc.get("candidates") or []) or 0
+		if sg.meta.has_field("custom_customer"):
+			sg.custom_customer = doc.customer
+		if sg.meta.has_field("from_date"):
+			sg.from_date = confirmed
+		if sg.meta.has_field("to_date"):
+			sg.to_date = confirmed
+		if sg.meta.has_field("custom_from_date"):
+			sg.custom_from_date = confirmed
+		if sg.meta.has_field("custom_to_date"):
+			sg.custom_to_date = confirmed
+		sg.flags.ignore_permissions = True
+		sg.flags.ignore_mandatory = True
+		sg.insert(ignore_permissions=True)
+		sg_name = sg.name
+
+	# Morning slot by default — coordinator can reschedule on Training Calendar
+	from numerouno.numerouno.api.training_schedule import PERIODS
+
+	period = PERIODS[0]
+	cs = frappe.new_doc("Course Schedule")
+	cs.student_group = sg_name
+	cs.course = doc.course
+	cs.schedule_date = getdate(confirmed)
+	cs.from_time = period["from_time"]
+	cs.to_time = period["to_time"]
+	# instructor + room assigned later manually
+	cs.flags.ignore_permissions = True
+	cs.flags.ignore_mandatory = True
+	cs.validate = lambda: _validate_calendar_session(cs)
+	cs.insert(ignore_permissions=True)
+
+	doc.db_set("student_group", sg_name, update_modified=False)
+	doc.db_set("course_schedule", cs.name, update_modified=False)
+	doc.student_group = sg_name
+	doc.course_schedule = cs.name
+
+	return {
+		"student_group": sg_name,
+		"course_schedule": cs.name,
+		"created": True,
 	}
 
 
@@ -236,20 +360,94 @@ def _parse_candidates(candidates, require_attachment: bool = False) -> list[dict
 
 
 @frappe.whitelist()
-def get_courses_for_portal():
-	"""Active courses for the date-request dropdown."""
+def get_courses_for_portal(txt=None):
+	"""Active courses for the date-request picker (optional search text)."""
 	_require_requester_customer()
 	filters = {}
 	if frappe.get_meta("Course").has_field("disabled"):
 		filters["disabled"] = 0
+	txt = (txt or "").strip()
+	or_filters = None
+	if txt:
+		or_filters = [
+			["name", "like", f"%{txt}%"],
+			["course_name", "like", f"%{txt}%"],
+		]
 	rows = frappe.get_all(
 		"Course",
 		filters=filters,
+		or_filters=or_filters,
 		fields=["name", "course_name"],
 		order_by="course_name asc",
-		limit_page_length=500,
+		limit_page_length=50 if txt else 500,
 	)
 	return [{"name": r.name, "course_name": r.course_name or r.name} for r in rows if r.name]
+
+
+@frappe.whitelist()
+def list_saved_candidates(txt=None):
+	"""Distinct candidates previously submitted by this customer's date requests.
+
+	Clients pick from a dropdown on the next booking instead of re-typing.
+	"""
+	session = _require_requester_customer()
+	customers = session.customers or []
+	if not customers:
+		return []
+
+	txt = (txt or "").strip()
+	params = {"customers": customers}
+	extra = ""
+	if txt:
+		extra = " and (c.full_name like %(txt)s or ifnull(c.id_number,'') like %(txt)s)"
+		params["txt"] = f"%{txt}%"
+
+	rows = frappe.db.sql(
+		f"""
+		select
+			c.full_name,
+			c.id_number,
+			c.date_of_birth,
+			c.contact_number,
+			c.email,
+			max(c.id_attachment) as id_attachment,
+			max(p.modified) as last_used
+		from `tabTraining Date Request Candidate` c
+		inner join `tabTraining Date Request` p on p.name = c.parent
+		where p.customer in %(customers)s
+		  and ifnull(c.full_name, '') != ''
+		  {extra}
+		group by
+			lower(trim(c.full_name)),
+			lower(trim(ifnull(c.id_number, ''))),
+			c.date_of_birth,
+			lower(trim(ifnull(c.contact_number, ''))),
+			lower(trim(ifnull(c.email, '')))
+		order by last_used desc
+		limit 100
+		""",
+		params,
+		as_dict=True,
+	)
+	out = []
+	for r in rows:
+		out.append(
+			{
+				"full_name": r.full_name or "",
+				"id_number": r.id_number or "",
+				"date_of_birth": str(r.date_of_birth) if r.date_of_birth else "",
+				"date_of_birth_fmt": formatdate(r.date_of_birth) if r.date_of_birth else "",
+				"contact_number": r.contact_number or "",
+				"email": r.email or "",
+				"id_attachment": r.id_attachment or "",
+				"label": (
+					f"{r.full_name}"
+					+ (f" · {r.id_number}" if r.id_number else "")
+					+ (f" · {formatdate(r.date_of_birth)}" if r.date_of_birth else "")
+				),
+			}
+		)
+	return out
 
 
 @frappe.whitelist()
@@ -344,7 +542,7 @@ def submit_date_request(
 
 @frappe.whitelist()
 def confirm_proposed_date(name=None):
-	"""Requester accepts coordinator's proposed date."""
+	"""Requester accepts coordinator's proposed date → Training Calendar."""
 	session = _require_requester_customer()
 	doc = _get_owned((name or "").strip(), session)
 	if doc.status != "Proposed" or not doc.proposed_date:
@@ -354,13 +552,15 @@ def confirm_proposed_date(name=None):
 	doc.status = "Confirmed"
 	doc.flags.ignore_permissions = True
 	doc.save(ignore_permissions=True)
+	calendar = _sync_confirmed_to_training_calendar(doc)
 	frappe.db.commit()
 
 	notify_customer_status(
 		doc,
 		"Training date confirmed",
 		f"Your training date for <strong>{frappe.utils.escape_html(doc.course_name or doc.course)}</strong> "
-		f"is confirmed for <strong>{formatdate(doc.confirmed_date)}</strong>.",
+		f"is confirmed for <strong>{formatdate(doc.confirmed_date)}</strong>. "
+		f"It has been added to the training calendar.",
 	)
 	from numerouno.numerouno.doctype.training_date_request.training_date_request import (
 		_coordinator_emails,
@@ -372,7 +572,10 @@ def confirm_proposed_date(name=None):
 <p>Customer confirmed the proposed date for request <strong>{doc.name}</strong>.</p>
 <p>Course: {frappe.utils.escape_html(doc.course_name or doc.course)}<br/>
 Confirmed: <strong>{formatdate(doc.confirmed_date)}</strong><br/>
-Candidates: {len(doc.candidates or [])}</p>
+Candidates: {len(doc.candidates or [])}<br/>
+Training calendar: {frappe.utils.escape_html(calendar.get("course_schedule") or "")}<br/>
+Student group: {frappe.utils.escape_html(calendar.get("student_group") or "")}</p>
+<p>Assign an instructor on the Training Calendar when ready.</p>
 """
 	_send_mail(
 		_coordinator_emails(),
@@ -410,6 +613,7 @@ def request_date_review(name=None, customer_notes=None):
 
 @frappe.whitelist()
 def accept_preferred_date(name=None):
+	"""Coordinator accepts customer's preferred date → Training Calendar."""
 	_require_coordinator()
 	name = (name or "").strip()
 	doc = frappe.get_doc("Training Date Request", name)
@@ -418,14 +622,18 @@ def accept_preferred_date(name=None):
 	doc.confirmed_date = doc.preferred_date
 	doc.status = "Confirmed"
 	doc.save()
+	calendar = _sync_confirmed_to_training_calendar(doc)
 	frappe.db.commit()
 	notify_customer_status(
 		doc,
 		"Training date accepted",
 		f"NUTC has accepted your preferred date for "
 		f"<strong>{frappe.utils.escape_html(doc.course_name or doc.course)}</strong>: "
-		f"<strong>{formatdate(doc.confirmed_date)}</strong>. The training calendar will be updated shortly.",
+		f"<strong>{formatdate(doc.confirmed_date)}</strong>. "
+		f"It has been added to the training calendar.",
 	)
+	doc.student_group = calendar.get("student_group") or doc.student_group
+	doc.course_schedule = calendar.get("course_schedule") or doc.course_schedule
 	return _serialize(doc)
 
 
