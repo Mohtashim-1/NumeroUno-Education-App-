@@ -154,6 +154,7 @@ def _serialize(doc) -> dict:
 		"course_name": doc.course_name or doc.course,
 		"preferred_date": doc.preferred_date,
 		"preferred_date_fmt": formatdate(doc.preferred_date) if doc.preferred_date else "",
+		"preferred_batch": getattr(doc, "preferred_batch", None) or "",
 		"proposed_date": doc.proposed_date,
 		"proposed_date_fmt": formatdate(doc.proposed_date) if doc.proposed_date else "",
 		"confirmed_date": doc.confirmed_date,
@@ -206,6 +207,51 @@ def _unique_student_group_name(base: str) -> str:
 		if not frappe.db.exists("Student Group", candidate):
 			return candidate
 	return f"{name}-{frappe.generate_hash(length=6)}"
+
+
+BATCH_OPTIONS = (
+	"Morning Batch (8:00 AM)",
+	"Afternoon Batch (1:00 PM)",
+	"Evening Batch (5:00 PM)",
+)
+
+BATCH_PERIODS = {
+	"Morning Batch (8:00 AM)": {
+		"key": "morning",
+		"label": "Morning Batch (8:00 AM)",
+		"from_time": "08:00:00",
+		"to_time": "12:00:00",
+	},
+	"Afternoon Batch (1:00 PM)": {
+		"key": "afternoon",
+		"label": "Afternoon Batch (1:00 PM)",
+		"from_time": "13:00:00",
+		"to_time": "17:00:00",
+	},
+	"Evening Batch (5:00 PM)": {
+		"key": "evening",
+		"label": "Evening Batch (5:00 PM)",
+		"from_time": "17:00:00",
+		"to_time": "21:00:00",
+	},
+}
+
+
+def _batch_period(batch: str | None) -> dict:
+	batch = (batch or "").strip()
+	if batch in BATCH_PERIODS:
+		return BATCH_PERIODS[batch]
+	# Fallback morning if older requests have no batch
+	return BATCH_PERIODS[BATCH_OPTIONS[0]]
+
+
+def _require_valid_batch(batch: str | None) -> str:
+	batch = (batch or "").strip()
+	if batch not in BATCH_PERIODS:
+		frappe.throw(
+			_("Please select a batch: Morning (8:00 AM), Afternoon (1:00 PM), or Evening (5:00 PM).")
+		)
+	return batch
 
 
 def _validate_calendar_session(cs_doc):
@@ -269,10 +315,7 @@ def _sync_confirmed_to_training_calendar(doc) -> dict:
 		sg.insert(ignore_permissions=True)
 		sg_name = sg.name
 
-	# Morning slot by default — coordinator can reschedule on Training Calendar
-	from numerouno.numerouno.api.training_schedule import PERIODS
-
-	period = PERIODS[0]
+	period = _batch_period(getattr(doc, "preferred_batch", None))
 	cs = frappe.new_doc("Course Schedule")
 	cs.student_group = sg_name
 	cs.course = doc.course
@@ -294,6 +337,7 @@ def _sync_confirmed_to_training_calendar(doc) -> dict:
 		"student_group": sg_name,
 		"course_schedule": cs.name,
 		"created": True,
+		"batch": period["label"],
 	}
 
 
@@ -564,6 +608,7 @@ def list_my_date_requests():
 def submit_date_request(
 	course=None,
 	preferred_date=None,
+	preferred_batch=None,
 	candidates=None,
 	customer_notes=None,
 	contact_name=None,
@@ -573,6 +618,7 @@ def submit_date_request(
 	session = _require_requester_customer()
 	course = (course or "").strip()
 	preferred_date = (preferred_date or "").strip()
+	preferred_batch = _require_valid_batch(preferred_batch)
 	if not course:
 		frappe.throw(_("Please select a course."))
 	if not preferred_date:
@@ -606,6 +652,7 @@ def submit_date_request(
 	doc.contact_phone = (contact_phone or "").strip()
 	doc.course = course
 	doc.preferred_date = preferred_date
+	doc.preferred_batch = preferred_batch
 	doc.customer_notes = (customer_notes or "").strip()
 	doc.status = "Open"
 	for row in candidate_rows:
@@ -877,6 +924,7 @@ def submit_date_request_csv():
 
 	course = (frappe.form_dict.get("course") or "").strip()
 	preferred_date = (frappe.form_dict.get("preferred_date") or "").strip()
+	preferred_batch = _require_valid_batch(frappe.form_dict.get("preferred_batch"))
 	customer_notes = (frappe.form_dict.get("customer_notes") or "").strip()
 	contact_name = (frappe.form_dict.get("contact_name") or "").strip()
 	contact_phone = (frappe.form_dict.get("contact_phone") or "").strip()
@@ -973,6 +1021,7 @@ def submit_date_request_csv():
 	doc.contact_phone = contact_phone
 	doc.course = course
 	doc.preferred_date = preferred_date
+	doc.preferred_batch = preferred_batch
 	doc.customer_notes = customer_notes or _("Submitted via Certificate Portal CSV bulk upload")
 	doc.status = "Open"
 	for cand in candidates:

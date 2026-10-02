@@ -1,10 +1,37 @@
 import frappe
+from frappe import _
 from frappe.model.document import Document
-from frappe.utils import today
+from frappe.utils import flt, today
+
+
+RATING_FIELDS = (
+	"joining_instructions_clear",
+	"training_room_environment",
+	"administration_support",
+	"objectives_clearly_defined",
+	"content_organization",
+	"materials_aligned",
+	"course_pace",
+	"presentation_skills",
+	"teaching_effectiveness",
+	"knowledge_accessibility",
+	"assignments_exercises",
+	"handouts_tools_equipment",
+	"technology_effectiveness",
+)
 
 
 class CourseEvaluation(Document):
-	pass
+	def validate(self):
+		missing = []
+		for fieldname in RATING_FIELDS:
+			if flt(self.get(fieldname)) <= 0:
+				missing.append(self.meta.get_label(fieldname) or fieldname)
+		if missing:
+			frappe.throw(
+				_("Please rate every item before submitting:") + "<br><br>" + "<br>".join(missing),
+				title=_("Rating required"),
+			)
 
 
 def _submit_course_evaluation_from_web_form(doc):
@@ -63,23 +90,6 @@ def _student_group_db_fields():
 		if meta.has_field(fname):
 			fields.append(fname)
 	return fields
-
-
-RATING_FIELDS = (
-	"joining_instructions_clear",
-	"training_room_environment",
-	"administration_support",
-	"objectives_clearly_defined",
-	"content_organization",
-	"materials_aligned",
-	"course_pace",
-	"presentation_skills",
-	"teaching_effectiveness",
-	"knowledge_accessibility",
-	"assignments_exercises",
-	"handouts_tools_equipment",
-	"technology_effectiveness",
-)
 
 
 @frappe.whitelist(allow_guest=True)

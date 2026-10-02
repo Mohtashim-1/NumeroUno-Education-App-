@@ -23,6 +23,7 @@
   "course",
   "course_name",
   "preferred_date",
+  "preferred_batch",
   "column_break_req",
   "proposed_date",
   "confirmed_date",
@@ -144,6 +145,15 @@
    "label": "Preferred Date",
    "reqd": 1,
    "in_list_view": 1
+  },
+  {
+   "fieldname": "preferred_batch",
+   "fieldtype": "Select",
+   "label": "Preferred Batch",
+   "options": "\nMorning Batch (8:00 AM)\nAfternoon Batch (1:00 PM)\nEvening Batch (5:00 PM)",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
   },
   {
    "fieldname": "column_break_req",

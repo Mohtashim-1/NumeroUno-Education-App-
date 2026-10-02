@@ -56,6 +56,49 @@ frappe.ready(function () {
 		});
 	}
 
+	const RATING_FIELDS = [
+		"joining_instructions_clear",
+		"training_room_environment",
+		"administration_support",
+		"objectives_clearly_defined",
+		"content_organization",
+		"materials_aligned",
+		"course_pace",
+		"presentation_skills",
+		"teaching_effectiveness",
+		"knowledge_accessibility",
+		"assignments_exercises",
+		"handouts_tools_equipment",
+		"technology_effectiveness",
+	];
+	
+	function missing_ratings() {
+		return RATING_FIELDS.filter((fieldname) => {
+			const value = flt((form.doc && form.doc[fieldname]) || 0);
+			return value <= 0;
+		}).map((fieldname) => {
+			const field = form.fields_dict[fieldname];
+			return (field && field.df && field.df.label) || fieldname;
+		});
+	}
+
+	form.validate = () => {
+		const missing = missing_ratings();
+		if (!missing.length) {
+			return true;
+		}
+		frappe.msgprint({
+			title: __("Rating required"),
+			indicator: "orange",
+			message:
+				__("Please rate every item before submitting:") +
+				"<br><br><ul><li>" +
+				missing.join("</li><li>") +
+				"</li></ul>",
+		});
+		return false;
+	};
+
 	set_trainee_query();
 	set_student_group_query();
 

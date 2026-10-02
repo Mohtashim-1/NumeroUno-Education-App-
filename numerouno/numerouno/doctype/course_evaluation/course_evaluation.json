@@ -126,17 +126,20 @@
   {
    "fieldname": "joining_instructions_clear",
    "fieldtype": "Rating",
-   "label": "Joining instructions were clear"
+   "label": "Joining instructions were clear",
+   "reqd": 1
   },
   {
    "fieldname": "training_room_environment",
    "fieldtype": "Rating",
-   "label": "Training room, Learning environment (ambience, comfort) & facilities"
+   "label": "Training room, Learning environment (ambience, comfort) & facilities",
+   "reqd": 1
   },
   {
    "fieldname": "administration_support",
    "fieldtype": "Rating",
-   "label": "Administration support"
+   "label": "Administration support",
+   "reqd": 1
   },
   {
    "fieldname": "course_content_section",
@@ -146,22 +149,26 @@
   {
    "fieldname": "objectives_clearly_defined",
    "fieldtype": "Rating",
-   "label": "Objectives were clearly defined"
+   "label": "Objectives were clearly defined",
+   "reqd": 1
   },
   {
    "fieldname": "content_organization",
    "fieldtype": "Rating",
-   "label": "Content organization & relevance"
+   "label": "Content organization & relevance",
+   "reqd": 1
   },
   {
    "fieldname": "materials_aligned",
    "fieldtype": "Rating",
-   "label": "Materials aligned with learning goals"
+   "label": "Materials aligned with learning goals",
+   "reqd": 1
   },
   {
    "fieldname": "course_pace",
    "fieldtype": "Rating",
-   "label": "Course pace was appropriate"
+   "label": "Course pace was appropriate",
+   "reqd": 1
   },
   {
    "fieldname": "instructor_performance_section",
@@ -171,22 +178,26 @@
   {
    "fieldname": "presentation_skills",
    "fieldtype": "Rating",
-   "label": "Presentation skills"
+   "label": "Presentation skills",
+   "reqd": 1
   },
   {
    "fieldname": "teaching_effectiveness",
    "fieldtype": "Rating",
-   "label": "Teaching effectiveness"
+   "label": "Teaching effectiveness",
+   "reqd": 1
   },
   {
    "fieldname": "knowledge_accessibility",
    "fieldtype": "Rating",
-   "label": "Knowledge & accessibility"
+   "label": "Knowledge & accessibility",
+   "reqd": 1
   },
   {
    "fieldname": "assignments_exercises",
    "fieldtype": "Rating",
-   "label": "Assignments/exercises helpful"
+   "label": "Assignments/exercises helpful",
+   "reqd": 1
   },
   {
    "fieldname": "resources_technology_section",
@@ -196,12 +207,14 @@
   {
    "fieldname": "handouts_tools_equipment",
    "fieldtype": "Rating",
-   "label": "Handouts/tools/equipment availability"
+   "label": "Handouts/tools/equipment availability",
+   "reqd": 1
   },
   {
    "fieldname": "technology_effectiveness",
    "fieldtype": "Rating",
-   "label": "Technology effectiveness (AV, screens)"
+   "label": "Technology effectiveness (AV, screens)",
+   "reqd": 1
   },
   {
    "fieldname": "training_impact_section",
@@ -298,7 +311,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-16 15:48:26.170068",
+ "modified": "2026-10-02 15:10:00.000000",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Course Evaluation",
