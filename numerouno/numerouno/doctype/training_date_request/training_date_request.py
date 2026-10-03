@@ -7,6 +7,9 @@ from frappe.model.document import Document
 from frappe.utils import formatdate, get_url, getdate, today
 
 
+DEFAULT_PREFERRED_BATCH = "Morning Batch (8:00 AM)"
+
+
 class TrainingDateRequest(Document):
 	def validate(self):
 		self._set_defaults()
@@ -32,6 +35,10 @@ class TrainingDateRequest(Document):
 			)
 		if self.candidates:
 			self.participants = len(self.candidates)
+		# Older portal requests were created before Preferred Batch existed.
+		# Default so Confirm/Propose/save does not fail mandatory validation.
+		if not (self.preferred_batch or "").strip():
+			self.preferred_batch = DEFAULT_PREFERRED_BATCH
 
 	def _validate_dates(self):
 		if self.preferred_date and getdate(self.preferred_date) < getdate(today()):
@@ -128,6 +135,8 @@ def _notify_coordinators_new_request(doc):
       <td style="padding:6px 0;">{frappe.utils.escape_html(doc.course_name or doc.course)}</td></tr>
   <tr><td style="padding:6px 0;color:#5d6f79;">Preferred date</td>
       <td style="padding:6px 0;"><strong>{formatdate(doc.preferred_date)}</strong></td></tr>
+  <tr><td style="padding:6px 0;color:#5d6f79;">PO Number</td>
+      <td style="padding:6px 0;">{frappe.utils.escape_html(getattr(doc, "po_number", None) or "—")}</td></tr>
   <tr><td style="padding:6px 0;color:#5d6f79;">Candidates</td>
       <td style="padding:6px 0;">{len(doc.candidates or []) or doc.participants or 1}</td></tr>
 </table>

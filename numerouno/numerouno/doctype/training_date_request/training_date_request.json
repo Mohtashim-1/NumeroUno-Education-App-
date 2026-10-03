@@ -28,6 +28,10 @@
   "proposed_date",
   "confirmed_date",
   "participants",
+  "section_po",
+  "po_number",
+  "column_break_po",
+  "po_attachment",
   "section_candidates",
   "candidates",
   "section_notes",
@@ -182,6 +186,27 @@
    "description": "Auto-set from candidate rows"
   },
   {
+   "fieldname": "section_po",
+   "fieldtype": "Section Break",
+   "label": "Purchase Order"
+  },
+  {
+   "fieldname": "po_number",
+   "fieldtype": "Data",
+   "label": "PO Number",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_po",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "po_attachment",
+   "fieldtype": "Attach",
+   "label": "PO Attachment"
+  },
+  {
    "fieldname": "section_candidates",
    "fieldtype": "Section Break",
    "label": "Candidates"
@@ -242,7 +267,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 0,
  "links": [],
- "modified": "2026-10-01 00:00:00.000000",
+ "modified": "2026-10-03 14:50:00.000000",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Training Date Request",

@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
+  <title>Training Evaluation</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css"/>
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Newsreader:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+    :root {
+      --ink: #14212f;
+      --muted: #5b6776;
+      --panel: #ffffff;
+      --accent: #f36a3d;
+      --mint: #2b7a78;
+      --shadow: 0 18px 45px rgba(20, 33, 47, 0.14);
+      --star: #f36a3d;
+      --star-empty: #d8d0c4;
+    }
+
+    body {
+      background:
+        radial-gradient(1200px 600px at 5% -10%, #fde2c6 0%, rgba(253, 226, 198, 0) 65%),
+        radial-gradient(1000px 500px at 90% 0%, #cbe9e4 0%, rgba(203, 233, 228, 0) 60%),
+        linear-gradient(180deg, #f6f2ec 0%, #eef3f5 100%);
+      min-height: 100vh;
+      font-family: "Space Grotesk", "Newsreader", sans-serif;
+      color: var(--ink);
+    }
+
+    .eval-container {
+      background: var(--panel);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid rgba(20, 33, 47, 0.08);
+      animation: liftIn 0.5s ease;
+    }
+
+    .header-section {
+      position: relative;
+      background: linear-gradient(135deg, #1b2838 0%, #2f4860 100%);
+      color: #ffffff;
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+      font-family: "Newsreader", serif;
+    }
+
+    .header-section::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(300px 200px at 20% 20%, rgba(243, 106, 61, 0.35), transparent 60%),
+        radial-gradient(260px 200px at 80% 10%, rgba(43, 122, 120, 0.35), transparent 60%);
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    .header-section h2,
+    .header-section p,
+    .brand-logo {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-section h2 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    .header-section p {
+      color: rgba(255, 255, 255, 0.8);
+      margin: 8px 0 0;
+    }
+
+    .brand-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #ffffff;
+      padding: 8px;
+      box-shadow: 0 12px 24px rgba(20, 33, 47, 0.25);
+      object-fit: contain;
+      margin-bottom: 12px;
+    }
+
+    .eval-form {
+      padding: 2rem;
+      background: linear-gradient(180deg, #ffffff 0%, #fdfbf8 100%);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title i {
+      color: var(--mint);
+      width: 20px;
+      text-align: center;
+    }
+
+    .section-block {
+      background: #fffdf9;
+      border: 1px solid #ece6dc;
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-label .req {
+      color: #d6452f;
+      font-weight: 700;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 12px;
+      border: 2px solid #e6e1d7;
+      padding: 12px 15px;
+      font-size: 15px;
+      background: #fffdf9;
+      transition: all 0.2s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 0.2rem rgba(243, 106, 61, 0.2);
+    }
+
+    .form-control[readonly] {
+      background: #f4f1ea;
+      color: var(--muted);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+
+    .rating-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px dashed #e8dfd2;
+    }
+
+    .rating-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .rating-row:first-child {
+      padding-top: 0;
+    }
+
+    .rating-label {
+      flex: 1 1 220px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0;
+    }
+
+    .star-rating {
+      display: inline-flex;
+      gap: 4px;
+      direction: ltr;
+    }
+
+    .star-rating button {
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      line-height: 1;
+      color: var(--star-empty);
+      font-size: 22px;
+      transition: transform 0.15s ease, color 0.15s ease;
+    }
+
+    .star-rating button:hover {
+      transform: scale(1.12);
+    }
+
+    .star-rating button.active,
+    .star-rating button.hovered {
+      color: var(--star);
+    }
+
+    .signature-box {
+      border: 2px dashed #e6e1d7;
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    #signatureCanvas {
+      width: 100%;
+      height: 160px;
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #f36a3d 0%, #d8582a 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 14px 30px;
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(243, 106, 61, 0.35);
+      color: white;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.7;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: #eef1f4;
+      border: 1px solid #d6dde3;
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-weight: 600;
+    }
+
+    .error-message,
+    .success-message {
+      padding: 1rem;
+      border-radius: 12px;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .error-message {
+      background: #ffe4de;
+      color: #8a2b1d;
+      border: 1px solid rgba(243, 106, 61, 0.3);
+    }
+
+    .success-message {
+      background: #e0f2f1;
+      color: #1d5450;
+      border: 1px solid rgba(43, 122, 120, 0.3);
+    }
+
+    .summary-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f6efe4;
+      border: 1px solid #ece6dc;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      margin: 0 8px 8px 0;
+    }
+
+    @keyframes liftIn {
+      from { transform: translateY(18px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @media (max-width: 576px) {
+      .header-section h2 { font-size: 26px; }
+      .eval-form { padding: 1.25rem; }
+      .rating-row { flex-direction: column; align-items: flex-start; }
+    }
+
+    .awesomplete { width: 100%; display: block; }
+    .awesomplete > ul {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      max-height: 260px;
+      overflow: auto;
+      margin-top: 6px;
+      padding: 6px;
+      background: #fff;
+      z-index: 9999;
+    }
+    .awesomplete > ul > li {
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+    }
+    .awesomplete > ul > li[aria-selected="true"] {
+      background: #fff1ea;
+      color: #14212f;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-9 col-xl-8">
+        <div class="eval-container">
+          <div class="header-section">
+            <img class="brand-logo" src="https://erp.nutc.cloud/files/nutclogo.jpg" alt="NUTC Logo">
+            <h2>Training Evaluation</h2>
+            <p>Please rate your training experience. All star ratings are required.</p>
+          </div>
+
+          <div class="eval-form">
+            <div id="prefillSummary" class="mb-3"></div>
+
+            <form id="evaluationForm" novalidate>
+              <div class="section-block">
+                <h3 class="section-title"><i class="fas fa-user-graduate"></i> Trainee Information</h3>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-users"></i> Student Group <span class="req">*</span></label>
+                    <input type="text" class="form-control" id="studentGroupTxt" placeholder="Type to search student group" autocomplete="off">
+                    <input type="hidden" id="student_group" name="student_group" value="">
+                    <div class="hint">Type to search</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-user"></i> Trainee Name <span class="req">*</span></label>
+                    <input type="text" class="form-control" id="traineeNameTxt" placeholder="Type to search trainee" autocomplete="off">
+                    <input type="hidden" id="trainee_name" name="trainee_name" value="">
+                    <div class="hint">Type to search</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-envelope"></i> Email ID</label>
+                    <input class="form-control" id="email_id" name="email_id" type="email">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-phone"></i> Trainee Mobile</label>
+                    <input class="form-control" id="trainee_mobile" name="trainee_mobile">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label"><i class="fas fa-signature"></i> Signature</label>
+                    <div class="signature-box">
+                      <canvas id="signatureCanvas"></canvas>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                      <div class="hint">Sign with mouse or finger</div>
+                      <button type="button" class="btn btn-secondary btn-sm" id="clearSignatureBtn">Clear</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-block">
+                <h3 class="section-title"><i class="fas fa-book-open"></i> Course Information</h3>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-graduation-cap"></i> Course Name</label>
+                    <input type="text" class="form-control" id="courseNameTxt" placeholder="Type to search course" autocomplete="off">
+                    <input type="hidden" id="course_name" name="course_name" value="">
+                    <div class="hint">Type to search</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-building"></i> Company</label>
+                    <input type="text" class="form-control" id="companyTxt" placeholder="Type to search company" autocomplete="off">
+                    <input type="hidden" id="company" name="company" value="">
+                    <div class="hint">Type to search</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-chalkboard-teacher"></i> Instructor Name</label>
+                    <input type="text" class="form-control" id="instructorNameTxt" placeholder="Type to search instructor" autocomplete="off">
+                    <input type="hidden" id="instructor_name" name="instructor_name" value="">
+                    <div class="hint">Type to search</div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label"><i class="fas fa-calendar"></i> Dates</label>
+                    <input class="form-control" id="dates" name="dates" type="date">
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-block" data-rating-section>
+                <h3 class="section-title"><i class="fas fa-building"></i> Training Environment &amp; Administration</h3>
+                <div class="rating-row" data-field="joining_instructions_clear">
+                  <p class="rating-label">Joining instructions were clear <span class="req">*</span></p>
+                  <div class="star-rating" aria-label="Joining instructions were clear"></div>
+                </div>
+                <div class="rating-row" data-field="training_room_environment">
+                  <p class="rating-label">Training room, Learning environment &amp; facilities <span class="req">*</span></p>
+                  <div class="star-rating" aria-label="Training room environment"></div>
+                </div>
+                <div class="rating-row" data-field="administration_support">
+                  <p class="rating-label">Administration support <span class="req">*</span></p>
+                  <div class="star-rating" aria-label="Administration support"></div>
+                </div>
+              </div>
+
+              <div class="section-block" data-rating-section>
+                <h3 class="section-title"><i class="fas fa-list-check"></i> Course Content &amp; Structure</h3>
+                <div class="rating-row" data-field="objectives_clearly_defined">
+                  <p class="rating-label">Objectives were clearly defined <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+                <div class="rating-row" data-field="materials_aligned">
+                  <p class="rating-label">Materials aligned with learning goals <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+                <div class="rating-row" data-field="content_organization">
+                  <p class="rating-label">Content organization &amp; relevance <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+                <div class="rating-row" data-field="course_pace">
+                  <p class="rating-label">Course pace was appropriate <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+              </div>
+
+              <div class="section-block" data-rating-section>
+                <h3 class="section-title"><i class="fas fa-chalkboard-user"></i> Instructor Performance</h3>
+                <div class="rating-row" data-field="presentation_skills">
+                  <p class="rating-label">Presentation skills <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+                <div class="rating-row" data-field="knowledge_accessibility">
+                  <p class="rating-label">Knowledge &amp; accessibility <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+                <div class="rating-row" data-field="teaching_effectiveness">
+                  <p class="rating-label">Teaching effectiveness <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+                <div class="rating-row" data-field="assignments_exercises">
+                  <p class="rating-label">Assignments/exercises helpful <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+              </div>
+
+              <div class="section-block" data-rating-section>
+                <h3 class="section-title"><i class="fas fa-laptop"></i> Resources &amp; Technology</h3>
+                <div class="rating-row" data-field="handouts_tools_equipment">
+                  <p class="rating-label">Handouts/tools/equipment availability <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+                <div class="rating-row" data-field="technology_effectiveness">
+                  <p class="rating-label">Technology effectiveness (AV, screens) <span class="req">*</span></p>
+                  <div class="star-rating"></div>
+                </div>
+              </div>
+
+              <div class="section-block">
+                <h3 class="section-title"><i class="fas fa-bullseye"></i> Training Impact</h3>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Will the skills gained improve your job performance?</label>
+                    <select class="form-select" id="skills_improve_job_performance" name="skills_improve_job_performance">
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                      <option value="Maybe">Maybe</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Would you recommend this course to colleagues?</label>
+                    <select class="form-select" id="recommend_course" name="recommend_course">
+                      <option value="">Select</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                      <option value="Maybe">Maybe</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-block">
+                <h3 class="section-title"><i class="fas fa-clock"></i> Course Duration</h3>
+                <label class="form-label">Course Duration</label>
+                <select class="form-select" id="course_duration" name="course_duration">
+                  <option value="">Select</option>
+                  <option value="Too Long">Too Long</option>
+                  <option value="About Right">About Right</option>
+                  <option value="Short">Short</option>
+                </select>
+              </div>
+
+              <div class="section-block">
+                <h3 class="section-title"><i class="fas fa-comment-dots"></i> Additional Comments</h3>
+                <textarea class="form-control" id="additional_comments" name="additional_comments" rows="4" placeholder="Share any extra feedback..."></textarea>
+              </div>
+
+              <button type="submit" class="btn btn-primary" id="submitEvalBtn">
+                <span class="submit-text"><i class="fas fa-paper-plane me-2"></i>Submit Evaluation</span>
+                <span class="loading" style="display:none;">
+                  <span class="spinner-border spinner-border-sm me-2" role="status"></span>Submitting...
+                </span>
+              </button>
+
+              <div class="error-message" id="errorMessage"></div>
+              <div class="success-message" id="successMessage"></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
+  <script>
+    const RATING_FIELDS = [
+      "joining_instructions_clear",
+      "training_room_environment",
+      "administration_support",
+      "objectives_clearly_defined",
+      "materials_aligned",
+      "content_organization",
+      "course_pace",
+      "presentation_skills",
+      "knowledge_accessibility",
+      "teaching_effectiveness",
+      "assignments_exercises",
+      "handouts_tools_equipment",
+      "technology_effectiveness",
+    ];
+
+    const TEXT_FIELDS = [
+      "email_id",
+      "trainee_mobile",
+      "dates",
+      "skills_improve_job_performance",
+      "recommend_course",
+      "course_duration",
+      "additional_comments",
+    ];
+
+    const LINK_FIELDS = [
+      "student_group",
+      "trainee_name",
+      "course_name",
+      "company",
+      "instructor_name",
+    ];
+
+    const SEARCH_API =
+      "/api/method/numerouno.numerouno.doctype.course_evaluation.course_evaluation.search_evaluation_options";
+
+    const ratings = {};
+    let signaturePad = null;
+    const linkFields = {};
+    let applyingPrefill = false;
+
+    function $(id) {
+      return document.getElementById(id);
+    }
+
+    function getCsrfToken() {
+      return document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+    }
+
+    function debounce(fn, delay) {
+      let t = null;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    function showError(message) {
+      const el = $("errorMessage");
+      el.textContent = message;
+      el.style.display = "block";
+      $("successMessage").style.display = "none";
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function showSuccess(message) {
+      const el = $("successMessage");
+      el.textContent = message;
+      el.style.display = "block";
+      $("errorMessage").style.display = "none";
+    }
+
+    function setSubmitLoading(isLoading) {
+      const btn = $("submitEvalBtn");
+      btn.disabled = isLoading;
+      btn.querySelector(".submit-text").style.display = isLoading ? "none" : "inline";
+      btn.querySelector(".loading").style.display = isLoading ? "inline" : "none";
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function searchOptions(doctype, txt, extra = {}) {
+      const params = new URLSearchParams();
+      params.append("doctype", doctype);
+      params.append("txt", txt || "");
+      params.append("limit", "30");
+      Object.entries(extra).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+      const res = await fetch(`${SEARCH_API}?${params.toString()}`);
+      const data = await res.json();
+      if (Array.isArray(data.message)) return data.message;
+      return [];
+    }
+
+    function makeLinkField({ txtId, valId, doctype, getExtra, onSelect }) {
+      const txtEl = $(txtId);
+      const valEl = $(valId);
+      const lf = {
+        txtEl,
+        valEl,
+        lastItems: [],
+        aw: new Awesomplete(txtEl, { minChars: 0, autoFirst: true, maxItems: 30 }),
+        setList(items) {
+          lf.lastItems = items || [];
+          lf.aw.list = lf.lastItems.map((x) => x.label);
+        },
+        async setValue(value, label) {
+          valEl.value = value || "";
+          txtEl.value = label || value || "";
+          if (value && !label) {
+            const items = await searchOptions(doctype, value, getExtra ? getExtra() : {});
+            const found = items.find((x) => x.value === value) || items[0];
+            if (found) {
+              txtEl.value = found.label;
+              lf.lastItems = items;
+            }
+          }
+        },
+        clear() {
+          txtEl.value = "";
+          valEl.value = "";
+        },
+      };
+
+      const refresh = debounce(async () => {
+        const items = await searchOptions(doctype, txtEl.value || "", getExtra ? getExtra() : {});
+        lf.setList(items);
+        lf.aw.evaluate();
+      }, 200);
+
+      txtEl.addEventListener("input", () => {
+        valEl.value = "";
+        refresh();
+      });
+      txtEl.addEventListener("focus", refresh);
+      txtEl.addEventListener("click", refresh);
+      txtEl.addEventListener("awesomplete-selectcomplete", (evt) => {
+        const selectedLabel = evt?.text?.value || txtEl.value;
+        const found = lf.lastItems.find((x) => x.label === selectedLabel);
+        if (found) {
+          txtEl.value = found.label;
+          valEl.value = found.value;
+        } else {
+          valEl.value = "";
+        }
+        if (typeof onSelect === "function") {
+          onSelect({ label: txtEl.value, value: valEl.value });
+        }
+      });
+      txtEl.addEventListener("blur", () => {
+        const exact = lf.lastItems.find((x) => x.label === txtEl.value || x.value === txtEl.value);
+        if (exact) {
+          txtEl.value = exact.label;
+          valEl.value = exact.value;
+        } else if (txtEl.value && !valEl.value) {
+          valEl.value = "";
+        }
+      });
+
+      return lf;
+    }
+
+    async function applyDetailsFromSelection() {
+      if (applyingPrefill) return;
+      const studentGroup = $("student_group").value;
+      const student = $("trainee_name").value;
+      if (!studentGroup) return;
+
+      try {
+        const data = await loadPrefillFromApi(studentGroup, student);
+        if (!data || !Object.keys(data).length) return;
+        applyingPrefill = true;
+        await applyPrefill(data, { preserveSelection: true });
+      } catch (e) {
+        console.warn("Prefill failed", e);
+      } finally {
+        applyingPrefill = false;
+      }
+    }
+
+    function initLinkFields() {
+      linkFields.studentGroup = makeLinkField({
+        txtId: "studentGroupTxt",
+        valId: "student_group",
+        doctype: "Student Group",
+        onSelect: async () => {
+          linkFields.trainee.clear();
+          await applyDetailsFromSelection();
+        },
+      });
+
+      linkFields.trainee = makeLinkField({
+        txtId: "traineeNameTxt",
+        valId: "trainee_name",
+        doctype: "Student",
+        getExtra: () => ({ student_group: $("student_group").value }),
+        onSelect: async () => {
+          await applyDetailsFromSelection();
+        },
+      });
+
+      linkFields.course = makeLinkField({
+        txtId: "courseNameTxt",
+        valId: "course_name",
+        doctype: "Course",
+      });
+
+      linkFields.company = makeLinkField({
+        txtId: "companyTxt",
+        valId: "company",
+        doctype: "Company",
+      });
+
+      linkFields.instructor = makeLinkField({
+        txtId: "instructorNameTxt",
+        valId: "instructor_name",
+        doctype: "Instructor",
+      });
+    }
+
+    function initStarRatings() {
+      document.querySelectorAll(".rating-row[data-field]").forEach((row) => {
+        const field = row.dataset.field;
+        const container = row.querySelector(".star-rating");
+        ratings[field] = 0;
+
+        for (let i = 1; i <= 5; i++) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.dataset.value = String(i);
+          btn.setAttribute("aria-label", `${i} star${i > 1 ? "s" : ""}`);
+          btn.innerHTML = '<i class="fas fa-star"></i>';
+          container.appendChild(btn);
+        }
+
+        const buttons = [...container.querySelectorAll("button")];
+
+        function paint(value, className) {
+          buttons.forEach((btn) => {
+            const star = Number(btn.dataset.value);
+            btn.classList.toggle(className, star <= value);
+          });
+        }
+
+        container.addEventListener("mouseleave", () => {
+          buttons.forEach((btn) => btn.classList.remove("hovered"));
+        });
+
+        buttons.forEach((btn) => {
+          btn.addEventListener("mouseenter", () => {
+            paint(Number(btn.dataset.value), "hovered");
+          });
+          btn.addEventListener("click", () => {
+            ratings[field] = Number(btn.dataset.value);
+            paint(ratings[field], "active");
+          });
+        });
+      });
+    }
+
+    function initSignaturePad() {
+      const canvas = $("signatureCanvas");
+      const ctx = canvas.getContext("2d");
+      let drawing = false;
+      let hasInk = false;
+
+      function resize() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        const rect = canvas.getBoundingClientRect();
+        const image = hasInk ? canvas.toDataURL("image/png") : null;
+        canvas.width = rect.width * ratio;
+        canvas.height = 160 * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#14212f";
+        if (image) {
+          const img = new Image();
+          img.onload = () => ctx.drawImage(img, 0, 0, rect.width, 160);
+          img.src = image;
+        }
+      }
+
+      function getPoint(event) {
+        const rect = canvas.getBoundingClientRect();
+        const source = event.touches ? event.touches[0] : event;
+        return {
+          x: source.clientX - rect.left,
+          y: source.clientY - rect.top,
+        };
+      }
+
+      function start(event) {
+        drawing = true;
+        const point = getPoint(event);
+        ctx.beginPath();
+        ctx.moveTo(point.x, point.y);
+        event.preventDefault();
+      }
+
+      function move(event) {
+        if (!drawing) return;
+        const point = getPoint(event);
+        ctx.lineTo(point.x, point.y);
+        ctx.stroke();
+        hasInk = true;
+        event.preventDefault();
+      }
+
+      function end() {
+        drawing = false;
+      }
+
+      canvas.addEventListener("mousedown", start);
+      canvas.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", end);
+      canvas.addEventListener("touchstart", start, { passive: false });
+      canvas.addEventListener("touchmove", move, { passive: false });
+      canvas.addEventListener("touchend", end);
+
+      $("clearSignatureBtn").addEventListener("click", () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasInk = false;
+      });
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      signaturePad = {
+        isEmpty: () => !hasInk,
+        toDataURL: () => (hasInk ? canvas.toDataURL("image/png") : ""),
+      };
+    }
+
+    async function applyPrefill(data, opts = {}) {
+      TEXT_FIELDS.forEach((field) => {
+        if (data[field] !== undefined && data[field] !== null && $(field)) {
+          $(field).value = data[field] || "";
+        }
+      });
+
+      if (data.student_group) {
+        await linkFields.studentGroup.setValue(
+          data.student_group,
+          opts.preserveSelection ? $("studentGroupTxt").value : data.student_group
+        );
+      }
+      if (data.trainee_name) {
+        await linkFields.trainee.setValue(
+          data.trainee_name,
+          opts.preserveSelection ? $("traineeNameTxt").value : data.trainee_name
+        );
+      }
+      if (data.course_name) {
+        await linkFields.course.setValue(data.course_name, data.course_name);
+      }
+      if (data.company) {
+        await linkFields.company.setValue(data.company, data.company);
+      }
+      if (data.instructor_name) {
+        await linkFields.instructor.setValue(data.instructor_name, data.instructor_name);
+      }
+
+      const chips = [];
+      if (data.course_name) {
+        chips.push(`<span class="summary-chip"><i class="fas fa-graduation-cap"></i>${escapeHtml(data.course_name)}</span>`);
+      }
+      if (data.student_group) {
+        chips.push(`<span class="summary-chip"><i class="fas fa-users"></i>${escapeHtml(data.student_group)}</span>`);
+      }
+      if (data.trainee_name) {
+        chips.push(`<span class="summary-chip"><i class="fas fa-user"></i>${escapeHtml(data.trainee_name)}</span>`);
+      }
+      $("prefillSummary").innerHTML = chips.join("");
+    }
+
+    async function loadPrefillFromApi(studentGroup, student) {
+      if (!studentGroup) return {};
+      const params = new URLSearchParams();
+      params.append("student_group", studentGroup);
+      if (student) params.append("student", student);
+      const res = await fetch(
+        `/api/method/numerouno.numerouno.api.quiz_api.get_course_evaluation_prefill?${params.toString()}`
+      );
+      const data = await res.json();
+      if (data.message?.status !== "success") return {};
+      return data.message.data || {};
+    }
+
+    async function bootstrap() {
+      const params = new URLSearchParams(window.location.search || "");
+      const fromUrl = {};
+      [
+        "course_name",
+        "company",
+        "instructor_name",
+        "dates",
+        "trainee_name",
+        "email_id",
+        "trainee_mobile",
+        "student_group",
+      ].forEach((field) => {
+        const value = params.get(field);
+        if (value) fromUrl[field] = value;
+      });
+
+      applyingPrefill = true;
+      try {
+        await applyPrefill(fromUrl);
+        if (fromUrl.student_group) {
+          const apiPrefill = await loadPrefillFromApi(fromUrl.student_group, fromUrl.trainee_name);
+          await applyPrefill({ ...fromUrl, ...apiPrefill });
+        }
+      } catch (e) {
+        console.warn("Prefill failed", e);
+      } finally {
+        applyingPrefill = false;
+      }
+    }
+
+    function collectPayload() {
+      const payload = {
+        doctype: "Course Evaluation",
+        naming_series: "CE-.MM.-.#.",
+      };
+
+      TEXT_FIELDS.forEach((field) => {
+        payload[field] = ($(field)?.value || "").trim();
+      });
+
+      LINK_FIELDS.forEach((field) => {
+        payload[field] = ($(field)?.value || "").trim();
+      });
+
+      RATING_FIELDS.forEach((field) => {
+        payload[field] = ratings[field] ? ratings[field] / 5 : 0;
+      });
+
+      payload.signature = signaturePad && !signaturePad.isEmpty() ? signaturePad.toDataURL() : "";
+      return payload;
+    }
+
+    function validate(payload) {
+      if (!payload.student_group || !payload.trainee_name) {
+        return "Please select Student Group and Trainee Name from the suggestions.";
+      }
+
+      const missing = RATING_FIELDS.filter((field) => !payload[field] || Number(payload[field]) <= 0);
+      if (missing.length) {
+        return "Please rate every star item before submitting.";
+      }
+      return "";
+    }
+
+    async function submitEvaluation(event) {
+      event.preventDefault();
+      const payload = collectPayload();
+      const error = validate(payload);
+      if (error) {
+        showError(error);
+        return;
+      }
+
+      setSubmitLoading(true);
+      try {
+        const body = new URLSearchParams();
+        body.append("web_form", "course-evaluation");
+        body.append("data", JSON.stringify(payload));
+
+        const headers = {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          Accept: "application/json",
+        };
+        const csrf = getCsrfToken();
+        if (csrf) headers["X-Frappe-CSRF-Token"] = csrf;
+
+        const res = await fetch("/api/method/frappe.website.doctype.web_form.web_form.accept", {
+          method: "POST",
+          headers,
+          body: body.toString(),
+        });
+        const data = await res.json();
+
+        if (data.exc || data._server_messages) {
+          let message = "Failed to submit evaluation.";
+          try {
+            const msgs = JSON.parse(data._server_messages || "[]");
+            if (msgs.length) {
+              message = msgs
+                .map((m) => {
+                  try {
+                    return JSON.parse(m).message || m;
+                  } catch (_) {
+                    return m;
+                  }
+                })
+                .join(" ");
+            }
+          } catch (_) {}
+          showError(message.replace(/<[^>]+>/g, " "));
+          setSubmitLoading(false);
+          return;
+        }
+
+        showSuccess("Thank you! Your training evaluation has been submitted.");
+        $("evaluationForm").querySelectorAll("input, select, textarea, button").forEach((el) => {
+          if (el.id !== "submitEvalBtn") el.disabled = true;
+        });
+        document.querySelectorAll(".star-rating button").forEach((btn) => {
+          btn.disabled = true;
+        });
+        setSubmitLoading(false);
+        $("submitEvalBtn").disabled = true;
+      } catch (err) {
+        console.error(err);
+        showError("Error submitting evaluation. Please try again.");
+        setSubmitLoading(false);
+      }
+    }
+
+    initLinkFields();
+    initStarRatings();
+    initSignaturePad();
+    bootstrap();
+    $("evaluationForm").addEventListener("submit", submitEvaluation);
+  </script>
+</body>
+</html>

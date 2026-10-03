@@ -7,15 +7,15 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="csrf-token" content="{{ frappe.session.csrf_token }}">
-  <title>Public Quiz Attempt v3.0.7</title>
+  <title>Public Quiz Attempt v3.0.9</title>
 
   <script>
     // Force page reload if version mismatch
-    if (localStorage.getItem("quizVersion") !== "3.0.7") {
-      localStorage.setItem("quizVersion", "3.0.7");
+    if (localStorage.getItem("quizVersion") !== "3.0.9") {
+      localStorage.setItem("quizVersion", "3.0.9");
       if (window.location.search.indexOf("v=") === -1) {
         window.location.href =
-          window.location.href + (window.location.search ? "&" : "?") + "v=3.0.7";
+          window.location.href + (window.location.search ? "&" : "?") + "v=3.0.9";
       }
     }
   </script>
@@ -521,7 +521,7 @@
  <script>
   const VERSION = "3.0.7";
   const QUIZ_DEBUG = false;
-  const COURSE_EVALUATION_URL = "https://erpnext.nutc.cloud/course-evaluation/new";
+  const COURSE_EVALUATION_URL = "/training-evaluation";
   const RTL_LANGS = new Set(["ar", "ur"]);
   const AUTOSAVE_PREFIX = "publicQuizAutosave";
   const I18N = {

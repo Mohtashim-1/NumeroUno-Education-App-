@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, today
+from frappe.utils import cint, flt, today
 
 
 RATING_FIELDS = (
@@ -258,3 +258,123 @@ def get_student_groups_for_student(student):
 		pluck="parent",
 		order_by="parent asc",
 	)
+
+
+@frappe.whitelist(allow_guest=True)
+def search_evaluation_options(doctype=None, txt=None, student_group=None, limit=20):
+	"""Typeahead options for Training Evaluation public page."""
+	if not _can_use_course_evaluation_api():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+
+	doctype = (doctype or "").strip()
+	txt = (txt or "").strip()
+	limit = min(cint(limit or 20), 50)
+	like = f"%{txt}%"
+
+	if doctype == "Student Group":
+		rows = frappe.db.sql(
+			"""
+			SELECT name, IFNULL(student_group_name, name) AS title, IFNULL(course, '') AS course
+			FROM `tabStudent Group`
+			WHERE IFNULL(disabled, 0) = 0
+			  AND (
+				%(txt)s = ''
+				OR name LIKE %(like)s
+				OR IFNULL(student_group_name, '') LIKE %(like)s
+				OR IFNULL(course, '') LIKE %(like)s
+			  )
+			ORDER BY modified DESC
+			LIMIT %(limit)s
+			""",
+			{"txt": txt, "like": like, "limit": limit},
+			as_dict=True,
+		)
+		return [
+			{
+				"value": row.name,
+				"label": f"{row.title} ({row.course})" if row.course else row.title,
+			}
+			for row in rows
+		]
+
+	if doctype == "Student":
+		if student_group:
+			rows = frappe.db.sql(
+				"""
+				SELECT sgs.student AS value, IFNULL(st.student_name, sgs.student) AS label
+				FROM `tabStudent Group Student` sgs
+				LEFT JOIN `tabStudent` st ON st.name = sgs.student
+				WHERE sgs.parent = %(student_group)s
+				  AND (
+					%(txt)s = ''
+					OR sgs.student LIKE %(like)s
+					OR IFNULL(st.student_name, '') LIKE %(like)s
+				  )
+				ORDER BY label ASC
+				LIMIT %(limit)s
+				""",
+				{
+					"student_group": student_group,
+					"txt": txt,
+					"like": like,
+					"limit": limit,
+				},
+				as_dict=True,
+			)
+		else:
+			rows = frappe.db.sql(
+				"""
+				SELECT name AS value, IFNULL(student_name, name) AS label
+				FROM `tabStudent`
+				WHERE %(txt)s = '' OR name LIKE %(like)s OR IFNULL(student_name, '') LIKE %(like)s
+				ORDER BY student_name ASC
+				LIMIT %(limit)s
+				""",
+				{"txt": txt, "like": like, "limit": limit},
+				as_dict=True,
+			)
+		return [{"value": row.value, "label": row.label} for row in rows]
+
+	if doctype == "Course":
+		rows = frappe.db.sql(
+			"""
+			SELECT name AS value, IFNULL(course_name, name) AS label
+			FROM `tabCourse`
+			WHERE %(txt)s = '' OR name LIKE %(like)s OR IFNULL(course_name, '') LIKE %(like)s
+			ORDER BY course_name ASC
+			LIMIT %(limit)s
+			""",
+			{"txt": txt, "like": like, "limit": limit},
+			as_dict=True,
+		)
+		return [{"value": row.value, "label": row.label} for row in rows]
+
+	if doctype == "Company":
+		rows = frappe.db.sql(
+			"""
+			SELECT name AS value, name AS label
+			FROM `tabCompany`
+			WHERE %(txt)s = '' OR name LIKE %(like)s
+			ORDER BY name ASC
+			LIMIT %(limit)s
+			""",
+			{"txt": txt, "like": like, "limit": limit},
+			as_dict=True,
+		)
+		return [{"value": row.value, "label": row.label} for row in rows]
+
+	if doctype == "Instructor":
+		rows = frappe.db.sql(
+			"""
+			SELECT name AS value, IFNULL(instructor_name, name) AS label
+			FROM `tabInstructor`
+			WHERE %(txt)s = '' OR name LIKE %(like)s OR IFNULL(instructor_name, '') LIKE %(like)s
+			ORDER BY instructor_name ASC
+			LIMIT %(limit)s
+			""",
+			{"txt": txt, "like": like, "limit": limit},
+			as_dict=True,
+		)
+		return [{"value": row.value, "label": row.label} for row in rows]
+
+	frappe.throw(_("Unsupported doctype for evaluation search"))

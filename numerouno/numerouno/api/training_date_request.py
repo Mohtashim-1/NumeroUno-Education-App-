@@ -155,6 +155,8 @@ def _serialize(doc) -> dict:
 		"preferred_date": doc.preferred_date,
 		"preferred_date_fmt": formatdate(doc.preferred_date) if doc.preferred_date else "",
 		"preferred_batch": getattr(doc, "preferred_batch", None) or "",
+		"po_number": getattr(doc, "po_number", None) or "",
+		"po_attachment": getattr(doc, "po_attachment", None) or "",
 		"proposed_date": doc.proposed_date,
 		"proposed_date_fmt": formatdate(doc.proposed_date) if doc.proposed_date else "",
 		"confirmed_date": doc.confirmed_date,
@@ -252,6 +254,25 @@ def _require_valid_batch(batch: str | None) -> str:
 			_("Please select a batch: Morning (8:00 AM), Afternoon (1:00 PM), or Evening (5:00 PM).")
 		)
 	return batch
+
+
+def _relink_portal_file(file_url: str | None, doctype: str, docname: str):
+	"""Attach a previously uploaded File (by URL) to the Training Date Request."""
+	file_url = (file_url or "").strip()
+	if not file_url or not docname:
+		return
+	file_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+	if not file_name:
+		return
+	frappe.db.set_value(
+		"File",
+		file_name,
+		{
+			"attached_to_doctype": doctype,
+			"attached_to_name": docname,
+		},
+		update_modified=False,
+	)
 
 
 def _validate_calendar_session(cs_doc):
@@ -614,11 +635,15 @@ def submit_date_request(
 	contact_name=None,
 	contact_phone=None,
 	customer=None,
+	po_number=None,
+	po_attachment=None,
 ):
 	session = _require_requester_customer()
 	course = (course or "").strip()
 	preferred_date = (preferred_date or "").strip()
 	preferred_batch = _require_valid_batch(preferred_batch)
+	po_number = (po_number or "").strip()
+	po_attachment = (po_attachment or "").strip()
 	if not course:
 		frappe.throw(_("Please select a course."))
 	if not preferred_date:
@@ -653,6 +678,8 @@ def submit_date_request(
 	doc.course = course
 	doc.preferred_date = preferred_date
 	doc.preferred_batch = preferred_batch
+	doc.po_number = po_number
+	doc.po_attachment = po_attachment
 	doc.customer_notes = (customer_notes or "").strip()
 	doc.status = "Open"
 	for row in candidate_rows:
@@ -660,6 +687,10 @@ def submit_date_request(
 	doc.participants = len(candidate_rows)
 	doc.flags.ignore_permissions = True
 	doc.insert(ignore_permissions=True)
+
+	if po_attachment:
+		_relink_portal_file(po_attachment, doc.doctype, doc.name)
+
 	frappe.db.commit()
 	return _serialize(doc)
 
@@ -925,6 +956,8 @@ def submit_date_request_csv():
 	course = (frappe.form_dict.get("course") or "").strip()
 	preferred_date = (frappe.form_dict.get("preferred_date") or "").strip()
 	preferred_batch = _require_valid_batch(frappe.form_dict.get("preferred_batch"))
+	po_number = (frappe.form_dict.get("po_number") or "").strip()
+	po_attachment = (frappe.form_dict.get("po_attachment") or "").strip()
 	customer_notes = (frappe.form_dict.get("customer_notes") or "").strip()
 	contact_name = (frappe.form_dict.get("contact_name") or "").strip()
 	contact_phone = (frappe.form_dict.get("contact_phone") or "").strip()
@@ -1022,6 +1055,8 @@ def submit_date_request_csv():
 	doc.course = course
 	doc.preferred_date = preferred_date
 	doc.preferred_batch = preferred_batch
+	doc.po_number = po_number
+	doc.po_attachment = po_attachment
 	doc.customer_notes = customer_notes or _("Submitted via Certificate Portal CSV bulk upload")
 	doc.status = "Open"
 	for cand in candidates:
@@ -1030,6 +1065,9 @@ def submit_date_request_csv():
 	doc.participants = len(candidates)
 	doc.flags.ignore_permissions = True
 	doc.insert(ignore_permissions=True)
+
+	if po_attachment:
+		_relink_portal_file(po_attachment, doc.doctype, doc.name)
 
 	for cand in candidates:
 		fname = cand.get("_file_name")
