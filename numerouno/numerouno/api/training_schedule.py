@@ -1,5 +1,6 @@
 from datetime import timedelta
 import csv
+import hmac
 import io
 
 import frappe
@@ -608,6 +609,164 @@ def save_session(data):
 	if student_group and payload.get("max_strength") not in (None, ""):
 		_set_group_max_strength(student_group, payload.get("max_strength"))
 	return {"name": doc.name}
+
+
+def _booking_secret_ok():
+	"""Staff calls (bench / logged-in) are allowed. The inbox agent sends a shared secret."""
+	if frappe.session.user and frappe.session.user != "Guest":
+		return True
+	expected = frappe.conf.get("avynqo_booking_secret") or ""
+	given = frappe.get_request_header("X-Avynqo-Secret") or ""
+	return bool(expected) and hmac.compare_digest(str(given), str(expected))
+
+
+def _match_course_name(text):
+	"""Best Course name for a customer's words. Empty when nothing is a clear match."""
+	text = " ".join((text or "").lower().replace("-", " ").split())
+	if not text:
+		return ""
+	exact = frappe.db.sql(
+		"""
+		select name from `tabCourse`
+		where lower(name) = %(t)s or lower(ifnull(course_name, '')) = %(t)s
+		limit 1
+		""",
+		{"t": text},
+	)
+	if exact:
+		return exact[0][0]
+	# The names customers use, pointed at the course row the schedule already uses.
+	aliases = (
+		(("h2s", "level 1"), "H2S TRAINING LEVEL 1 ( EEBA) ( ANSI)"),
+		(("h2s", "level 2"), "H2S TRAINING LEVEL 2 (SCBA) (ANSI)"),
+		(("opito", "h2s"), "BASIC H2S TRAINING (OPITO APPROVED) Course code – 9014"),
+	)
+	for needles, course in aliases:
+		if all(n in text for n in needles) and frappe.db.exists("Course", course):
+			return course
+	tokens = [t for t in text.split() if len(t) > 2]
+	if not tokens:
+		return ""
+	rows = frappe.db.sql("select name, ifnull(course_name, name) from `tabCourse`")
+	scored = []
+	for name, label in rows:
+		hay = f"{name} {label}".lower()
+		hits = sum(1 for t in tokens if t in hay)
+		if hits:
+			scored.append((hits, -len(name), name))
+	if not scored:
+		return ""
+	scored.sort(reverse=True)
+	if len(scored) > 1 and scored[0][0] == scored[1][0]:
+		return ""
+	if scored[0][0] < max(1, len(tokens) - 1):
+		return ""
+	return scored[0][2]
+
+
+def _active_instructor(course):
+	row = frappe.db.sql(
+		"""
+		select cs.instructor
+		from `tabCourse Schedule` cs
+		inner join `tabInstructor` i on i.name = cs.instructor
+		where cs.course = %(course)s and ifnull(i.status, 'Active') = 'Active'
+		order by cs.schedule_date desc
+		limit 1
+		""",
+		{"course": course},
+	)
+	return row[0][0] if row else ""
+
+
+@frappe.whitelist(allow_guest=True)
+def create_confirmed_booking(
+	course_name,
+	schedule_date,
+	participants=None,
+	customer_email=None,
+	customer_name=None,
+	period="morning",
+):
+	"""Add one Training Schedule session when a client has confirmed a date.
+
+	Same course, date and client is not created twice.
+	"""
+	if not _booking_secret_ok():
+		frappe.throw(_("Not allowed."), frappe.PermissionError)
+	course = _match_course_name(course_name)
+	if not course:
+		return {"created": False, "reason": "course_not_found"}
+	day = getdate(schedule_date)
+	email = (customer_email or "").strip().lower()
+	who = (customer_name or email or "Client").strip()
+	existing = frappe.db.sql(
+		"""
+		select name from `tabCourse Schedule`
+		where course = %(course)s and schedule_date = %(day)s
+		  and (%(email)s = '' or ifnull(title, '') like %(mark)s)
+		limit 1
+		""",
+		{"course": course, "day": day, "email": email, "mark": f"%{email}%"},
+	)
+	if existing:
+		return {"created": False, "reason": "already_exists", "name": existing[0][0], "course": course}
+
+	instructor = _active_instructor(course)
+	if not instructor:
+		return {"created": False, "reason": "no_instructor", "course": course}
+
+	year = str(day.year)
+	if not frappe.db.exists("Academic Year", year):
+		year = frappe.db.get_value("Academic Year", {}, "name", order_by="year_start_date desc") or year
+	pax = cint(participants) or 0
+	group_name = f"{course[:48]} {day.isoformat()} {who[:40]}".strip()[:140]
+	if frappe.db.exists("Student Group", group_name):
+		group = frappe.get_doc("Student Group", group_name)
+	else:
+		group = frappe.get_doc(
+			{
+				"doctype": "Student Group",
+				"academic_year": year,
+				"group_based_on": "Course",
+				"student_group_name": group_name,
+				"course": course,
+				"max_strength": pax or 20,
+				"instructors": [{"instructor": instructor}],
+			}
+		)
+		group.flags.ignore_permissions = True
+		group.insert()
+
+	slot = _period_by_key(period)
+	doc = frappe.new_doc("Course Schedule")
+	doc.student_group = group.name
+	doc.instructor = instructor
+	doc.schedule_date = day
+	doc.from_time = slot["from_time"]
+	doc.to_time = slot["to_time"]
+	doc.course = course
+	doc.flags.ignore_permissions = True
+	doc.flags.ignore_mandatory = True
+	doc.validate = lambda: _validate_session_portal(doc)
+	doc.save()
+	label = doc.title or course
+	extra = []
+	if pax:
+		extra.append(f"{pax} candidates")
+	if email:
+		extra.append(email)
+	if extra:
+		doc.db_set("title", f"{label} · {' · '.join(extra)}"[:140])
+	return {
+		"created": True,
+		"name": doc.name,
+		"course": course,
+		"date": str(day),
+		"instructor": instructor,
+		"student_group": group.name,
+		"period": slot["key"],
+	}
 
 
 def _move_session_candidates(course_schedule, new_date):

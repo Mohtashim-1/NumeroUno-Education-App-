@@ -23,11 +23,17 @@ def submit_numerouno_registration(payload=None):
 		}
 
 		doc_data = {"doctype": "NumeroUno Registration"}
-		for fieldname in field_map:
+		for fieldname, df in field_map.items():
 			value = data.get(fieldname)
+			if df.fieldtype == "Check":
+				doc_data[fieldname] = 1 if cint(value) else 0
+				continue
 			if value in (None, ""):
 				continue
 			doc_data[fieldname] = value
+
+		if not doc_data.get("trainee_code_of_conduct_ack"):
+			frappe.throw("Please confirm that you undertake to comply with the Trainee Code of Conduct Policy.")
 
 		doc = frappe.get_doc(doc_data)
 		doc.insert(ignore_permissions=True)

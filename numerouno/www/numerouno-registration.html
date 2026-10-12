@@ -183,6 +183,29 @@
       color: var(--ink);
     }
 
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8fbfd;
+    }
+
+    .check-row input {
+      margin-top: 3px;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .check-row label {
+      margin: 0;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+
     .actions {
       display: flex;
       justify-content: space-between;
@@ -313,13 +336,24 @@
 
     function buildField(field) {
       const requiredMark = field.reqd ? '<span class="req">*</span>' : "";
-      const fullClass = ["Small Text", "Signature", "HTML"].includes(field.fieldtype) ? " full" : "";
+      const fullClass = ["Small Text", "Signature", "HTML", "Check"].includes(field.fieldtype) ? " full" : "";
 
       if (field.fieldtype === "HTML") {
         return `
           <div class="field full" data-fieldname="${escapeHtml(field.fieldname)}">
-            ${field.label ? `<label>${escapeHtml(field.label)}</label>` : ""}
+            ${field.label && field.fieldname !== "trainee_code_of_conduct_html" ? `<label>${escapeHtml(field.label)}</label>` : ""}
             <div class="html-block">${field.options || ""}</div>
+          </div>
+        `;
+      }
+
+      if (field.fieldtype === "Check") {
+        return `
+          <div class="field full" data-fieldname="${escapeHtml(field.fieldname)}">
+            <div class="check-row">
+              <input type="checkbox" id="${escapeHtml(field.fieldname)}" name="${escapeHtml(field.fieldname)}" ${field.default && field.default !== "0" ? "checked" : ""} ${field.reqd ? "required" : ""}>
+              <label for="${escapeHtml(field.fieldname)}">${escapeHtml(field.label)} ${requiredMark}</label>
+            </div>
           </div>
         `;
       }
@@ -536,13 +570,29 @@
       const submitButton = document.getElementById("submit-btn");
       submitButton.disabled = true;
 
+      if (!form.reportValidity()) {
+        submitButton.disabled = false;
+        return;
+      }
+
       const payload = {};
       for (const section of formSchema) {
         for (const field of section.items || []) {
+          if (field.fieldtype === "HTML") continue;
           const input = form.elements[field.fieldname];
           if (!input) continue;
+          if (field.fieldtype === "Check") {
+            payload[field.fieldname] = input.checked ? 1 : 0;
+            continue;
+          }
           payload[field.fieldname] = input.value;
         }
+      }
+
+      if (!payload.trainee_code_of_conduct_ack) {
+        showMessage("error", "Please confirm that you undertake to comply with the Trainee Code of Conduct Policy.");
+        submitButton.disabled = false;
+        return;
       }
 
       try {

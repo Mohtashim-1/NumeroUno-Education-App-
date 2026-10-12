@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <!-- csrf_token -->
+  {% raw %}
+  <title>Book Training — NumeroUNO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+<style>
+    :root {
+      --ink: #071820;
+      --ink-soft: #16323f;
+      --sand: #f1ebe0;
+      --sand-2: #e3d9c8;
+      --paper: #fbf9f4;
+      --coral: #e85d3b;
+      --coral-deep: #c44728;
+      --coral-glow: rgba(232, 93, 59, 0.34);
+      --sea: #14665f;
+      --sea-bright: #1f8f85;
+      --sea-soft: #d7f1ed;
+      --gold: #c9a227;
+      --muted: #5a6b74;
+      --line: rgba(7, 24, 32, 0.12);
+      --ok: #157a45;
+      --ok-soft: #e3f7eb;
+      --danger: #b42318;
+      --shadow: 0 28px 70px rgba(7, 24, 32, 0.16);
+      --shadow-soft: 0 14px 36px rgba(7, 24, 32, 0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Outfit", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(980px 460px at -8% -12%, rgba(232, 93, 59, 0.22), transparent 58%),
+        radial-gradient(860px 420px at 108% -4%, rgba(20, 102, 95, 0.2), transparent 52%),
+        radial-gradient(640px 320px at 50% 110%, rgba(201, 162, 39, 0.12), transparent 55%),
+        linear-gradient(180deg, #efe7d8 0%, var(--paper) 42%, #e8f0f2 100%);
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+
+    .login-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+    @media (max-width: 960px) {
+      .login-layout { grid-template-columns: 1fr; }
+      .login-visual { min-height: 260px; }
+    }
+    .login-visual {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(145deg, rgba(11,31,42,.55), rgba(31,122,114,.35)),
+        url("https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1600&q=80") center/cover;
+      color: #fff;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .login-visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(600px 300px at 20% 20%, rgba(232,93,59,.35), transparent 60%),
+        linear-gradient(180deg, transparent 30%, rgba(11,31,42,.78));
+    }
+    .login-visual > * { position: relative; z-index: 1; }
+    .brand-mark {
+      font-family: "Fraunces", serif;
+      font-size: clamp(42px, 6vw, 64px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 0.95;
+      margin: 0 0 14px;
+    }
+    .login-visual p {
+      max-width: 420px;
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.5;
+      color: rgba(255,255,255,.88);
+    }
+    .login-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 28px;
+      background: rgba(250,248,243,.72);
+      backdrop-filter: blur(10px);
+    }
+    .login-card {
+      width: min(420px, 100%);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 32px;
+    }
+    .login-card h1 {
+      font-family: "Fraunces", serif;
+      font-size: 30px;
+      margin: 0 0 8px;
+      letter-spacing: -0.02em;
+    }
+    .login-card .sub {
+      color: var(--muted);
+      margin: 0 0 28px;
+      line-height: 1.45;
+    }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: 14px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field textarea { min-height: 110px; resize: vertical; }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--sea);
+      box-shadow: 0 0 0 4px rgba(31,122,114,.12);
+      background: #fff;
+    }
+    .otp-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+    .otp-row input {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      padding: 12px 0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 20px;
+      font-weight: 600;
+      transition: transform .12s, background .12s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    .btn-primary {
+      background: var(--coral);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(232,93,59,.28);
+    }
+    .btn-primary:hover { background: var(--coral-deep); }
+    .btn-sea { background: var(--sea); color: #fff; }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+    .btn-block { width: 100%; }
+    .btn-sm { padding: 9px 14px; font-size: 14px; }
+    .alert {
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .alert-error { background: #fdecea; color: var(--danger); }
+    .alert-ok { background: #e8f7ee; color: var(--ok); }
+    .alert-info { background: var(--sea-soft); color: var(--ink-soft); }
+    .hint { margin-top: 12px; color: var(--muted); font-size: 13px; text-align: center; }
+    .linkish {
+      background: none; border: 0; padding: 0;
+      color: var(--sea); font-weight: 600; text-decoration: underline;
+    }
+
+    .shell {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .topbar-brand {
+      font-family: "Fraunces", serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .topbar-brand span { color: var(--coral); }
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,.8);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 8px 8px 16px;
+    }
+    .user-chip strong { display: block; font-size: 14px; }
+    .user-chip small { color: var(--muted); font-size: 12px; }
+    .hero {
+      background: linear-gradient(135deg, var(--ink) 0%, #163948 55%, #1f7a72 120%);
+      color: #fff;
+      border-radius: 28px;
+      padding: 32px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 280px; height: 280px;
+      right: -60px; top: -80px;
+      border-radius: 50%;
+      background: rgba(232,93,59,.28);
+      filter: blur(10px);
+    }
+    .hero > * { position: relative; z-index: 1; }
+    .hero h2 {
+      font-family: "Fraunces", serif;
+      font-size: clamp(28px, 4vw, 40px);
+      margin: 0 0 8px;
+      letter-spacing: -0.03em;
+    }
+    .hero p { margin: 0; color: rgba(255,255,255,.78); max-width: 560px; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 24px;
+    }
+    @media (max-width: 720px) {
+      .metrics { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .user-chip { justify-content: space-between; }
+    }
+    .metric {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .metric .label {
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.65);
+      margin-bottom: 8px;
+    }
+    .metric .value {
+      font-family: "Fraunces", serif;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .filters select {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 10px 14px;
+      min-width: 200px;
+    }
+    .session-grid { display: grid; gap: 12px; }
+    .session-card {
+      background: linear-gradient(180deg, #fff 0%, #fbfefe 100%);
+      border: 1px solid rgba(20, 102, 95, 0.12);
+      border-radius: 20px;
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr auto;
+      gap: 16px;
+      align-items: center;
+      transition: transform .14s, box-shadow .14s, border-color .14s;
+      box-shadow: var(--shadow-soft);
+    }
+    .session-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(232, 93, 59, 0.35);
+      box-shadow: 0 18px 40px rgba(7, 24, 32, 0.1);
+    }
+    @media (max-width: 800px) {
+      .session-card { grid-template-columns: 1fr; }
+    }
+    .course-name {
+      font-weight: 700;
+      font-size: 17px;
+      margin-bottom: 4px;
+    }
+    .muted { color: var(--muted); font-size: 13px; }
+    .seat-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 7px 13px;
+      background: linear-gradient(135deg, var(--sea-soft), #eaf8f2);
+      color: var(--sea);
+      border: 1px solid rgba(20, 102, 95, 0.18);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .empty {
+      background: #fff;
+      border: 1px dashed var(--line);
+      border-radius: 20px;
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .backdrop {
+      position: fixed; inset: 0;
+      background: rgba(11,31,42,.45);
+      backdrop-filter: blur(3px);
+      z-index: 40;
+    }
+    .drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(460px, 100%);
+      background: var(--paper);
+      z-index: 50;
+      box-shadow: -20px 0 50px rgba(11,31,42,.2);
+      display: flex;
+      flex-direction: column;
+      animation: slideIn .22s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(24px); opacity: .4; }
+      to { transform: none; opacity: 1; }
+    }
+    .drawer-head {
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+    }
+    .drawer-head h3 {
+      font-family: "Fraunces", serif;
+      margin: 0;
+      font-size: 26px;
+    }
+    .drawer-body { padding: 22px 24px; overflow: auto; flex: 1; }
+    .drawer-foot {
+      padding: 16px 24px 24px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+    .kv {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .kv div {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .kv .k {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .kv .v { font-weight: 600; }
+
+    /* ── Success screen ── */
+    .success-shell {
+      min-height: calc(100vh - 40px);
+      display: grid;
+      place-items: center;
+      padding: 28px 16px 48px;
+      animation: fadeUp .45s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(.7); }
+      60% { transform: scale(1.08); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes ringPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(20, 102, 95, 0.28); }
+      50% { box-shadow: 0 0 0 14px rgba(20, 102, 95, 0); }
+    }
+    .success-panel {
+      width: min(640px, 100%);
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.98) 0%, #fff 48%, #f7fbfa 100%);
+      border: 1px solid rgba(20, 102, 95, 0.14);
+      border-radius: 32px;
+      padding: 0;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .success-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 7px;
+      background: linear-gradient(90deg, var(--coral), var(--gold), var(--sea-bright));
+    }
+    .success-banner {
+      position: relative;
+      padding: 36px 28px 28px;
+      background:
+        radial-gradient(420px 180px at 50% -20%, rgba(232, 93, 59, 0.18), transparent 70%),
+        linear-gradient(160deg, #0c2430 0%, #134842 55%, #1a6d65 100%);
+      color: #fff;
+      overflow: hidden;
+    }
+    .success-banner::after {
+      content: "";
+      position: absolute;
+      width: 220px; height: 220px;
+      right: -60px; bottom: -90px;
+      border-radius: 50%;
+      background: rgba(232, 93, 59, 0.22);
+      filter: blur(8px);
+    }
+    .success-banner > * { position: relative; z-index: 1; }
+    .success-brand {
+      font-size: 12px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      opacity: .72;
+      margin-bottom: 18px;
+      font-weight: 600;
+    }
+    .success-panel .check {
+      width: 76px; height: 76px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2bb59f, #157a66);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 700;
+      animation: popIn .5s cubic-bezier(.2,1.2,.3,1) both, ringPulse 2.2s ease 0.4s infinite;
+      border: 3px solid rgba(255,255,255,.35);
+    }
+    .success-panel h2 {
+      font-family: "Fraunces", serif;
+      margin: 0 0 8px;
+      font-size: clamp(30px, 5vw, 40px);
+      letter-spacing: -0.03em;
+      color: #fff;
+    }
+    .success-banner p {
+      margin: 0 auto;
+      max-width: 420px;
+      line-height: 1.5;
+      color: rgba(255,255,255,.82);
+      font-size: 15px;
+    }
+    .success-body { padding: 28px 28px 32px; }
+    .success-kv {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      text-align: left;
+      margin: 0 0 22px;
+    }
+    @media (max-width: 560px) {
+      .success-kv { grid-template-columns: 1fr; }
+      .success-actions { flex-direction: column; }
+      .success-actions .btn { width: 100%; }
+    }
+    .success-kv > div {
+      background: linear-gradient(180deg, #fff, #f4faf8);
+      border: 1px solid rgba(20, 102, 95, 0.12);
+      border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow-soft);
+    }
+    .success-kv .k {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--sea);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .success-kv .v {
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.35;
+      color: var(--ink);
+    }
+    .success-kv .v.accent {
+      color: var(--coral-deep);
+      font-family: "Fraunces", serif;
+      font-size: 22px;
+    }
+    .next-steps {
+      text-align: left;
+      background: linear-gradient(135deg, rgba(232, 93, 59, 0.08), rgba(20, 102, 95, 0.08));
+      border: 1px solid rgba(7, 24, 32, 0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 22px;
+    }
+    .next-steps h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+    .next-steps ol {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .next-steps li + li { margin-top: 4px; }
+    .success-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+    .btn-ghost.success-ghost {
+      background: #fff;
+      border-color: rgba(20, 102, 95, 0.28);
+      color: var(--sea);
+    }
+    .btn-ghost.success-ghost:hover {
+      background: var(--sea-soft);
+      border-color: var(--sea);
+    }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: var(--sand);
+      border-radius: 999px;
+      padding: 4px;
+      margin-bottom: 22px;
+    }
+    .auth-tabs button {
+      border: 0;
+      background: transparent;
+      border-radius: 999px;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .auth-tabs button.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: var(--shadow-soft);
+    }
+    .locked-field {
+      background: linear-gradient(180deg, #f3faf8, #eef6f4) !important;
+      color: var(--ink-soft);
+      font-weight: 600;
+    }
+    .slot-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .slot-chips button {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .slot-chips button.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+    .slot-chips button.preferred:not(.active) {
+      border-color: rgba(20,102,95,.4);
+      color: var(--sea);
+      background: var(--sea-soft);
+    }
+    .pref-badge {
+      display: inline-flex;
+      margin-left: 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(232,93,59,.12);
+      color: var(--coral-deep);
+      font-size: 11px;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+    .status-pill {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status-Pending { background: #fff4e5; color: #9a6700; }
+    .status-Confirmed { background: var(--sea-soft); color: var(--sea); }
+    .status-Rejected { background: #fdecea; color: var(--danger); }
+    .st-CandidatesSubmitted { background: var(--ok-soft); color: var(--ok); }
+    .booking-card {
+      background: #fff;
+      border: 1px solid rgba(20,102,95,.12);
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-soft);
+      text-align: left;
+    }
+    .candidate-row {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
+      text-align: left;
+    }
+    .file-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px dashed rgba(20,102,95,.35);
+      background: var(--sea-soft);
+      color: var(--sea);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .view-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .view-tabs button {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.75);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .view-tabs button.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+    .meta-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+  const { createApp, ref, computed, onMounted, nextTick } = Vue;
+  const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || "";
+  const API = "numerouno.numerouno.api.guest_training_booking";
+
+  async function call(method, args = {}, type = "POST") {
+    const params = new URLSearchParams();
+    Object.entries(args || {}).forEach(([k, v]) => {
+      if (v === undefined || v === null) return;
+      params.append(k, typeof v === "object" ? JSON.stringify(v) : v);
+    });
+    let url = "/api/method/" + method;
+    const options = {
+      method: type,
+      credentials: "same-origin",
+      headers: { "X-Frappe-CSRF-Token": CSRF, Accept: "application/json" },
+    };
+    if (type === "GET") url += "?" + params.toString();
+    else {
+      options.headers["Content-Type"] = "application/x-www-form-urlencoded";
+      options.body = params.toString();
+    }
+    const res = await fetch(url, options);
+    const data = await res.json();
+    if (data.exc || data.exception || data._server_messages) {
+      let msg = data.message || data.exception || "Something went wrong.";
+      try {
+        const server = JSON.parse(data._server_messages || "[]");
+        if (server[0]) msg = JSON.parse(server[0]).message || msg;
+      } catch (_) {}
+      throw new Error(typeof msg === "string" ? msg : "Request failed.");
+    }
+    return data.message;
+  }
+
+  async function uploadFile(file) {
+    const fd = new FormData();
+    fd.append("file", file, file.name);
+    fd.append("is_private", "1");
+    const res = await fetch("/api/method/" + API + ".upload_id_file", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-Frappe-CSRF-Token": CSRF },
+      body: fd,
+    });
+    const data = await res.json();
+    if (data.exc || data.exception || data._server_messages) {
+      let msg = data.message || data.exception || "Upload failed.";
+      try {
+        const server = JSON.parse(data._server_messages || "[]");
+        if (server[0]) msg = JSON.parse(server[0]).message || msg;
+      } catch (_) {}
+      throw new Error(typeof msg === "string" ? msg : "Upload failed.");
+    }
+    return data.message?.file_url;
+  }
+
+  createApp({
+    setup() {
+      const bootLoading = ref(true);
+      const authenticated = ref(false);
+      const authTab = ref("signin"); // signin | request
+      const step = ref("email"); // email | otp | app | success | upload
+      const view = ref("schedule"); // schedule | bookings
+      const email = ref("");
+      const company = ref("");
+      const contactName = ref("");
+      const phone = ref("");
+      const preferredSlot = ref("morning");
+      const slots = ref([
+        { key: "morning", label: "Morning · 08:00" },
+        { key: "afternoon", label: "Afternoon · 13:00" },
+        { key: "evening", label: "Evening · 18:00" },
+      ]);
+      const otpDigits = ref(["", "", "", "", "", ""]);
+      const otpInputs = ref([]);
+      const busy = ref(false);
+      const error = ref("");
+      const info = ref("");
+      const sessions = ref([]);
+      const courses = ref([]);
+      const courseFilter = ref("");
+      const slotFilter = ref("");
+      const bookings = ref([]);
+      const selected = ref(null);
+      const participants = ref(1);
+      const poNumber = ref("");
+      const guestNotes = ref("");
+      const lastBooking = ref(null);
+      const uploadBooking = ref(null);
+      const candidates = ref([{ full_name: "", id_number: "", id_attachment: "", file_name: "" }]);
+
+      const otpCode = computed(() => otpDigits.value.join(""));
+      const openCount = computed(() => sessions.value.length);
+      const filteredSessions = computed(() => sessions.value);
+
+      function statusClass(status) {
+        return "status-pill status-" + String(status || "").replace(/\s+/g, "");
+      }
+
+      async function boot() {
+        bootLoading.value = true;
+        try {
+          const s = await call(API + ".get_session", {}, "GET");
+          if (s?.slots?.length) slots.value = s.slots;
+          if (s?.authenticated) {
+            authenticated.value = true;
+            email.value = s.email || "";
+            company.value = s.company || "";
+            contactName.value = s.contact_name || "";
+            phone.value = s.phone || "";
+            preferredSlot.value = s.preferred_slot || "morning";
+            slotFilter.value = s.preferred_slot || "morning";
+            step.value = "app";
+            await Promise.all([loadSessions(), loadBookings()]);
+          }
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          bootLoading.value = false;
+        }
+      }
+
+      async function requestAccount() {
+        error.value = ""; info.value = "";
+        busy.value = true;
+        try {
+          const res = await call(API + ".request_account", {
+            email: email.value,
+            company_name: company.value,
+            contact_name: contactName.value,
+            phone: phone.value,
+          });
+          info.value = res.message || "Request submitted.";
+          if (res.already) { authTab.value = "signin"; step.value = "email"; }
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      async function requestOtp() {
+        error.value = ""; info.value = "";
+        if (!email.value.includes("@")) { error.value = "Enter a valid email."; return; }
+        busy.value = true;
+        try {
+          const res = await call(API + ".request_access_otp", { email: email.value });
+          if (!res.ok) {
+            error.value = res.message || "Cannot sign in.";
+            if (res.needs_account) authTab.value = "request";
+            return;
+          }
+          info.value = res.message || "Code sent.";
+          otpDigits.value = ["", "", "", "", "", ""];
+          step.value = "otp";
+          await nextTick();
+          otpInputs.value[0]?.focus();
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      async function verifyOtp() {
+        error.value = "";
+        if (otpCode.value.length !== 6) { error.value = "Enter the 6-digit code."; return; }
+        busy.value = true;
+        try {
+          const res = await call(API + ".verify_access_otp", { email: email.value, otp: otpCode.value });
+          authenticated.value = true;
+          company.value = res.company || "";
+          contactName.value = res.contact_name || "";
+          phone.value = res.phone || phone.value;
+          preferredSlot.value = res.preferred_slot || "morning";
+          slotFilter.value = res.preferred_slot || "morning";
+          step.value = "app";
+          await Promise.all([loadSessions(), loadBookings()]);
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      function applyOtpCode(code) {
+        const digits = String(code || "").replace(/\D/g, "").slice(0, 6).split("");
+        otpDigits.value = [0,1,2,3,4,5].map((i) => digits[i] || "");
+        nextTick(() => {
+          otpInputs.value[Math.min(digits.length, 5)]?.focus();
+          if (digits.length === 6) verifyOtp();
+        });
+      }
+      function onOtpInput(i, ev) {
+        const raw = (ev.target.value || "").replace(/\D/g, "");
+        if (raw.length > 1) { applyOtpCode(raw); return; }
+        otpDigits.value[i] = raw.slice(-1);
+        if (raw && i < 5) otpInputs.value[i + 1]?.focus();
+        if (otpCode.value.length === 6) verifyOtp();
+      }
+      function onOtpKeydown(i, ev) {
+        if (ev.key === "Backspace" && !otpDigits.value[i] && i > 0) {
+          otpDigits.value[i - 1] = "";
+          otpInputs.value[i - 1]?.focus();
+        }
+      }
+      function onOtpPaste(ev) {
+        ev.preventDefault();
+        applyOtpCode(ev.clipboardData?.getData("text") || "");
+      }
+
+      async function loadSessions() {
+        busy.value = true; error.value = "";
+        try {
+          const res = await call(API + ".get_available_sessions", {
+            days: 21,
+            course: courseFilter.value || null,
+            slot: slotFilter.value || null,
+          });
+          sessions.value = res.sessions || [];
+          courses.value = res.courses || [];
+          if (res.slots?.length) slots.value = res.slots;
+          if (res.preferred_slot) preferredSlot.value = res.preferred_slot;
+          if (res.company) company.value = res.company;
+        } catch (e) {
+          error.value = e.message;
+          if (/sign in|approved/i.test(e.message)) {
+            authenticated.value = false; step.value = "email";
+          }
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      async function loadBookings() {
+        try {
+          const res = await call(API + ".get_my_bookings", {});
+          bookings.value = res.bookings || [];
+        } catch (_) {}
+      }
+
+      function openBook(session) {
+        selected.value = session;
+        participants.value = 1;
+        poNumber.value = "";
+        guestNotes.value = "";
+        error.value = "";
+      }
+      function closeBook() { selected.value = null; }
+
+      async function submitBooking() {
+        if (!selected.value) return;
+        error.value = ""; busy.value = true;
+        try {
+          const res = await call(API + ".submit_booking_request", {
+            course_schedule: selected.value.name,
+            slot: selected.value.slot || preferredSlot.value,
+            phone: phone.value,
+            po_number: poNumber.value,
+            participants: participants.value,
+            guest_notes: guestNotes.value,
+          });
+          lastBooking.value = res.booking;
+          info.value = res.message;
+          selected.value = null;
+          step.value = "success";
+          await loadBookings();
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      function openUpload(b) {
+        uploadBooking.value = b;
+        candidates.value = [{ full_name: "", id_number: "", id_attachment: "", file_name: "" }];
+        step.value = "upload";
+        error.value = "";
+      }
+      function addCandidate() {
+        candidates.value.push({ full_name: "", id_number: "", id_attachment: "", file_name: "" });
+      }
+      function removeCandidate(i) {
+        if (candidates.value.length === 1) return;
+        candidates.value.splice(i, 1);
+      }
+      async function onIdFile(i, ev) {
+        const file = ev.target.files?.[0];
+        if (!file) return;
+        busy.value = true; error.value = "";
+        try {
+          const url = await uploadFile(file);
+          candidates.value[i].id_attachment = url;
+          candidates.value[i].file_name = file.name;
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          busy.value = false;
+          ev.target.value = "";
+        }
+      }
+      async function submitCandidates() {
+        error.value = ""; busy.value = true;
+        try {
+          const payload = candidates.value.map((c) => ({
+            full_name: c.full_name,
+            id_number: c.id_number,
+            id_attachment: c.id_attachment,
+          }));
+          const res = await call(API + ".submit_candidates", {
+            booking: uploadBooking.value.name,
+            candidates: payload,
+          });
+          info.value = res.message;
+          lastBooking.value = res.booking;
+          step.value = "success";
+          await loadBookings();
+        } catch (e) {
+          error.value = e.message;
+        } finally {
+          busy.value = false;
+        }
+      }
+
+      async function signOut() {
+        await call(API + ".logout", {});
+        authenticated.value = false;
+        step.value = "email";
+        authTab.value = "signin";
+        sessions.value = [];
+        bookings.value = [];
+        otpDigits.value = ["", "", "", "", "", ""];
+      }
+      function bookAnother() {
+        lastBooking.value = null;
+        step.value = "app";
+        view.value = "schedule";
+        loadSessions();
+      }
+
+      onMounted(boot);
+
+      return {
+        bootLoading, authenticated, authTab, step, view, email, company, contactName, phone,
+        preferredSlot, slots, otpDigits, otpInputs, busy, error, info, sessions, courses,
+        courseFilter, slotFilter, bookings, selected, participants, poNumber, guestNotes,
+        lastBooking, uploadBooking, candidates, otpCode, openCount, filteredSessions,
+        statusClass, requestAccount, requestOtp, verifyOtp, onOtpInput, onOtpKeydown, onOtpPaste,
+        loadSessions, loadBookings, openBook, closeBook, submitBooking, openUpload,
+        addCandidate, removeCandidate, onIdFile, submitCandidates, signOut, bookAnother,
+      };
+    },
+    template: `
+      <div v-if="bootLoading" style="min-height:100vh;display:grid;place-items:center;color:var(--muted);">Loading…</div>
+
+      <div v-else-if="!authenticated || step === 'email' || step === 'otp'" class="login-layout">
+        <section class="login-visual">
+          <h1 class="brand-mark">Numero<br/>UNO</h1>
+          <p>Approved company accounts only. Request access, then book Morning, Afternoon or Evening slots from our live schedule.</p>
+        </section>
+        <section class="login-panel">
+          <div class="login-card">
+            <h1>Guest Training Portal</h1>
+            <p class="sub" v-if="step === 'email' && authTab === 'signin'">Sign in with your approved work email. Company is locked to your account.</p>
+            <p class="sub" v-else-if="step === 'email'">Request an account for your company. We’ll approve it before you can book.</p>
+            <p class="sub" v-else>Enter the 6-digit code sent to <strong>{{ email }}</strong>.</p>
+
+            <div v-if="step === 'email'" class="auth-tabs">
+              <button type="button" :class="{active: authTab==='signin'}" @click="authTab='signin'; error=''; info=''">Sign in</button>
+              <button type="button" :class="{active: authTab==='request'}" @click="authTab='request'; error=''; info=''">Request account</button>
+            </div>
+
+            <div v-if="error" class="alert alert-error">{{ error }}</div>
+            <div v-if="info" class="alert alert-ok">{{ info }}</div>
+
+            <template v-if="step === 'email' && authTab === 'signin'">
+              <div class="field">
+                <label>Work email</label>
+                <input v-model.trim="email" type="email" placeholder="you@company.com" @keydown.enter.prevent="requestOtp" />
+              </div>
+              <button class="btn btn-primary btn-block" :disabled="busy" @click="requestOtp">
+                <span v-if="busy" class="spinner"></span><span v-else>Continue</span>
+              </button>
+            </template>
+
+            <template v-else-if="step === 'email'">
+              <div class="field"><label>Contact name</label><input v-model.trim="contactName" type="text" /></div>
+              <div class="field"><label>Work email</label><input v-model.trim="email" type="email" /></div>
+              <div class="field"><label>Company</label><input v-model.trim="company" type="text" placeholder="Organisation name" /></div>
+              <div class="field"><label>Phone</label><input v-model.trim="phone" type="tel" placeholder="+971 …" /></div>
+              <button class="btn btn-primary btn-block" :disabled="busy" @click="requestAccount">
+                <span v-if="busy" class="spinner"></span><span v-else>Submit for approval</span>
+              </button>
+            </template>
+
+            <template v-else>
+              <div class="field">
+                <label>Code</label>
+                <div class="otp-row">
+                  <input v-for="(d,i) in otpDigits" :key="i" :ref="el => otpInputs[i]=el" maxlength="6" inputmode="numeric"
+                    autocomplete="one-time-code" :value="d" @input="onOtpInput(i,$event)" @keydown="onOtpKeydown(i,$event)" @paste="onOtpPaste" />
+                </div>
+              </div>
+              <button class="btn btn-primary btn-block" :disabled="busy" @click="verifyOtp">
+                <span v-if="busy" class="spinner"></span><span v-else>Open schedule</span>
+              </button>
+              <p class="hint">
+                <button class="linkish" type="button" @click="step='email'; error=''; info=''">Go back</button>
+                ·
+                <button class="linkish" type="button" :disabled="busy" @click="requestOtp">Resend</button>
+              </p>
+            </template>
+          </div>
+        </section>
+      </div>
+
+      <div v-else-if="step === 'success'" class="success-shell">
+        <div class="success-panel">
+          <div class="success-banner">
+            <div class="success-brand">NumeroUNO Training</div>
+            <div class="check">✓</div>
+            <h2>{{ lastBooking?.status === 'Candidates Submitted' ? 'Candidates submitted' : 'Request received' }}</h2>
+            <p>{{ info || (lastBooking?.status === 'Candidates Submitted' ? 'Thank you — our team has your candidate details.' : 'No schedule was created yet. A coordinator will confirm your booking first.') }}</p>
+          </div>
+          <div class="success-body">
+            <div v-if="lastBooking" class="success-kv">
+              <div><div class="k">Course</div><div class="v">{{ lastBooking.course_name }}</div></div>
+              <div><div class="k">Date & slot</div><div class="v">{{ lastBooking.date_label }} · {{ lastBooking.slot_label }}</div></div>
+              <div><div class="k">Company</div><div class="v">{{ lastBooking.company_name || company }}</div></div>
+              <div><div class="k">Status</div><div class="v"><span :class="statusClass(lastBooking.status)">{{ lastBooking.status }}</span></div></div>
+            </div>
+            <div class="next-steps">
+              <h3>What happens next</h3>
+              <ol>
+                <li>Training coordinator reviews and confirms your booking.</li>
+                <li>After confirmation, upload each candidate’s name and ID.</li>
+                <li>We add them to the training calendar only then.</li>
+              </ol>
+            </div>
+            <div class="success-actions">
+              <button class="btn btn-primary" @click="bookAnother">Back to portal</button>
+              <button class="btn btn-ghost success-ghost" @click="step='app'; view='bookings'; loadBookings()">My bookings</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="step === 'upload'" class="shell">
+        <header class="topbar">
+          <div class="topbar-brand">Upload candidates</div>
+          <button class="btn btn-ghost btn-sm" @click="step='app'; view='bookings'">Back</button>
+        </header>
+        <div v-if="error" class="alert alert-error">{{ error }}</div>
+        <p class="muted" style="margin-bottom:16px;">
+          {{ uploadBooking?.course_name }} · {{ uploadBooking?.date_label }} · {{ uploadBooking?.slot_label }}
+        </p>
+        <div v-for="(c, i) in candidates" :key="i" class="candidate-row">
+          <div class="field"><label>Full name</label><input v-model.trim="c.full_name" type="text" /></div>
+          <div class="field"><label>Emirates ID / Passport No.</label><input v-model.trim="c.id_number" type="text" /></div>
+          <div class="field">
+            <label>ID document</label>
+            <label class="file-btn">
+              {{ c.file_name || 'Upload ID scan' }}
+              <input type="file" accept="image/*,.pdf" hidden @change="onIdFile(i, $event)" />
+            </label>
+          </div>
+          <button v-if="candidates.length > 1" type="button" class="btn btn-ghost btn-sm" @click="removeCandidate(i)">Remove</button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+          <button class="btn btn-ghost" type="button" @click="addCandidate">Add another candidate</button>
+          <button class="btn btn-primary" :disabled="busy" @click="submitCandidates">
+            <span v-if="busy" class="spinner"></span><span v-else>Submit candidates</span>
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="shell">
+        <header class="topbar">
+          <div class="topbar-brand">Numero<span>UNO</span> Training</div>
+          <div class="user-chip">
+            <div>
+              <strong>{{ company || 'Guest' }}</strong>
+              <small>{{ email }}</small>
+            </div>
+            <button class="btn btn-ghost btn-sm" @click="signOut">Sign out</button>
+          </div>
+        </header>
+
+        <section class="hero">
+          <h2>Book from the live schedule</h2>
+          <p>Your company is locked to this account. Pick a session — Morning, Afternoon or Evening. We confirm before anything is added to the calendar.</p>
+          <div class="metrics">
+            <div class="metric"><div class="label">Open sessions</div><div class="value">{{ openCount }}</div></div>
+            <div class="metric"><div class="label">Company</div><div class="value" style="font-size:16px;">{{ company }}</div></div>
+          </div>
+        </section>
+
+        <div class="view-tabs">
+          <button type="button" :class="{active: view==='schedule'}" @click="view='schedule'">Schedule</button>
+          <button type="button" :class="{active: view==='bookings'}" @click="view='bookings'; loadBookings()">My bookings</button>
+        </div>
+
+        <div v-if="error" class="alert alert-error">{{ error }}</div>
+
+        <template v-if="view==='schedule'">
+          <div class="toolbar">
+            <div class="filters">
+              <select v-model="courseFilter" @change="loadSessions">
+                <option value="">All courses</option>
+                <option v-for="c in courses" :key="c.name" :value="c.name">{{ c.label }}</option>
+              </select>
+              <div class="slot-chips">
+                <button type="button" :class="{active: !slotFilter}" @click="slotFilter=''; loadSessions()">All slots</button>
+                <button v-for="s in slots" :key="s.key" type="button"
+                  :class="{active: slotFilter===s.key, preferred: preferredSlot===s.key}"
+                  @click="slotFilter=s.key; loadSessions()">{{ s.label }}</button>
+              </div>
+              <button class="btn btn-ghost btn-sm" :disabled="busy" @click="loadSessions">Refresh</button>
+            </div>
+          </div>
+
+          <div v-if="!filteredSessions.length" class="empty">No open sessions for this filter in the next 21 days.</div>
+          <div v-else class="session-grid">
+            <article v-for="s in filteredSessions" :key="s.name" class="session-card">
+              <div>
+                <div class="course-name">{{ s.course_name }}
+                  <span v-if="s.matches_preferred" class="pref-badge">Your slot</span>
+                </div>
+                <div class="muted">{{ s.date_label }} · {{ s.weekday }} · {{ s.slot_label }}</div>
+              </div>
+              <div><span class="seat-pill">{{ s.seats_label }}</span></div>
+              <div><button class="btn btn-primary btn-sm" @click="openBook(s)">Request booking</button></div>
+            </article>
+          </div>
+        </template>
+
+        <template v-else>
+          <div v-if="!bookings.length" class="empty">No bookings yet.</div>
+          <div v-for="b in bookings" :key="b.name" class="booking-card">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap;">
+              <div>
+                <strong>{{ b.course_name }}</strong>
+                <div class="muted">{{ b.date_label }} · {{ b.slot_label }}</div>
+              </div>
+              <span :class="statusClass(b.status)">{{ b.status }}</span>
+            </div>
+            <div style="margin-top:12px;" v-if="b.can_upload_candidates">
+              <button class="btn btn-primary btn-sm" @click="openUpload(b)">Upload name &amp; ID</button>
+            </div>
+            <div class="muted" style="margin-top:8px;" v-else-if="b.status==='Pending'">Waiting for coordinator confirmation.</div>
+            <div class="muted" style="margin-top:8px;" v-else-if="b.status==='Candidates Submitted'">{{ b.candidate_count }} candidate(s) submitted.</div>
+          </div>
+        </template>
+
+        <div v-if="selected" class="backdrop" @click="closeBook"></div>
+        <aside v-if="selected" class="drawer">
+          <div class="drawer-head">
+            <div>
+              <h3>Request booking</h3>
+              <p class="muted" style="margin:6px 0 0;">{{ selected.course_name }}</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" @click="closeBook">Close</button>
+          </div>
+          <div class="drawer-body">
+            <div v-if="error" class="alert alert-error">{{ error }}</div>
+            <div class="meta-row">
+              <div class="kv" style="margin:0;display:block;">
+                <div><div class="k">Date</div><div class="v">{{ selected.date_label }}</div></div>
+              </div>
+              <div class="kv" style="margin:0;display:block;">
+                <div><div class="k">Slot</div><div class="v">{{ selected.slot_label }}</div></div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Company</label>
+              <input class="locked-field" :value="company" type="text" readonly />
+            </div>
+            <div class="field">
+              <label>Phone (optional)</label>
+              <input v-model.trim="phone" type="tel" placeholder="+971 …" />
+            </div>
+            <div class="field">
+              <label>Expected participants</label>
+              <input v-model.number="participants" type="number" min="1" max="20" />
+            </div>
+            <div class="field">
+              <label>PO number (optional)</label>
+              <input v-model.trim="poNumber" type="text" />
+            </div>
+            <div class="field">
+              <label>Notes (optional)</label>
+              <textarea v-model.trim="guestNotes" placeholder="Anything we should know"></textarea>
+            </div>
+            <p class="muted">Candidate names and IDs are uploaded after our coordinator confirms — not now. No schedule is created until then.</p>
+          </div>
+          <div class="drawer-foot">
+            <button class="btn btn-primary btn-block" :disabled="busy" @click="submitBooking">
+              <span v-if="busy" class="spinner"></span><span v-else>Submit request</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+    `,
+  }).mount("#app");
+  </script>
+  {% endraw %}
+</body>
+</html>

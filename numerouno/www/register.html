@@ -558,7 +558,7 @@
       if (field.fieldtype === "HTML") {
         return `
           <div class="field full" data-fieldname="${escapeHtml(field.fieldname)}">
-            ${field.label ? `<label>${escapeHtml(field.label)}</label>` : ""}
+            ${field.label && field.fieldname !== "trainee_code_of_conduct_html" ? `<label>${escapeHtml(field.label)}</label>` : ""}
             <div class="html-block">${field.options || ""}</div>
           </div>
         `;

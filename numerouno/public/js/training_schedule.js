@@ -1176,7 +1176,13 @@
 		template: `
 		<div class="ts-app">
 			<aside class="ts-sidebar">
-				<div class="ts-brand">TRAINING SCHEDULE</div>
+				<div class="ts-brand">
+					<img src="/assets/numerouno/images/logo.png" alt="Numero Uno">
+					<div>
+						<div class="ts-brand-name">Numero Uno</div>
+						<div class="ts-brand-sub">Training & Consulting</div>
+					</div>
+				</div>
 				<nav class="ts-nav">
 					<button :class="{active: view==='dashboard'}" @click="view='dashboard'">▦ Dashboard</button>
 					<button :class="{active: view==='trainers'}" @click="view='trainers'">👤 Trainers</button>
@@ -1206,6 +1212,10 @@
 			<main class="ts-main">
 				<header class="ts-top">
 					<div>
+						<div class="ts-top-brand">
+							<img src="/assets/numerouno/images/logo.png" alt="">
+							<span>Numero Uno Training & Consulting</span>
+						</div>
 						<h1>Training Schedule</h1>
 						<p v-if="selectedTrainer">
 							Showing sessions for <b>{{ selectedTrainer.instructor_name }}</b>

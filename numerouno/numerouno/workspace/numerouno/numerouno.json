@@ -427,6 +427,27 @@
    "url": "https://erpnext.nutc.cloud/customer-portal"
   },
   {
+   "color": "Cyan",
+   "doc_view": "List",
+   "label": "Guest Training Portal",
+   "type": "URL",
+   "url": "https://erpnext.nutc.cloud/book-training"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Guest Training Accounts",
+   "link_to": "Guest Training Account",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Guest Training Bookings",
+   "link_to": "Guest Training Booking",
+   "type": "DocType"
+  },
+  {
    "color": "Blue",
    "doc_view": "List",
    "label": "Supplier Invoice Portal",

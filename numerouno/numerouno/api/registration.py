@@ -129,6 +129,9 @@ def submit_registration(payload=None):
 		doc_data["is_flagged"] = 0
 		doc_data["review_notes"] = None
 
+		if not doc_data.get("trainee_code_of_conduct_ack"):
+			frappe.throw("Please confirm that you undertake to comply with the Trainee Code of Conduct Policy.")
+
 		doc = frappe.get_doc(doc_data)
 		apply_course_declaration_responses(doc, data.get("course_declaration_responses"))
 		doc.insert(ignore_permissions=True)

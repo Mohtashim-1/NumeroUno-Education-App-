@@ -40,10 +40,42 @@ body.ts-body {
 	gap: 18px;
 }
 .ts-brand {
-	font-size: 13px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 2px 8px 8px;
+}
+.ts-brand img {
+	width: 46px;
+	height: 46px;
+	object-fit: contain;
+	border-radius: 10px;
+	background: #fff;
+	flex: 0 0 auto;
+}
+.ts-brand-name {
+	font-size: 15px;
 	font-weight: 800;
-	letter-spacing: 0.12em;
-	padding: 4px 10px 12px;
+	line-height: 1.15;
+}
+.ts-brand-sub {
+	margin-top: 2px;
+	font-size: 11px;
+	font-weight: 500;
+	color: rgba(255,255,255,0.72);
+}
+.ts-top-brand {
+	display: none;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px;
+	font-size: 13px;
+	font-weight: 700;
+}
+.ts-top-brand img {
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
 }
 .ts-nav { display: flex; flex-direction: column; gap: 4px; }
 .ts-nav a, .ts-nav button {
@@ -606,6 +638,7 @@ body.ts-body {
 @media (max-width: 980px) {
 	.ts-app { grid-template-columns: 1fr; }
 	.ts-sidebar { display: none; }
+	.ts-top-brand { display: flex; }
 	.ts-stats { grid-template-columns: 1fr 1fr; }
 	.ts-top { flex-direction: column; align-items: stretch; }
 	.ts-detail-meta { grid-template-columns: 1fr 1fr; }

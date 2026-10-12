@@ -47,6 +47,9 @@
   "has_vantage_number",
   "vantage_number",
   "previous_opito_training_at_centre",
+  "trainee_code_of_conduct_section",
+  "trainee_code_of_conduct_html",
+  "trainee_code_of_conduct_ack",
   "signature_section",
   "learner_signature",
   "signature_date",
@@ -311,6 +314,25 @@
    "reqd": 1
   },
   {
+   "fieldname": "trainee_code_of_conduct_section",
+   "fieldtype": "Section Break",
+   "label": "Trainee Code of Conduct"
+  },
+  {
+   "fieldname": "trainee_code_of_conduct_html",
+   "fieldtype": "HTML",
+   "label": "Trainee Code of Conduct",
+   "options": "<div class=\"trainee-coc\" style=\"padding:18px 20px;background:#f8fafc;border:1px solid #d0d7de;border-radius:14px;font-size:13px;line-height:1.7;color:#1f2937;\">\n  <div style=\"font-weight:800;font-size:15px;margin-bottom:12px;color:#0f172a;\">NUMERO UNO Trainee Code of Conduct Policy</div>\n  <div style=\"display:grid;grid-template-columns:1.4fr 1fr;gap:10px 18px;margin-bottom:14px;\">\n    <div><strong>Training Course:</strong> _________________________________</div>\n    <div><strong>Location:</strong> _____________</div>\n    <div><strong>Trainer:</strong> ______________________</div>\n    <div><strong>Date:</strong> _____________ &nbsp;&nbsp; <strong>Time:</strong> _____________</div>\n  </div>\n  <p style=\"margin:0 0 10px;\">I, the undersigned, undertake to comply with all the principles listed at NUMERO UNO Trainee Code of Conduct Policy; as follows:</p>\n  <ol style=\"margin:0 0 14px;padding-left:22px;\">\n    <li>Report to the training sessions on time.</li>\n    <li>Demonstrate appropriate and respectful behaviour with trainers, fellow trainees and admin staff.</li>\n    <li>Ensure disagreements or differences of opinion are expressed respectfully and resolved constructively.</li>\n    <li>Adhere to the Centre\u2019s dress code and professional attire.</li>\n    <li>Observe confidentiality when dealing with personal, organizational, or proprietary information shared within the training environment.</li>\n    <li>Perform all assessments and assignments with integrity and properly attribute sources when necessary.</li>\n    <li>Handle the training facility, equipment, tools and training materials with care and I understand that I am accountable in cases of negligent behaviour; accidental or deliberate.</li>\n    <li>Adhere to health, safety &amp; Environment protocols and report hazards, when applicable.</li>\n    <li>Seek and give constructive feedback from trainers and peers to improve learning and performance.</li>\n    <li>Refrain from any harassment behaviour whether verbal, non-verbal or physical.</li>\n  </ol>\n  <p style=\"margin:0 0 16px;\">I understand that violations of the Code of Conduct may result in warnings, suspension, or expulsion from the training program.</p>\n  <div style=\"display:grid;grid-template-columns:1.4fr 1fr 0.8fr;gap:16px;margin-top:8px;font-size:12px;color:#475569;\">\n    <div>_________________________<br><strong>Trainee Name</strong></div>\n    <div>__________________<br><strong>Signature</strong></div>\n    <div>_________<br><strong>Date</strong></div>\n  </div>\n</div>",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "trainee_code_of_conduct_ack",
+   "fieldtype": "Check",
+   "label": "I have read and undertake to comply with the NUMERO UNO Trainee Code of Conduct Policy",
+   "reqd": 1
+  },
+  {
    "fieldname": "signature_section",
    "fieldtype": "Section Break",
    "label": "Learner Signature"
@@ -395,7 +417,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-17 14:15:05.788544",
+ "modified": "2026-10-05 13:15:00.000000",
  "modified_by": "Administrator",
  "module": "Numerouno",
  "name": "Registration",
