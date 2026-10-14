@@ -4,7 +4,9 @@ from urllib.parse import urlencode
 import frappe
 from frappe.utils import add_days, getdate
 
-PUBLIC_VERIFICATION_BASE_URL = "https://nutc.ae/verify"
+# Served by apps/numerouno/www/certificate-verification (calls get_certificate_by_qr).
+# The marketing site at nutc.ae/portal currently only demos DEMO-001 client-side.
+PUBLIC_VERIFICATION_BASE_URL = "https://erpnext.nutc.cloud/certificate-verification"
 
 
 def collapse_name_whitespace(value):
@@ -49,11 +51,13 @@ def names_match(entered_name, expected_names):
 
 
 def get_public_verification_url(certificate_number=None, student_name=None):
-	"""Public certificate verification page on the marketing site."""
+	"""Public certificate verification page (ERP guest form that calls get_certificate_by_qr)."""
 	params = {}
 
 	if certificate_number:
 		params["certNumber"] = (certificate_number or "").strip()
+	if student_name:
+		params["name"] = (student_name or "").strip()
 
 	if not params:
 		return PUBLIC_VERIFICATION_BASE_URL
