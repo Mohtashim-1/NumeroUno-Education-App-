@@ -1151,7 +1151,13 @@ def get_instructor_quiz_status(
 
 @frappe.whitelist()
 def get_instructor_results(
-    limit=50, offset=0, student_group=None, student=None, course=None, instructor=None
+    limit=50,
+    offset=0,
+    student_group=None,
+    student=None,
+    course=None,
+    instructor=None,
+    confirmation_status=None,
 ):
     limit = int(limit or 50)
     offset = int(offset or 0)
@@ -1162,6 +1168,7 @@ def get_instructor_results(
     student = (student or "").strip()
     course = (course or "").strip()
     instructor = (instructor or "").strip()
+    confirmation_status = (confirmation_status or "").strip().lower()
 
     student_group_names = _resolve_student_group_names(user, roles, instructor)
     is_adnoc_instructor = _is_adnoc_instructor(user, roles, instructor)
@@ -1186,6 +1193,13 @@ def get_instructor_results(
     if course:
         filters["course"] = course
 
+    ar_meta = frappe.get_meta("Assessment Result")
+    if ar_meta.has_field("custom_trainer_confirmed"):
+        if confirmation_status in {"pending", "0", "no"}:
+            filters["custom_trainer_confirmed"] = 0
+        elif confirmation_status in {"confirmed", "1", "yes"}:
+            filters["custom_trainer_confirmed"] = 1
+
     total = frappe.db.count("Assessment Result", filters=filters)
     result_fields = [
         "name",
@@ -1204,7 +1218,6 @@ def get_instructor_results(
         "modified",
         "creation",
     ]
-    ar_meta = frappe.get_meta("Assessment Result")
     for fieldname in (
         "custom_trainer_confirmed",
         "custom_trainer_confirmed_by",

@@ -76,8 +76,11 @@ def can_bypass_trainer_confirmation(user=None) -> bool:
 	return bool({"System Manager", "Certification"}.intersection(roles))
 
 
-def assert_trainer_confirmed_for_certificate(doc, print_settings=None):
-	"""Doc event: before_print on Assessment Result."""
+def assert_trainer_confirmed_for_certificate(doc, method=None, print_settings=None):
+	"""Doc event: before_print on Assessment Result.
+
+	Frappe hooks call ``(doc, method, *args)``, so ``method`` is required.
+	"""
 	print_format = resolve_print_format_name(print_settings)
 	if not is_certificate_print_format(print_format):
 		return
@@ -92,7 +95,7 @@ def assert_trainer_confirmed_for_certificate(doc, print_settings=None):
 	frappe.throw(
 		_(
 			"Trainer has not confirmed {0} for certificate printing. "
-			"Open Instructor Portal → Result and confirm the student first."
+			"Open Instructor Portal → Certificate Confirm and confirm the student first."
 		).format(student),
 		title=_("Trainer Confirmation Required"),
 	)

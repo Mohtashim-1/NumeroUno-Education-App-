@@ -552,6 +552,7 @@ function _instructor_portal_boot(page) {
 					<button type="button" class="portal-tab" data-target="cards-section">Student Cards</button>
 					<button type="button" class="portal-tab" data-target="quiz-section">Quiz Status</button>
 					<button type="button" class="portal-tab" data-target="result-section">Result</button>
+					<button type="button" class="portal-tab" data-target="certificate-confirm-section">Certificate Confirm</button>
 					<button type="button" class="portal-tab" data-target="bulk-assessment-section">Bulk Assessment</button>
 					<button type="button" class="portal-tab" data-target="resit-section">Resit</button>
 					<button type="button" class="portal-tab" hidden data-form-flag="assessor_checklist" data-target="assessor-checklist-section">Course Assessor Checklist</button>
@@ -704,6 +705,50 @@ function _instructor_portal_boot(page) {
 							<tbody id="instructor-result-body">
 								<tr>
 									<td colspan="12" class="empty-state">Loading...</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="portal-section" id="certificate-confirm-section" hidden>
+				<div class="portal-panel">
+					<div class="panel-header">
+						<div class="panel-title">
+							<span>CC</span>
+							<div>
+								<h3>Certificate Confirm</h3>
+								<p class="panel-subtitle">Filter students, select rows, then confirm before Assessment Certificate printing.</p>
+							</div>
+						</div>
+						<div class="quiz-actions">
+							<button type="button" class="portal-btn portal-btn-primary" id="cert-confirm-selected">Confirm Selected</button>
+							<button type="button" class="portal-btn portal-btn-ghost" id="cert-confirm-all-visible">Confirm All Visible</button>
+						</div>
+					</div>
+					<div class="portal-filters" id="certificate-confirm-filters">
+						<div id="filter-confirm-status"></div>
+					</div>
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th style="width:36px;"><input type="checkbox" id="cert-select-all" title="Select all"></th>
+									<th>Result</th>
+									<th>Student</th>
+									<th>Group</th>
+									<th>Course</th>
+									<th>Grade</th>
+									<th>Doc Status</th>
+									<th>Trainer Confirm</th>
+									<th>Confirmed On</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody id="instructor-certificate-confirm-body">
+								<tr>
+									<td colspan="10" class="empty-state">Loading...</td>
 								</tr>
 							</tbody>
 						</table>
@@ -1178,6 +1223,7 @@ function _instructor_portal_boot(page) {
 		adsd_pretest: 0
 	};
 	var pageSize = 50;
+	var certConfirmOffset = 0;
 	var isAdnocInstructor = false;
 	var safetyBriefingTypes = [];
 	var formFlags = {
@@ -1189,7 +1235,8 @@ function _instructor_portal_boot(page) {
 		instructor: "",
 		course: "",
 		student_group: "",
-		student: ""
+		student: "",
+		confirmation_status: "Pending"
 	};
 	var filterControls = {};
 
@@ -1204,6 +1251,7 @@ function _instructor_portal_boot(page) {
 	load_portal_data();
 	load_quiz_status();
 	load_results();
+	load_certificate_confirmations();
 	load_bulk_assessments();
 	load_all_instructor_forms();
 	load_safety_briefing_groups();
@@ -1328,9 +1376,36 @@ function _instructor_portal_boot(page) {
 			parent: $("#filter-student")
 		});
 
+		filterControls.confirmation_status = frappe.ui.form.make_control({
+			df: {
+				label: "Confirmation Status",
+				fieldname: "confirmation_status",
+				fieldtype: "Select",
+				options: ["Pending", "Confirmed", "All"].join("\n"),
+				default: "Pending"
+			},
+			parent: $("#filter-confirm-status"),
+			render_input: true
+		});
+		filterControls.confirmation_status.refresh();
+		if (filterControls.confirmation_status.set_value) {
+			filterControls.confirmation_status.set_value("Pending");
+		}
+		if (filterControls.confirmation_status.$input) {
+			filterControls.confirmation_status.$input.on("change", function () {
+				certConfirmOffset = 0;
+				filterState.confirmation_status =
+					(filterControls.confirmation_status && filterControls.confirmation_status.get_value()) || "Pending";
+				load_certificate_confirmations();
+			});
+		}
+
 		$("#portal-reset-filters").off('click').on('click', function () {
 			Object.values(filterControls).forEach(function (control) {
-				if (control && control.set_value) {
+				if (!control || !control.set_value) return;
+				if (control.df && control.df.fieldname === "confirmation_status") {
+					control.set_value("Pending");
+				} else {
 					control.set_value("");
 				}
 			});
@@ -1366,16 +1441,20 @@ function _instructor_portal_boot(page) {
 			instructor: (filterControls.instructor && filterControls.instructor.get_value()) || "",
 			course: (filterControls.course && filterControls.course.get_value()) || "",
 			student_group: (filterControls.student_group && filterControls.student_group.get_value()) || "",
-			student: (filterControls.student && filterControls.student.get_value()) || ""
+			student: (filterControls.student && filterControls.student.get_value()) || "",
+			confirmation_status:
+				(filterControls.confirmation_status && filterControls.confirmation_status.get_value()) || "Pending"
 		};
 		attendanceOffset = 0;
 		cardsOffset = 0;
 		quizOffset = 0;
 		resultOffset = 0;
+		certConfirmOffset = 0;
 		reset_form_section_offsets();
 		load_portal_data();
 		load_quiz_status();
 		load_results();
+		load_certificate_confirmations();
 		load_bulk_assessments();
 		load_all_instructor_forms();
 		load_safety_briefing_groups();
@@ -1852,6 +1931,212 @@ function _instructor_portal_boot(page) {
 		});
 	}
 
+	function load_certificate_confirmations() {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.get_instructor_results",
+			args: {
+				limit: pageSize,
+				offset: certConfirmOffset,
+				student_group: filterState.student_group,
+				student: filterState.student,
+				course: filterState.course,
+				instructor: filterState.instructor,
+				confirmation_status: filterState.confirmation_status || "Pending"
+			},
+			callback: function (r) {
+				var message = r.message || {};
+				render_certificate_confirmations(message.records || [], certConfirmOffset > 0);
+			},
+			error: function () {
+				render_certificate_confirmations([]);
+				frappe.msgprint("Unable to load certificate confirmations.");
+			}
+		});
+	}
+
+	function render_certificate_confirmations(records, append) {
+		var $body = $("#instructor-certificate-confirm-body");
+		if (!append) {
+			$body.empty();
+			$("#cert-select-all").prop("checked", false);
+		}
+
+		if (!records.length) {
+			if (!append) {
+				$body.append(`
+					<tr>
+						<td colspan="10" class="empty-state">No assessment results match these filters.</td>
+					</tr>
+				`);
+			}
+			bind_certificate_confirm_actions();
+			return;
+		}
+
+		records.forEach(function (row) {
+			var resultLink = row.name
+				? `<a href="/app/assessment-result/${frappe.utils.escape_html(row.name)}">${frappe.utils.escape_html(row.name)}</a>`
+				: "";
+			var studentLink = row.student
+				? `<a href="/app/student/${frappe.utils.escape_html(row.student)}">${frappe.utils.escape_html(row.student)}</a>`
+				: "";
+			var groupLink = row.student_group
+				? `<a href="/app/student-group/${frappe.utils.escape_html(row.student_group)}">${frappe.utils.escape_html(row.student_group)}</a>`
+				: "";
+			var statusLabel = row.docstatus === 1 ? "Submitted" : "Draft";
+			var statusClass = row.docstatus === 1 ? "pass" : "pending";
+			var trainerConfirmed = !!row.trainer_confirmed;
+			var confirmCell = trainerConfirmed
+				? `<span class="status-pill pass">Confirmed</span>`
+				: `<span class="status-pill pending">Pending</span>`;
+			var confirmedOn = row.custom_trainer_confirmed_on
+				? frappe.datetime.str_to_user(row.custom_trainer_confirmed_on)
+				: "-";
+			var actionLinks = [];
+			if (row.can_confirm_certificate && row.name) {
+				if (trainerConfirmed) {
+					actionLinks.push(`
+						<button type="button"
+							class="portal-btn portal-btn-ghost cert-row-confirm-btn"
+							data-assessment-result="${frappe.utils.escape_html(row.name)}"
+							data-confirmed="0">
+							Undo Confirm
+						</button>
+					`);
+				} else {
+					actionLinks.push(`
+						<button type="button"
+							class="portal-btn portal-btn-primary cert-row-confirm-btn"
+							data-assessment-result="${frappe.utils.escape_html(row.name)}"
+							data-confirmed="1">
+							Confirm
+						</button>
+					`);
+				}
+			}
+			actionLinks.push(
+				`<a href="/app/assessment-result/${frappe.utils.escape_html(row.name || "")}">View</a>`
+			);
+
+			$body.append(`
+				<tr>
+					<td>
+						${row.name ? `<input type="checkbox" class="cert-select-row" value="${frappe.utils.escape_html(row.name)}">` : ""}
+					</td>
+					<td><div class="data-title">${resultLink}</div></td>
+					<td>
+						<div class="data-title">${studentLink}</div>
+						<div class="data-meta">${frappe.utils.escape_html(row.student_name || "")}</div>
+					</td>
+					<td><div class="data-title">${groupLink}</div></td>
+					<td><div class="data-title">${frappe.utils.escape_html(row.course || "-")}</div></td>
+					<td><div class="data-title">${frappe.utils.escape_html(row.grade || "-")}</div></td>
+					<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
+					<td>${confirmCell}</td>
+					<td><div class="data-title">${frappe.utils.escape_html(confirmedOn)}</div></td>
+					<td><div class="quiz-actions">${actionLinks.join("")}</div></td>
+				</tr>
+			`);
+		});
+
+		bind_certificate_confirm_actions();
+		bind_certificate_confirm_load_more(records.length);
+	}
+
+	function bind_certificate_confirm_actions() {
+		$("#cert-select-all").off("change").on("change", function () {
+			var checked = $(this).is(":checked");
+			$("#instructor-certificate-confirm-body .cert-select-row").prop("checked", checked);
+		});
+
+		$(".cert-row-confirm-btn").off("click").on("click", function () {
+			var $button = $(this);
+			var confirmed = Number($button.data("confirmed") || 0);
+			frappe.call({
+				method: "numerouno.numerouno.page.instructor_portal.instructor_portal.confirm_assessment_result_for_certificate",
+				args: {
+					assessment_result: $button.data("assessment-result"),
+					confirmed: confirmed,
+				},
+				freeze: true,
+				freeze_message: confirmed ? __("Confirming...") : __("Clearing confirmation..."),
+				callback: function (r) {
+					if (r.exc) return;
+					frappe.show_alert({
+						message: confirmed ? __("Confirmed for certificate") : __("Confirmation cleared"),
+						indicator: "green",
+					});
+					certConfirmOffset = 0;
+					resultOffset = 0;
+					load_certificate_confirmations();
+					load_results();
+				},
+			});
+		});
+
+		$("#cert-confirm-selected").off("click").on("click", function () {
+			var names = $("#instructor-certificate-confirm-body .cert-select-row:checked")
+				.map(function () { return $(this).val(); })
+				.get();
+			if (!names.length) {
+				frappe.msgprint(__("Select at least one student."));
+				return;
+			}
+			bulk_confirm_certificate_rows(names);
+		});
+
+		$("#cert-confirm-all-visible").off("click").on("click", function () {
+			var names = $("#instructor-certificate-confirm-body .cert-select-row")
+				.map(function () { return $(this).val(); })
+				.get();
+			if (!names.length) {
+				frappe.msgprint(__("No students visible to confirm."));
+				return;
+			}
+			bulk_confirm_certificate_rows(names);
+		});
+	}
+
+	function bulk_confirm_certificate_rows(names) {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.bulk_confirm_assessment_results_for_certificate",
+			args: {
+				assessment_results: names,
+				confirmed: 1,
+			},
+			freeze: true,
+			freeze_message: __("Confirming students for certificate..."),
+			callback: function (r) {
+				if (r.exc) return;
+				var count = ((r.message || {}).updated || []).length;
+				frappe.show_alert({
+					message: __("Confirmed {0} student(s) for certificate", [count]),
+					indicator: "green",
+				});
+				certConfirmOffset = 0;
+				resultOffset = 0;
+				load_certificate_confirmations();
+				load_results();
+			},
+		});
+	}
+
+	function bind_certificate_confirm_load_more(count) {
+		$("#cert-confirm-load-more").remove();
+		if (count < pageSize) return;
+
+		$("#certificate-confirm-section .portal-panel").append(`
+			<div class="mt-2 text-center">
+				<button type="button" class="portal-btn portal-btn-ghost" id="cert-confirm-load-more">Load more</button>
+			</div>
+		`);
+
+		$("#cert-confirm-load-more").off("click").on("click", function () {
+			certConfirmOffset += pageSize;
+			load_certificate_confirmations();
+		});
+	}
+
 	function render_results(records, append) {
 		var $body = $("#instructor-result-body");
 		if (!append) {
@@ -2023,7 +2308,9 @@ function _instructor_portal_boot(page) {
 						indicator: "green",
 					});
 					resultOffset = 0;
+					certConfirmOffset = 0;
 					load_results();
+					load_certificate_confirmations();
 				},
 			});
 		});
@@ -2076,7 +2363,9 @@ function _instructor_portal_boot(page) {
 					indicator: "green",
 				});
 				resultOffset = 0;
+				certConfirmOffset = 0;
 				load_results();
+				load_certificate_confirmations();
 			},
 		});
 	}
