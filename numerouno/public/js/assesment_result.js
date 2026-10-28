@@ -73,6 +73,8 @@ frappe.ui.form.on('Assessment Result', {
 				show_validity_dialog(frm);
 			}, __('Actions'));
 		}
+
+		add_trainer_confirmation_buttons(frm);
 	},
 	
 	onload: function(frm) {
@@ -106,6 +108,65 @@ frappe.ui.form.on('Assessment Result', {
 		}
 	}
 });
+
+function add_trainer_confirmation_buttons(frm) {
+	if (frm.is_new() || !frm.doc.name) {
+		return;
+	}
+
+	const canConfirm =
+		frappe.user.has_role("Instructor") ||
+		frappe.user.has_role("Trainer") ||
+		frappe.user.has_role("Academics User") ||
+		frappe.user.has_role("Education Manager") ||
+		frappe.user.has_role("System Manager") ||
+		frappe.user.has_role("Certification") ||
+		(frappe.session && frappe.session.user === "Administrator");
+
+	if (!canConfirm) {
+		return;
+	}
+
+	const confirmed = cint(frm.doc.custom_trainer_confirmed);
+	if (confirmed) {
+		frm.dashboard.set_headline_alert(
+			__("Trainer confirmed for certificate printing"),
+			"green"
+		);
+		frm.add_custom_button(__("Undo Trainer Confirm"), function () {
+			set_trainer_confirmation(frm, 0);
+		}, __("Certificate"));
+	} else {
+		frm.dashboard.set_headline_alert(
+			__("Trainer confirmation required before printing Assessment Certificate"),
+			"orange"
+		);
+		frm.add_custom_button(__("Confirm for Certificate"), function () {
+			set_trainer_confirmation(frm, 1);
+		}, __("Certificate"));
+	}
+}
+
+function set_trainer_confirmation(frm, confirmed) {
+	frappe.call({
+		method: "numerouno.numerouno.page.instructor_portal.instructor_portal.confirm_assessment_result_for_certificate",
+		args: {
+			assessment_result: frm.doc.name,
+			confirmed: confirmed,
+		},
+		freeze: true,
+		callback: function (r) {
+			if (r.exc) return;
+			frappe.show_alert({
+				message: confirmed
+					? __("Confirmed for certificate")
+					: __("Confirmation cleared"),
+				indicator: "green",
+			});
+			frm.reload_doc();
+		},
+	});
+}
 
 function patch_certificate_upload(frm) {
 	const field = frm.fields_dict.custom_certificate;

@@ -675,14 +675,19 @@ function _instructor_portal_boot(page) {
 							<span>RS</span>
 							<div>
 								<h3>Result</h3>
-								<p class="panel-subtitle">Assessment results created from quiz activity and pass/fail submissions.</p>
+								<p class="panel-subtitle">Confirm each student here before Assessment Certificate can be printed.</p>
 							</div>
+						</div>
+						<div class="quiz-actions">
+							<button type="button" class="portal-btn portal-btn-primary" id="result-confirm-selected">Confirm Selected</button>
+							<button type="button" class="portal-btn portal-btn-ghost" id="result-confirm-all-visible">Confirm All Visible</button>
 						</div>
 					</div>
 					<div class="table-responsive">
 						<table class="table">
 							<thead>
 								<tr>
+									<th style="width:36px;"><input type="checkbox" id="result-select-all" title="Select all"></th>
 									<th>Result</th>
 									<th>Student</th>
 									<th>Group</th>
@@ -691,13 +696,14 @@ function _instructor_portal_boot(page) {
 									<th>Grade</th>
 									<th>Make / Model / Capacity</th>
 									<th>Status</th>
+									<th>Trainer Confirm</th>
 									<th>Modified</th>
 									<th>Action</th>
 								</tr>
 							</thead>
 							<tbody id="instructor-result-body">
 								<tr>
-									<td colspan="10" class="empty-state">Loading...</td>
+									<td colspan="12" class="empty-state">Loading...</td>
 								</tr>
 							</tbody>
 						</table>
@@ -1850,13 +1856,14 @@ function _instructor_portal_boot(page) {
 		var $body = $("#instructor-result-body");
 		if (!append) {
 			$body.empty();
+			$("#result-select-all").prop("checked", false);
 		}
 
 		if (!records.length) {
 			if (!append) {
 				$body.append(`
 					<tr>
-						<td colspan="10" class="empty-state">No assessment results found.</td>
+						<td colspan="12" class="empty-state">No assessment results found.</td>
 					</tr>
 				`);
 			}
@@ -1880,9 +1887,35 @@ function _instructor_portal_boot(page) {
 			var statusLabel = row.docstatus === 1 ? "Submitted" : "Draft";
 			var statusClass = row.docstatus === 1 ? "pass" : "pending";
 			var modifiedLabel = row.modified ? frappe.datetime.str_to_user(row.modified) : "-";
+			var trainerConfirmed = !!row.trainer_confirmed;
+			var confirmCell = trainerConfirmed
+				? `<span class="status-pill pass">Confirmed</span>`
+				: `<span class="status-pill pending">Pending</span>`;
 			var actionLinks = [
 				`<a href="/app/assessment-result/${frappe.utils.escape_html(row.name || "")}">View</a>`
 			];
+
+			if (row.can_confirm_certificate && row.name) {
+				if (trainerConfirmed) {
+					actionLinks.push(`
+						<button type="button"
+							class="portal-btn portal-btn-ghost confirm-certificate-btn"
+							data-assessment-result="${frappe.utils.escape_html(row.name)}"
+							data-confirmed="0">
+							Undo Confirm
+						</button>
+					`);
+				} else {
+					actionLinks.push(`
+						<button type="button"
+							class="portal-btn portal-btn-primary confirm-certificate-btn"
+							data-assessment-result="${frappe.utils.escape_html(row.name)}"
+							data-confirmed="1">
+							Confirm for Certificate
+						</button>
+					`);
+				}
+			}
 
 			if (row.theory_reports_enabled && row.name) {
 				var pdfParams = new URLSearchParams();
@@ -1939,8 +1972,13 @@ function _instructor_portal_boot(page) {
 				}
 			}
 
+			var selectCell = row.name
+				? `<input type="checkbox" class="result-select-row" value="${frappe.utils.escape_html(row.name)}">`
+				: "";
+
 			$body.append(`
 				<tr>
+					<td>${selectCell}</td>
 					<td><div class="data-title">${resultLink}</div></td>
 					<td>
 						<div class="data-title">${studentLink}</div>
@@ -1952,6 +1990,7 @@ function _instructor_portal_boot(page) {
 					<td><div class="data-title">${frappe.utils.escape_html(row.grade || "-")}</div></td>
 					<td>${makeModelCell}</td>
 					<td><span class="status-pill ${statusClass}">${frappe.utils.escape_html(statusLabel)}</span></td>
+					<td>${confirmCell}</td>
 					<td><div class="data-title">${frappe.utils.escape_html(modifiedLabel)}</div></td>
 					<td><div class="quiz-actions">${actionLinks.join("")}</div></td>
 				</tr>
@@ -1959,7 +1998,87 @@ function _instructor_portal_boot(page) {
 		});
 
 		bind_make_model_buttons();
+		bind_confirm_certificate_buttons();
+		bind_result_bulk_confirm();
 		bind_result_load_more(records.length);
+	}
+
+	function bind_confirm_certificate_buttons() {
+		$(".confirm-certificate-btn").off("click").on("click", function () {
+			var $button = $(this);
+			var assessmentResult = $button.data("assessment-result");
+			var confirmed = Number($button.data("confirmed") || 0);
+			frappe.call({
+				method: "numerouno.numerouno.page.instructor_portal.instructor_portal.confirm_assessment_result_for_certificate",
+				args: {
+					assessment_result: assessmentResult,
+					confirmed: confirmed,
+				},
+				freeze: true,
+				freeze_message: confirmed ? __("Confirming for certificate...") : __("Clearing confirmation..."),
+				callback: function (r) {
+					if (r.exc) return;
+					frappe.show_alert({
+						message: confirmed ? __("Confirmed for certificate") : __("Confirmation cleared"),
+						indicator: "green",
+					});
+					resultOffset = 0;
+					load_results();
+				},
+			});
+		});
+	}
+
+	function bind_result_bulk_confirm() {
+		$("#result-select-all").off("change").on("change", function () {
+			var checked = $(this).is(":checked");
+			$("#instructor-result-body .result-select-row").prop("checked", checked);
+		});
+
+		$("#result-confirm-selected").off("click").on("click", function () {
+			var names = $("#instructor-result-body .result-select-row:checked")
+				.map(function () { return $(this).val(); })
+				.get();
+			if (!names.length) {
+				frappe.msgprint(__("Select at least one student result."));
+				return;
+			}
+			bulk_confirm_results(names);
+		});
+
+		$("#result-confirm-all-visible").off("click").on("click", function () {
+			var names = $("#instructor-result-body .result-select-row")
+				.map(function () { return $(this).val(); })
+				.get();
+			if (!names.length) {
+				frappe.msgprint(__("No results visible to confirm."));
+				return;
+			}
+			bulk_confirm_results(names);
+		});
+	}
+
+	function bulk_confirm_results(names) {
+		frappe.call({
+			method: "numerouno.numerouno.page.instructor_portal.instructor_portal.bulk_confirm_assessment_results_for_certificate",
+			args: {
+				assessment_results: names,
+				confirmed: 1,
+			},
+			freeze: true,
+			freeze_message: __("Confirming students for certificate..."),
+			callback: function (r) {
+				if (r.exc) return;
+				var msg = r.message || {};
+				var count = (msg.updated || []).length;
+				frappe.show_alert({
+					message: __("Confirmed {0} student(s) for certificate", [count]),
+					indicator: "green",
+				});
+				resultOffset = 0;
+				load_results();
+			},
+		});
 	}
 
 	function bind_make_model_buttons() {

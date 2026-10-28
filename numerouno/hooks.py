@@ -253,6 +253,7 @@ doc_events = {
         "before_update_after_submit": "numerouno.numerouno.permissions.assert_assessment_result_not_customer_write",
         "before_submit": "numerouno.numerouno.permissions.assert_assessment_result_not_customer_write",
         "before_cancel": "numerouno.numerouno.permissions.assert_assessment_result_not_customer_write",
+        "before_print": "numerouno.numerouno.utils.trainer_confirmation.assert_trainer_confirmed_for_certificate",
         "on_update": "numerouno.numerouno.notifications.event_handlers.handle_assessment_pending",
         "after_insert": "numerouno.numerouno.notifications.event_handlers.handle_assessment_creation",
         "on_submit": "numerouno.numerouno.unified_assessment_system.trigger_assessment_result_events",
@@ -382,6 +383,7 @@ override_whitelisted_methods = {
 after_migrate = [
     "numerouno.numerouno.customer_portal_setup.after_migrate",
     "numerouno.numerouno.food_required_setup.after_migrate",
+    "numerouno.numerouno.trainer_confirmation_setup.after_migrate",
     "numerouno.numerouno.training_schedule_setup.after_migrate",
     "numerouno.numerouno.habc2_setup.after_migrate",
     "numerouno.numerouno.habc1_setup.after_migrate",

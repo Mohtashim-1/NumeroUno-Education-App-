@@ -1187,26 +1187,36 @@ def get_instructor_results(
         filters["course"] = course
 
     total = frappe.db.count("Assessment Result", filters=filters)
+    result_fields = [
+        "name",
+        "assessment_plan",
+        "student",
+        "student_name",
+        "student_group",
+        "course",
+        "custom_make",
+        "custom_model",
+        "custom_capacity",
+        "total_score",
+        "maximum_score",
+        "grade",
+        "docstatus",
+        "modified",
+        "creation",
+    ]
+    ar_meta = frappe.get_meta("Assessment Result")
+    for fieldname in (
+        "custom_trainer_confirmed",
+        "custom_trainer_confirmed_by",
+        "custom_trainer_confirmed_on",
+    ):
+        if ar_meta.has_field(fieldname):
+            result_fields.append(fieldname)
+
     records = frappe.get_all(
         "Assessment Result",
         filters=filters,
-        fields=[
-            "name",
-            "assessment_plan",
-            "student",
-            "student_name",
-            "student_group",
-            "course",
-            "custom_make",
-            "custom_model",
-            "custom_capacity",
-            "total_score",
-            "maximum_score",
-            "grade",
-            "docstatus",
-            "modified",
-            "creation",
-        ],
+        fields=result_fields,
         order_by="modified desc",
         limit=limit,
         start=offset,
@@ -1223,6 +1233,8 @@ def get_instructor_results(
 
     for row in records:
         row["theory_reports_enabled"] = not _is_rospa_course(row.get("course"))
+        row["trainer_confirmed"] = int(row.get("custom_trainer_confirmed") or 0)
+        row["can_confirm_certificate"] = _can_instructor_edit_result(row.name, user, roles)
 
     return {
         "records": records,
@@ -1231,6 +1243,53 @@ def get_instructor_results(
         "offset": offset,
         "is_adnoc_instructor": is_adnoc_instructor,
     }
+
+
+@frappe.whitelist()
+def confirm_assessment_result_for_certificate(assessment_result, confirmed=1):
+    """Instructor confirms (or clears) a student for Assessment Certificate printing."""
+    assessment_result = (assessment_result or "").strip()
+    if not assessment_result:
+        frappe.throw(_("Assessment Result is required"))
+
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+    if not _can_instructor_edit_result(assessment_result, user, roles):
+        frappe.throw(
+            _("Not permitted to confirm this assessment result."),
+            frappe.PermissionError,
+        )
+
+    from numerouno.numerouno.utils.trainer_confirmation import set_trainer_confirmation
+
+    return set_trainer_confirmation(assessment_result, confirmed=confirmed)
+
+
+@frappe.whitelist()
+def bulk_confirm_assessment_results_for_certificate(assessment_results=None, confirmed=1):
+    """Confirm multiple Assessment Results for certificate printing."""
+    from frappe.utils import cstr
+    from numerouno.numerouno.utils.trainer_confirmation import set_trainer_confirmation
+
+    if isinstance(assessment_results, str):
+        assessment_results = frappe.parse_json(assessment_results)
+
+    names = [cstr(name).strip() for name in (assessment_results or []) if cstr(name).strip()]
+    if not names:
+        frappe.throw(_("Select at least one Assessment Result"))
+
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+
+    updated = []
+    skipped = []
+    for name in names:
+        if not _can_instructor_edit_result(name, user, roles):
+            skipped.append(name)
+            continue
+        updated.append(set_trainer_confirmation(name, confirmed=confirmed))
+
+    return {"updated": updated, "skipped": skipped, "confirmed": int(confirmed or 0)}
 
 
 @frappe.whitelist()
