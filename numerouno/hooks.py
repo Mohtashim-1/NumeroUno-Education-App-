@@ -299,6 +299,7 @@ scheduler_events = {
 		"numerouno.numerouno.doctype.student_group.student_group.send_daily_unpaid_notifications",
 		"numerouno.numerouno.asset_management.send_asset_maintenance_reminders",
 		"numerouno.numerouno.hr.leave_accrual.accrue_nutc_annual_leave_daily",
+		"numerouno.numerouno.regular_course_schedule.ensure_regular_schedules_daily",
 	]
 }
 
@@ -386,6 +387,7 @@ after_migrate = [
     "numerouno.numerouno.habc1_setup.after_migrate",
     "numerouno.numerouno.habc_workspace.after_migrate",
     "numerouno.numerouno.course_form_flags_setup.after_migrate",
+    "numerouno.numerouno.regular_course_schedule_setup.after_migrate",
     "numerouno.numerouno.sales_invoice_nutc_po_setup.after_migrate",
     "numerouno.numerouno.sales_invoice_tracking_setup.after_migrate",
     "numerouno.numerouno.supplier_compliance_setup.after_migrate",

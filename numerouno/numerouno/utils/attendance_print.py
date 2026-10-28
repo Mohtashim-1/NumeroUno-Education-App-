@@ -67,12 +67,15 @@ def get_attendance_sheet_print_data(student_group):
 	if sg.instructors and sg.instructors[0].instructor:
 		instructor_signature_url = _instructor_signature_url(sg.instructors[0].instructor)
 
+	food_required = (getattr(sg, "custom_food_required", None) or "").strip() or "No"
+
 	return frappe._dict(
 		students=students,
 		attendance=attendance,
 		cards=cards,
 		attendance_date=attendance_date,
 		instructor_signature_url=instructor_signature_url,
+		food_required=food_required,
 	)
 
 
@@ -104,4 +107,5 @@ def _empty_payload():
 		cards={},
 		attendance_date=None,
 		instructor_signature_url="",
+		food_required="No",
 	)
