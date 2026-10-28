@@ -1,8 +1,9 @@
 import json
+import re
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, cint, flt, nowdate
+from frappe.utils import add_days, cint, cstr, flt, nowdate
 
 from numerouno.numerouno.utils.food_invoice import append_food_for_student_rows
 
@@ -327,13 +328,14 @@ def _set_item_tax_amounts(invoice):
 
 
 @frappe.whitelist()
-def create_invoice(customer, row_names):
+def create_invoice(customer, row_names, rate=None):
 	if not customer:
 		frappe.throw(_("Customer is required."))
 
 	rows = _get_pending_student_rows(customer, row_names)
 	groups = sorted({row.student_group for row in rows if row.student_group})
 	courses = {}
+	rate_override = flt(rate) if rate not in (None, "") else None
 
 	invoice = frappe.new_doc("Sales Invoice")
 	invoice.customer = customer
@@ -368,7 +370,7 @@ def create_invoice(customer, row_names):
 			{
 				"item_code": course,
 				"qty": len(course_rows),
-				"rate": _get_item_rate(course),
+				"rate": rate_override if rate_override is not None else _get_item_rate(course),
 			},
 		)
 
@@ -392,7 +394,7 @@ def create_invoice(customer, row_names):
 
 
 @frappe.whitelist()
-def create_invoices(row_names):
+def create_invoices(row_names, rate=None):
 	row_names = _as_list(row_names)
 	if not row_names:
 		frappe.throw(_("Select at least one pending student."))
@@ -418,10 +420,88 @@ def create_invoices(row_names):
 
 	invoices = []
 	for customer, customer_rows in rows_by_customer.items():
-		invoices.append(create_invoice(customer, customer_rows))
+		invoices.append(create_invoice(customer, customer_rows, rate=rate))
 
 	return {
 		"invoices": invoices,
 		"invoice_count": len(invoices),
 		"student_count": sum(invoice["student_count"] for invoice in invoices),
+	}
+
+
+def _normalize_student_groups(student_groups):
+	groups = []
+	seen = set()
+	for raw in _as_list(student_groups):
+		for part in re.split(r"[\s,;]+", cstr(raw)):
+			name = part.strip()
+			if not name or name in seen:
+				continue
+			seen.add(name)
+			groups.append(name)
+	return groups
+
+
+@frappe.whitelist()
+def create_invoice_from_student_groups(student_groups, rate=None, customer=None):
+	"""Fast path: paste many Student Group names + optional rate → draft invoice(s)."""
+	groups = _normalize_student_groups(student_groups)
+	if not groups:
+		frappe.throw(_("Paste at least one Student Group."))
+
+	missing = [name for name in groups if not frappe.db.exists("Student Group", name)]
+	if missing:
+		frappe.throw(
+			_("Student Group not found: {0}").format(", ".join(missing[:20])),
+			title=_("Invalid Student Groups"),
+		)
+
+	customer = (customer or "").strip() or None
+	pending_condition = _pending_condition()
+	values = {"groups": tuple(groups)}
+	customer_sql = ""
+	if customer:
+		customer_sql = "AND sgs.customer_name = %(customer)s"
+		values["customer"] = customer
+
+	rows = frappe.db.sql(
+		f"""
+		SELECT
+			sgs.name AS row_name,
+			sgs.customer_name AS customer,
+			sgs.student_group
+		FROM `tabStudent Group Student` sgs
+		WHERE sgs.student_group IN %(groups)s
+			{customer_sql}
+			AND {pending_condition}
+		ORDER BY sgs.customer_name, sgs.student_group, sgs.student_name
+		""",
+		values,
+		as_dict=True,
+	)
+
+	if not rows:
+		frappe.throw(_("No pending (uninvoiced) students found in the pasted Student Groups."))
+
+	rows_by_customer = {}
+	for row in rows:
+		if not row.customer:
+			frappe.throw(_("Student in {0} has no customer.").format(row.student_group))
+		rows_by_customer.setdefault(row.customer, []).append(row.row_name)
+
+	invoices = []
+	for cust, customer_rows in rows_by_customer.items():
+		invoices.append(create_invoice(cust, customer_rows, rate=rate))
+
+	matched_groups = {row.student_group for row in rows}
+	skipped_groups = [name for name in groups if name not in matched_groups]
+
+	return {
+		"invoices": invoices,
+		"invoice_count": len(invoices),
+		"student_count": sum(invoice["student_count"] for invoice in invoices),
+		"student_group_count": len(matched_groups),
+		"requested_group_count": len(groups),
+		"skipped_groups": skipped_groups,
+		"rate": flt(rate) if rate not in (None, "") else None,
 	}

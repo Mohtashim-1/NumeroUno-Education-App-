@@ -64,6 +64,7 @@ class InvoicedCreationPage {
 							<input type="checkbox" class="show-all-customers">
 							<span>${__("Show All Customers")}</span>
 						</label>
+						<button class="btn btn-default btn-sm quick-bulk-invoice">${__("Quick Bulk (Paste Groups)")}</button>
 						<button class="btn btn-default btn-sm select-visible-pending" disabled>${__("Select All Visible Pending")}</button>
 						<button class="btn btn-default btn-sm select-customer-pending" disabled>${__("Select Customer Pending")}</button>
 						<button class="btn btn-default btn-sm clear-selection" disabled>${__("Clear")}</button>
@@ -337,6 +338,7 @@ class InvoicedCreationPage {
 		});
 
 		this.$root.on("click", ".create-invoice", () => this.create_invoice());
+		this.$root.on("click", ".quick-bulk-invoice", () => this.quick_bulk_invoice());
 
 		this.$root.on("input", ".customer-search", (event) => {
 			this.search.customers = event.currentTarget.value || "";
@@ -659,30 +661,126 @@ class InvoicedCreationPage {
 			]) :
 			__("Create 1 draft Sales Invoice for {0} selected student(s)?", [selected_count]);
 
-		frappe.confirm(message, () => {
-			frappe.call({
-				method: "numerouno.numerouno.page.invoiced_creation.invoiced_creation.create_invoices",
-				args: {
-					row_names: Array.from(this.selected_rows),
+		const dialog = new frappe.ui.Dialog({
+			title: __("Create Invoice"),
+			fields: [
+				{
+					fieldtype: "HTML",
+					options: `<p>${frappe.utils.escape_html(message)}</p>`,
 				},
-				freeze: true,
-				freeze_message: __("Creating Invoice"),
-				callback: (r) => {
-					const invoices = r.message?.invoices || [];
-					if (!invoices.length) return;
-					frappe.show_alert({
-						message: __("{0} Sales Invoice draft(s) created", [invoices.length]),
-						indicator: "green",
-					});
-					this.refresh();
-					if (invoices.length === 1) {
-						frappe.set_route("Form", "Sales Invoice", invoices[0].sales_invoice);
-					} else {
-						frappe.set_route("List", "Sales Invoice");
-					}
+				{
+					label: __("Rate (optional override)"),
+					fieldname: "rate",
+					fieldtype: "Currency",
+					description: __("Leave blank to use Item Price. Example: 1880"),
 				},
-			});
+			],
+			primary_action_label: __("Create"),
+			primary_action: (values) => {
+				dialog.hide();
+				frappe.call({
+					method: "numerouno.numerouno.page.invoiced_creation.invoiced_creation.create_invoices",
+					args: {
+						row_names: Array.from(this.selected_rows),
+						rate: values.rate,
+					},
+					freeze: true,
+					freeze_message: __("Creating Invoice"),
+					callback: (r) => {
+						const invoices = r.message?.invoices || [];
+						if (!invoices.length) return;
+						frappe.show_alert({
+							message: __("{0} Sales Invoice draft(s) created", [invoices.length]),
+							indicator: "green",
+						});
+						this.refresh();
+						if (invoices.length === 1) {
+							frappe.set_route("Form", "Sales Invoice", invoices[0].sales_invoice);
+						} else {
+							frappe.set_route("List", "Sales Invoice");
+						}
+					},
+				});
+			},
 		});
+		dialog.show();
+	}
+
+	quick_bulk_invoice() {
+		const dialog = new frappe.ui.Dialog({
+			title: __("Quick Bulk Invoice from Student Groups"),
+			fields: [
+				{
+					fieldtype: "HTML",
+					options: `<p>${__(
+						"Paste Student Group IDs (one per line). All pending students in those groups will be invoiced in one step."
+					)}</p>`,
+				},
+				{
+					label: __("Student Groups"),
+					fieldname: "student_groups",
+					fieldtype: "Long Text",
+					reqd: 1,
+					description: __("Example: STD-GRP-2026-44560"),
+				},
+				{
+					label: __("Rate"),
+					fieldname: "rate",
+					fieldtype: "Currency",
+					reqd: 1,
+					default: 1880,
+				},
+				{
+					label: __("Customer (optional)"),
+					fieldname: "customer",
+					fieldtype: "Link",
+					options: "Customer",
+					description: __("Leave blank to auto-split by customer on the groups."),
+				},
+			],
+			primary_action_label: __("Create Draft Invoice(s)"),
+			primary_action: (values) => {
+				frappe.call({
+					method: "numerouno.numerouno.page.invoiced_creation.invoiced_creation.create_invoice_from_student_groups",
+					args: {
+						student_groups: values.student_groups,
+						rate: values.rate,
+						customer: values.customer,
+					},
+					freeze: true,
+					freeze_message: __("Creating invoice from student groups..."),
+					callback: (r) => {
+						if (r.exc) return;
+						const msg = r.message || {};
+						const invoices = msg.invoices || [];
+						dialog.hide();
+						let note = __("{0} draft invoice(s), {1} students, {2} groups", [
+							msg.invoice_count || 0,
+							msg.student_count || 0,
+							msg.student_group_count || 0,
+						]);
+						if ((msg.skipped_groups || []).length) {
+							note += "<br>" + __("Skipped (already invoiced / no pending): {0}", [
+								(msg.skipped_groups || []).slice(0, 15).join(", "),
+							]);
+						}
+						frappe.msgprint({
+							title: __("Invoice Created"),
+							indicator: "green",
+							message: note,
+						});
+						this.refresh();
+						if (invoices.length === 1) {
+							frappe.set_route("Form", "Sales Invoice", invoices[0].sales_invoice);
+						} else if (invoices.length > 1) {
+							frappe.set_route("List", "Sales Invoice");
+						}
+					},
+				});
+			},
+		});
+		dialog.$wrapper.find(".modal-dialog").css("max-width", "720px");
+		dialog.show();
 	}
 
 	selected_customer_count() {
