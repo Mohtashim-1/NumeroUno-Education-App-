@@ -68,6 +68,30 @@ def is_trainer_confirmed(doc) -> bool:
 	return bool(getattr(doc, CONFIRMED_FIELD, 0))
 
 
+def has_trainer_confirmation_field() -> bool:
+	return frappe.get_meta("Assessment Result").has_field(CONFIRMED_FIELD)
+
+
+def is_ready_for_client_portal(doc) -> bool:
+	"""Certificates appear on client portal / digests only after trainer confirmation."""
+	if not has_trainer_confirmation_field():
+		return True
+	return is_trainer_confirmed(doc)
+
+
+def assert_ready_for_client_portal(doc):
+	if is_ready_for_client_portal(doc):
+		return
+	student = getattr(doc, "student_name", None) or getattr(doc, "student", None) or getattr(doc, "name", doc)
+	frappe.throw(
+		_(
+			"Certificate for {0} is not available yet. "
+			"It will appear on the portal after the instructor confirms it."
+		).format(student),
+		title=_("Awaiting Instructor Confirmation"),
+	)
+
+
 def can_bypass_trainer_confirmation(user=None) -> bool:
 	user = user or frappe.session.user
 	if user == "Administrator":
@@ -110,15 +134,28 @@ def set_trainer_confirmation(assessment_result: str, confirmed: int = 1) -> dict
 		frappe.throw(_("Assessment Result {0} not found").format(assessment_result))
 
 	confirmed = 1 if int(confirmed or 0) else 0
+	now = now_datetime()
 	values = {
 		CONFIRMED_FIELD: confirmed,
 		CONFIRMED_BY_FIELD: frappe.session.user if confirmed else None,
-		CONFIRMED_ON_FIELD: now_datetime() if confirmed else None,
+		CONFIRMED_ON_FIELD: now if confirmed else None,
 	}
+
+	# Portal + digest emails: only after instructor confirmation.
+	meta = frappe.get_meta("Assessment Result")
+	if meta.has_field("custom_show_on_portal"):
+		values["custom_show_on_portal"] = 1 if confirmed else 0
+	if meta.has_field("custom_portal_enabled_on"):
+		values["custom_portal_enabled_on"] = now if confirmed else None
+	if meta.has_field("custom_portal_digest_sent"):
+		# Reset so the next digest can notify the client after confirmation.
+		values["custom_portal_digest_sent"] = 0
+
 	frappe.db.set_value("Assessment Result", assessment_result, values, update_modified=True)
 	return {
 		"assessment_result": assessment_result,
 		"confirmed": confirmed,
 		"confirmed_by": values[CONFIRMED_BY_FIELD],
 		"confirmed_on": values[CONFIRMED_ON_FIELD],
+		"show_on_portal": values.get("custom_show_on_portal"),
 	}

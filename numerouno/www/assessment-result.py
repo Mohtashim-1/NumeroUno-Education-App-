@@ -6,11 +6,13 @@ def get_context(context):
     # Get customer if this user is a customer
     customer = frappe.db.get_value("Customer", {"email_id": user}, "name")
     
-    filters = {"show_on_portal": 1}
-    
+    filters = {"custom_show_on_portal": 1, "docstatus": 1}
+    if frappe.get_meta("Assessment Result").has_field("custom_trainer_confirmed"):
+        filters["custom_trainer_confirmed"] = 1
+
     if customer:
         # Customer can see all results linked to them
-        filters["customer"] = customer
+        filters["customer_name"] = customer
         context.results = frappe.get_all("Assessment Result",
             filters=filters,
             fields=["name", "assessment_title", "score", "total", "student"],
