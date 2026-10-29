@@ -4,11 +4,21 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
-from frappe.utils import now_datetime
+from frappe.utils import cint, get_datetime, now_datetime
 
 CONFIRMED_FIELD = "custom_trainer_confirmed"
 CONFIRMED_BY_FIELD = "custom_trainer_confirmed_by"
 CONFIRMED_ON_FIELD = "custom_trainer_confirmed_on"
+
+# Portal / client download / digest emails:
+# - created before this date → visible without instructor confirmation (legacy)
+# - created on/after this date → instructor confirmation required
+# Policy start = Monday 26 Oct 2026 (legacy through Sunday 25 Oct 2026).
+TRAINER_CONFIRMATION_POLICY_START = "2026-10-26"
+
+# Temporary kill-switch: when False, certificate portal / downloads / digests
+# ignore instructor confirmation and show certificates as before.
+PORTAL_TRAINER_CONFIRMATION_ENABLED = False
 
 # Formats that are certificates (not theory reports / attendance / ID cards).
 _CERTIFICATE_ALIASES = {
@@ -65,18 +75,82 @@ def resolve_print_format_name(print_settings=None) -> str:
 def is_trainer_confirmed(doc) -> bool:
 	if isinstance(doc, str):
 		return bool(frappe.db.get_value("Assessment Result", doc, CONFIRMED_FIELD))
-	return bool(getattr(doc, CONFIRMED_FIELD, 0))
+	if isinstance(doc, dict):
+		return bool(cint(doc.get(CONFIRMED_FIELD)))
+	return bool(cint(getattr(doc, CONFIRMED_FIELD, 0)))
 
 
 def has_trainer_confirmation_field() -> bool:
 	return frappe.get_meta("Assessment Result").has_field(CONFIRMED_FIELD)
 
 
+def is_portal_trainer_confirmation_enabled() -> bool:
+	"""Whether portal/download/digest must enforce instructor confirmation."""
+	return bool(PORTAL_TRAINER_CONFIRMATION_ENABLED) and has_trainer_confirmation_field()
+
+
+def get_trainer_confirmation_policy_start():
+	"""Datetime cutoff: confirmation required for certificates created on/after this instant."""
+	return get_datetime(f"{TRAINER_CONFIRMATION_POLICY_START} 00:00:00")
+
+
+def requires_trainer_confirmation_for_portal(doc) -> bool:
+	"""True when certificate falls under the confirmation-required policy (from 26 Oct 2026)."""
+	if not is_portal_trainer_confirmation_enabled():
+		return False
+
+	if isinstance(doc, dict):
+		creation = doc.get("creation")
+	elif isinstance(doc, str):
+		creation = frappe.db.get_value("Assessment Result", doc, "creation")
+	else:
+		creation = getattr(doc, "creation", None)
+		if not creation and getattr(doc, "name", None):
+			creation = frappe.db.get_value("Assessment Result", doc.name, "creation")
+
+	if not creation:
+		# Fail closed for undated docs under the new policy.
+		return True
+
+	return get_datetime(creation) >= get_trainer_confirmation_policy_start()
+
+
 def is_ready_for_client_portal(doc) -> bool:
-	"""Certificates appear on client portal / digests only after trainer confirmation."""
-	if not has_trainer_confirmation_field():
+	"""Portal visibility / client download / digest eligibility.
+
+	Legacy certificates created before 26 Oct 2026 remain visible without
+	instructor confirmation. From 26 Oct 2026 onward, confirmation is required.
+	"""
+	if not is_portal_trainer_confirmation_enabled():
+		return True
+	if not requires_trainer_confirmation_for_portal(doc):
 		return True
 	return is_trainer_confirmed(doc)
+
+
+def portal_confirmation_sql(alias: str | None = None) -> str:
+	"""SQL fragment: confirmed OR created before policy start."""
+	if not is_portal_trainer_confirmation_enabled():
+		return "(1 = 1)"
+	prefix = f"`{alias}`." if alias else ""
+	return (
+		f"(IFNULL({prefix}`{CONFIRMED_FIELD}`, 0) = 1 "
+		f"OR {prefix}`creation` < %(trainer_confirm_cutoff)s)"
+	)
+
+
+def apply_portal_confirmation_filter(filters: dict) -> dict:
+	"""Mutate get_all filters when simple AND is enough (no OR with other fields).
+
+	Prefer ``is_ready_for_client_portal`` / ``portal_confirmation_sql`` when OR
+	search filters are also needed.
+	"""
+	filters = dict(filters or {})
+	if not has_trainer_confirmation_field():
+		return filters
+	# Cannot express OR in a plain dict filter — callers must use SQL/helper.
+	# Keep confirmed-only as safe default only when explicitly requested.
+	return filters
 
 
 def assert_ready_for_client_portal(doc):
@@ -105,6 +179,10 @@ def assert_trainer_confirmed_for_certificate(doc, method=None, print_settings=No
 
 	Frappe hooks call ``(doc, method, *args)``, so ``method`` is required.
 	"""
+	# Same temporary kill-switch as portal visibility.
+	if not PORTAL_TRAINER_CONFIRMATION_ENABLED:
+		return
+
 	print_format = resolve_print_format_name(print_settings)
 	if not is_certificate_print_format(print_format):
 		return
