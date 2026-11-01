@@ -899,6 +899,16 @@ def create_stripe_payment(
 			description = _("Payment for Invoice {0}").format(inv.name)
 			company = inv.company
 
+		if not pr.mode_of_payment and pr.payment_account:
+			from numerouno.numerouno.doctype.portal_payment_request.portal_payment_request import (
+				get_or_create_stripe_mode_of_payment,
+			)
+
+			mop = get_or_create_stripe_mode_of_payment(company, pr.payment_account)
+			if mop:
+				pr.db_set("mode_of_payment", mop, update_modified=False)
+				pr.mode_of_payment = mop
+
 		if not pr.payment_url:
 			try:
 				url = pr.get_payment_url()

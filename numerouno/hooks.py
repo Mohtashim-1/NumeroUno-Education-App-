@@ -71,6 +71,7 @@ doctype_js = {
     "Student Attendance" : "public/js/student_attendance.js",
     "Student Card" : "public/js/student_card.js",
     "Sales Invoice" : "public/js/sales_invoice.js",
+    "Payment Entry": "public/js/payment_entry.js",
     "Quotation" : "public/js/quotation.js",
     "Quiz Activity" : "public/js/quiz_activity.js",
     "Assessment Result" : "public/js/assesment_result.js",
@@ -240,6 +241,11 @@ doc_events = {
         ],
         "on_cancel": "numerouno.numerouno.utils.student_invoice_sync.clear_student_group_student_on_invoice_cancel",
     },
+    "Payment Entry": {
+        "before_insert": "numerouno.numerouno.doctype.portal_payment_request.portal_payment_request.set_stripe_mode_of_payment_on_payment_entry",
+        "before_validate": "numerouno.numerouno.doctype.portal_payment_request.portal_payment_request.set_stripe_mode_of_payment_on_payment_entry",
+        "on_cancel": "numerouno.numerouno.doctype.portal_payment_request.portal_payment_request.sync_portal_payment_request_on_payment_entry_cancel",
+    },
     "Quotation": {
         "before_cancel": "numerouno.numerouno.utils.quotation_workflow.require_cancellation_reason",
         "on_cancel": "numerouno.numerouno.utils.quotation_workflow.sync_workflow_state_on_cancel",
@@ -325,7 +331,9 @@ override_whitelisted_methods = {
 
 # exempt linked doctypes from being automatically cancelled
 #
-# auto_cancel_exempted_doctypes = ["Auto Repeat"]
+# Portal Payment Request must not be cancelled before its Payment Entry —
+# PE cancel syncs/cancels the linked PPR afterwards.
+auto_cancel_exempted_doctypes = ["Portal Payment Request"]
 
 # Ignore links to specified DocTypes when deleting documents
 # -----------------------------------------------------------

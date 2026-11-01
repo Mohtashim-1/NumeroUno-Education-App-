@@ -402,7 +402,24 @@
 					{ k: "PO", v: f.po || "—" },
 					{ k: "Invoice date", v: fmtDate(f.invoiceDate) },
 					{ k: "Due date", v: fmtDate(f.dueDate) },
-					{ k: "Total", v: money(parseFloat(String(f.amount).replace(/[,$]/g, "")) || 0, f.currency || "AED") },
+					{
+						k: "Net (excl. VAT)",
+						v: money(parseFloat(String(f.amount).replace(/[,$]/g, "")) || 0, f.currency || "AED"),
+					},
+					{
+						k: "VAT (5%)",
+						v: money(
+							(parseFloat(String(f.amount).replace(/[,$]/g, "")) || 0) * 0.05,
+							f.currency || "AED"
+						),
+					},
+					{
+						k: "Grand total (incl. VAT)",
+						v: money(
+							(parseFloat(String(f.amount).replace(/[,$]/g, "")) || 0) * 1.05,
+							f.currency || "AED"
+						),
+					},
 					{ k: "Currency", v: f.currency || "AED" },
 					{ k: "Invoice document", v: file.value ? file.value.name : "—" },
 					{ k: "Delivery note #", v: f.dnNumber || "—" },
@@ -966,7 +983,7 @@
                 <div class="sip-field"><label>PO Number<span v-if="requirePO"> *</span></label><div><select v-model="f.po"><option value="">Select open PO</option><option v-for="p in openPOs" :key="p.id" :value="p.id">{{ p.label }}</option></select><div v-if="errors.po" class="sip-err">{{ errors.po }}</div></div></div>
                 <div class="sip-field"><label>Invoice Date *</label><div><input v-model="f.invoiceDate" type="date" :min="invoiceDateMin" :max="invoiceDateMax" /><div class="sip-sub" style="margin-top:4px">Today or up to 7 days back · future dates blocked</div><div v-if="errors.invoiceDate" class="sip-err">{{ errors.invoiceDate }}</div></div></div>
                 <div class="sip-field"><label>Due Date *</label><div><input v-model="f.dueDate" type="date" /><div v-if="errors.dueDate" class="sip-err">{{ errors.dueDate }}</div></div></div>
-                <div class="sip-field"><label>Net amount excl. VAT *</label><div style="display:flex;gap:8px;align-items:flex-start"><select v-model="f.currency" style="width:88px;height:38px;border:1px solid #cfd6e0;border-radius:6px"><option>AED</option><option>GBP</option><option>USD</option></select><input v-model="f.amount" class="mono" placeholder="0.00" style="flex:1" /><div v-if="errors.amount" class="sip-err">{{ errors.amount }}</div></div><div class="sip-sub" style="margin-top:4px">VAT (e.g. UAE 5%) is applied automatically on the Purchase Invoice for AP.</div></div>
+                <div class="sip-field"><label>Net amount excl. VAT *</label><div style="display:flex;gap:8px;align-items:flex-start"><select v-model="f.currency" style="width:88px;height:38px;border:1px solid #cfd6e0;border-radius:6px"><option>AED</option><option>GBP</option><option>USD</option></select><input v-model="f.amount" class="mono" placeholder="0.00" style="flex:1" /><div v-if="errors.amount" class="sip-err">{{ errors.amount }}</div></div><div class="sip-sub" style="margin-top:4px">UAE VAT 5% is calculated automatically on the Purchase Invoice (net × 1.05 = grand total).</div></div>
               </div>
             </div>
             <div v-show="step === 2" style="max-width:640px;display:flex;flex-direction:column;gap:18px">

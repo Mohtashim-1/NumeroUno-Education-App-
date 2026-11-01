@@ -25,13 +25,18 @@ class PortalPaymentRequest(Document):
 		self.status = "Open"
 
 	def on_cancel(self):
+		# Block only while the linked Payment Entry is still submitted.
+		# When PE is cancelled first (or already cancelled), allow this cancel.
 		if self.status == "Paid" and self.payment_entry:
-			frappe.throw(_("Cannot cancel a paid Portal Payment Request. Cancel/reallocate the Payment Entry first."))
+			pe_docstatus = frappe.db.get_value("Payment Entry", self.payment_entry, "docstatus")
+			if cint(pe_docstatus) == 1:
+				frappe.throw(
+					_("Cannot cancel a paid Portal Payment Request. Cancel/reallocate the Payment Entry first.")
+				)
 		self.db_set("status", "Cancelled")
 
 	def _set_gateway_defaults(self):
 		"""Pick default Stripe gateway + bank account for this currency."""
-		filters = {"is_default": 1}
 		row = frappe.db.get_value(
 			"Payment Gateway Account",
 			{"payment_gateway": ("like", "%Stripe%"), "currency": self.currency},
@@ -98,6 +103,7 @@ class PortalPaymentRequest(Document):
 		pe.party_name = self.customer_name
 		pe.paid_from = party_account
 		pe.paid_to = self.payment_account
+		pe.mode_of_payment = get_or_create_stripe_mode_of_payment(self.company, self.payment_account)
 		pe.paid_amount = flt(self.amount)
 		pe.received_amount = flt(self.amount)
 		pe.target_exchange_rate = 1
@@ -187,6 +193,93 @@ class PortalPaymentRequest(Document):
 			)
 		)
 		return {"ok": 1, "allocated": allocate_amount, "payment_entry": pe.name, "sales_invoice": si.name}
+
+
+def sync_portal_payment_request_on_payment_entry_cancel(doc, method=None):
+	"""Allow PE cancel despite Portal Payment Request links; cancel linked PPRs after PE."""
+	if not frappe.db.exists("DocType", "Portal Payment Request"):
+		return
+
+	ignored = list(doc.get("ignore_linked_doctypes") or [])
+	if "Portal Payment Request" not in ignored:
+		ignored.append("Portal Payment Request")
+	doc.ignore_linked_doctypes = tuple(ignored)
+
+	ppr_names = frappe.get_all(
+		"Portal Payment Request",
+		filters={"payment_entry": doc.name, "docstatus": 1},
+		pluck="name",
+	)
+	for name in ppr_names:
+		ppr = frappe.get_doc("Portal Payment Request", name)
+		ppr.flags.ignore_permissions = True
+		ppr.cancel()
+
+
+def get_or_create_stripe_mode_of_payment(company: str | None, payment_account: str | None) -> str | None:
+	"""Resolve Mode of Payment for Stripe receives; create Stripe MoP if missing."""
+	if not company or not payment_account:
+		return None
+
+	existing = frappe.db.get_value(
+		"Mode of Payment Account",
+		{"company": company, "default_account": payment_account},
+		"parent",
+	)
+	if existing:
+		return existing
+
+	mop_name = "Stripe"
+	if not frappe.db.exists("Mode of Payment", mop_name):
+		mop = frappe.get_doc(
+			{
+				"doctype": "Mode of Payment",
+				"mode_of_payment": mop_name,
+				"enabled": 1,
+				"type": "Bank",
+				"accounts": [
+					{
+						"company": company,
+						"default_account": payment_account,
+					}
+				],
+			}
+		)
+		mop.insert(ignore_permissions=True)
+		return mop.name
+
+	# Stripe MoP exists but missing this company/account mapping
+	mop = frappe.get_doc("Mode of Payment", mop_name)
+	if not any(
+		row.company == company and row.default_account == payment_account for row in mop.accounts
+	):
+		mop.append(
+			"accounts",
+			{
+				"company": company,
+				"default_account": payment_account,
+			},
+		)
+		mop.save(ignore_permissions=True)
+	return mop.name
+
+
+def set_stripe_mode_of_payment_on_payment_entry(doc, method=None):
+	"""Fill Mode of Payment on Stripe receives created via Payment Request / portal."""
+	if doc.mode_of_payment or doc.payment_type != "Receive" or not doc.paid_to:
+		return
+	if not doc.company:
+		return
+
+	is_stripe_account = frappe.db.exists(
+		"Payment Gateway Account",
+		{"payment_account": doc.paid_to, "payment_gateway": ("like", "%Stripe%")},
+	)
+	looks_like_stripe = (doc.paid_to or "").startswith("Stripe") or "Stripe" in (doc.remarks or "")
+	if not is_stripe_account and not looks_like_stripe:
+		return
+
+	doc.mode_of_payment = get_or_create_stripe_mode_of_payment(doc.company, doc.paid_to)
 
 
 @frappe.whitelist()

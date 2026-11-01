@@ -11,10 +11,37 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 def after_migrate():
 	ensure_supplier_compliance_fields()
+	ensure_purchase_invoice_portal_fields()
 
 
 def ensure_supplier_compliance_fields():
 	create_custom_fields(get_supplier_compliance_fields(), update=True)
+
+
+def ensure_purchase_invoice_portal_fields():
+	"""Visible Attach fields on Purchase Invoice for supplier portal uploads."""
+	create_custom_fields(get_purchase_invoice_portal_fields(), update=True)
+
+
+def get_purchase_invoice_portal_fields():
+	return {
+		"Purchase Invoice": [
+			{
+				"fieldname": "custom_supplier_invoice_attachment",
+				"fieldtype": "Attach",
+				"label": "Supplier Invoice Attachment",
+				"insert_after": "bill_no",
+				"description": "Invoice PDF/image uploaded via Supplier Invoice Portal",
+			},
+			{
+				"fieldname": "custom_delivery_note_attachment",
+				"fieldtype": "Attach",
+				"label": "Signed Delivery Note Attachment",
+				"insert_after": "custom_supplier_invoice_attachment",
+				"description": "Signed DN uploaded via Supplier Invoice Portal",
+			},
+		]
+	}
 
 
 def get_supplier_compliance_fields():

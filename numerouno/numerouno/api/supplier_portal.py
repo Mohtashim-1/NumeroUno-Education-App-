@@ -789,27 +789,61 @@ def submit_invoice(payload=None):
 		)
 	)
 	remarks.append(_("Invoice file: {0}").format(inv_name))
-	remarks.append(_("Submitted via Supplier Invoice Portal — see Attachments for invoice & DN files."))
+	remarks.append(
+		_(
+			"Submitted via Supplier Invoice Portal — open Supplier Invoice Attachment / Signed Delivery Note Attachment (or Attachments)."
+		)
+	)
 	pi.remarks = "\n".join(remarks)
+
+	# Ensure Attach fields exist before insert so URLs can be stored on the form
+	from numerouno.numerouno.supplier_compliance_setup import ensure_purchase_invoice_portal_fields
+
+	ensure_purchase_invoice_portal_fields()
 
 	pi.flags.ignore_permissions = True
 	pi.insert()
 
-	# Persist uploaded files on the Purchase Invoice (Attachments)
+	# Persist uploaded files on the Purchase Invoice (Attachments + visible Attach fields)
 	attached = []
 	try:
-		if invoice_upload and getattr(invoice_upload, "filename", None):
-			attached.append(
-				_attach_portal_file(invoice_upload, pi.doctype, pi.name, prefix="supplier_invoice")
-			)
-		if dn_upload and getattr(dn_upload, "filename", None):
-			attached.append(
-				_attach_portal_file(dn_upload, pi.doctype, pi.name, prefix="delivery_note")
-			)
-		if not attached:
-			frappe.throw(_("Invoice and delivery note files must be uploaded."))
+		if not (invoice_upload and getattr(invoice_upload, "filename", None)):
+			frappe.throw(_("Upload the supplier invoice document."))
+		if not (dn_upload and getattr(dn_upload, "filename", None)):
+			frappe.throw(_("Upload the signed delivery note document."))
+
+		inv_file = _attach_portal_file(
+			invoice_upload,
+			pi.doctype,
+			pi.name,
+			prefix="supplier_invoice",
+			attach_field="custom_supplier_invoice_attachment",
+		)
+		dn_file = _attach_portal_file(
+			dn_upload,
+			pi.doctype,
+			pi.name,
+			prefix="delivery_note",
+			attach_field="custom_delivery_note_attachment",
+		)
+		attached.extend([inv_file, dn_file])
+
+		pi.db_set(
+			{
+				"custom_supplier_invoice_attachment": inv_file["file_url"],
+				"custom_delivery_note_attachment": dn_file["file_url"],
+			},
+			update_modified=False,
+		)
+
+		# Re-load and force VAT if insert somehow cleared tax amounts
+		pi.reload()
+		if flt(pi.total_taxes_and_charges) <= 0 and flt(pi.net_total) > 0:
+			_apply_purchase_taxes(pi, company, supplier)
+			pi.flags.ignore_permissions = True
+			pi.save()
 	except Exception:
-		# Don't leave a draft PI without the supplier documents
+		# Don't leave a draft PI without the supplier documents / taxes
 		frappe.db.rollback()
 		try:
 			if frappe.db.exists("Purchase Invoice", pi.name):
@@ -820,67 +854,136 @@ def submit_invoice(payload=None):
 		raise
 
 	frappe.db.commit()
+	pi.reload()
 
 	return {
 		"status": "success",
 		"reference": pi.name,
 		"purchase_invoice": pi.name,
+		"net_total": flt(pi.net_total),
 		"grand_total": flt(pi.grand_total),
 		"total_taxes_and_charges": flt(pi.total_taxes_and_charges),
 		"taxes_and_charges": pi.taxes_and_charges,
 		"attachments": attached,
-		"message": _("Invoice submitted to NumeroUNO AP for review. Open Attachments on the Purchase Invoice to view the files."),
+		"message": _(
+			"Invoice submitted. AP can open the Purchase Invoice — Supplier Invoice Attachment and Signed Delivery Note Attachment are on the form (also under Attachments)."
+		),
 	}
 
 
-def _apply_purchase_taxes(pi, company: str, supplier: str):
-	"""Set taxes_and_charges from supplier tax category or company default template."""
+def _get_purchase_vat_template(company: str, supplier: str | None = None) -> str | None:
+	"""Resolve UAE VAT / default purchase tax template for the company."""
 	template = None
-	tax_category = frappe.db.get_value("Supplier", supplier, "tax_category")
+	tax_category = None
+	if supplier:
+		tax_category = frappe.db.get_value("Supplier", supplier, "tax_category")
 	if tax_category and frappe.db.exists("Tax Category", tax_category):
-		# Prefer a purchase tax template matching company + tax category title if present
 		template = frappe.db.get_value(
 			"Purchase Taxes and Charges Template",
-			{"company": company, "title": ["like", f"%{tax_category}%"]},
+			{"company": company, "title": ["like", f"%{tax_category}%"], "disabled": 0},
 			"name",
 		)
 	if not template:
 		template = frappe.db.get_value(
 			"Purchase Taxes and Charges Template",
-			{"company": company, "is_default": 1},
+			{"company": company, "is_default": 1, "disabled": 0},
 			"name",
 		)
 	if not template:
 		template = frappe.db.get_value(
 			"Purchase Taxes and Charges Template",
-			{"company": company},
+			{"company": company, "title": ["like", "%VAT 5%"], "disabled": 0},
+			"name",
+		) or frappe.db.get_value(
+			"Purchase Taxes and Charges Template",
+			{"company": company, "name": ["like", "%VAT 5%"], "disabled": 0},
 			"name",
 		)
 	if not template:
-		return
+		template = frappe.db.get_value(
+			"Purchase Taxes and Charges Template",
+			{"company": company, "disabled": 0},
+			"name",
+		)
+	return template
 
-	pi.taxes_and_charges = template
+
+def _apply_purchase_taxes(pi, company: str, supplier: str):
+	"""Always apply purchase VAT template rows and recalculate totals."""
+	template = _get_purchase_vat_template(company, supplier)
+	tax_category = frappe.db.get_value("Supplier", supplier, "tax_category") if supplier else None
 	if tax_category:
 		pi.tax_category = tax_category
-	try:
-		pi.set_taxes()
-	except Exception:
-		# Fallback: copy template rows manually
-		from erpnext.controllers.accounts_controller import get_taxes_and_charges
 
-		for tax in get_taxes_and_charges("Purchase Taxes and Charges Template", template):
-			pi.append("taxes", tax)
+	# Clear any stale tax rows so we don't double-apply
+	pi.set("taxes", [])
+
+	if template:
+		pi.taxes_and_charges = template
+		template_doc = frappe.get_doc("Purchase Taxes and Charges Template", template)
+		for row in template_doc.get("taxes") or []:
+			pi.append(
+				"taxes",
+				{
+					"category": row.get("category") or "Total",
+					"add_deduct_tax": row.get("add_deduct_tax") or "Add",
+					"charge_type": row.charge_type,
+					"account_head": row.account_head,
+					"description": row.description or row.account_head,
+					"rate": row.rate,
+					"cost_center": row.cost_center,
+					"included_in_print_rate": row.included_in_print_rate,
+				},
+			)
+
+	# Hard fallback: 5% VAT if template missing or empty
+	if not pi.get("taxes"):
+		account_head = (
+			frappe.db.get_value("Account", {"account_name": ["like", "VAT 5%"], "company": company}, "name")
+			or frappe.db.get_value("Account", {"name": ["like", "%VAT 5%%"], "company": company}, "name")
+		)
+		if not account_head:
+			frappe.throw(_("No purchase VAT template/account found. Configure UAE VAT 5% for {0}.").format(company))
+		cost_center = frappe.db.get_value("Company", company, "cost_center")
+		pi.append(
+			"taxes",
+			{
+				"category": "Total",
+				"add_deduct_tax": "Add",
+				"charge_type": "On Net Total",
+				"account_head": account_head,
+				"description": "VAT 5%",
+				"rate": 5,
+				"cost_center": cost_center,
+			},
+		)
+
 	try:
 		pi.calculate_taxes_and_totals()
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Supplier Portal VAT calculate")
+		raise
+
+	if flt(pi.net_total) > 0 and flt(pi.total_taxes_and_charges) <= 0:
+		# Last resort: set tax amount explicitly at 5%
+		expected = flt(pi.net_total) * 0.05
+		if pi.taxes:
+			pi.taxes[0].tax_amount = expected
+			pi.taxes[0].rate = 5
+		pi.total_taxes_and_charges = expected
+		pi.grand_total = flt(pi.net_total) + expected
+		pi.base_total_taxes_and_charges = expected
+		pi.base_grand_total = flt(pi.base_net_total or pi.net_total) + expected
+		pi.outstanding_amount = pi.grand_total
 
 
-def _attach_portal_file(upload, doctype: str, docname: str, prefix: str) -> dict:
-	from frappe.utils.file_manager import save_file
-	from frappe.utils import now_datetime
+def _attach_portal_file(upload, doctype: str, docname: str, prefix: str, attach_field: str | None = None) -> dict:
+	"""Save upload as a File linked to the document (and optionally an Attach field)."""
+	from frappe.utils import now_datetime, cstr
 
-	content = upload.read()
+	content = upload.stream.read() if hasattr(upload, "stream") else None
+	if not content:
+		content = upload.read() if hasattr(upload, "read") else None
 	if hasattr(upload, "seek"):
 		try:
 			upload.seek(0)
@@ -890,23 +993,54 @@ def _attach_portal_file(upload, doctype: str, docname: str, prefix: str) -> dict
 		frappe.throw(_("Uploaded file is empty."))
 	if len(content) > 10 * 1024 * 1024:
 		frappe.throw(_("File must be smaller than 10 MB."))
-	filename = upload.filename
+
+	filename = cstr(getattr(upload, "filename", None) or "upload.bin")
 	ext = ("." + filename.rsplit(".", 1)[-1].lower()) if "." in filename else ""
 	if ext and ext not in {".pdf", ".png", ".jpg", ".jpeg"}:
 		frappe.throw(_("File must be PDF, PNG, or JPG."))
 
 	stamp = now_datetime().strftime("%Y%m%d%H%M%S")
-	safe_name = f"{prefix}_{stamp}_{filename}"
-	file_doc = save_file(
-		safe_name,
-		content,
-		doctype,
-		docname,
-		is_private=1,
+	safe_name = f"{prefix}_{stamp}_{filename}".replace("/", "_").replace("\\", "_")
+
+	file_doc = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": safe_name,
+			"is_private": 1,
+			"content": content,
+			"attached_to_doctype": doctype,
+			"attached_to_name": docname,
+			"attached_to_field": attach_field,
+		}
 	)
+	file_doc.flags.ignore_permissions = True
+	file_doc.save()
+
+	# If File save reused another doc's attachment (hash collision), force a dedicated link
+	if file_doc.attached_to_name != docname or file_doc.attached_to_doctype != doctype:
+		linked = frappe.get_doc(
+			{
+				"doctype": "File",
+				"file_name": safe_name,
+				"file_url": file_doc.file_url,
+				"is_private": 1,
+				"attached_to_doctype": doctype,
+				"attached_to_name": docname,
+				"attached_to_field": attach_field,
+				"content_hash": file_doc.content_hash,
+			}
+		)
+		linked.flags.ignore_permissions = True
+		linked.insert()
+		file_doc = linked
+
+	if not file_doc.file_url:
+		frappe.throw(_("Failed to store uploaded file {0}.").format(filename))
+
 	return {
 		"file_name": file_doc.file_name,
 		"file_url": file_doc.file_url,
+		"attach_field": attach_field,
 	}
 
 
