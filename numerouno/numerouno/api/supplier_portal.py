@@ -437,12 +437,44 @@ def _submissions_for_supplier(supplier: str) -> list[dict]:
 
 
 @frappe.whitelist(allow_guest=True)
+def get_portal_csrf():
+	"""Return a CSRF token for the current guest/user session (portal login)."""
+	from frappe.sessions import get_csrf_token
+
+	return get_csrf_token()
+
+
+def _is_portal_staff(user: str | None = None) -> bool:
+	"""Desk users who may open the portal for AP review / troubleshooting."""
+	user = user or frappe.session.user
+	if not user or user == "Guest":
+		return False
+	if user == "Administrator":
+		return True
+	roles = set(frappe.get_roles(user))
+	return bool(
+		roles
+		& {
+			"System Manager",
+			"Accounts Manager",
+			"Accounts User",
+			"Purchase Manager",
+			"Purchase User",
+		}
+	)
+
+
+@frappe.whitelist(allow_guest=True)
 def login(usr=None, pwd=None):
 	"""Email + password login for Supplier Invoice Portal."""
-	usr = (usr or frappe.form_dict.get("usr") or "").strip().lower()
+	usr = (usr or frappe.form_dict.get("usr") or "").strip()
 	pwd = pwd or frappe.form_dict.get("pwd") or ""
 	if not usr or not pwd:
 		frappe.throw(_("Email and password are required."))
+
+	# Emails are case-insensitive; keep Desk usernames like Administrator intact
+	if "@" in usr:
+		usr = usr.lower()
 
 	from frappe.auth import LoginManager
 
@@ -455,7 +487,8 @@ def login(usr=None, pwd=None):
 		frappe.throw(_("Invalid email or password."))
 
 	supplier = _supplier_for_user(frappe.session.user)
-	if not supplier:
+	staff = _is_portal_staff(frappe.session.user)
+	if not supplier and not staff:
 		frappe.local.login_manager.logout()
 		frappe.throw(
 			_(
@@ -464,11 +497,17 @@ def login(usr=None, pwd=None):
 			)
 		)
 
+	if staff:
+		frappe.session.data.supplier_portal_staff = 1
+
 	return {
 		"ok": 1,
 		"user": frappe.session.user,
 		"supplier": supplier,
-		"message": _("Signed in successfully."),
+		"staff": 1 if staff else 0,
+		"message": _("Signed in successfully.")
+		if supplier
+		else _("Signed in as staff (AP preview). Use a Supplier Portal User for real supplier access."),
 	}
 
 
@@ -609,6 +648,60 @@ def get_bootstrap():
 		}
 
 	supplier = _supplier_for_user()
+	staff = _is_portal_staff()
+
+	# Staff preview (Administrator / AP) — portal shell without a Supplier link
+	if not supplier and staff:
+		ensure_supplier_compliance_fields()
+		return {
+			"authenticated": True,
+			"staff_mode": True,
+			"demo_mode": False,
+			"require_po": True,
+			"portal": portal,
+			"vendor": {
+				"display_name": _("AP Staff Preview"),
+				"contact_name": get_fullname(frappe.session.user) or frappe.session.user,
+				"vendor_id": "",
+				"ap_email": "ap@nutc.cloud",
+				"supplier": "",
+			},
+			"open_pos": [],
+			"orders": [],
+			"submissions": [],
+			"inventory": [],
+			"compliance_docs": _demo_seed()["compliance_docs"],
+			"compliance_gate": {
+				"allowed": False,
+				"blocking": [
+					{
+						"id": "staff_preview",
+						"name": "Staff preview",
+						"status": "Blocked",
+					}
+				],
+				"message": _(
+					"Staff preview only. Create a Portal User on a Supplier to submit invoices."
+				),
+			},
+			"message_threads": [],
+			"help_articles": _demo_seed()["help_articles"],
+			"profile": {
+				"email": frappe.session.user,
+				"phone": "",
+				"address": "",
+				"payment_method": "Bank transfer",
+				"bank_account": "",
+				"notify_email": True,
+				"notify_status": True,
+			},
+			"user": frappe.session.user,
+			"message": _(
+				"Signed in as {0} (staff). This portal is for suppliers — "
+				"open a Supplier and use “Create Supplier Invoice Portal User” for real access."
+			).format(frappe.session.user),
+		}
+
 	if not supplier:
 		return {
 			"authenticated": False,

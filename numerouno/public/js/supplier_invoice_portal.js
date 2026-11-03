@@ -23,27 +23,86 @@
 	};
 
 	function csrf() {
-		return document.querySelector('meta[name="csrf-token"]')?.content || "";
+		return document.querySelector('meta[name="csrf-token"]')?.content || window.csrf_token || "";
+	}
+
+	function setCsrf(token) {
+		if (!token) return;
+		window.csrf_token = token;
+		const meta = document.querySelector('meta[name="csrf-token"]');
+		if (meta) meta.setAttribute("content", token);
+	}
+
+	async function refreshCsrf() {
+		try {
+			const res = await fetch(`/api/method/${API}.get_portal_csrf`, {
+				method: "GET",
+				headers: { Accept: "application/json" },
+				credentials: "same-origin",
+			});
+			const data = await res.json();
+			if (data.message) setCsrf(data.message);
+		} catch (e) {
+			/* keep existing token */
+		}
+		return csrf();
 	}
 
 	async function call(method, args = {}) {
+		let token = csrf();
+		if (!token) token = await refreshCsrf();
+
+		const payload = { ...args, csrf_token: token };
 		const res = await fetch(`/api/method/${API}.${method}`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 				Accept: "application/json",
-				"X-Frappe-CSRF-Token": csrf(),
+				"X-Frappe-CSRF-Token": token,
 			},
 			credentials: "same-origin",
-			body: JSON.stringify(args),
+			body: JSON.stringify(payload),
 		});
-		const data = await res.json();
+		const data = await res.json().catch(() => ({}));
 		if (!res.ok || data.exc) {
+			const raw = String(data.message || data.exc || "");
+			// Stale CSRF after cookie rotation — refresh once and retry
+			if (res.status === 400 || /Invalid Request/i.test(raw) || data.exc_type === "CSRFTokenError") {
+				token = await refreshCsrf();
+				const retry = await fetch(`/api/method/${API}.${method}`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						"X-Frappe-CSRF-Token": token,
+					},
+					credentials: "same-origin",
+					body: JSON.stringify({ ...args, csrf_token: token }),
+				});
+				const data2 = await retry.json().catch(() => ({}));
+				if (!retry.ok || data2.exc) {
+					let message = "Request failed";
+					try {
+						if (data2._server_messages) {
+							const msgs = JSON.parse(data2._server_messages);
+							message = JSON.parse(msgs[0]).message || message;
+						} else if (data2.message) {
+							message = data2.message;
+						}
+					} catch (e) {
+						message = data2.message || message;
+					}
+					throw new Error(message);
+				}
+				return data2.message;
+			}
 			let message = "Request failed";
 			try {
 				if (data._server_messages) {
 					const msgs = JSON.parse(data._server_messages);
 					message = JSON.parse(msgs[0]).message || message;
+				} else if (data.message) {
+					message = data.message;
 				}
 			} catch (e) {
 				message = data.message || message;
@@ -933,7 +992,7 @@
       <h1 class="sip-title" style="font-size:22px">Supplier sign in</h1>
       <p class="sip-sub">Use the email and password provided by NumeroUNO AP. Registration stays public; this portal is for approved suppliers only.</p>
       <div style="display:flex;flex-direction:column;gap:14px;margin-top:18px">
-        <div class="sip-field" style="grid-template-columns:1fr"><label>Email</label><input v-model="login.email" type="email" autocomplete="username" @keydown.enter="doLogin" /></div>
+        <div class="sip-field" style="grid-template-columns:1fr"><label>Email / User</label><input v-model="login.email" type="text" autocomplete="username" placeholder="supplier@email.com or Administrator" @keydown.enter="doLogin" /></div>
         <div class="sip-field" style="grid-template-columns:1fr"><label>Password</label><input v-model="login.password" type="password" autocomplete="current-password" @keydown.enter="doLogin" /></div>
         <div v-if="loginError" class="sip-err">{{ loginError }}</div>
         <button type="button" class="sip-btn" :disabled="loginBusy" @click="doLogin">{{ loginBusy ? 'Signing in…' : 'Sign in' }}</button>
