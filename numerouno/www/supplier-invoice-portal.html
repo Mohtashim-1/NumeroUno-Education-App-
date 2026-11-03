@@ -3,17 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="csrf-token" content="{{ csrf_token|default('', true)|e }}">
+  <meta name="csrf-token" content="">
   <title>Supplier Portal — Numero Uno Training and Consulting LLC</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/numerouno/css/supplier_invoice_portal.css?v=9">
   <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
-  <script>window.csrf_token = "{{ csrf_token|default('', true)|e }}";</script>
+  <!-- csrf_token -->
+  <script>
+    (function () {
+      var t = (window.frappe && frappe.csrf_token) || "";
+      if (t && t !== "None" && t !== "null") {
+        window.csrf_token = t;
+        var m = document.querySelector('meta[name="csrf-token"]');
+        if (m) m.setAttribute("content", t);
+      }
+    })();
+  </script>
 </head>
 <body>
   <div id="supplier-invoice-portal"></div>
-  <script src="/assets/numerouno/js/supplier_invoice_portal.js?v=16"></script>
+  <script src="/assets/numerouno/js/supplier_invoice_portal.js?v=17"></script>
 </body>
 </html>

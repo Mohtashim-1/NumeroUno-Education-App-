@@ -23,12 +23,22 @@
 	};
 
 	function csrf() {
-		return document.querySelector('meta[name="csrf-token"]')?.content || window.csrf_token || "";
+		const fromFrappe =
+			typeof frappe !== "undefined" && frappe.csrf_token && frappe.csrf_token !== "None"
+				? frappe.csrf_token
+				: "";
+		return (
+			document.querySelector('meta[name="csrf-token"]')?.content ||
+			window.csrf_token ||
+			fromFrappe ||
+			""
+		);
 	}
 
 	function setCsrf(token) {
-		if (!token) return;
+		if (!token || token === "None" || token === "null") return;
 		window.csrf_token = token;
+		if (typeof frappe !== "undefined") frappe.csrf_token = token;
 		const meta = document.querySelector('meta[name="csrf-token"]');
 		if (meta) meta.setAttribute("content", token);
 	}
@@ -44,6 +54,20 @@
 			if (data.message) setCsrf(data.message);
 		} catch (e) {
 			/* keep existing token */
+		}
+		if (!csrf()) {
+			// Fallback: re-fetch portal HTML and pick up <!-- csrf_token --> injection
+			try {
+				const page = await fetch("/supplier-invoice-portal", {
+					credentials: "same-origin",
+					headers: { Accept: "text/html" },
+				});
+				const html = await page.text();
+				const m = html.match(/frappe\.csrf_token\s*=\s*"([^"]+)"/);
+				if (m && m[1] && m[1] !== "None") setCsrf(m[1]);
+			} catch (e2) {
+				/* ignore */
+			}
 		}
 		return csrf();
 	}
