@@ -48,6 +48,12 @@ def get_columns():
 			"width": 150,
 		},
 		{
+			"fieldname": "course_location",
+			"label": _("Course Location"),
+			"fieldtype": "Data",
+			"width": 150,
+		},
+		{
 			"fieldname": "course_creation_date",
 			"label": _("Course Creation Date"),
 			"fieldtype": "Date",
@@ -155,6 +161,11 @@ def get_data(filters):
 			sgs.customer_name AS customer,
 			sgs.sales_person AS sales_person,
 			sgs.course_name AS course_name,
+			COALESCE(
+				NULLIF(TRIM(sg.custom_course_location_name), ''),
+				NULLIF(TRIM(sg.custom_course_location), ''),
+				NULLIF(TRIM(sg.custom_coarse_location), '')
+			) AS course_location,
 			DATE(sg.creation) AS course_creation_date,
 			GROUP_CONCAT(DISTINCT sgi.instructor_name ORDER BY sgi.idx SEPARATOR ', ') AS instructor_name,
 			COALESCE(NULLIF(TRIM(sgs.student_name), ''), st.student_name, sgs.student) AS student_name,
