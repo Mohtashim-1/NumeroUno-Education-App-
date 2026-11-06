@@ -355,10 +355,25 @@ def _demo_seed():
 	}
 
 
+def _staff_act_as_supplier() -> str | None:
+	"""Supplier selected by AP/Administrator for portal testing."""
+	if not _is_portal_staff():
+		return None
+	name = (frappe.session.data.get("supplier_portal_act_as") or "").strip()
+	if name and frappe.db.exists("Supplier", name):
+		return name
+	return None
+
+
 def _supplier_for_user(user: str | None = None) -> str | None:
 	user = user or frappe.session.user
 	if not user or user == "Guest":
 		return None
+	# Staff may impersonate a supplier for AP testing
+	if user == frappe.session.user:
+		act_as = _staff_act_as_supplier()
+		if act_as:
+			return act_as
 	if frappe.db.exists("Supplier", {"supplier_name": user}):
 		return user
 	if frappe.db.table_exists("Portal User"):
@@ -380,6 +395,52 @@ def _supplier_for_user(user: str | None = None) -> str | None:
 		):
 			return row.link_name
 	return None
+
+
+@frappe.whitelist()
+def list_suppliers_for_staff(txt: str | None = None, limit: int = 50):
+	"""AP/Administrator: suppliers available to test the portal as."""
+	if not _is_portal_staff():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	limit = min(cint(limit) or 50, 100)
+	txt = (txt or "").strip()
+	filters = {"disabled": 0}
+	or_filters = None
+	if txt:
+		or_filters = [
+			["Supplier", "name", "like", f"%{txt}%"],
+			["Supplier", "supplier_name", "like", f"%{txt}%"],
+		]
+	rows = frappe.get_all(
+		"Supplier",
+		filters=filters,
+		or_filters=or_filters,
+		fields=["name", "supplier_name"],
+		order_by="supplier_name asc",
+		limit_page_length=limit,
+	)
+	return [{"name": r.name, "label": r.supplier_name or r.name} for r in rows]
+
+
+@frappe.whitelist()
+def set_act_as_supplier(supplier: str | None = None):
+	"""AP/Administrator: act as a Supplier in the invoice portal (testing)."""
+	if not _is_portal_staff():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	supplier = (supplier or "").strip()
+	if not supplier:
+		frappe.session.data.supplier_portal_act_as = None
+		frappe.local.session_obj.update(force=True)
+		return {"ok": 1, "supplier": None}
+	if not frappe.db.exists("Supplier", supplier):
+		frappe.throw(_("Supplier not found."))
+	frappe.session.data.supplier_portal_act_as = supplier
+	frappe.session.data.supplier_portal_staff = 1
+	try:
+		frappe.local.session_obj.update(force=True)
+	except Exception:
+		pass
+	return {"ok": 1, "supplier": supplier, "label": frappe.db.get_value("Supplier", supplier, "supplier_name")}
 
 
 def _open_pos_for_supplier(supplier: str) -> list[dict]:
@@ -650,15 +711,17 @@ def get_bootstrap():
 	supplier = _supplier_for_user()
 	staff = _is_portal_staff()
 
-	# Staff preview (Administrator / AP) — portal shell without a Supplier link
+	# Staff without act-as: pick a supplier to test as
 	if not supplier and staff:
 		ensure_supplier_compliance_fields()
 		return {
 			"authenticated": True,
 			"staff_mode": True,
+			"needs_supplier_pick": True,
 			"demo_mode": False,
 			"require_po": True,
 			"portal": portal,
+			"staff_suppliers": list_suppliers_for_staff(limit=80),
 			"vendor": {
 				"display_name": _("AP Staff Preview"),
 				"contact_name": get_fullname(frappe.session.user) or frappe.session.user,
@@ -676,12 +739,12 @@ def get_bootstrap():
 				"blocking": [
 					{
 						"id": "staff_preview",
-						"name": "Staff preview",
+						"name": "Pick supplier",
 						"status": "Blocked",
 					}
 				],
 				"message": _(
-					"Staff preview only. Create a Portal User on a Supplier to submit invoices."
+					"Signed in as staff. Choose a Supplier below to test Compliance uploads and invoice submission."
 				),
 			},
 			"message_threads": [],
@@ -697,8 +760,7 @@ def get_bootstrap():
 			},
 			"user": frappe.session.user,
 			"message": _(
-				"Signed in as {0} (staff). This portal is for suppliers — "
-				"open a Supplier and use “Create Supplier Invoice Portal User” for real access."
+				"Signed in as {0} (staff). Select a Supplier to act as for testing."
 			).format(frappe.session.user),
 		}
 
@@ -715,8 +777,11 @@ def get_bootstrap():
 
 	ensure_supplier_compliance_fields()
 	supplier_doc = frappe.get_doc("Supplier", supplier)
+	acting_as_staff = bool(staff and _staff_act_as_supplier())
 	seed = {
 		"authenticated": True,
+		"staff_mode": acting_as_staff,
+		"needs_supplier_pick": False,
 		"demo_mode": False,
 		"require_po": True,
 		"portal": portal,
@@ -754,6 +819,11 @@ def get_bootstrap():
 			"notify_status": True,
 		},
 	}
+	if acting_as_staff:
+		seed["staff_suppliers"] = list_suppliers_for_staff(limit=80)
+		seed["message"] = _(
+			"Staff testing as {0}. Compliance uploads and invoices apply to this Supplier."
+		).format(supplier_doc.supplier_name or supplier)
 	return seed
 
 
@@ -1152,8 +1222,6 @@ ALLOWED_CURRENCIES = ("AED", "GBP", "USD")
 @frappe.whitelist(methods=["POST"])
 def upload_compliance_document():
 	"""Upload a compliance attachment from the supplier portal (optional validity date)."""
-	from frappe.utils.file_manager import save_file
-
 	supplier = _require_supplier_session()
 	doc_id = (frappe.form_dict.get("doc_id") or "").strip()
 	valid_until = (frappe.form_dict.get("valid_until") or "").strip() or None
@@ -1177,24 +1245,15 @@ def upload_compliance_document():
 	if not upload or not getattr(upload, "filename", None):
 		frappe.throw(_("Please choose a file to upload."))
 
-	content = upload.read()
-	if not content:
-		frappe.throw(_("Uploaded file is empty."))
-	if len(content) > 10 * 1024 * 1024:
-		frappe.throw(_("File must be smaller than 10 MB."))
-
-	filename = upload.filename
-	ext = ("." + filename.rsplit(".", 1)[-1].lower()) if "." in filename else ""
-	if ext and ext not in {".pdf", ".png", ".jpg", ".jpeg"}:
-		frappe.throw(_("File must be PDF, PNG, or JPG."))
-
-	file_doc = save_file(
-		f"{doc_id}_{filename}",
-		content,
+	# Use File-doc attach helper (avoids save_file max_file_size type bugs)
+	attached = _attach_portal_file(
+		upload,
 		"Supplier",
 		supplier,
-		is_private=1,
+		prefix=doc_id,
 	)
+	filename = attached["file_name"]
+	file_url = attached["file_url"]
 
 	label = COMPLIANCE_DOC_LABELS[doc_id]
 	status = "Valid"
@@ -1211,7 +1270,7 @@ def upload_compliance_document():
 		status = "On file"
 		meta = f"{filename} uploaded"
 
-	_persist_compliance_on_supplier(supplier, doc_id, file_doc.file_url, valid_until)
+	_persist_compliance_on_supplier(supplier, doc_id, file_url, valid_until)
 	frappe.get_doc("Supplier", supplier).add_comment(
 		"Attachment",
 		_("Compliance upload: {0} — {1}").format(label, meta),
@@ -1225,7 +1284,7 @@ def upload_compliance_document():
 		"doc_id": doc_id,
 		"label": label,
 		"file_name": filename,
-		"file_url": file_doc.file_url,
+		"file_url": file_url,
 		"valid_until": str(valid_until) if valid_until else "",
 		"doc_status": status,
 		"meta": meta,

@@ -145,17 +145,21 @@
 	const money = (n, c = "AED") =>
 		new Intl.NumberFormat("en-AE", { style: "currency", currency: c || "AED" }).format(n || 0);
 
-	const todayISO = () => {
-		const d = new Date();
-		d.setHours(0, 0, 0, 0);
-		return d.toISOString().slice(0, 10);
+	/** Local calendar YYYY-MM-DD (never use toISOString — UTC shift breaks UAE/Dubai “today”). */
+	const toLocalISODate = (d) => {
+		const y = d.getFullYear();
+		const m = String(d.getMonth() + 1).padStart(2, "0");
+		const day = String(d.getDate()).padStart(2, "0");
+		return `${y}-${m}-${day}`;
 	};
+
+	const todayISO = () => toLocalISODate(new Date());
 
 	const daysAgoISO = (days) => {
 		const d = new Date();
-		d.setHours(0, 0, 0, 0);
+		d.setHours(12, 0, 0, 0); // noon avoids DST edge cases when stepping days
 		d.setDate(d.getDate() - days);
-		return d.toISOString().slice(0, 10);
+		return toLocalISODate(d);
 	};
 
 	const EMPTY_FORM = () => ({
@@ -186,8 +190,8 @@
 			const errors = reactive({});
 			const drag = ref(false);
 			const dnDrag = ref(false);
-			const invoiceDateMin = daysAgoISO(7);
-			const invoiceDateMax = todayISO();
+			const invoiceDateMin = computed(() => daysAgoISO(7));
+			const invoiceDateMax = computed(() => todayISO());
 			const subs = ref([]);
 			const openPOs = ref([]);
 			const orders = ref([]);
@@ -219,6 +223,11 @@
 			const loginError = ref("");
 			const login = reactive({ email: "", password: "" });
 			const demoMode = ref(false);
+			const staffMode = ref(false);
+			const needsSupplierPick = ref(false);
+			const staffSuppliers = ref([]);
+			const actAsSupplier = ref("");
+			const actAsBusy = ref(false);
 			const inventory = ref([]);
 			const complianceDocs = ref([]);
 			const complianceGate = ref({ allowed: false, blocking: [], message: "" });
@@ -830,7 +839,13 @@
 				}
 				authed.value = true;
 				loginError.value = "";
-				if (boot.vendor) vendor.value = boot.vendor;
+				staffMode.value = !!boot.staff_mode || !!boot.needs_supplier_pick;
+				needsSupplierPick.value = !!boot.needs_supplier_pick;
+				if (boot.staff_suppliers?.length) staffSuppliers.value = boot.staff_suppliers;
+				if (boot.vendor) {
+					vendor.value = boot.vendor;
+					actAsSupplier.value = boot.vendor.supplier || "";
+				}
 				if (boot.open_pos) openPOs.value = boot.open_pos;
 				if (boot.submissions) subs.value = boot.submissions;
 				if (boot.orders) orders.value = boot.orders;
@@ -847,6 +862,37 @@
 				requirePO.value = boot.require_po !== false;
 				demoMode.value = false;
 				f.currency = "AED";
+			};
+
+			const chooseActAsSupplier = async () => {
+				if (!actAsSupplier.value) return;
+				actAsBusy.value = true;
+				try {
+					await call("set_act_as_supplier", { supplier: actAsSupplier.value });
+					const boot = await call("get_bootstrap");
+					applyBootstrap(boot);
+					view.value = "compliance";
+				} catch (e) {
+					alert(e.message || "Could not switch supplier");
+				} finally {
+					actAsBusy.value = false;
+				}
+			};
+
+			const clearActAsSupplier = async () => {
+				actAsBusy.value = true;
+				try {
+					await call("set_act_as_supplier", { supplier: "" });
+					const list = await call("list_suppliers_for_staff", { limit: 80 });
+					staffSuppliers.value = list || [];
+					actAsSupplier.value = "";
+					const boot = await call("get_bootstrap");
+					applyBootstrap(boot);
+				} catch (e) {
+					alert(e.message || "Could not clear supplier");
+				} finally {
+					actAsBusy.value = false;
+				}
 			};
 
 			const doLogin = async () => {
@@ -924,6 +970,13 @@
 				doLogin,
 				doLogout,
 				demoMode,
+				staffMode,
+				needsSupplierPick,
+				staffSuppliers,
+				actAsSupplier,
+				actAsBusy,
+				chooseActAsSupplier,
+				clearActAsSupplier,
 				portal,
 				vendor,
 				openPOs,
@@ -1031,6 +1084,18 @@
       <div class="sip-aside-foot">Vendor ID <code>{{ vendor.vendor_id }}</code><br>AP contact: {{ vendor.ap_email }}</div>
     </aside>
     <main class="sip-main">
+      <div v-if="staffMode" class="sip-card" style="margin-bottom:14px;border-color:#9db7e0;background:#f3f7fd">
+        <div style="font-weight:700;color:#1d4f91;margin-bottom:8px">AP / Administrator test mode</div>
+        <p class="sip-sub" style="margin:0 0 10px">Pick a Supplier to upload Compliance docs and submit invoices as that vendor.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <select v-model="actAsSupplier" style="min-width:280px;height:36px;padding:0 10px;border:1px solid #cfd6e0;border-radius:6px">
+            <option value="">Select supplier…</option>
+            <option v-for="s in staffSuppliers" :key="s.name" :value="s.name">{{ s.label }}</option>
+          </select>
+          <button type="button" class="sip-btn sm" :disabled="actAsBusy || !actAsSupplier" @click="chooseActAsSupplier">{{ actAsBusy ? 'Loading…' : 'Act as supplier' }}</button>
+          <button v-if="vendor.supplier" type="button" class="sip-btn secondary sm" :disabled="actAsBusy" @click="clearActAsSupplier">Clear</button>
+        </div>
+      </div>
       <template v-if="view === 'submit'">
         <div v-if="!done">
           <div v-if="invoiceBlocked" class="sip-card" style="margin-bottom:0;border-color:#f0b8b2;background:#fdf2f0">
